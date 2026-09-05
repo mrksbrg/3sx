@@ -1521,9 +1521,7 @@ void op_112_move() {
 
     case 1:
         if (op_112_sound_ready()) {
-            op_w.r_no_2 += 1;
-            op_work_clear();
-            op_w.index = 71;
+            advance_opening_step(71);
             op_w.mv_ctr = 0;
             return;
         }
@@ -1535,9 +1533,7 @@ void op_112_move() {
         op_w.mv_ctr += 1;
 
         if (op_w.mv_ctr >= op_112_sound[op_w.r_no_2]) {
-            op_w.r_no_2 += 1;
-            op_work_clear();
-            op_w.index = 72;
+            advance_opening_step(72);
             return;
         }
 
@@ -1548,9 +1544,7 @@ void op_112_move() {
         op_w.mv_ctr += 1;
 
         if (op_w.mv_ctr >= op_112_sound[op_w.r_no_2]) {
-            op_w.r_no_2 += 1;
-            op_work_clear();
-            op_w.index = 73;
+            advance_opening_step(73);
             op_obj_disp = 0;
             effect_48_init(18);
             return;
@@ -1563,9 +1557,7 @@ void op_112_move() {
         op_w.mv_ctr += 1;
 
         if (op_w.mv_ctr >= op_112_sound[op_w.r_no_2]) {
-            op_w.r_no_2 += 1;
-            op_work_clear();
-            op_w.index = 74;
+            advance_opening_step(74);
             op_obj_disp = 1;
             return;
         }
@@ -1577,9 +1569,7 @@ void op_112_move() {
         op_w.mv_ctr += 1;
 
         if (op_w.mv_ctr >= op_112_sound[op_w.r_no_2]) {
-            op_w.r_no_2 += 1;
-            op_work_clear();
-            op_w.index = 75;
+            advance_opening_step(75);
             return;
         }
 
@@ -1590,9 +1580,7 @@ void op_112_move() {
         op_w.mv_ctr += 1;
 
         if (op_w.mv_ctr >= op_112_sound[op_w.r_no_2]) {
-            op_w.r_no_2 += 1;
-            op_work_clear();
-            op_w.index = 76;
+            advance_opening_step(76);
             op_obj_disp = 0;
             effect_48_init(19);
             return;
@@ -1605,9 +1593,7 @@ void op_112_move() {
         op_w.mv_ctr += 1;
 
         if (op_w.mv_ctr >= op_112_sound[op_w.r_no_2]) {
-            op_w.r_no_2 += 1;
-            op_work_clear();
-            op_w.index = 77;
+            advance_opening_step(77);
             op_obj_disp = 1;
             return;
         }
@@ -1619,9 +1605,7 @@ void op_112_move() {
         op_w.mv_ctr += 1;
 
         if (op_w.mv_ctr >= op_112_sound[op_w.r_no_2]) {
-            op_w.r_no_2 += 1;
-            op_work_clear();
-            op_w.index = 78;
+            advance_opening_step(78);
             return;
         }
 
