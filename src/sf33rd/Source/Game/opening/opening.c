@@ -64,6 +64,14 @@ s16 op_sound_status;
 MVXY op_bg_mvxy[3];
 OP_W op_w;
 
+static void tick_opening_title_timeout() {
+    if (!Game_pause) {
+        if (--op_timer0 == 0) {
+            D_No[3] = 99;
+        }
+    }
+}
+
 s16 opening_demo() {
     switch (D_No[3]) {
     case 0:
@@ -94,12 +102,7 @@ s16 opening_demo() {
         break;
 
     case 3:
-        if (!Game_pause) {
-            if (--op_timer0 == 0) {
-                D_No[3] = 99;
-            }
-        }
-
+        tick_opening_title_timeout();
         TITLE_Move(1);
         Disp_Copyright();
         break;
