@@ -2547,6 +2547,22 @@ void op_bg0_0014(s16 r_index) {
 
 const s32 ot_bg0_0015_tbl[6] = { 0xFF00A0B0, 0xFF005888, 0xFF00A0B0, 0xFF005888, 0xFF000058, 0xFF000000 };
 
+static void advance_bg0_tile_fade(void) {
+    bgw_ptr->free -= 1;
+
+    if (bgw_ptr->free <= 0) {
+        bgw_ptr->l_limit += 1;
+
+        if (bgw_ptr->l_limit >= 6) {
+            opw_ptr->r_no_0 += 1;
+        } else {
+            bgw_ptr->free = 1;
+            op_w.bgw[0].map[1][0].col.full = ot_bg0_0015_tbl[bgw_ptr->l_limit];
+            op_w.bgw[0].map[2][0].col.full = ot_bg0_0015_tbl[bgw_ptr->l_limit];
+        }
+    }
+}
+
 void op_bg0_0015(s16 r_index) {
     switch (opw_ptr->r_no_0) {
     case 0:
@@ -2576,20 +2592,7 @@ void op_bg0_0015(s16 r_index) {
     case 1:
         op_w.bgw[0].map[1][0].col.full = 0xFF000000;
         op_w.bgw[0].map[2][0].col.full = 0xFF000000;
-        bgw_ptr->free -= 1;
-
-        if (bgw_ptr->free <= 0) {
-            bgw_ptr->l_limit += 1;
-
-            if (bgw_ptr->l_limit >= 6) {
-                opw_ptr->r_no_0 += 1;
-            } else {
-                bgw_ptr->free = 1;
-                op_w.bgw[0].map[1][0].col.full = ot_bg0_0015_tbl[bgw_ptr->l_limit];
-                op_w.bgw[0].map[2][0].col.full = ot_bg0_0015_tbl[bgw_ptr->l_limit];
-            }
-        }
-
+        advance_bg0_tile_fade();
         break;
 
     case 2:
