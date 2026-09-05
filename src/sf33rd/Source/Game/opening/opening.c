@@ -2197,6 +2197,22 @@ void op_bg0_0003(s16 r_index) {
 
 const s32 ot_bg0_0004_tbl[6] = { 0xFF00A0B0, 0xFF005888, 0xFF00A0B0, 0xFF005888, 0xFF000058, 0xFF000000 };
 
+static void advance_bg0_fade(PAL_CURSOR_COL* beta_col) {
+    bgw_ptr->free -= 1;
+
+    if (bgw_ptr->free <= 0) {
+        bgw_ptr->l_limit += 1;
+
+        if (bgw_ptr->l_limit >= 6) {
+            opw_ptr->r_no_0 += 1;
+        } else {
+            bgw_ptr->free = 1;
+            beta_col[0].color = beta_col[1].color = beta_col[2].color = beta_col[3].color =
+                ot_bg0_0004_tbl[bgw_ptr->l_limit];
+        }
+    }
+}
+
 void op_bg0_0004(s16 r_index) {
     PAL_CURSOR beta_poly;
     PAL_CURSOR_P beta_p[4];
@@ -2242,20 +2258,7 @@ void op_bg0_0004(s16 r_index) {
         /* fallthrough */
 
     case 2:
-        bgw_ptr->free -= 1;
-
-        if (bgw_ptr->free <= 0) {
-            bgw_ptr->l_limit += 1;
-
-            if (bgw_ptr->l_limit >= 6) {
-                opw_ptr->r_no_0 += 1;
-            } else {
-                bgw_ptr->free = 1;
-                beta_col[0].color = beta_col[1].color = beta_col[2].color = beta_col[3].color =
-                    ot_bg0_0004_tbl[bgw_ptr->l_limit];
-            }
-        }
-
+        advance_bg0_fade(beta_col);
         if (!No_Trans) {
             njDrawPolygon2D(&beta_poly, 4, PrioBase[75], 0x20);
         }
