@@ -797,9 +797,7 @@ void op_104_move() {
 
     case 1:
         if (op_104_sound_ready()) {
-            op_w.r_no_2 += 1;
-            op_work_clear();
-            op_w.index = 18;
+            advance_opening_step(18);
             return;
         }
 
@@ -808,9 +806,7 @@ void op_104_move() {
 
     case 2:
         if (gSeqStatus[0] >= op_104_sound[op_w.r_no_2]) {
-            op_w.r_no_2 += 1;
-            op_work_clear();
-            op_w.index = 19;
+            advance_opening_step(19);
             op_obj_disp = 0;
             effect_48_init(10);
             return;
@@ -821,9 +817,7 @@ void op_104_move() {
 
     case 3:
         if (gSeqStatus[0] >= op_104_sound[op_w.r_no_2]) {
-            op_w.r_no_2 += 1;
-            op_work_clear();
-            op_w.index = 20;
+            advance_opening_step(20);
             op_obj_disp = 1;
             return;
         }
@@ -833,9 +827,7 @@ void op_104_move() {
 
     case 4:
         if (gSeqStatus[0] >= op_104_sound[op_w.r_no_2]) {
-            op_w.r_no_2 += 1;
-            op_work_clear();
-            op_w.index = 21;
+            advance_opening_step(21);
             op_obj_disp = 0;
             effect_48_init(11);
             return;
@@ -846,9 +838,7 @@ void op_104_move() {
 
     case 5:
         if (gSeqStatus[0] >= op_104_sound[op_w.r_no_2]) {
-            op_w.r_no_2 += 1;
-            op_work_clear();
-            op_w.index = 22;
+            advance_opening_step(22);
             op_obj_disp = 1;
             return;
         }
@@ -858,9 +848,7 @@ void op_104_move() {
 
     case 6:
         if (gSeqStatus[0] >= op_104_sound[op_w.r_no_2]) {
-            op_w.r_no_2 += 1;
-            op_work_clear();
-            op_w.index = 23;
+            advance_opening_step(23);
             return;
         }
 
