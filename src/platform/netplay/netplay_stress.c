@@ -18,6 +18,7 @@
 #define STRESS_CHECK_DISTANCE_DEFAULT 8
 #define GAME_STATE_FIGHT 2     // G_No[1] while a round is being played
 #define STRESS_PAD_CONNECTED 2 // Interface_Type value keyConvert() uses for a present pad
+#define BOOT_TRACE_NAME "boot-state-trace.csv"
 #define STATE_TRACE_NAME "state-trace.csv"
 
 static bool stress_pending = false;
@@ -109,6 +110,32 @@ void Stress_SetOutputDir(const char* directory) {
     }
 }
 
+static void initialize_state_trace(const char* name) {
+    char path[512];
+    Stress_Path(path, sizeof(path), name);
+
+    SDL_IOStream* io = SDL_IOFromFile(path, "w");
+
+    if (io != NULL) {
+        SDL_IOprintf(io, "frame,checksum\n");
+        SDL_CloseIO(io);
+    }
+}
+
+static void append_state_trace(const char* name, int frame, u32 checksum) {
+    char path[512];
+    Stress_Path(path, sizeof(path), name);
+
+    SDL_IOStream* io = SDL_IOFromFile(path, "a");
+
+    if (io == NULL) {
+        return;
+    }
+
+    SDL_IOprintf(io, "%d,%08X\n", frame, checksum);
+    SDL_CloseIO(io);
+}
+
 void Stress_Begin(int seed, int check_distance, int frames) {
     // A zero seed would make xorshift produce nothing but zeroes.
     stress_rng = seed != 0 ? (u32)seed : 1;
@@ -117,15 +144,8 @@ void Stress_Begin(int seed, int check_distance, int frames) {
     stress_frame_limit = frames;
     stress_pending = true;
 
-    char path[512];
-    Stress_Path(path, sizeof(path), STATE_TRACE_NAME);
-
-    SDL_IOStream* io = SDL_IOFromFile(path, "w");
-
-    if (io != NULL) {
-        SDL_IOprintf(io, "frame,checksum\n");
-        SDL_CloseIO(io);
-    }
+    initialize_state_trace(BOOT_TRACE_NAME);
+    initialize_state_trace(STATE_TRACE_NAME);
 
 #if DEBUG
     // Both simulations of a frame have to still be in the buffer when the desync
@@ -137,22 +157,16 @@ void Stress_Begin(int seed, int check_distance, int frames) {
 #endif
 }
 
+void Stress_RecordBootState(u32 checksum) {
+    append_state_trace(BOOT_TRACE_NAME, stress_boot_timer, checksum);
+}
+
 void Stress_RecordState(int frame, u32 checksum) {
     if (!stress_running) {
         return;
     }
 
-    char path[512];
-    Stress_Path(path, sizeof(path), STATE_TRACE_NAME);
-
-    SDL_IOStream* io = SDL_IOFromFile(path, "a");
-
-    if (io == NULL) {
-        return;
-    }
-
-    SDL_IOprintf(io, "%d,%08X\n", frame, checksum);
-    SDL_CloseIO(io);
+    append_state_trace(STATE_TRACE_NAME, frame, checksum);
 }
 
 bool Stress_IsRequested() {

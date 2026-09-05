@@ -226,6 +226,7 @@ void Main_StepFrame() {
         Netplay_TickMatchmaking();
         Netplay_TickDirectP2P();
         Stress_Tick();
+        Netplay_RecordStressBootState();
     }
 #else
     njUserMain();

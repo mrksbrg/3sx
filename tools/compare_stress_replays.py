@@ -23,6 +23,8 @@ sys.path.insert(0, str(TOOLS_DIR))
 from stress_desync import run_dir_for  # noqa: E402
 
 TRACE_NAME = "state-trace.csv"
+BOOT_TRACE_NAME = "boot-state-trace.csv"
+TraceRow = tuple[str, int, str]
 
 
 @dataclass(frozen=True)
@@ -77,9 +79,15 @@ def read_trace(path: Path) -> list[tuple[int, str]]:
         return [(int(row["frame"]), row["checksum"]) for row in rows]
 
 
+def read_complete_trace(gameplay_path: Path) -> list[TraceRow]:
+    boot_rows = [("boot", frame, checksum) for frame, checksum in read_trace(gameplay_path.parent / BOOT_TRACE_NAME)]
+    gameplay_rows = [("gameplay", frame, checksum) for frame, checksum in read_trace(gameplay_path)]
+    return boot_rows + gameplay_rows
+
+
 def first_difference(
-    baseline: list[tuple[int, str]], candidate: list[tuple[int, str]]
-) -> tuple[int, tuple[int, str] | None, tuple[int, str] | None] | None:
+    baseline: list[TraceRow], candidate: list[TraceRow]
+) -> tuple[int, TraceRow | None, TraceRow | None] | None:
     for index, (baseline_row, candidate_row) in enumerate(zip_longest(baseline, candidate)):
         if baseline_row != candidate_row:
             return index, baseline_row, candidate_row
@@ -132,8 +140,8 @@ def compare_seed(args: argparse.Namespace, output_root: Path, seed: int) -> int:
         print(f"seed {seed}: ERROR: {error}")
         return 2
 
-    baseline = read_trace(baseline_path)
-    candidate = read_trace(candidate_path)
+    baseline = read_complete_trace(baseline_path)
+    candidate = read_complete_trace(candidate_path)
     difference = first_difference(baseline, candidate)
 
     if difference is None:

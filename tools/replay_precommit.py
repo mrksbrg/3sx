@@ -10,7 +10,7 @@ from pathlib import Path
 TOOLS_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(TOOLS_DIR))
 
-from compare_stress_replays import TraceRun, first_difference, read_trace, run_trace
+from compare_stress_replays import TraceRun, first_difference, read_complete_trace, run_trace
 
 REPO_ROOT = TOOLS_DIR.parent
 GAME_SOURCE_PREFIX = "src/sf33rd/Source/Game/"
@@ -97,8 +97,8 @@ def compare_builds(baseline: Path, candidate: Path) -> int:
         output = Path(directory)
         baseline_trace = run_trace(TraceRun(baseline, 1, DEFAULT_FRAMES, DEFAULT_TIMEOUT), output / "baseline")
         candidate_trace = run_trace(TraceRun(candidate, 1, DEFAULT_FRAMES, DEFAULT_TIMEOUT), output / "candidate")
-        baseline_rows = read_trace(baseline_trace)
-        candidate_rows = read_trace(candidate_trace)
+        baseline_rows = read_complete_trace(baseline_trace)
+        candidate_rows = read_complete_trace(candidate_trace)
         difference = first_difference(baseline_rows, candidate_rows)
 
     if difference is None:
