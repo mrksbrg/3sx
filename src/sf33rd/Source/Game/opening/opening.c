@@ -142,54 +142,53 @@ void TITLE_Init() {
 s16 TITLE_Move(u16 type) {
     ppgSetupCurrentDataList(&ppgTitleList);
 
-    switch (type) {
+    if (type == 1) {
+        Put_char(title[type], 601, 9, 192, 96, 1.0f, 1.0f);
+        return 0;
+    }
+
+    if (type != 0) {
+        return 0;
+    }
+
+    switch (op_w.r_no_0) {
     case 0:
-        switch (op_w.r_no_0) {
-        case 0:
+        op_w.r_no_0 += 1;
+        Zoom_Value_Set(0x40);
+        Frame_Up(192, 112, 0x13);
+        op_timer0 = 10;
+        break;
+
+    case 1:
+        op_timer0 -= 1;
+
+        if (op_timer0 <= 0) {
             op_w.r_no_0 += 1;
-            Zoom_Value_Set(0x40);
-            Frame_Up(192, 112, 0x13);
-            op_timer0 = 10;
-            break;
+            op_timer0 = 19;
+        }
 
-        case 1:
-            op_timer0 -= 1;
+        break;
 
-            if (op_timer0 <= 0) {
-                op_w.r_no_0 += 1;
-                op_timer0 = 19;
-            }
-
-            break;
-
-        case 2:
-            if (Game_pause) {
-                break;
-            }
-
-            if (op_timer0-- >= 0) {
-                Frame_Down(0xC0, 0x70, 1);
-            } else {
-                op_w.r_no_0 += 1;
-            }
-
-            break;
-
-        default:
-            Zoom_Value_Set(0x40);
+    case 2:
+        if (Game_pause) {
             break;
         }
 
-        Put_char(title[type], 601, 9, 192, 96, scr_sc, scr_sc);
-        return 0;
+        if (op_timer0-- >= 0) {
+            Frame_Down(0xC0, 0x70, 1);
+        } else {
+            op_w.r_no_0 += 1;
+        }
 
-    case 1:
-        Put_char(title[type], 601, 9, 192, 96, 1.0f, 1.0f);
-        return 0;
+        break;
 
     default:
-        return 0;
+        Zoom_Value_Set(0x40);
+        break;
     }
+
+    Put_char(title[type], 601, 9, 192, 96, scr_sc, scr_sc);
+    return 0;
 }
 
 void OPBG_Init() {
