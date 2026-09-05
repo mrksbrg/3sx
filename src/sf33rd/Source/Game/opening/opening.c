@@ -1349,9 +1349,7 @@ void op_110_move() {
 
     case 1:
         if (op_110_sound_ready()) {
-            op_w.r_no_2 += 1;
-            op_work_clear();
-            op_w.index = 60;
+            advance_opening_step(60);
             op_obj_disp = 1;
             return;
         }
@@ -1361,9 +1359,7 @@ void op_110_move() {
 
     case 2:
         if (gSeqStatus[0] >= op_110_sound[op_w.r_no_2]) {
-            op_w.r_no_2 += 1;
-            op_work_clear();
-            op_w.index = 61;
+            advance_opening_step(61);
             op_obj_disp = 0;
             effect_48_init(3);
             return;
@@ -1374,9 +1370,7 @@ void op_110_move() {
 
     case 3:
         if (gSeqStatus[0] >= op_110_sound[op_w.r_no_2]) {
-            op_w.r_no_2 += 1;
-            op_work_clear();
-            op_w.index = 62;
+            advance_opening_step(62);
             op_obj_disp = 1;
             return;
         }
@@ -1386,9 +1380,7 @@ void op_110_move() {
 
     case 4:
         if (gSeqStatus[0] >= op_110_sound[op_w.r_no_2]) {
-            op_w.r_no_2 += 1;
-            op_work_clear();
-            op_w.index = 63;
+            advance_opening_step(63);
             op_obj_disp = 0;
             effect_48_init(4);
             return;
@@ -1399,9 +1391,7 @@ void op_110_move() {
 
     case 5:
         if (gSeqStatus[0] >= op_110_sound[op_w.r_no_2]) {
-            op_w.r_no_2 += 1;
-            op_work_clear();
-            op_w.index = 64;
+            advance_opening_step(64);
             op_obj_disp = 1;
             return;
         }
