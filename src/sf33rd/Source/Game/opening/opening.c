@@ -1486,6 +1486,16 @@ static bool op_112_sound_ready() {
     return (gSeqStatus[0] >= op_112_sound[op_w.r_no_2]) && (gSeqStatus[0] != 0x70);
 }
 
+static void start_op_112_timed_sequence(void) {
+    if (op_112_sound_ready()) {
+        advance_opening_step(71);
+        op_w.mv_ctr = 0;
+        return;
+    }
+
+    op_bg_move(70);
+}
+
 void op_112_move() {
     switch (op_w.r_no_2) {
     case 0:
@@ -1505,13 +1515,7 @@ void op_112_move() {
         break;
 
     case 1:
-        if (op_112_sound_ready()) {
-            advance_opening_step(71);
-            op_w.mv_ctr = 0;
-            return;
-        }
-
-        op_bg_move(70);
+        start_op_112_timed_sequence();
         break;
 
     case 2:
