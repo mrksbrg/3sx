@@ -1496,6 +1496,17 @@ static void start_op_112_timed_sequence(void) {
     op_bg_move(70);
 }
 
+static void update_op_112_scene_71_transition(void) {
+    op_w.mv_ctr += 1;
+
+    if (op_w.mv_ctr >= op_112_sound[op_w.r_no_2]) {
+        advance_opening_step(72);
+        return;
+    }
+
+    op_bg_move(71);
+}
+
 void op_112_move() {
     switch (op_w.r_no_2) {
     case 0:
@@ -1519,14 +1530,7 @@ void op_112_move() {
         break;
 
     case 2:
-        op_w.mv_ctr += 1;
-
-        if (op_w.mv_ctr >= op_112_sound[op_w.r_no_2]) {
-            advance_opening_step(72);
-            return;
-        }
-
-        op_bg_move(71);
+        update_op_112_scene_71_transition();
         break;
 
     case 3:
