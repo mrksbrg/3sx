@@ -639,6 +639,23 @@ static bool op_103_sound_ready() {
     return (gSeqStatus[0] >= op_103_sound[op_w.r_no_2]) && (gSeqStatus[0] != 0x67);
 }
 
+static void update_op_103_effect_sequence(void) {
+    if (op_103_sound_ready()) {
+        op_w.r_no_2 += 1;
+        op_w.index = 6;
+        op_work_clear();
+        effect_F6_init(11);
+        effect_F6_init(12);
+        effect_F6_init(13);
+        effect_F6_init(14);
+        effect_F6_init(15);
+        effect_F6_init(16);
+        return;
+    }
+
+    op_bg_move(5);
+}
+
 void op_103_move() {
     switch (op_w.r_no_2) {
     case 0:
@@ -655,20 +672,7 @@ void op_103_move() {
         break;
 
     case 1:
-        if (op_103_sound_ready()) {
-            op_w.r_no_2 += 1;
-            op_w.index = 6;
-            op_work_clear();
-            effect_F6_init(11);
-            effect_F6_init(12);
-            effect_F6_init(13);
-            effect_F6_init(14);
-            effect_F6_init(15);
-            effect_F6_init(16);
-            return;
-        }
-
-        op_bg_move(5);
+        update_op_103_effect_sequence();
         break;
 
     case 2:
