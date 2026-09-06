@@ -1155,6 +1155,18 @@ static void update_op_108_scene_45_transition(void) {
     op_bg_move(45);
 }
 
+static void update_op_108_scene_47_transition(void) {
+    op_w.mv_ctr += 1;
+
+    if (op_w.mv_ctr >= op_108_sound[op_w.r_no_2]) {
+        advance_opening_step(48);
+        op_bg_move(48);
+        return;
+    }
+
+    op_bg_move(47);
+}
+
 void op_108_move() {
     switch (op_w.r_no_2) {
     case 0:
@@ -1201,15 +1213,7 @@ void op_108_move() {
         break;
 
     case 7:
-        op_w.mv_ctr += 1;
-
-        if (op_w.mv_ctr >= op_108_sound[op_w.r_no_2]) {
-            advance_opening_step(48);
-            op_bg_move(48);
-            return;
-        }
-
-        op_bg_move(47);
+        update_op_108_scene_47_transition();
         break;
 
     case 8:
