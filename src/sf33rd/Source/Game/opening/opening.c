@@ -2127,6 +2127,12 @@ void op_bg0_0001(s16 r_index) {
     op_scrn_pos_set2(0);
 }
 
+static void draw_bg0_fade_overlay(PAL_CURSOR* beta_poly) {
+    if (!No_Trans) {
+        njDrawPolygon2D(beta_poly, 4, PrioBase[75], 0x20);
+    }
+}
+
 void op_bg0_0002(s16 r_index) {
     PAL_CURSOR beta_poly;
     PAL_CURSOR_P beta_p[4];
@@ -2154,16 +2160,12 @@ void op_bg0_0002(s16 r_index) {
         bgw_ptr->wxy[0].cal = 0x2000000;
         bgw_ptr->xy[1].cal = 0;
 
-        if (!No_Trans) {
-            njDrawPolygon2D(&beta_poly, 4, PrioBase[75], 0x20);
-        }
+        draw_bg0_fade_overlay(&beta_poly);
 
         break;
 
     case 1:
-        if (!No_Trans) {
-            njDrawPolygon2D(&beta_poly, 4, PrioBase[75], 0x20);
-        }
+        draw_bg0_fade_overlay(&beta_poly);
 
         break;
     }
@@ -2237,12 +2239,6 @@ static void advance_bg0_fade(PAL_CURSOR_COL* beta_col) {
             beta_col[0].color = beta_col[1].color = beta_col[2].color = beta_col[3].color =
                 ot_bg0_0004_tbl[bgw_ptr->l_limit];
         }
-    }
-}
-
-static void draw_bg0_fade_overlay(PAL_CURSOR* beta_poly) {
-    if (!No_Trans) {
-        njDrawPolygon2D(beta_poly, 4, PrioBase[75], 0x20);
     }
 }
 
