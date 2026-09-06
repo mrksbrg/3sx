@@ -2062,10 +2062,6 @@ void op_bg0_0001(s16 r_index) {
             break;
 
         case 0x26:
-            oh_bg_blk_w(op_w.bgw, 0x3D, 1, 0, 1);
-            oh_bg_blk_w(op_w.bgw, 0x3E, 2, 0, 1);
-            break;
-
         case 0x27:
             oh_bg_blk_w(op_w.bgw, 0x3D, 1, 0, 1);
             oh_bg_blk_w(op_w.bgw, 0x3E, 2, 0, 1);
