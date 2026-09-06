@@ -33,6 +33,24 @@ cmake --build build
 There are **no unit tests**. CI builds on four platforms and runs no tests at all. Do not
 assume anything is verified by the pipeline.
 
+## Running the game
+
+`build/3sx.exe` is the bare linker output. It sits next to no DLLs and will fail to start
+with a missing-DLL error (typically `SDL3.dll`) if launched directly. The runnable copy -
+with `SDL3.dll`, `libiconv-2.dll`, `zlib1.dll`, and `assets/` alongside the exe - only
+exists after the install step:
+
+```bash
+cmake --install build --prefix build/application
+```
+
+Always launch **`build/application/bin/3sx.exe`**, never `build/3sx.exe` directly.
+
+The install step doesn't run automatically after `cmake --build build`, so
+`build/application/bin/3sx.exe` goes stale the moment you rebuild. Re-run the install step
+(or at minimum copy the fresh `build/3sx.exe` over
+`build/application/bin/3sx.exe`) before playtesting.
+
 ## Behavioural verification
 
 `statcheck` replays real Fightcade matches frame by frame and compares engine state
