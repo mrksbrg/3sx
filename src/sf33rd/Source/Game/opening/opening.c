@@ -1639,9 +1639,7 @@ void op_113_move() {
 
     case 1:
         if (op_113_sound_ready()) {
-            op_w.r_no_2 += 1;
-            op_work_clear();
-            op_w.index = 80;
+            advance_opening_step(80);
             op_obj_disp = 1;
             return;
         }
@@ -1665,9 +1663,7 @@ void op_113_move() {
 
     case 3:
         if (gSeqStatus[0] >= op_113_sound[op_w.r_no_2]) {
-            op_w.r_no_2 += 1;
-            op_work_clear();
-            op_w.index = 82;
+            advance_opening_step(82);
             op_obj_disp = 1;
             return;
         }
