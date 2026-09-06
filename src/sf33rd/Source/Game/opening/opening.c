@@ -1133,6 +1133,16 @@ static void update_op_108_followup_step(void) {
     op_bg_move(43);
 }
 
+static void update_op_108_timed_transition(s16 next_index) {
+    op_w.mv_ctr += 1;
+
+    if (op_w.mv_ctr >= op_108_sound[op_w.r_no_2]) {
+        advance_opening_step(next_index);
+        op_bg_move(next_index);
+        return;
+    }
+}
+
 void op_108_move() {
     switch (op_w.r_no_2) {
     case 0:
@@ -1167,14 +1177,7 @@ void op_108_move() {
         break;
 
     case 4:
-        op_w.mv_ctr += 1;
-
-        if (op_w.mv_ctr >= op_108_sound[op_w.r_no_2]) {
-            advance_opening_step(45);
-            op_bg_move(45);
-            return;
-        }
-
+        update_op_108_timed_transition(45);
         break;
 
     case 5:
@@ -1190,14 +1193,7 @@ void op_108_move() {
         break;
 
     case 6:
-        op_w.mv_ctr += 1;
-
-        if (op_w.mv_ctr >= op_108_sound[op_w.r_no_2]) {
-            advance_opening_step(47);
-            op_bg_move(47);
-            return;
-        }
-
+        update_op_108_timed_transition(47);
         break;
 
     case 7:
@@ -1213,14 +1209,7 @@ void op_108_move() {
         break;
 
     case 8:
-        op_w.mv_ctr += 1;
-
-        if (op_w.mv_ctr >= op_108_sound[op_w.r_no_2]) {
-            advance_opening_step(49);
-            op_bg_move(49);
-            return;
-        }
-
+        update_op_108_timed_transition(49);
         break;
 
     case 9:
@@ -1236,14 +1225,7 @@ void op_108_move() {
         break;
 
     case 10:
-        op_w.mv_ctr += 1;
-
-        if (op_w.mv_ctr >= op_108_sound[op_w.r_no_2]) {
-            advance_opening_step(51);
-            op_bg_move(51);
-            return;
-        }
-
+        update_op_108_timed_transition(51);
         break;
 
     case 11:
