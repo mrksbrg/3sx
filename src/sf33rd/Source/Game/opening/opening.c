@@ -1091,6 +1091,18 @@ void op_107_move() {
 
 const s16 op_108_sound[13] = { 0, 4, 20, 24, 28, 32, 48, 52, 60, 64, 76, 80, 86 };
 
+static void update_op_108_first_step(void) {
+    op_w.mv_ctr += 1;
+
+    if (op_w.mv_ctr >= op_108_sound[op_w.r_no_2]) {
+        advance_opening_step(42);
+        op_bg_move(42);
+        return;
+    }
+
+    op_bg_move(41);
+}
+
 static void update_op_108_effect_sequence(void) {
     op_w.mv_ctr += 1;
 
@@ -1128,15 +1140,7 @@ void op_108_move() {
         break;
 
     case 1:
-        op_w.mv_ctr += 1;
-
-        if (op_w.mv_ctr >= op_108_sound[op_w.r_no_2]) {
-            advance_opening_step(42);
-            op_bg_move(42);
-            return;
-        }
-
-        op_bg_move(41);
+        update_op_108_first_step();
         break;
 
     case 2:
