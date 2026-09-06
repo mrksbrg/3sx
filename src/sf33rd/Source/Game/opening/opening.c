@@ -967,9 +967,7 @@ void op_107_move() {
     case 0:
         op_plmove_timer += 1;
         op_obj_disp = 1;
-        op_w.r_no_2 += 1;
-        op_work_clear();
-        op_w.index = 29;
+        advance_opening_step(29);
         op_bg_move(29);
         effect_F6_init(29);
         effect_F6_init(30);
