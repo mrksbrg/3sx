@@ -914,9 +914,7 @@ void op_106_move() {
 
     case 1:
         if (op_106_sound_ready()) {
-            op_w.r_no_2 += 1;
-            op_work_clear();
-            op_w.index = 26;
+            advance_opening_step(26);
             return;
         }
 
@@ -925,9 +923,7 @@ void op_106_move() {
 
     case 2:
         if (gSeqStatus[0] >= op_106_sound[op_w.r_no_2]) {
-            op_w.r_no_2 += 1;
-            op_work_clear();
-            op_w.index = 27;
+            advance_opening_step(27);
             return;
         }
 
@@ -936,9 +932,7 @@ void op_106_move() {
 
     case 3:
         if (gSeqStatus[0] >= op_106_sound[op_w.r_no_2]) {
-            op_w.r_no_2 += 1;
-            op_work_clear();
-            op_w.index = 28;
+            advance_opening_step(28);
             op_obj_disp = 0;
             effect_48_init(15);
             return;
