@@ -789,9 +789,7 @@ static bool op_104_sound_ready() {
 void op_104_move() {
     switch (op_w.r_no_2) {
     case 0:
-        op_w.r_no_2 += 1;
-        op_work_clear();
-        op_w.index = 17;
+        advance_opening_step(17);
         op_bg_move(17);
         effect_F6_init(17);
         effect_F6_init(18);
