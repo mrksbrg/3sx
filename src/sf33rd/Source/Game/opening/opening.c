@@ -1760,9 +1760,7 @@ void op_115_move() {
 
     case 1:
         if (op_115_sound_ready()) {
-            op_w.r_no_2 += 1;
-            op_work_clear();
-            op_w.index = 90;
+            advance_opening_step(90);
             return;
         }
 
