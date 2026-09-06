@@ -1867,6 +1867,17 @@ void op_117_move() {
     }
 }
 
+static void update_opening_copyright_display(void) {
+    if (Check_Fade_Complete() != 0) {
+        op_w.r_no_2 += 1;
+        Disp_Copyright();
+        op_w.mv_ctr = 240;
+    }
+
+    op_w.index = 93;
+    op_bg_move(93);
+}
+
 void op_118_move() {
     switch (op_w.r_no_2) {
     case 0:
@@ -1893,14 +1904,7 @@ void op_118_move() {
         break;
 
     case 3:
-        if (Check_Fade_Complete() != 0) {
-            op_w.r_no_2 += 1;
-            Disp_Copyright();
-            op_w.mv_ctr = 240;
-        }
-
-        op_w.index = 93;
-        op_bg_move(93);
+        update_opening_copyright_display();
         break;
 
     case 4:
