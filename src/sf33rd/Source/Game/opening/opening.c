@@ -870,9 +870,7 @@ void op_104_move() {
 void op_105_move() {
     switch (op_w.r_no_2) {
     case 0:
-        op_w.r_no_2 += 1;
-        op_work_clear();
-        op_w.index = 24;
+        advance_opening_step(24);
         op_bg_move(24);
         effect_F6_init(24);
         op_obj_disp = 0;
