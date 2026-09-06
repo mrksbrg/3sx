@@ -1878,6 +1878,15 @@ static void update_opening_copyright_display(void) {
     op_bg_move(93);
 }
 
+static void update_opening_delay(void) {
+    op_w.mv_ctr -= 1;
+
+    if (op_w.mv_ctr < 0) {
+        op_w.r_no_2 += 1;
+        return;
+    }
+}
+
 void op_118_move() {
     switch (op_w.r_no_2) {
     case 0:
@@ -1886,13 +1895,7 @@ void op_118_move() {
         break;
 
     case 1:
-        op_w.mv_ctr -= 1;
-
-        if (op_w.mv_ctr < 0) {
-            op_w.r_no_2 += 1;
-            return;
-        }
-
+        update_opening_delay();
         break;
 
     case 2:
@@ -1908,13 +1911,7 @@ void op_118_move() {
         break;
 
     case 4:
-        op_w.mv_ctr -= 1;
-
-        if (op_w.mv_ctr < 0) {
-            op_w.r_no_2 += 1;
-            return;
-        }
-
+        update_opening_delay();
         break;
 
     case 5:
