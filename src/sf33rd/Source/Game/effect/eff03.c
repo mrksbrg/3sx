@@ -103,6 +103,11 @@ static s32 game_is_active(void) {
 }
 
 
+static s32 should_end_effect(const WORK_Other* ewk) {
+    return ewk->wu.dead_f == 1 || Suicide[0] != 0;
+}
+
+
 void effect_03_move(WORK_Other* ewk) {
     switch (ewk->wu.routine_no[0]) {
     case 0:
@@ -159,7 +164,7 @@ void effect_03_move(WORK_Other* ewk) {
         /* fallthrough */
 
     case 1:
-        if (ewk->wu.dead_f == 1 || Suicide[0] != 0) {
+        if (should_end_effect(ewk)) {
             ewk->wu.disp_flag = 0;
             ewk->wu.routine_no[0]++;
             break;
