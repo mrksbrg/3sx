@@ -79,6 +79,10 @@ void set_1st_Bonus_Game_result(WORK* wk);
 void set_bs2_floor(WORK_Other* wk);
 void send_to_shizumi_guai(WORK* wk);
 
+static s32 game_is_active(void) {
+    return EXE_flag == 0 && Game_pause == 0;
+}
+
 void effect_C2_move(WORK_Other* ewk) {
     switch (ewk->wu.routine_no[0]) {
     case 0:
@@ -131,7 +135,7 @@ void effect_C2_move(WORK_Other* ewk) {
         break;
 
     case 2:
-        if (EXE_flag == 0 && Game_pause == 0) {
+        if (game_is_active()) {
             switch (ewk->wu.routine_no[1]) {
             case 0:
                 if (--ewk->wu.hit_stop > 0) {
