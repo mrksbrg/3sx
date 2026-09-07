@@ -312,6 +312,11 @@ const s8** han_adrs[3] = { src_han_kata, src_han_alpha, src_han_alpha2 };
 const s8** zen_adrs[11] = { src_zen_comm, src_zen_hira, src_zen_kata, src_zen_kan0, src_zen_kan1, src_zen_kan2,
                             src_zen_kan3, src_zen_kan4, src_zen_kan5, src_zen_kan6, src_zen_kan7 };
 
+static s32 is_double_width_code(u8 data) {
+    return data >= 128 && data < 160;
+}
+
+
 void effect_B6_move(WORK_Other_CONN* ewk) {
     switch (ewk->wu.routine_no[0]) {
     case 0:
@@ -529,7 +534,7 @@ three:
 }
 
 s32 msgCheckCodeSize(u8 data) {
-    if (data >= 128 && data < 160) {
+    if (is_double_width_code(data)) {
         return 2;
     }
 
