@@ -45,11 +45,6 @@ static s32 can_update_effect(void) {
 }
 
 
-static s32 primary_effect_is_past_intro(const WORK_Other* ewk) {
-    return ewk->wu.type == 0 && ewk->wu.old_rno[1] > 2;
-}
-
-
 void effect_24_move(WORK_Other* ewk) {
     switch (ewk->wu.routine_no[0]) {
     case 0:
@@ -115,7 +110,9 @@ void eff24_quake_sub(WORK_Other* ewk) {
         ewk->wu.xyz[1].disp.pos = ewk->wu.old_rno[2];
         ewk->wu.xyz[1].disp.low = 0;
 
-        if (primary_effect_is_past_intro(ewk)) {
+        const s32 primary_effect_is_past_intro = ewk->wu.type == 0 && ewk->wu.old_rno[1] > 2;
+
+        if (primary_effect_is_past_intro) {
             ewk->wu.routine_no[1]++;
             dog24_data_set(ewk);
 
