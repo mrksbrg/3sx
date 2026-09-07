@@ -19,6 +19,10 @@
 
 void effm1_move(WORK_Other* ewk);
 
+static s32 game_is_active(void) {
+    return !EXE_flag && !Game_pause;
+}
+
 void effect_M1_move(WORK_Other* ewk) {
     switch (ewk->wu.routine_no[0]) {
     case 0:
@@ -33,7 +37,7 @@ void effect_M1_move(WORK_Other* ewk) {
         break;
 
     case 1:
-        if (!EXE_flag && !Game_pause) {
+        if (game_is_active()) {
             effm1_move(ewk);
         }
 
