@@ -13,6 +13,11 @@
 s32 Check_Disp_90(WORK_Other_CONN* ewk);
 s16 Check_Disp_Pos_90(WORK_Other_CONN* ewk);
 
+static s32 uses_highlight_step(const WORK_Other_CONN* ewk) {
+    return ewk->wu.dir_step == 2 || ewk->wu.dir_step == 6;
+}
+
+
 void effect_90_move(WORK_Other_CONN* ewk) {
     if (Menu_Suicide[ewk->master_player]) {
         push_effect_work(&ewk->wu);
@@ -33,7 +38,7 @@ void effect_90_move(WORK_Other_CONN* ewk) {
 }
 
 s32 Check_Disp_90(WORK_Other_CONN* ewk) {
-    if (ewk->wu.dir_step == 2 || ewk->wu.dir_step == 6) {
+    if (uses_highlight_step(ewk)) {
         return 1;
     }
 
