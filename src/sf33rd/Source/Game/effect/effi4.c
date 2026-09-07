@@ -16,6 +16,10 @@
 #include "sf33rd/Source/Game/rendering/texcash.h"
 #include "sf33rd/Source/Game/stage/ta_sub.h"
 
+static s32 can_update_effect(void) {
+    return !EXE_flag && !Game_pause && !EXE_obroll;
+}
+
 void effect_I4_move(WORK_Other* ewk) {
     if (obr_no_disp_check()) {
         return;
@@ -35,7 +39,7 @@ void effect_I4_move(WORK_Other* ewk) {
         break;
 
     case 1:
-        if (!EXE_flag && !Game_pause && !EXE_obroll) {
+        if (can_update_effect()) {
             effect_i4_hit_sub(ewk);
         }
 
