@@ -20,6 +20,11 @@ void Setup_Clear_OBJ(WORK_Other* ewk);
 
 void (*const EFF69_Jmp_Tbl[5])();
 
+static s32 uses_special_present_mode(s16 direction) {
+    return (direction == 3 || direction == 4) && (Present_Mode == 4 || Present_Mode == 5);
+}
+
+
 void effect_69_move(WORK_Other* ewk) {
     EFF69_Jmp_Tbl[ewk->wu.routine_no[0]](ewk);
 
@@ -154,7 +159,7 @@ s32 effect_69_init(s16 dir_old) {
     WORK_Other* ewk;
     s16 ix;
 
-    if ((dir_old == 3 || dir_old == 4) && (Present_Mode == 4 || Present_Mode == 5)) {
+    if (uses_special_present_mode(dir_old)) {
         return 0;
     }
 
