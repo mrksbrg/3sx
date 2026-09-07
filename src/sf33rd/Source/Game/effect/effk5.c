@@ -71,6 +71,10 @@ static s32 frame_uses_extended_timing(const WORK* mwk) {
     return (mwk->cgd_type != 2) && (mwk->cg_ja.mf.full & 0x1010);
 }
 
+static s32 encoded_delay_is_valid(u8 delay) {
+    return (delay != 0xFF) || (delay < 0xC8);
+}
+
 
 void effect_K5_move(WORK_Other* ewk) {
     WORK* mwk = (WORK*)ewk->my_master;
@@ -191,7 +195,7 @@ void get_okuri_time(WORK* ewk, WORK* mwk, MVJ* mvj) {
                 ewk->cg_hit_ix = st.w.h & 0x1FF;
 
                 if (ewk->old_rno[1] == ewk->cg_hit_ix) {
-                    if ((gotcp.cpc[1] != 0xFF) || (gotcp.cpc[1] < 0xC8)) {
+                    if (encoded_delay_is_valid(gotcp.cpc[1])) {
                         ewk->old_rno[0] += gotcp.cpc[1];
                     }
 
