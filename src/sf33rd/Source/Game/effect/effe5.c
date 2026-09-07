@@ -49,6 +49,11 @@ const u16 illusion_setup_table[13][2] = {
 s32 check_new_after_image(WORK_Other* ewk, PLW* mwk);
 void setup_illusion_data(WORK_Other* ewk, PLW* mwk);
 
+static s32 uses_alternate_block_image(const PLW* mwk) {
+    return mwk->image_data_index == 11 && mwk->kind_of_blocking == 2;
+}
+
+
 void effect_E5_move(WORK_Other* ewk) {
     PLW* mwk = (PLW*)ewk->my_master;
     s16 i;
@@ -65,7 +70,7 @@ void effect_E5_move(WORK_Other* ewk) {
             break;
         }
 
-        if (mwk->image_data_index == 11 && mwk->kind_of_blocking == 2) {
+        if (uses_alternate_block_image(mwk)) {
             mwk->image_data_index = 33;
         }
 
