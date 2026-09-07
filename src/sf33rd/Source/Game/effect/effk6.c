@@ -33,6 +33,11 @@ void (*const EFFK6_Jmp_Tbl[6])() = {
     EFFK6_WAIT, EFFK6_SLIDE_IN, EFFK6_SLIDE_OUT, EFFK6_SUDDENLY, EFFK6_MOVE, EFFK6_KILL
 };
 
+static s32 uses_special_direction(const WORK_Other* ewk) {
+    return ewk->wu.dir_old == 27 || ewk->wu.dir_old == 28;
+}
+
+
 void effect_K6_move(WORK_Other* ewk) {
     EFFK6_Jmp_Tbl[ewk->wu.routine_no[0]](ewk);
     ewk->wu.position_x = ewk->wu.xyz[0].disp.pos & 0xFFFF;
@@ -64,7 +69,7 @@ void EFFK6_SLIDE_IN(WORK_Other* ewk) {
         ewk->wu.routine_no[1]++;
         ewk->wu.disp_flag = 1;
 
-        if (ewk->wu.dir_old == 27 || ewk->wu.dir_old == 28) {
+        if (uses_special_direction(ewk)) {
             xx = ID_of_Face[Cursor_Y[ewk->master_id]][Cursor_X[ewk->master_id]];
             Setup_1st_PosK6(ewk, xx, Play_Type);
         } else {
