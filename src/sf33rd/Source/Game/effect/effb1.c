@@ -30,6 +30,10 @@ void effB1_trans(WORK* ewk);
 void effB1_mark_change(WORK_Other_CONN* ewk);
 void effB1_mark_exchange(WORK_Other_CONN* ewk);
 
+static s32 should_end_effect(const WORK_Other_CONN* ewk) {
+    return ewk->wu.dead_f == 1 || Suicide[0] != 0;
+}
+
 void effect_B1_move(WORK_Other_CONN* ewk) {
     s16 i;
 
@@ -85,7 +89,7 @@ void effect_B1_move(WORK_Other_CONN* ewk) {
         break;
 
     case 1:
-        if (ewk->wu.dead_f == 1 || Suicide[0] != 0) {
+        if (should_end_effect(ewk)) {
             ewk->wu.disp_flag = 0;
             ewk->wu.type = 0;
             ewk->wu.routine_no[0] = 2;
