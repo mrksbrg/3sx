@@ -21,6 +21,11 @@ const CONN bbbs_ball[4][3] = {
 void effH9_trans(WORK* ewk);
 void nokori_ball_effH9(WORK_Other_CONN* ewk, s16 num);
 
+static s32 effect_update_is_blocked(void) {
+    return Game_pause || EXE_flag;
+}
+
+
 void effect_H9_move(WORK_Other_CONN* ewk) {
     switch (ewk->wu.routine_no[0]) {
     case 0:
@@ -36,7 +41,7 @@ void effect_H9_move(WORK_Other_CONN* ewk) {
             break;
 
         case 1:
-            if (Game_pause || EXE_flag) {
+            if (effect_update_is_blocked()) {
                 break;
             }
 
