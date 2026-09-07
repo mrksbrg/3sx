@@ -47,6 +47,11 @@ const s8 swallow_areas_y[12][32] = {
 const s32 swallow_speeds[16] = { 0,       0x8000,  0x10000, 0x18000, 0x20000, 0x28000, 0x30000, 0x38000,
                                  0x40000, 0x48000, 0x50000, 0x58000, 0x60000, 0x68000, 0x70000, 0x78000 };
 
+static s32 effect_update_is_blocked(void) {
+    return EXE_flag != 0 || Game_pause != 0;
+}
+
+
 void effect_D4_move(WORK_Other* ewk) {
     PLW* wk = (PLW*)ewk->wu.target_adrs;
     PLW* mwk = (PLW*)ewk->my_master;
@@ -85,7 +90,7 @@ void effect_D4_move(WORK_Other* ewk) {
             break;
         }
 
-        if (EXE_flag != 0 || Game_pause != 0) {
+        if (effect_update_is_blocked()) {
             break;
         }
 
