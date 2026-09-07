@@ -17,6 +17,11 @@
 
 void Setup_Char_E0(WORK_Other* ewk);
 
+static s32 selection_animation_can_advance(const WORK_Other* ewk) {
+    return ewk->wu.dm_vital == 0 && Exec_Wipe == 0;
+}
+
+
 void effect_E0_move(WORK_Other* ewk) {
     switch (ewk->wu.routine_no[0]) {
     case 0:
@@ -102,7 +107,7 @@ void effect_E0_move(WORK_Other* ewk) {
         return;
     }
 
-    if (ewk->wu.dm_vital == 0 && Exec_Wipe == 0) {
+    if (selection_animation_can_advance(ewk)) {
         char_move(&ewk->wu);
     }
 
