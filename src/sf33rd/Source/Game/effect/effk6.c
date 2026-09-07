@@ -210,7 +210,7 @@ void EFFK6_SUDDENLY(WORK_Other* ewk) {
         break;
 
     default:
-        if (ewk->wu.dir_old == 27 || ewk->wu.dir_old == 28) {
+        if (uses_special_direction(ewk)) {
             Order[ewk->wu.dir_old] = 4;
             ewk->wu.routine_no[0] = 4;
             ewk->wu.routine_no[6] = 0;
