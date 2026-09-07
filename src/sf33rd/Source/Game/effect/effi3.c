@@ -12,6 +12,10 @@
 
 const I3_Data i3_data[6] = { { 3, 2, 0 }, { 1, 1, 0 }, { 2, 0, 0 }, { 2, 0, 0 }, { 2, 0, 0 }, { 2, 0, 0 } };
 
+static s32 should_end_effect(const WORK_Other* ewk) {
+    return ewk->wu.dead_f == 1 || Suicide[0] != 0;
+}
+
 void effect_I3_move(WORK_Other* ewk) {
     WORK* mwk = (WORK*)ewk->my_master;
 
@@ -40,7 +44,7 @@ void effect_I3_move(WORK_Other* ewk) {
         /* fallthrough */
 
     case 1:
-        if (ewk->wu.dead_f == 1 || Suicide[0] != 0) {
+        if (should_end_effect(ewk)) {
             ewk->wu.routine_no[0]++;
             break;
         }
