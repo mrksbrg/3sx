@@ -51,6 +51,11 @@ const ColorTableIndex color_table_index[11] = {
     { 17, 24, coltbl_010_1P, coltbl_010_2P }
 };
 
+static s32 uses_standard_effect_type(const WORK_Other* ewk) {
+    return (ewk->wu.type != 0) && (ewk->wu.type != 32);
+}
+
+
 void effect_D9_move(WORK_Other* ewk) {
     PLW* mwk = (PLW*)ewk->my_master;
 
@@ -78,7 +83,7 @@ void effect_D9_move(WORK_Other* ewk) {
             (--ewk->wu.dir_timer >= 0)) {
             if ((ewk->wu.vital_old & 4) != 0) {
                 if (ewk->wu.dir_old == mwk->wu.dm_count_up) {
-                    if ((ewk->wu.type != 0) && (ewk->wu.type != 32)) {
+                    if (uses_standard_effect_type(ewk)) {
                         if (mwk->wu.xyz[1].disp.pos <= 0) {
                             goto set_routine_2;
                         }
