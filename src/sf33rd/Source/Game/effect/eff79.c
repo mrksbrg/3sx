@@ -221,7 +221,7 @@ void effect_79_move(WORK_Other* ewk) {
             arrived[0] = EFF79_Move_X(ewk);
             arrived[1] = EFF79_Move_Y(ewk);
 
-            if (arrived[0] == 0 || arrived[1] == 0) {
+            if (movement_is_incomplete(arrived)) {
                 break;
             }
 
@@ -294,7 +294,7 @@ void effect_79_move(WORK_Other* ewk) {
             arrived[0] = EFF79_Move_X(ewk);
             arrived[1] = EFF79_Move_Y(ewk);
 
-            if (arrived[0] != 0 && arrived[1] != 0) {
+            if (!movement_is_incomplete(arrived)) {
                 ewk->wu.routine_no[0]++;
             }
 
