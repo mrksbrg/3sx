@@ -381,7 +381,7 @@ void Move_Move_79(WORK_Other* ewk) {
         arrived[0] = EFF79_Move_X(ewk);
         arrived[1] = EFF79_Move_Y(ewk);
 
-        if (arrived[0] != 0 && arrived[1] != 0) {
+        if (!movement_is_incomplete(arrived)) {
             ewk->wu.routine_no[2]++;
             OK_Moving_SA_Plate[ewk->master_id]--;
         }
@@ -457,7 +457,7 @@ void Move_79(WORK_Other* ewk) {
         arrived[0] = EFF79_Move_X(ewk);
         arrived[1] = EFF79_Move_Y(ewk);
 
-        if (arrived[0] != 0 && arrived[1] != 0) {
+        if (!movement_is_incomplete(arrived)) {
             ewk->wu.routine_no[2]++;
             ewk->wu.hit_quake = ewk->wu.dmcal_m;
             Moving_Plate_Counter[ewk->master_id]--;
