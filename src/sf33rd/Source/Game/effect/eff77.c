@@ -25,6 +25,11 @@ static s32 game_is_inactive(void) {
 }
 
 
+static s32 effect_update_is_blocked(void) {
+    return Game_pause || EXE_flag;
+}
+
+
 void effect_77_move(WORK_Other* ewk) {
     s16 i;
     u16 bg;
@@ -62,7 +67,7 @@ if (game_is_inactive()) {
         /* fallthrough */
 
     case 1:
-        if (Game_pause || EXE_flag) {
+        if (effect_update_is_blocked()) {
             break;
         }
 
