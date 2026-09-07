@@ -18,14 +18,18 @@ static s32 should_disable_new_challenger_vibration(const PLW* mwk) {
 }
 
 
+static s32 effect_should_stop(const WORK_Other* ewk, const PLW* mwk) {
+    return (mwk->wu.E3_work_index != ewk->wu.myself || ewk->wu.dead_f != 0) ||
+           (Mode_Type != MODE_NORMAL_TRAINING && Mode_Type != MODE_PARRY_TRAINING);
+}
+
 void effect_E3_move(WORK_Other* ewk) {
     PLW* mwk = (PLW*)ewk->my_master;
     s16 num;
 
     switch (ewk->wu.routine_no[0]) {
     case 0:
-        if ((mwk->wu.E3_work_index != ewk->wu.myself || ewk->wu.dead_f != 0) ||
-            (Mode_Type != MODE_NORMAL_TRAINING && Mode_Type != MODE_PARRY_TRAINING)) {
+        if (effect_should_stop(ewk, mwk)) {
             ewk->wu.routine_no[0] = 2;
             break;
         }
@@ -132,8 +136,7 @@ void effect_E3_move(WORK_Other* ewk) {
         /* fallthrough */
 
     case 1:
-        if ((mwk->wu.E3_work_index != ewk->wu.myself || ewk->wu.dead_f != 0) ||
-            (Mode_Type != MODE_NORMAL_TRAINING && Mode_Type != MODE_PARRY_TRAINING)) {
+        if (effect_should_stop(ewk, mwk)) {
             ewk->wu.routine_no[0] = 2;
             break;
         }
