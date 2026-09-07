@@ -22,6 +22,10 @@ void effm2_move2(WORK_Other* ewk);
 
 const s16 effm2_char_tbl[4] = { 50, 50, 29, 46 };
 
+static s32 game_is_active(void) {
+    return !EXE_flag && !Game_pause;
+}
+
 void effect_M2_move(WORK_Other* ewk) {
     switch (ewk->wu.routine_no[0]) {
     case 0:
@@ -31,7 +35,7 @@ void effect_M2_move(WORK_Other* ewk) {
         break;
 
     case 1:
-        if (!EXE_flag && !Game_pause) {
+        if (game_is_active()) {
             if (ewk->wu.type) {
                 effm2_move2(ewk);
             } else {
