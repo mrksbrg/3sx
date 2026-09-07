@@ -28,6 +28,10 @@ static s32 should_end_parts_effect(const WORK_Other* ewk, const WORK* mwk) {
     return ewk->wu.dead_f == 1 || mwk->olc_work_ix[ewk->wu.type] != ewk->wu.myself;
 }
 
+static s32 is_mirrored_primary_part(const WORK_Other* ewk, const WORK* mwk) {
+    return ewk->wu.type == 0 && ((const PLW*)mwk)->player_number == 0 && mwk->rl_flag;
+}
+
 
 void effect_01_move(WORK_Other* ewk) {
     WORK* mwk = (WORK*)ewk->my_master;
@@ -58,7 +62,7 @@ if (game_is_active()) {
                 ewk->wu.cg_olc.olc_ix[ewk->wu.type] = ewk->wu.cg_ix = mwk->cg_olc.olc_ix[ewk->wu.type];
                 ewk->wu.now_koc = ewk->wu.cg_ix;
 
-                if (ewk->wu.type == 0 && ((PLW*)mwk)->player_number == 0 && mwk->rl_flag) {
+                if (is_mirrored_primary_part(ewk, mwk)) {
                     ewk->wu.now_koc++;
                 }
 
