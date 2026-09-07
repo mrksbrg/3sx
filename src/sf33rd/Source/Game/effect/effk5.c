@@ -67,6 +67,10 @@ static s32 image_data_needs_refresh(const WORK_Other* ewk, const WORK* mwk) {
     return mwk->K5_init_flag || (ewk->wu.old_rno[1] != mwk->cg_hit_ix);
 }
 
+static s32 frame_uses_extended_timing(const WORK* mwk) {
+    return (mwk->cgd_type != 2) && (mwk->cg_ja.mf.full & 0x1010);
+}
+
 
 void effect_K5_move(WORK_Other* ewk) {
     WORK* mwk = (WORK*)ewk->my_master;
@@ -171,7 +175,7 @@ void get_okuri_time(WORK* ewk, WORK* mwk, MVJ* mvj) {
     s16 exc;
     u16 now_mf;
 
-    if ((mwk->cgd_type != 2) && (mwk->cg_ja.mf.full & 0x1010)) {
+    if (frame_uses_extended_timing(mwk)) {
         now_mf = mwk->cg_ja.mf.full;
         exc = 0;
         ewk->old_rno[0] = mwk->cg_ctr;
