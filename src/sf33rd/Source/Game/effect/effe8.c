@@ -14,6 +14,11 @@
 void effe8_zanzou_process(WORK_Other* ewk, PLW* mwk);
 void effE8_trans(WORK_Other* ewk, PLW* mwk);
 
+static s32 master_is_in_effect_state(const WORK* mtwk) {
+    return mtwk->routine_no[0] == 4 && mtwk->routine_no[1] == 1 && mtwk->routine_no[3] < 2;
+}
+
+
 void effect_E8_move(WORK_Other* ewk) {
     PLW* mwk = (PLW*)ewk->my_master;
     WORK_Other* cwk = (WORK_Other*)ewk->wu.target_adrs;
@@ -76,7 +81,7 @@ void effect_E8_move(WORK_Other* ewk) {
         if (pcon_rno[0] != 2) {
             mtwk = (WORK*)mwk->wu.target_adrs;
 
-            if (mtwk->routine_no[0] == 4 && mtwk->routine_no[1] == 1 && mtwk->routine_no[3] < 2) {
+            if (master_is_in_effect_state(mtwk)) {
                 break;
             }
         }
