@@ -23,6 +23,10 @@ static s32 effect_should_stop(const WORK_Other* ewk, const PLW* mwk) {
            (Mode_Type != MODE_NORMAL_TRAINING && Mode_Type != MODE_PARRY_TRAINING);
 }
 
+static s32 is_airborne_action_window(const PLW* mwk) {
+    return (mwk->wu.routine_no[1] == 1 && mwk->wu.routine_no[2] >= 4) && mwk->wu.routine_no[2] < 14;
+}
+
 void effect_E3_move(WORK_Other* ewk) {
     PLW* mwk = (PLW*)ewk->my_master;
     s16 num;
@@ -242,7 +246,7 @@ void effect_E3_move(WORK_Other* ewk) {
                 break;
 
             case 4:
-                if ((mwk->wu.routine_no[1] == 1 && mwk->wu.routine_no[2] >= 4) && mwk->wu.routine_no[2] < 14) {
+                if (is_airborne_action_window(mwk)) {
                     ewk->wu.dm_vital = 1;
                     ewk->wu.dir_timer = 12;
                 } else {
