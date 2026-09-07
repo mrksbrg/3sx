@@ -35,6 +35,10 @@ static s32 game_is_active(void) {
     return !EXE_flag && !Game_pause;
 }
 
+static s32 animal_animation_finished(const WORK_Other* ewk) {
+    return ewk->wu.cg_type == 0xFF;
+}
+
 void effect_M0_move(WORK_Other* ewk) {
     switch (ewk->wu.routine_no[0]) {
     case 0:
@@ -228,7 +232,7 @@ void animal_0002(WORK_Other* ewk) {
     case 1:
         char_move(&ewk->wu);
 
-        if (ewk->wu.cg_type == 0xFF) {
+        if (animal_animation_finished(ewk)) {
             ewk->wu.routine_no[1]++;
             ewk->wu.rl_flag ^= 1;
             cat_run_set(ewk);
@@ -279,7 +283,7 @@ void animal_0004(WORK_Other* ewk) {
     case 2:
         char_move(&ewk->wu);
 
-        if (ewk->wu.cg_type == 0xFF) {
+        if (animal_animation_finished(ewk)) {
             ewk->wu.routine_no[1]++;
             mouse_run_set(ewk);
         }
@@ -337,7 +341,7 @@ void animal_0005(WORK_Other* ewk) {
     case 3:
         char_move(&ewk->wu);
 
-        if (ewk->wu.cg_type == 0xFF) {
+        if (animal_animation_finished(ewk)) {
             ewk->wu.routine_no[1]++;
             mouse_run_set(ewk);
         }
