@@ -26,6 +26,10 @@ const GillEffData gill_eff_data[54] = {
     { -16, 140, -2, 110 }, { -16, 140, -2, 111 }, { -40, 144, -2, 110 }, { -40, 144, -2, 111 }
 };
 
+static s32 game_is_active(void) {
+    return EXE_flag == 0 && Game_pause == 0;
+}
+
 void effect_G4_move(WORK_Other* ewk) {
     switch (ewk->wu.routine_no[0]) {
     case 0:
@@ -50,7 +54,7 @@ void effect_G4_move(WORK_Other* ewk) {
             break;
         }
 
-        if (EXE_flag == 0 && Game_pause == 0) {
+        if (game_is_active()) {
             char_move(&ewk->wu);
 
             if (ewk->wu.cg_type == 0xFF) {
