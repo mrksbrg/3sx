@@ -15,6 +15,10 @@ const s16 M3_bahn_data[5] = { 16, 10, 78, 0, -512 };
 
 void effM3_trans(WORK* ewk);
 
+static s32 should_end_effect(const WORK_Other* ewk) {
+    return ewk->wu.dead_f == 1 || Suicide[2] != 0;
+}
+
 void effect_M3_move(WORK_Other* ewk) {
     switch (ewk->wu.routine_no[0]) {
     case 0:
@@ -32,7 +36,7 @@ void effect_M3_move(WORK_Other* ewk) {
         break;
 
     case 1:
-        if (ewk->wu.dead_f == 1 || Suicide[2] != 0) {
+        if (should_end_effect(ewk)) {
             ewk->wu.disp_flag = 0;
             ewk->wu.type = 0;
             ewk->wu.routine_no[0] = 2;
