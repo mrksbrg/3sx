@@ -35,6 +35,11 @@ u8 Extra_Counter[2];
 
 const s32 Pos_Z_Data_79[3] = { 0, 5, 10 };
 
+static s32 movement_is_incomplete(const s16* arrived) {
+    return arrived[0] == 0 || arrived[1] == 0;
+}
+
+
 void effect_79_move(WORK_Other* ewk) {
     s16 xx;
     s16 arrived[2];
@@ -88,7 +93,7 @@ void effect_79_move(WORK_Other* ewk) {
             arrived[0] = EFF79_Move_X(ewk);
             arrived[1] = EFF79_Move_Y(ewk);
 
-            if (arrived[0] == 0 || arrived[1] == 0) {
+            if (movement_is_incomplete(arrived)) {
                 break;
             }
 
