@@ -13,6 +13,11 @@
 
 const u8 Time_Data[5] = { 80, 90, 50, 50, 50 };
 
+static s32 is_bonus_stage_twenty(void) {
+    return Bonus_Game_Flag == 20 && bg_w.stage == 20;
+}
+
+
 void effect_84_move(WORK_Other* ewk) {
     if (Suicide[0]) {
         push_effect_work(&ewk->wu);
@@ -48,7 +53,7 @@ void effect_84_move(WORK_Other* ewk) {
                 Game_pause = 1;
                 ewk->wu.routine_no[1]++;
 
-                if (Bonus_Game_Flag == 20 && bg_w.stage == 20) {
+                if (is_bonus_stage_twenty()) {
                     ewk->wu.dir_timer = 90;
                 }
 
