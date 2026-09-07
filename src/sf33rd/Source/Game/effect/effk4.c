@@ -40,6 +40,10 @@ const s16 effK4_char_sel_table[4][16] = {
     { 140, 140, 140, 136, 136, 136, 132, 132, 132, 140, 136, 132, 134, 142, 143, 140 }
 };
 
+static s32 game_is_active(void) {
+    return EXE_flag == 0 && Game_pause == 0;
+}
+
 void effect_K4_move(WORK_Other* ewk) {
     switch (ewk->wu.routine_no[0]) {
     case 0:
@@ -59,7 +63,7 @@ void effect_K4_move(WORK_Other* ewk) {
             break;
         }
 
-        if (EXE_flag == 0 && Game_pause == 0) {
+        if (game_is_active()) {
             char_move(&ewk->wu);
             add_mvxy_speed(&ewk->wu);
             cal_mvxy_speed(&ewk->wu);
