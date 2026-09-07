@@ -39,6 +39,11 @@ static s32 game_is_active(void) {
 }
 
 
+static s32 needs_large_render_region(s16 type, s16 index) {
+    return type == 3 && index == 2;
+}
+
+
 void effect_12_move(WORK_Other* ewk) {
     if (obr_no_disp_check()) {
         return;
@@ -110,7 +115,7 @@ s32 effect_12_init(s16 type) {
         ewk->wu.my_mts = 7;
         ewk->wu.my_trans_mode = get_my_trans_mode(ewk->wu.my_mts);
 
-        if (type == 3 && i == 2) {
+        if (needs_large_render_region(type, i)) {
             ewk->wu.my_mr_flag = 1;
             ewk->wu.my_mr.size.x = 127;
             ewk->wu.my_mr.size.y = 127;
