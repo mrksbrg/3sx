@@ -48,11 +48,6 @@ static s32 game_is_active(void) {
 }
 
 
-static s32 should_end_effect(const WORK_Other* ewk, const PLW* mwk) {
-    return ewk->wu.dead_f == 1 || mwk->wu.routine_no[1] != 4;
-}
-
-
 void effect_41_move(WORK_Other* ewk) {
     PLW* mwk = (PLW*)ewk->my_master;
 
@@ -78,7 +73,9 @@ void effect_41_move(WORK_Other* ewk) {
         goto jump;
 
     case 1:
-        if (should_end_effect(ewk, mwk)) {
+        const s32 should_end_effect = ewk->wu.dead_f == 1 || mwk->wu.routine_no[1] != 4;
+
+        if (should_end_effect) {
             ewk->wu.routine_no[0]++;
             ewk->wu.disp_flag = 0;
             break;
