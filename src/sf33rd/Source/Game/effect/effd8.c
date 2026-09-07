@@ -25,6 +25,12 @@ const u8 D8_Priority_Data[4] = { 55, 55, 52, 53 };
 
 // Funcs
 
+static s32 cursor_position_changed(const WORK_Other* ewk) {
+    return (ewk->wu.vital_new != Cursor_X[ewk->master_id]) ||
+           (ewk->wu.vital_old != Cursor_Y[ewk->master_id]);
+}
+
+
 void effect_D8_move(WORK_Other* ewk) {
     s16 offset_x;
 
@@ -54,7 +60,7 @@ void effect_D8_move(WORK_Other* ewk) {
         break;
 
     case 2:
-        if ((ewk->wu.vital_new != Cursor_X[ewk->master_id]) || (ewk->wu.vital_old != Cursor_Y[ewk->master_id])) {
+        if (cursor_position_changed(ewk)) {
             ewk->wu.vital_new = Cursor_X[ewk->master_id];
             ewk->wu.vital_old = Cursor_Y[ewk->master_id];
 
