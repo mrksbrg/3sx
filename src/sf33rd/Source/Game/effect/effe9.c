@@ -12,6 +12,11 @@
 #include "sf33rd/Source/Game/rendering/mtrans.h"
 #include "sf33rd/Source/Game/system/work_sys.h"
 
+static s32 should_adjust_end_panel(const WORK_Other* ewk) {
+    return End_PL == 14 && ewk->wu.type < 2;
+}
+
+
 void effect_E9_move(WORK_Other* ewk) {
     PAL_CURSOR ita;
     PAL_CURSOR_P ita_p[4];
@@ -71,7 +76,7 @@ void effect_E9_move(WORK_Other* ewk) {
             break;
         }
 
-        if (End_PL == 14 && ewk->wu.type < 2) {
+        if (should_adjust_end_panel(ewk)) {
             if (ewk->wu.type) {
                 ita_p[0].y = ita_p[3].y = 0.0f;
                 ita_p[1].y = ita_p[2].y = (33.0f - ((33.0f * scr_sc) - 33.0f));
