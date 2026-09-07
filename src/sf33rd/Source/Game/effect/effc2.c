@@ -716,13 +716,17 @@ void get_bs2_parts_data(WORK* wk) {
     set_parts_priority(wk);
 }
 
+static s32 target_car_has_priority(const PLW* mwk, const PLW* twk) {
+    return twk->bs2_on_car || twk->bs2_over_car2 || mwk->wu.xyz[0].disp.pos < twk->wu.xyz[0].disp.pos;
+}
+
 void setup_prio_ix(WORK_Other* c2wk) {
     PLW* mwk = (PLW*)c2wk->my_master;
     PLW* twk = (PLW*)mwk->wu.target_adrs;
 
     c2wk->wu.vital_new = 0;
 
-    if (twk->bs2_on_car || twk->bs2_over_car2 || mwk->wu.xyz[0].disp.pos < twk->wu.xyz[0].disp.pos) {
+    if (target_car_has_priority(mwk, twk)) {
         c2wk->wu.vital_new = 1;
     }
 }
