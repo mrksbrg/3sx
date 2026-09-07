@@ -61,6 +61,11 @@ const s8* Letter_Data_23[4][12] = { { "L.PUNCH",
 
 void (*const EFF23_Jmp_Tbl[4])() = { EFF23_WAIT, EFF23_SLIDE_IN, EFF23_CHAR_CHANGE, EFF23_SUDDENLY };
 
+static s32 uses_alternate_direction(const WORK_Other_CONN* ewk) {
+    return ewk->wu.dir_old == 91 || ewk->wu.dir_old == 103;
+}
+
+
 void effect_23_move(WORK_Other_CONN* ewk) {
     if (Check_Die_61((WORK_Other*)ewk)) {
         push_effect_work(&ewk->wu);
@@ -71,7 +76,7 @@ void effect_23_move(WORK_Other_CONN* ewk) {
     ewk->wu.position_x = ewk->wu.xyz[0].disp.pos & 0xFFFF;
     ewk->wu.position_y = ewk->wu.xyz[1].disp.pos & 0xFFFF;
 
-    if (ewk->wu.dir_old == 91 || ewk->wu.dir_old == 103) {
+    if (uses_alternate_direction(ewk)) {
         ewk->wu.my_clear_level = 0;
         sort_push_request3(&ewk->wu);
         return;
