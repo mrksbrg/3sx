@@ -228,6 +228,10 @@ const s16 k2_kidou[83][4] = {
 
 void (*const effK2_main_process[9])();
 
+static s32 game_is_active(void) {
+    return EXE_flag == 0 && Game_pause == 0;
+}
+
 void effect_K2_move(WORK_Other* ewk) {
     DADD* hahen = (DADD*)ewk->wu.target_adrs;
     WORK* mwk = (WORK*)ewk->my_master;
@@ -275,7 +279,7 @@ void effect_K2_move(WORK_Other* ewk) {
             break;
         }
 
-        if (EXE_flag == 0 && Game_pause == 0) {
+        if (game_is_active()) {
             effK2_main_process[ewk->wu.routine_no[1]](ewk, hahen);
         }
 
