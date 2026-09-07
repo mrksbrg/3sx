@@ -23,6 +23,11 @@ static s32 game_is_active(void) {
 }
 
 
+static s32 animation_can_advance(void) {
+    return !EXE_flag && !Game_pause;
+}
+
+
 void effect_83_move(WORK_Other* ewk) {
     WORK* oya_ptr = (WORK*)ewk->my_master;
     s16 work;
@@ -60,7 +65,7 @@ void effect_83_move(WORK_Other* ewk) {
         break;
 
     case 2:
-        if (!EXE_flag && !Game_pause) {
+        if (animation_can_advance()) {
             char_move(&ewk->wu);
             add_x_sub(&ewk->wu);
             add_y_sub(&ewk->wu);
