@@ -60,6 +60,11 @@ static s32 palette_can_advance(const WORK_Other* ewk, const PLW* mwk) {
            (((ewk->wu.vital_old & 0x10) == 0) || (ewk->wu.total_paring == mwk->wu.kind_of_waza));
 }
 
+static s32 palette_processing_can_continue(WORK_Other* ewk, const PLW* mwk) {
+    return (ewk->wu.vital_old & 2) == 0 || EXE_flag != 0 || Game_pause != 0 || mwk->wu.hit_stop > 0 ||
+           (--ewk->wu.dir_timer >= 0);
+}
+
 
 void effect_D9_move(WORK_Other* ewk) {
     PLW* mwk = (PLW*)ewk->my_master;
@@ -84,8 +89,7 @@ void effect_D9_move(WORK_Other* ewk) {
             break;
         }
 
-        if ((ewk->wu.vital_old & 2) == 0 || EXE_flag != 0 || Game_pause != 0 || mwk->wu.hit_stop > 0 ||
-            (--ewk->wu.dir_timer >= 0)) {
+        if (palette_processing_can_continue(ewk, mwk)) {
             if ((ewk->wu.vital_old & 4) != 0) {
                 if (ewk->wu.dir_old == mwk->wu.dm_count_up) {
                     if (uses_standard_effect_type(ewk)) {
