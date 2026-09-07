@@ -13,6 +13,11 @@
 #include "sf33rd/Source/Game/system/sysdir.h"
 #include "sf33rd/Source/Game/system/work_sys.h"
 
+static s32 should_disable_new_challenger_vibration(const PLW* mwk) {
+    return mwk->wu.id == New_Challenger && Training[0].contents[0][0][0] != 4;
+}
+
+
 void effect_E3_move(WORK_Other* ewk) {
     PLW* mwk = (PLW*)ewk->my_master;
     s16 num;
@@ -35,7 +40,7 @@ void effect_E3_move(WORK_Other* ewk) {
             break;
         }
 
-        if (mwk->wu.id == New_Challenger && Training[0].contents[0][0][0] != 4) {
+        if (should_disable_new_challenger_vibration(mwk)) {
             vib_sel[mwk->wu.id] = 0;
         }
 
