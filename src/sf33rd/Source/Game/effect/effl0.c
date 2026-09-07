@@ -9,6 +9,11 @@
 #include "sf33rd/Source/Game/engine/slowf.h"
 #include "sf33rd/Source/Game/engine/workuser.h"
 
+static s32 effect_is_alive(const WORK_Other* ewk) {
+    return ewk->wu.dead_f == 0 && Suicide[0] == 0;
+}
+
+
 void effect_L0_move(WORK_Other* ewk) {
     PLW* mwk = (PLW*)ewk->my_master;
 
@@ -19,7 +24,7 @@ void effect_L0_move(WORK_Other* ewk) {
         /* fallthrough */
 
     case 1:
-        if (ewk->wu.dead_f == 0 && Suicide[0] == 0) {
+        if (effect_is_alive(ewk)) {
             if (Game_pause || EXE_flag) {
                 break;
             }
