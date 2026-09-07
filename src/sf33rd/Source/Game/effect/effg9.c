@@ -15,6 +15,11 @@
 
 const s16 g9_pos_hos[16] = { 0, 1, -1, 2, -2, 0, 3, -3, 1, -1, 2, -2, 4, 3, 0, 3 };
 
+static s32 effect_can_update(void) {
+    return (EXE_flag == 0) && (Game_pause == 0);
+}
+
+
 void effect_G9_move(WORK_Other* ewk) {
     s16 rnd_ix;
 
@@ -46,7 +51,7 @@ void effect_G9_move(WORK_Other* ewk) {
             break;
         }
 
-        if ((EXE_flag == 0) && (Game_pause == 0)) {
+        if (effect_can_update()) {
             char_move(&ewk->wu);
 
             if (ewk->wu.cg_type == 0xFF) {
