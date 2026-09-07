@@ -63,6 +63,11 @@ u32 decode_mvsw(u16 flag);
 
 // Funcs
 
+static s32 image_data_needs_refresh(const WORK_Other* ewk, const WORK* mwk) {
+    return mwk->K5_init_flag || (ewk->wu.old_rno[1] != mwk->cg_hit_ix);
+}
+
+
 void effect_K5_move(WORK_Other* ewk) {
     WORK* mwk = (WORK*)ewk->my_master;
     MVJ* mvj;
@@ -109,7 +114,7 @@ void effect_K5_move(WORK_Other* ewk) {
         if (mwk->K5_exec_ok) {
             mwk->K5_exec_ok = 0;
 
-            if (mwk->K5_init_flag || (ewk->wu.old_rno[1] != mwk->cg_hit_ix)) {
+            if (image_data_needs_refresh(ewk, mwk)) {
                 mwk->K5_init_flag = 0;
                 ewk->wu.old_rno[1] = mwk->cg_hit_ix;
                 ewk->wu.routine_no[1] = 0;
