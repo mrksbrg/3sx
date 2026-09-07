@@ -24,10 +24,14 @@ const s8 effm8_random_tbl[16] = { 0, 1, 0, 0, 1, 1, 0, 1, 0, 0, 1, 0, 1, 1, 0, 1
 
 const s16 effm8_timer_tbl[4] = { 24, 56, 72, 112 };
 
+static s32 game_is_active(void) {
+    return !EXE_flag && !Game_pause;
+}
+
 void effect_M8_move(WORK_Other* ewk) {
     switch (ewk->wu.routine_no[0]) {
     case 0:
-        if (!EXE_flag && !Game_pause) {
+        if (game_is_active()) {
             if (ewk->wu.type) {
                 effm8_move_win(ewk);
             } else {
