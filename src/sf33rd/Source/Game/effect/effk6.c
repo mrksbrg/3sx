@@ -37,6 +37,22 @@ static s32 uses_special_direction(const WORK_Other* ewk) {
     return ewk->wu.dir_old == 27 || ewk->wu.dir_old == 28;
 }
 
+static s16 get_center_name_position(s16 master_id, s16 get_type, s16 play_style) {
+    if (play_style == 1) {
+        if (get_type == 0) {
+            return master_id == 0 ? -160 : 160;
+        }
+
+        return master_id == 0 ? 44 : 189;
+    }
+
+    if (get_type == 0) {
+        return -152;
+    }
+
+    return 208;
+}
+
 
 void effect_K6_move(WORK_Other* ewk) {
     EFFK6_Jmp_Tbl[ewk->wu.routine_no[0]](ewk);
@@ -318,19 +334,7 @@ s16 Get_PosK6(WORK_Other* ewk, s16 Who, s16 Get_Type, s16 Play_Style) {
 
         case 31:
         case 35:
-            if (Play_Style == 1) {
-                if (Get_Type == 0) {
-                    return -160;
-                } else {
-                    return 44;
-                }
-            } else {
-                if (Get_Type == 0) {
-                    return -152;
-                } else {
-                    return 208;
-                }
-            }
+            return get_center_name_position(ewk->master_id, Get_Type, Play_Style);
         }
     } else {
         switch (ewk->wu.direction) {
@@ -342,19 +346,7 @@ s16 Get_PosK6(WORK_Other* ewk, s16 Who, s16 Get_Type, s16 Play_Style) {
 
         case 31:
         case 35:
-            if (Play_Style == 1) {
-                if (Get_Type == 0) {
-                    return 160;
-                } else {
-                    return 189;
-                }
-            } else {
-                if (Get_Type == 0) {
-                    return -152;
-                } else {
-                    return 208;
-                }
-            }
+            return get_center_name_position(ewk->master_id, Get_Type, Play_Style);
         }
     }
 }
