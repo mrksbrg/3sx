@@ -19,6 +19,10 @@ const s16 plhos_data[20][3] = { { 2, 136, 4 }, { 40, 92, 3 },  { -4, 104, 2 },  
                                 { 2, 92, 5 },  { -4, 104, 2 }, { -4, 104, 5 },  { 2, 136, 4 },  { -4, 104, 2 },
                                 { 6, 90, 2 },  { -4, 104, 2 }, { -41, 127, 5 }, { -4, 104, 4 }, { -4, 104, 4 } };
 
+static s32 should_end_effect_c0(const WORK_Other* ewk) {
+    return ewk->wu.dead_f == 1 || Suicide[0] != 0;
+}
+
 void effect_C0_move(WORK_Other* ewk) {
     PLW* mwk = (PLW*)ewk->my_master;
     s16 i;
@@ -34,7 +38,7 @@ void effect_C0_move(WORK_Other* ewk) {
         /* fallthrough */
 
     case 1:
-        if (ewk->wu.dead_f == 1 || Suicide[0] != 0) {
+        if (should_end_effect_c0(ewk)) {
             ewk->wu.disp_flag = 0;
             ewk->wu.routine_no[0]++;
             break;
