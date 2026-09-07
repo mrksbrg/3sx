@@ -20,6 +20,11 @@ static s32 can_update_effect(void) {
 }
 
 
+static s32 effect_can_advance(void) {
+    return !EXE_flag && !Game_pause && !EXE_obroll;
+}
+
+
 void effect_71_move(WORK_Other* ewk) {
     s16 work;
 
@@ -44,7 +49,7 @@ if (can_update_effect()) {
         break;
 
     case 1:
-        if (!EXE_flag && !Game_pause && !EXE_obroll) {
+        if (effect_can_advance()) {
             ewk->wu.routine_no[0] = 0;
             ewk->wu.old_rno[1] = 0;
             work = random_16();
