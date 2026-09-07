@@ -387,6 +387,11 @@ static s32 can_initialize_color_data(const PLW* mwk) {
     return mwk->gill_ccch_go != 0 || (mwk->wu.routine_no[1] == 0 && mwk->wu.routine_no[2] == 1);
 }
 
+static s32 effect_can_update(void) {
+    return EXE_flag == 0 && Game_pause == 0;
+}
+
+
 void effect_J7_move(WORK_Other* ewk) {
     PLW* mwk = (PLW*)ewk->my_master;
 
@@ -415,7 +420,7 @@ void effect_J7_move(WORK_Other* ewk) {
         } else if (mwk->wu.vital_new < 0) {
             ewk->wu.routine_no[0] = 2;
             ewk->wu.routine_no[1] = 0;
-        } else if (EXE_flag == 0 && Game_pause == 0) {
+        } else if (effect_can_update()) {
             check_new_color_data(&ewk->wu);
         }
 
