@@ -77,6 +77,11 @@ static s32 is_record_clear_level(const WORK_Other* ewk) {
     return Record_Data_Tr == 0 && ewk->wu.type == 0 && ewk->master_priority == 2;
 }
 
+static s32 is_recording_display(const WORK_Other* ewk) {
+    return Record_Data_Tr == 0 && ewk->wu.type == 11 && ewk->master_priority == 1;
+}
+
+
 void effect_A3_move(WORK_Other* ewk) {
     s16 color;
     s16 ix;
@@ -105,7 +110,7 @@ void effect_A3_move(WORK_Other* ewk) {
     if (is_record_clear_level(ewk)) {
         clear_level = 1;
     }
-    if (Record_Data_Tr == 0 && ewk->wu.type == 11 && ewk->master_priority == 1) {
+    if (is_recording_display(ewk)) {
         clear_level = 1;
     }
 

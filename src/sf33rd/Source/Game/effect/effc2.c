@@ -79,6 +79,10 @@ void set_1st_Bonus_Game_result(WORK* wk);
 void set_bs2_floor(WORK_Other* wk);
 void send_to_shizumi_guai(WORK* wk);
 
+static s32 game_is_active(void) {
+    return EXE_flag == 0 && Game_pause == 0;
+}
+
 void effect_C2_move(WORK_Other* ewk) {
     switch (ewk->wu.routine_no[0]) {
     case 0:
@@ -131,7 +135,7 @@ void effect_C2_move(WORK_Other* ewk) {
         break;
 
     case 2:
-        if (EXE_flag == 0 && Game_pause == 0) {
+        if (game_is_active()) {
             switch (ewk->wu.routine_no[1]) {
             case 0:
                 if (--ewk->wu.hit_stop > 0) {
@@ -712,13 +716,17 @@ void get_bs2_parts_data(WORK* wk) {
     set_parts_priority(wk);
 }
 
+static s32 target_car_has_priority(const PLW* mwk, const PLW* twk) {
+    return twk->bs2_on_car || twk->bs2_over_car2 || mwk->wu.xyz[0].disp.pos < twk->wu.xyz[0].disp.pos;
+}
+
 void setup_prio_ix(WORK_Other* c2wk) {
     PLW* mwk = (PLW*)c2wk->my_master;
     PLW* twk = (PLW*)mwk->wu.target_adrs;
 
     c2wk->wu.vital_new = 0;
 
-    if (twk->bs2_on_car || twk->bs2_over_car2 || mwk->wu.xyz[0].disp.pos < twk->wu.xyz[0].disp.pos) {
+    if (target_car_has_priority(mwk, twk)) {
         c2wk->wu.vital_new = 1;
     }
 }

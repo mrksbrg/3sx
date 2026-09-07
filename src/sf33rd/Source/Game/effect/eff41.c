@@ -73,7 +73,9 @@ void effect_41_move(WORK_Other* ewk) {
         goto jump;
 
     case 1:
-        if (ewk->wu.dead_f == 1 || mwk->wu.routine_no[1] != 4) {
+        const s32 should_end_effect = ewk->wu.dead_f == 1 || mwk->wu.routine_no[1] != 4;
+
+        if (should_end_effect) {
             ewk->wu.routine_no[0]++;
             ewk->wu.disp_flag = 0;
             break;

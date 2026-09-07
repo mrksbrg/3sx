@@ -22,10 +22,14 @@
 // forward declaration
 const s16 effl7_data_tbl[16];
 
+static s32 should_end_effect(const WORK_Other* ewk) {
+    return Suicide[0] || (ewk->wu.dead_f);
+}
+
 void effect_L7_move(WORK_Other* ewk) {
     WORK* oya_ptr = (WORK*)ewk->my_master;
 
-    if (Suicide[0] || (ewk->wu.dead_f)) {
+    if (should_end_effect(ewk)) {
         ewk->wu.routine_no[0] = 1;
         ewk->wu.disp_flag = 0;
     }

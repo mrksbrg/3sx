@@ -45,12 +45,17 @@ const s8* button_string_data[8][12] = {
     { "PLAYER 1", "PLAYER 2", NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL }
 };
 
+static s32 pause_input_is_blocked(void) {
+    return Game_pause == 0x81 && Pause_Down == 0;
+}
+
+
 void effect_10_move(WORK_Other* ewk) {
     s16 color;
     s16 correct_index;
     s16 ix;
 
-    if (Game_pause == 0x81 && Pause_Down == 0) {
+    if (pause_input_is_blocked()) {
         return;
     }
 

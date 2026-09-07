@@ -312,6 +312,11 @@ const s8** han_adrs[3] = { src_han_kata, src_han_alpha, src_han_alpha2 };
 const s8** zen_adrs[11] = { src_zen_comm, src_zen_hira, src_zen_kata, src_zen_kan0, src_zen_kan1, src_zen_kan2,
                             src_zen_kan3, src_zen_kan4, src_zen_kan5, src_zen_kan6, src_zen_kan7 };
 
+static s32 is_double_width_code(u8 data) {
+    return data >= 128 && data < 160;
+}
+
+
 void effect_B6_move(WORK_Other_CONN* ewk) {
     switch (ewk->wu.routine_no[0]) {
     case 0:
@@ -424,10 +429,62 @@ void get_message_conn_data(WORK_Other_CONN* ewk, s16 kind, s16 pl, s16 msg) {
     ewk->num_of_conn = mjcnt;
 }
 
-s32 msgConvertObjNum(u8* moji, s32* spc, s32* hz, u16* num, u8 hzSel) {
-    u8 tmpstr[4];
+static const u8* find_han_character_3(const u8* text, u16* number) {
     s32 i;
     s32 j;
+
+    for (i = 0; i < 3; i++) {
+        for (j = 0; j < 128; j++) {
+            if (strcmp(text, han_adrs[i][j]) != 0) {
+                continue;
+            }
+
+            *number = j + (i * 128) + 0x7F30;
+            return text;
+        }
+    }
+
+    return NULL;
+}
+
+static const u8* find_zen_character(const u8* text, u16* number) {
+    s32 i;
+    s32 j;
+
+    for (i = 0; i < 11; i++) {
+        for (j = 0; j < 128; j++) {
+            if (strcmp(text, zen_adrs[i][j]) != 0) {
+                continue;
+            }
+
+            *number = j + (i * 128) + 0x80B0;
+            return text;
+        }
+    }
+
+    return NULL;
+}
+
+static const u8* find_han_character_2(const u8* text, u16* number) {
+    s32 i;
+    s32 j;
+
+    for (i = 0; i < 2; i++) {
+        for (j = 0; j < 128; j++) {
+            if (strcmp(text, han_adrs[i][j]) != 0) {
+                continue;
+            }
+
+            *number = j + (i * 128) + 0x7F30;
+            return text;
+        }
+    }
+
+    return NULL;
+}
+
+s32 msgConvertObjNum(u8* moji, s32* spc, s32* hz, u16* num, u8 hzSel) {
+    u8 tmpstr[4];
     s32 rnum;
 
     if (hzSel != 0) {
@@ -451,31 +508,17 @@ s32 msgConvertObjNum(u8* moji, s32* spc, s32* hz, u16* num, u8 hzSel) {
             tmpstr[1] = ((u8**)src_han_zen_conv)[tmpstr[0]][1];
             tmpstr[0] = ((u8**)src_han_zen_conv)[tmpstr[0]][0];
 
-            for (i = 0; i < 3; i++) {
-                for (j = 0; j < 128; j++) {
-                    if (strcmp(&tmpstr[0], han_adrs[i][j]) != 0) {
-                        continue;
-                    }
-
-                    *hz = 0;
-                    *spc = 0;
-                    *num = j + (i * 128) + 0x7F30;
-                    return 1;
-                }
+            if (find_han_character_3(&tmpstr[0], num)) {
+                *hz = 0;
+                *spc = 0;
+                return 1;
             }
         }
 
-        for (i = 0; i < 11; i++) {
-            for (j = 0; j < 128; j++) {
-                if (strcmp(&tmpstr[0], zen_adrs[i][j]) != 0) {
-                    continue;
-                }
-
-                *hz = 1;
-                *spc = 0;
-                *num = j + (i * 128) + 0x80B0;
-                return 2;
-            }
+        if (find_zen_character(&tmpstr[0], num)) {
+            *hz = 1;
+            *spc = 0;
+            return 2;
         }
 
         goto three;
@@ -496,17 +539,10 @@ s32 msgConvertObjNum(u8* moji, s32* spc, s32* hz, u16* num, u8 hzSel) {
         goto one;
     }
 
-    for (i = 0; i < 2; i++) {
-        for (j = 0; j < 128; j++) {
-            if (strcmp(&tmpstr[0], han_adrs[i][j]) != 0) {
-                continue;
-            }
-
-            *hz = 0;
-            *spc = 0;
-            *num = j + (i * 128) + 0x7F30;
-            return rnum;
-        }
+    if (find_han_character_2(&tmpstr[0], num)) {
+        *hz = 0;
+        *spc = 0;
+        return rnum;
     }
 
 one:
@@ -529,7 +565,7 @@ three:
 }
 
 s32 msgCheckCodeSize(u8 data) {
-    if (data >= 128 && data < 160) {
+    if (is_double_width_code(data)) {
         return 2;
     }
 

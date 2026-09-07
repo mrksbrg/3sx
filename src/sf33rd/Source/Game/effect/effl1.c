@@ -138,6 +138,10 @@ const s16 gj_loser_face[20] = { 0x6EC3, 0x6EC4, 0x6EC5, 0x6EC6, 0x6EC7, 0x6EC8, 
 const CONN gj_bar2[6] = { { -123, 164, 0, 0x6F50 }, { -113, 164, 0, 0x6F50 }, { -103, 164, 0, 0x6F50 },
                           { -93, 164, 0, 0x6F50 },  { -83, 164, 0, 0x6F50 },  { -73, 164, 0, 0x6F6F } };
 
+static s32 should_end_effect(const WORK_Other_CONN* ewk) {
+    return ewk->wu.dead_f == 1 || Suicide[2] != 0;
+}
+
 void effect_L1_move(WORK_Other_CONN* ewk) {
     s16 i;
 
@@ -162,7 +166,7 @@ void effect_L1_move(WORK_Other_CONN* ewk) {
         break;
 
     case 1:
-        if (ewk->wu.dead_f == 1 || Suicide[2] != 0) {
+        if (should_end_effect(ewk)) {
             ewk->wu.routine_no[0] = 2;
             ewk->wu.type = 0;
             ewk->wu.disp_flag = 0;

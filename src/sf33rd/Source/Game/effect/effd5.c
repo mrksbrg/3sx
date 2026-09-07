@@ -29,6 +29,10 @@ const s16 range_time_table[16] = { 32, 34, 36, 38, 40, 42, 44, 46, 48, 50, 52, 5
 
 const s16 range_isp_table[16] = { 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 4, 5, 5, 5, 5, 5 };
 
+static s32 game_is_active(void) {
+    return EXE_flag == 0 && Game_pause == 0;
+}
+
 void effect_D5_move(WORK_Other* ewk) {
     switch (ewk->wu.routine_no[0]) {
     case 0:
@@ -61,7 +65,7 @@ void effect_D5_move(WORK_Other* ewk) {
                 ewk->wu.hit_stop = -ewk->wu.hit_stop;
             }
 
-            if (EXE_flag == 0 && Game_pause == 0) {
+            if (game_is_active()) {
                 effD5_main_process(ewk);
 
                 if (ewk->wu.cg_type == 0xFF) {

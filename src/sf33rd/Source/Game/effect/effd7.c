@@ -28,6 +28,10 @@ s32 my_ball_live_check(PLW* wk);
 
 const s16 effD7_hit_box[2][4] = { { -9, 17, -6, 12 }, { -4, 10, 114, 9 } };
 
+static s32 game_is_active(void) {
+    return EXE_flag == 0 && Game_pause == 0;
+}
+
 void effect_D7_move(WORK_Other* ewk) {
     switch (ewk->wu.routine_no[0]) {
     case 0:
@@ -63,7 +67,7 @@ void effect_D7_move(WORK_Other* ewk) {
                 ewk->wu.hit_stop = -ewk->wu.hit_stop;
             }
 
-            if (EXE_flag == 0 && Game_pause == 0) {
+            if (game_is_active()) {
                 effD7_main_process(ewk);
             }
 

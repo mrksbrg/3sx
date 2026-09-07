@@ -22,6 +22,11 @@ static s32 game_is_active(void) {
 }
 
 
+static s32 animation_can_advance(void) {
+    return !EXE_flag && !Game_pause;
+}
+
+
 void effect_15_move(WORK_Other* ewk) {
     if (ewk->wu.type) {
         eff15_koishi(ewk);
@@ -70,7 +75,7 @@ if (game_is_active()) {
         break;
 
     case 2:
-        if (!EXE_flag && !Game_pause) {
+        if (animation_can_advance()) {
             char_move(&ewk->wu);
 
             if (ewk->wu.cg_type) {

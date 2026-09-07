@@ -51,6 +51,21 @@ const ColorTableIndex color_table_index[11] = {
     { 17, 24, coltbl_010_1P, coltbl_010_2P }
 };
 
+static s32 uses_standard_effect_type(const WORK_Other* ewk) {
+    return (ewk->wu.type != 0) && (ewk->wu.type != 32);
+}
+
+static s32 palette_can_advance(const WORK_Other* ewk, const PLW* mwk) {
+    return ((ewk->wu.vital_old & 8) == 0 || (mwk->sa->ok == -1)) &&
+           (((ewk->wu.vital_old & 0x10) == 0) || (ewk->wu.total_paring == mwk->wu.kind_of_waza));
+}
+
+static s32 palette_processing_can_continue(WORK_Other* ewk, const PLW* mwk) {
+    return (ewk->wu.vital_old & 2) == 0 || EXE_flag != 0 || Game_pause != 0 || mwk->wu.hit_stop > 0 ||
+           (--ewk->wu.dir_timer >= 0);
+}
+
+
 void effect_D9_move(WORK_Other* ewk) {
     PLW* mwk = (PLW*)ewk->my_master;
 
@@ -74,11 +89,10 @@ void effect_D9_move(WORK_Other* ewk) {
             break;
         }
 
-        if ((ewk->wu.vital_old & 2) == 0 || EXE_flag != 0 || Game_pause != 0 || mwk->wu.hit_stop > 0 ||
-            (--ewk->wu.dir_timer >= 0)) {
+        if (palette_processing_can_continue(ewk, mwk)) {
             if ((ewk->wu.vital_old & 4) != 0) {
                 if (ewk->wu.dir_old == mwk->wu.dm_count_up) {
-                    if ((ewk->wu.type != 0) && (ewk->wu.type != 32)) {
+                    if (uses_standard_effect_type(ewk)) {
                         if (mwk->wu.xyz[1].disp.pos <= 0) {
                             goto set_routine_2;
                         }
@@ -92,8 +106,7 @@ void effect_D9_move(WORK_Other* ewk) {
                 }
             }
 
-            if (((ewk->wu.vital_old & 8) == 0 || (mwk->sa->ok == -1)) &&
-                (((ewk->wu.vital_old & 0x10) == 0) || (ewk->wu.total_paring == mwk->wu.kind_of_waza))) {
+            if (palette_can_advance(ewk, mwk)) {
                 if (--ewk->wu.vitality <= 0) {
                     ewk->wu.dir_step += 2;
 

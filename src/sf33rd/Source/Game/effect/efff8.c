@@ -16,6 +16,10 @@
 
 const s16 paring_b_mark_data[3][20][2];
 
+static s32 should_end_effect(const WORK_Other* ewk) {
+    return (ewk->wu.dead_f == 1) || (Suicide[0] != 0);
+}
+
 void effect_F8_move(WORK_Other* ewk) {
     WORK* mwk = (WORK*)ewk->my_master;
 
@@ -43,7 +47,7 @@ void effect_F8_move(WORK_Other* ewk) {
         return;
 
     case 1:
-        if ((ewk->wu.dead_f == 1) || (Suicide[0] != 0)) {
+        if (should_end_effect(ewk)) {
             ewk->wu.disp_flag = 0;
             ewk->wu.routine_no[0] += 1;
             return;

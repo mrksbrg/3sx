@@ -147,6 +147,10 @@ const s16 thunder_set_pos_SKB[20][4] = { { 2, 5, 1, 23 }, { 2, 5, 1, 23 }, { 2, 
 void effE2_sort_push(WORK* ewk, WORK* mwk);
 void effe2_erase_or_die(WORK* wk);
 
+static s32 game_is_active(void) {
+    return EXE_flag == 0 && Game_pause == 0;
+}
+
 void effect_E2_move(WORK_Other* ewk) {
     PLW* mwk = (PLW*)ewk->my_master;
 
@@ -176,7 +180,7 @@ void effect_E2_move(WORK_Other* ewk) {
 
         switch (ewk->wu.routine_no[1]) {
         case 0:
-            if (EXE_flag == 0 && Game_pause == 0) {
+            if (game_is_active()) {
                 char_move(&ewk->wu);
 
                 if (ewk->wu.cg_type) {

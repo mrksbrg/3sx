@@ -20,6 +20,11 @@ static s32 game_is_active(void) {
 }
 
 
+static s32 animation_can_advance(void) {
+    return !EXE_flag && !Game_pause;
+}
+
+
 void effect_55_move(WORK_Other* ewk) {
     if (obr_no_disp_check()) {
         return;
@@ -46,7 +51,7 @@ if (game_is_active()) {
         break;
 
     case 2:
-        if (!EXE_flag && !Game_pause) {
+        if (animation_can_advance()) {
             ewk->wu.old_rno[0]--;
 
             if (ewk->wu.old_rno[0] < 0) {

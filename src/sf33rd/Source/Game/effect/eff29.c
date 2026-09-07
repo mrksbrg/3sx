@@ -23,6 +23,11 @@ static s32 can_update_effect(void) {
 }
 
 
+static s32 effect_can_advance(void) {
+    return !EXE_flag && !Game_pause && !EXE_obroll;
+}
+
+
 void effect_29_move(WORK_Other* ewk) {
     s16 work;
 
@@ -46,7 +51,7 @@ if (can_update_effect()) {
         break;
 
     case 1:
-        if (!EXE_flag && !Game_pause && !EXE_obroll) {
+        if (effect_can_advance()) {
             char_move(&ewk->wu);
 
             if (ewk->wu.cg_type) {

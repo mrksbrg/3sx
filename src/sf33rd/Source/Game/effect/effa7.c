@@ -17,6 +17,10 @@
 #include "sf33rd/Source/Game/sound/se_data.h"
 #include "sf33rd/Source/Game/stage/bg.h"
 
+static s32 game_is_active(void) {
+    return EXE_flag == 0 && Game_pause == 0;
+}
+
 void effect_A7_move(WORK_Other* ewk) {
     const HMDT* tad;
     const EXPLEM* edt;
@@ -139,7 +143,7 @@ void effect_A7_move(WORK_Other* ewk) {
             break;
         }
 
-        if (EXE_flag == 0 && Game_pause == 0) {
+        if (game_is_active()) {
             char_move(&ewk->wu);
 
             if (ewk->wu.cg_type == 0xFF) {

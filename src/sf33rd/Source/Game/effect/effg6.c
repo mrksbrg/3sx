@@ -126,6 +126,20 @@ const s16 effg6_data[230][8] = { { 46, 0, 0, 0, -32, 32, 515, 31 },       { 46, 
                                  { 63, 7, -55, -5, -48, 28, 513, 31 },    { 63, 5, -48, -6, -36, 20, 515, 31 },
                                  { 63, 6, -38, -6, -32, 10, 515, 31 },    { 63, 7, -28, -5, 24, 18, 513, 31 } };
 
+static s32 effect_update_is_blocked(void) {
+    return (EXE_flag != 0) || (Game_pause != 0);
+}
+
+static s32 master_state_requires_shutdown(const WORK_Other* ewk, const WORK* mwk) {
+    return ((ewk->wu.dmcal_m & 1) && (ewk->wu.old_pos[1] != mwk->xyz[1].disp.pos)) ||
+           ((ewk->wu.dmcal_m & 2) && (mwk->disp_flag == 0)) ||
+           ((ewk->wu.dmcal_m & 4) && (ewk->wu.dm_vital != mwk->dm_count_up)) ||
+           ((ewk->wu.dmcal_m & 8) &&
+            ((ewk->wu.old_rno[0] != mwk->routine_no[0]) || (ewk->wu.old_rno[1] != mwk->routine_no[1]) ||
+             (ewk->wu.old_rno[2] != mwk->routine_no[2])));
+}
+
+
 void effect_G6_move(WORK_Other* ewk) {
     WORK* mwk = (WORK*)ewk->my_master;
 
@@ -157,18 +171,13 @@ void effect_G6_move(WORK_Other* ewk) {
             return;
         }
 
-        if (((ewk->wu.dmcal_m & 1) && (ewk->wu.old_pos[1] != mwk->xyz[1].disp.pos)) ||
-            ((ewk->wu.dmcal_m & 2) && (mwk->disp_flag == 0)) ||
-            ((ewk->wu.dmcal_m & 4) && (ewk->wu.dm_vital != mwk->dm_count_up)) ||
-            ((ewk->wu.dmcal_m & 8) &&
-             ((ewk->wu.old_rno[0] != mwk->routine_no[0]) || (ewk->wu.old_rno[1] != mwk->routine_no[1]) ||
-              (ewk->wu.old_rno[2] != mwk->routine_no[2])))) {
+        if (master_state_requires_shutdown(ewk, mwk)) {
         block_22:
             ewk->wu.routine_no[0] += 1;
             return;
         }
 
-        if ((EXE_flag != 0) || (Game_pause != 0)) {
+        if (effect_update_is_blocked()) {
             break;
         }
 

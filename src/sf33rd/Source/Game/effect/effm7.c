@@ -17,10 +17,14 @@
 
 void effm7_move(WORK_Other* ewk);
 
+static s32 game_is_active(void) {
+    return !EXE_flag && !Game_pause;
+}
+
 void effect_M7_move(WORK_Other* ewk) {
     switch (ewk->wu.routine_no[0]) {
     case 0:
-        if (!EXE_flag && !Game_pause) {
+        if (game_is_active()) {
             effm7_move(ewk);
         }
 

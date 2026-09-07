@@ -16,6 +16,11 @@
 const s16 EFF91_Pos_Data[2][3][2] = { { { -88, 95 }, { -94, 71 }, { -88, 47 } },
                                       { { 104, 95 }, { 98, 71 }, { 104, 47 } } };
 
+static s32 should_wait_for_round_operator(const WORK_Other* ewk) {
+    return (ewk->wu.type == 1) && (Round_Operator[0] == 0 || Round_Operator[1] == 0);
+}
+
+
 void effect_91_move(WORK_Other* ewk) {
     if (Menu_Suicide[ewk->master_player]) {
         push_effect_work(&ewk->wu);
@@ -26,7 +31,7 @@ void effect_91_move(WORK_Other* ewk) {
         return;
     }
 
-    if ((ewk->wu.type == 1) && (Round_Operator[0] == 0 || Round_Operator[1] == 0)) {
+    if (should_wait_for_round_operator(ewk)) {
         ewk->wu.my_clear_level = 205;
         sort_push_request4(&ewk->wu);
         return;

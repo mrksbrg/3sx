@@ -20,6 +20,11 @@ void Setup_Clear_OBJ(WORK_Other* ewk);
 
 void (*const EFF69_Jmp_Tbl[5])();
 
+static s32 uses_special_present_mode(s16 direction) {
+    return (direction == 3 || direction == 4) && (Present_Mode == 4 || Present_Mode == 5);
+}
+
+
 void effect_69_move(WORK_Other* ewk) {
     EFF69_Jmp_Tbl[ewk->wu.routine_no[0]](ewk);
 
@@ -33,6 +38,29 @@ void effect_69_move(WORK_Other* ewk) {
 void EFF69_WAIT(WORK_Other* ewk) {
     if ((ewk->wu.routine_no[0] = Order[ewk->wu.dir_old])) {
         ewk->wu.routine_no[1] = 0;
+    }
+}
+
+static void update_slide_in_position(WORK_Other* ewk) {
+    ewk->wu.xyz[0].cal += ewk->wu.mvxy.a[0].sp;
+    ewk->wu.mvxy.a[0].sp += ewk->wu.mvxy.d[0].sp;
+
+    if (0 < ewk->wu.mvxy.a[0].sp) {
+        if (ewk->wu.hit_quake <= ewk->wu.xyz[0].disp.pos) {
+            if (Order[ewk->wu.dir_old] == ewk->wu.routine_no[0]) {
+                Order[ewk->wu.dir_old] = 0;
+            }
+
+            ewk->wu.routine_no[0] = 0;
+            ewk->wu.xyz[0].disp.pos = ewk->wu.hit_quake;
+        }
+    } else if (ewk->wu.hit_quake >= ewk->wu.xyz[0].disp.pos) {
+        if (Order[ewk->wu.dir_old] == ewk->wu.routine_no[0]) {
+            Order[ewk->wu.dir_old] = 0;
+        }
+
+        ewk->wu.routine_no[0] = 0;
+        ewk->wu.xyz[0].disp.pos = ewk->wu.hit_quake;
     }
 }
 
@@ -65,26 +93,7 @@ void EFF69_SLIDE_IN(WORK_Other* ewk) {
         break;
 
     default:
-        ewk->wu.xyz[0].cal += ewk->wu.mvxy.a[0].sp;
-        ewk->wu.mvxy.a[0].sp += ewk->wu.mvxy.d[0].sp;
-
-        if (0 < ewk->wu.mvxy.a[0].sp) {
-            if (ewk->wu.hit_quake <= ewk->wu.xyz[0].disp.pos) {
-                if (Order[ewk->wu.dir_old] == ewk->wu.routine_no[0]) {
-                    Order[ewk->wu.dir_old] = 0;
-                }
-
-                ewk->wu.routine_no[0] = 0;
-                ewk->wu.xyz[0].disp.pos = ewk->wu.hit_quake;
-            }
-        } else if (ewk->wu.hit_quake >= ewk->wu.xyz[0].disp.pos) {
-            if (Order[ewk->wu.dir_old] == ewk->wu.routine_no[0]) {
-                Order[ewk->wu.dir_old] = 0;
-            }
-
-            ewk->wu.routine_no[0] = 0;
-            ewk->wu.xyz[0].disp.pos = ewk->wu.hit_quake;
-        }
+        update_slide_in_position(ewk);
 
         break;
     }
@@ -154,7 +163,7 @@ s32 effect_69_init(s16 dir_old) {
     WORK_Other* ewk;
     s16 ix;
 
-    if ((dir_old == 3 || dir_old == 4) && (Present_Mode == 4 || Present_Mode == 5)) {
+    if (uses_special_present_mode(dir_old)) {
         return 0;
     }
 

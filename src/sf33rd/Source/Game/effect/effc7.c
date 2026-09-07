@@ -26,6 +26,10 @@ const s16 paring_mark_data[3][20][2] = {
       { 28, 76 }, { 25, 77 }, { 34, 79 }, { 47, 74 }, { 21, 84 }, { 22, 73 } }
 };
 
+static s32 game_is_active(void) {
+    return EXE_flag == 0 && Game_pause == 0;
+}
+
 void effect_C7_move(WORK_Other* ewk) {
     WORK* mwk = (WORK*)ewk->my_master;
 
@@ -61,7 +65,7 @@ void effect_C7_move(WORK_Other* ewk) {
             break;
         }
 
-        if (EXE_flag == 0 && Game_pause == 0) {
+        if (game_is_active()) {
             char_move(&ewk->wu);
 
             if (ewk->wu.cg_type == 0xFF) {

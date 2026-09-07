@@ -14,6 +14,11 @@
 #include "sf33rd/Source/Game/screen/sel_data.h"
 #include "sf33rd/Source/Game/system/work_sys.h"
 
+static s32 moving_plate_matches_effect(const WORK_Other* ewk) {
+    return Moving_Plate[ewk->master_id] == ewk->wu.direction && ewk->wu.dm_vital == 0;
+}
+
+
 void effect_50_move(WORK_Other* ewk) {
     WORK_Other* pwk;
     u16 sw;
@@ -45,7 +50,7 @@ void effect_50_move(WORK_Other* ewk) {
         if (Sel_Arts_Complete[ewk->master_id]) {
             ewk->wu.routine_no[0] = 3;
             ewk->wu.dir_timer = 5;
-        } else if (Moving_Plate[ewk->master_id] == ewk->wu.direction && ewk->wu.dm_vital == 0) {
+        } else if (moving_plate_matches_effect(ewk)) {
             ewk->wu.routine_no[0]++;
             ewk->wu.char_index++;
             ewk->wu.dmcal_m += 3;

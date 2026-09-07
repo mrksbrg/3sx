@@ -22,6 +22,11 @@ static s32 game_is_active(void) {
 }
 
 
+static s32 judgement_is_blocked(void) {
+    return EXE_flag || Game_pause || pcon_rno[2] != 1 || Event_Judge_Gals != -1 || !Complete_Judgement;
+}
+
+
 void effect_33_move(WORK_Other* ewk) {
     switch (ewk->wu.routine_no[0]) {
     case 0:
@@ -39,7 +44,7 @@ void effect_33_move(WORK_Other* ewk) {
         suzi_sync_pos_set(ewk);
         sort_push_request(&ewk->wu);
 
-        if (EXE_flag || Game_pause || pcon_rno[2] != 1 || Event_Judge_Gals != -1 || !Complete_Judgement) {
+        if (judgement_is_blocked()) {
             break;
         }
 

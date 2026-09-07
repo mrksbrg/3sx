@@ -38,6 +38,11 @@ void Setup_Color_76(WORK_Other* ewk);
 void (*const EFF76_Jmp_Tbl[8])() = { EFF76_WAIT, EFF76_SLIDE_IN, EFF76_SLIDE_OUT,       EFF76_SUDDENLY,
                                      EFF57_KILL, EFF76_SHIFT,    EFF76_WAIT_BREAK_INTO, EFF76_BEFORE };
 
+static s32 uses_english_elena_name(s16 player_number) {
+    return player_number == 14 && mpp_w.language == LANG_ENGLISH;
+}
+
+
 void effect_76_move(WORK_Other* ewk) {
     EFF76_Jmp_Tbl[ewk->wu.routine_no[0]](ewk);
 
@@ -89,6 +94,29 @@ void EFF76_WAIT_BREAK_INTO(WORK_Other* ewk) {
     }
 }
 
+static void update_slide_in_position(WORK_Other* ewk) {
+    ewk->wu.xyz[0].cal += ewk->wu.mvxy.a[0].sp;
+    ewk->wu.mvxy.a[0].sp += ewk->wu.mvxy.d[0].sp;
+
+    if (0 < ewk->wu.mvxy.a[0].sp) {
+        if (ewk->wu.hit_quake <= ewk->wu.xyz[0].disp.pos) {
+            if (Order[ewk->wu.dir_old] == ewk->wu.routine_no[0]) {
+                Order[ewk->wu.dir_old] = 0;
+            }
+
+            ewk->wu.routine_no[0] = 0;
+            ewk->wu.xyz[0].disp.pos = ewk->wu.hit_quake;
+        }
+    } else if (ewk->wu.hit_quake >= ewk->wu.xyz[0].disp.pos) {
+        if (Order[ewk->wu.dir_old] == ewk->wu.routine_no[0]) {
+            Order[ewk->wu.dir_old] = 0;
+        }
+
+        ewk->wu.routine_no[0] = 0;
+        ewk->wu.xyz[0].disp.pos = ewk->wu.hit_quake;
+    }
+}
+
 void EFF76_SLIDE_IN(WORK_Other* ewk) {
     if (Order[ewk->wu.dir_old] != 1) {
         ewk->wu.routine_no[0] = Order[ewk->wu.dir_old];
@@ -107,27 +135,7 @@ void EFF76_SLIDE_IN(WORK_Other* ewk) {
         break;
 
     default:
-        ewk->wu.xyz[0].cal += ewk->wu.mvxy.a[0].sp;
-        ewk->wu.mvxy.a[0].sp += ewk->wu.mvxy.d[0].sp;
-
-        if (0 < ewk->wu.mvxy.a[0].sp) {
-            if (ewk->wu.hit_quake <= ewk->wu.xyz[0].disp.pos) {
-                if (Order[ewk->wu.dir_old] == ewk->wu.routine_no[0]) {
-                    Order[ewk->wu.dir_old] = 0;
-                }
-
-                ewk->wu.routine_no[0] = 0;
-                ewk->wu.xyz[0].disp.pos = ewk->wu.hit_quake;
-            }
-        } else if (ewk->wu.hit_quake >= ewk->wu.xyz[0].disp.pos) {
-            if (Order[ewk->wu.dir_old] == ewk->wu.routine_no[0]) {
-                Order[ewk->wu.dir_old] = 0;
-            }
-
-            ewk->wu.routine_no[0] = 0;
-            ewk->wu.xyz[0].disp.pos = ewk->wu.hit_quake;
-        }
-
+        update_slide_in_position(ewk);
         break;
     }
 }
@@ -624,7 +632,7 @@ void Setup_Color_L1(WORK_Other* ewk) {
 }
 
 s32 chkNameAkuma(s32 plnum, s32 rnum) {
-    if (plnum == 14 && mpp_w.language == LANG_ENGLISH) {
+    if (uses_english_elena_name(plnum)) {
         return rnum;
     }
 

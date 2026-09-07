@@ -1040,6 +1040,11 @@ const u16 car_parts[7][8][18][2] = { { { { 0x7D10, 0x0000 },
                                          { 0x7A3E, 0x0000 },
                                          { 0x7A3F, 0x0000 } } } };
 
+static s32 car_part_is_finishing(const WORK* c2wk) {
+    return c2wk->routine_no[0] == 2 && c2wk->routine_no[1] == 1;
+}
+
+
 void effect_C3_move(WORK_Other* ewk) {
     switch (ewk->wu.routine_no[0]) {
     case 0:
@@ -1217,7 +1222,7 @@ s32 get_efffC3_nsc(WORK* wk, WORK* c2wk) {
         return 1;
     }
 
-    if (c2wk->routine_no[0] == 2 && c2wk->routine_no[1] == 1) {
+    if (car_part_is_finishing(c2wk)) {
         return -1;
     }
 

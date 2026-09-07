@@ -16,6 +16,11 @@
 #include "sf33rd/Source/Game/stage/bg_data.h"
 #include "sf33rd/Source/Game/stage/bg_sub.h"
 
+static s32 master_presentation_changed(const WORK_Other* ewk, const WORK* mwk) {
+    return ewk->wu.dir_old != mwk->now_koc || ewk->wu.dir_step != mwk->char_index;
+}
+
+
 void effect_K8_move(WORK_Other* ewk) {
     WORK* mwk = (WORK*)ewk->my_master;
 
@@ -45,7 +50,7 @@ void effect_K8_move(WORK_Other* ewk) {
         if (EXE_flag == 0 && Game_pause == 0) {
             char_move(&ewk->wu);
 
-            if (ewk->wu.dir_old != mwk->now_koc || ewk->wu.dir_step != mwk->char_index) {
+            if (master_presentation_changed(ewk, mwk)) {
                 ewk->wu.routine_no[0] = 2;
                 Bg_Y_Sitei(0, 0);
                 seraph_flag = 0;

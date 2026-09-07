@@ -22,6 +22,11 @@ const s16 koishi_app_area[8][16];
 const s16 koishi_speed_x[5][8];
 const s16 koishi_speed_y[5][8];
 
+static s32 effect_can_update(void) {
+    return (EXE_flag == 0) && (Game_pause == 0);
+}
+
+
 void effect_I0_move(WORK_Other* ewk) {
     switch (ewk->wu.routine_no[0]) {
     case 0:
@@ -38,7 +43,7 @@ void effect_I0_move(WORK_Other* ewk) {
             return;
         }
 
-        if ((EXE_flag == 0) && (Game_pause == 0)) {
+        if (effect_can_update()) {
             switch (ewk->wu.routine_no[1]) {
             case 0:
                 add_mvxy_speed(&ewk->wu);

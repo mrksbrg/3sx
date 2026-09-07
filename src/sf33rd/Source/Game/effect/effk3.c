@@ -34,6 +34,10 @@ const s16 effK3_isp_y_hosei[4][8] = { { 0, 128, 256, 384, 512, 0, -128, -256 },
 
 const s16 effK3_life_time[4] = { 24, 20, 16, 12 };
 
+static s32 game_is_active(void) {
+    return EXE_flag == 0 && Game_pause == 0;
+}
+
 void effect_K3_move(WORK_Other* ewk) {
     switch (ewk->wu.routine_no[0]) {
     case 0:
@@ -52,7 +56,7 @@ void effect_K3_move(WORK_Other* ewk) {
             break;
         }
 
-        if (EXE_flag == 0 && Game_pause == 0) {
+        if (game_is_active()) {
             char_move(&ewk->wu);
             add_mvxy_speed(&ewk->wu);
             cal_mvxy_speed(&ewk->wu);

@@ -16,6 +16,11 @@
 
 void Setup_Eff70(WORK_Other* ewk);
 
+static s32 both_players_completed_selection(void) {
+    return Play_Type == 1 && (Sel_PL_Complete[0] & 0x8000) && (Sel_PL_Complete[1] & 0x8000);
+}
+
+
 void effect_70_move(WORK_Other* ewk) {
     if (Suicide[0] == 1) {
         ewk->wu.routine_no[0] = 99;
@@ -50,7 +55,7 @@ void effect_70_move(WORK_Other* ewk) {
         /* fallthrough */
 
     case 2:
-        if (Play_Type == 1 && Sel_PL_Complete[0] & 0x8000 && Sel_PL_Complete[1] & 0x8000) {
+        if (both_players_completed_selection()) {
             ewk->wu.routine_no[0]++;
             ewk->wu.dir_timer = 30;
         }

@@ -9,6 +9,18 @@
 #include "sf33rd/Source/Game/engine/slowf.h"
 #include "sf33rd/Source/Game/engine/workuser.h"
 
+static s32 effect_is_alive(const WORK_Other* ewk) {
+    return ewk->wu.dead_f == 0 && Suicide[0] == 0;
+}
+
+static s32 should_continue_flash(const WORK_Other* ewk, const PLW* mwk) {
+    return ewk->wu.dead_f == 0 && ewk->wu.dir_timer > 0 && mwk->wu.routine_no[1] != 1 &&
+           mwk->wu.routine_no[1] != 2 && mwk->wu.routine_no[1] != 3 &&
+           (mwk->wu.now_koc != 5 ||
+            (!(mwk->wu.kind_of_waza & 0x20) && mwk->wu.char_index != 0x40 && mwk->wu.char_index != 1));
+}
+
+
 void effect_L0_move(WORK_Other* ewk) {
     PLW* mwk = (PLW*)ewk->my_master;
 
@@ -19,7 +31,7 @@ void effect_L0_move(WORK_Other* ewk) {
         /* fallthrough */
 
     case 1:
-        if (ewk->wu.dead_f == 0 && Suicide[0] == 0) {
+        if (effect_is_alive(ewk)) {
             if (Game_pause || EXE_flag) {
                 break;
             }
@@ -28,10 +40,7 @@ void effect_L0_move(WORK_Other* ewk) {
                 ewk->wu.dir_timer--;
             }
 
-            if (ewk->wu.dead_f == 0 && ewk->wu.dir_timer > 0 && mwk->wu.routine_no[1] != 1 &&
-                mwk->wu.routine_no[1] != 2 && mwk->wu.routine_no[1] != 3 &&
-                (mwk->wu.now_koc != 5 ||
-                 (!(mwk->wu.kind_of_waza & 0x20) && mwk->wu.char_index != 0x40 && mwk->wu.char_index != 1))) {
+            if (should_continue_flash(ewk, mwk)) {
 
                 if (ewk->wu.dir_timer >= 30) {
                     break;

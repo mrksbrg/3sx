@@ -12,6 +12,10 @@
 #include "sf33rd/Source/Game/engine/workuser.h"
 #include "sf33rd/Source/Game/rendering/aboutspr.h"
 
+static s32 game_is_active(void) {
+    return EXE_flag == 0 && Game_pause == 0;
+}
+
 void effect_G3_move(WORK_Other* ewk) {
     WORK_Other* mwk;
     PLW* pwk = (PLW*)ewk->wu.target_adrs;
@@ -55,7 +59,7 @@ void effect_G3_move(WORK_Other* ewk) {
             break;
         }
 
-        if (EXE_flag == 0 && Game_pause == 0) {
+        if (game_is_active()) {
             if (!ewk->wu.routine_no[1]) {
                 adjust = 80;
 

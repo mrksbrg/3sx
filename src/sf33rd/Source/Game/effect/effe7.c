@@ -14,6 +14,11 @@
 
 void effe7_get_zanzou_data(WORK_Other* ewk);
 
+static s32 uses_metamorphose_color(const WORK_Other* ewk, const PLW* mwk) {
+    return ewk->wu.olc_work_ix[2] && mwk->metamorphose;
+}
+
+
 void effect_E7_move(WORK_Other* ewk) {
     PLW* mwk = (PLW*)ewk->my_master;
     s16 pricol;
@@ -63,7 +68,7 @@ void effect_E7_move(WORK_Other* ewk) {
             }
 
             if (ewk->wu.old_rno[4]) {
-                if (ewk->wu.olc_work_ix[2] && mwk->metamorphose) {
+                if (uses_metamorphose_color(ewk, mwk)) {
                     ewk->wu.extra_col = after_image_color[ewk->wu.old_rno[4] + pricol][(ewk->master_id + 1) & 1];
                 } else {
                     ewk->wu.extra_col = after_image_color[ewk->wu.old_rno[4] + pricol][ewk->master_id];
