@@ -30,6 +30,10 @@ const s16 ase_delta_hosei[4][6] = { { -88, -96, -112, -80, -128, -88 },
                                     { -88, -96, -112, -80, -128, -88 },
                                     { -88, -96, -112, -80, -128, -88 } };
 
+static s32 game_is_active(void) {
+    return EXE_flag == 0 && Game_pause == 0;
+}
+
 void effect_G5_move(WORK_Other* ewk) {
     switch (ewk->wu.routine_no[0]) {
     case 0:
@@ -52,7 +56,7 @@ void effect_G5_move(WORK_Other* ewk) {
             break;
         }
 
-        if (EXE_flag == 0 && Game_pause == 0) {
+        if (game_is_active()) {
             ewk->wu.dir_old += ewk->wu.dir_step;
 
             if (ewk->wu.dir_old < 0) {
