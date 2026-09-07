@@ -24,6 +24,11 @@ void Setup_Char_Index(WORK_Other* ewk);
 
 void (*const EFF42_Jmp_Tbl[5])();
 
+static s32 present_mode_hides_effect(void) {
+    return Present_Mode == 4 || Present_Mode == 5;
+}
+
+
 void effect_42_move(WORK_Other* ewk) {
     EFF42_Jmp_Tbl[Order[ewk->wu.dir_old]](ewk);
 
@@ -212,7 +217,7 @@ s32 effect_42_init(s16 type) {
     WORK_Other* ewk;
     s16 ix;
 
-    if (Present_Mode == 4 || Present_Mode == 5) {
+    if (present_mode_hides_effect()) {
         return 0;
     }
 
