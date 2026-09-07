@@ -20,10 +20,14 @@
 void effl6_flont(WORK_Other* ewk);
 void effl6_back(WORK_Other* ewk);
 
+static s32 game_is_active(void) {
+    return !EXE_flag && !Game_pause;
+}
+
 void effect_L6_move(WORK_Other* ewk) {
     switch (ewk->wu.routine_no[0]) {
     case 0:
-        if (!EXE_flag && !Game_pause) {
+        if (game_is_active()) {
             if (ewk->wu.type) {
                 effl6_flont(ewk);
             } else {
