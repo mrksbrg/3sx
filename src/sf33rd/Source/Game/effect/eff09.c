@@ -1191,9 +1191,34 @@ void eff09_19000(WORK_Other* ewk) {
     }
 }
 
+static void advance_eff09_20000(WORK_Other* ewk, WORK* oya_ptr) {
+    s16 pos_work;
+
+    if (!EXE_flag && !Game_pause) {
+        char_move(&ewk->wu);
+
+        if (oya_ptr->id) {
+            pos_work = bg_w.bgw[1].wxy[0].disp.pos - bg_w.pos_offset;
+            pos_work -= 64;
+
+            if (ewk->wu.xyz[0].disp.pos < pos_work) {
+                oya_ptr->cmwk[1] = 1;
+                ewk->wu.routine_no[1]++;
+            }
+        } else {
+            pos_work = bg_w.bgw[1].wxy[0].disp.pos + bg_w.pos_offset;
+            pos_work += 64;
+
+            if (ewk->wu.xyz[0].disp.pos > pos_work) {
+                oya_ptr->cmwk[1] = 1;
+                ewk->wu.routine_no[1]++;
+            }
+        }
+    }
+}
+
 void eff09_20000(WORK_Other* ewk) {
     WORK* oya_ptr;
-    s16 pos_work;
 
     if (test_flag) {
         ewk->wu.routine_no[1] = 99;
@@ -1216,28 +1241,7 @@ void eff09_20000(WORK_Other* ewk) {
         break;
 
     case 1:
-        if (!EXE_flag && !Game_pause) {
-            char_move(&ewk->wu);
-
-            if (oya_ptr->id) {
-                pos_work = bg_w.bgw[1].wxy[0].disp.pos - bg_w.pos_offset;
-                pos_work -= 64;
-
-                if (ewk->wu.xyz[0].disp.pos < pos_work) {
-                    oya_ptr->cmwk[1] = 1;
-                    ewk->wu.routine_no[1]++;
-                }
-            } else {
-                pos_work = bg_w.bgw[1].wxy[0].disp.pos + bg_w.pos_offset;
-                pos_work += 64;
-
-                if (ewk->wu.xyz[0].disp.pos > pos_work) {
-                    oya_ptr->cmwk[1] = 1;
-                    ewk->wu.routine_no[1]++;
-                }
-            }
-        }
-
+        advance_eff09_20000(ewk, oya_ptr);
         disp_pos_trans_entry(ewk);
         break;
 
