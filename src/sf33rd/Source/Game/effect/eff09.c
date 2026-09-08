@@ -1382,6 +1382,10 @@ void eff09_22000(WORK_Other* ewk) {
     }
 }
 
+static s32 eff09_23000_parent_animation_started(const WORK* oya_ptr) {
+    return !EXE_flag && !Game_pause && oya_ptr->cg_type == 1;
+}
+
 void eff09_23000(WORK_Other* ewk) {
     WORK* oya_ptr;
 
@@ -1405,7 +1409,7 @@ void eff09_23000(WORK_Other* ewk) {
         break;
 
     case 1:
-        if (!EXE_flag && !Game_pause && oya_ptr->cg_type == 1) {
+        if (eff09_23000_parent_animation_started(oya_ptr)) {
             ewk->wu.routine_no[1]++;
         }
 
