@@ -335,25 +335,28 @@ void effe6_0006(WORK_Other* ewk) {
     }
 }
 
+static void set_effe6_0007_color(WORK_Other* ewk) {
+    switch (ewk->wu.type) {
+    case 22:
+        ewk->wu.my_col_code = 0x12C;
+        break;
+
+    case 23:
+        ewk->wu.my_col_code = 0x12D;
+        break;
+
+    case 24:
+    case 27:
+    case 28:
+        ewk->wu.my_col_code = 0x12E;
+        break;
+    }
+}
+
 void effe6_0007(WORK_Other* ewk) {
     switch (ewk->wu.routine_no[1]) {
     case 0:
-        switch (ewk->wu.type) {
-        case 22:
-            ewk->wu.my_col_code = 0x12C;
-            break;
-
-        case 23:
-            ewk->wu.my_col_code = 0x12D;
-            break;
-
-        case 24:
-        case 27:
-        case 28:
-            ewk->wu.my_col_code = 0x12E;
-            break;
-        }
-
+        set_effe6_0007_color(ewk);
         ewk->wu.my_col_mode = 0x200;
         effe6_init_common(ewk);
         disp_pos_trans_entry(ewk);
