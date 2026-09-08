@@ -224,43 +224,47 @@ void effect_C2_move(WORK_Other* ewk) {
     }
 }
 
+static void select_c2_first_process_state(WORK_Other* ewk, PLW* twk) {
+    switch (ewk->wu.direction + (twk->bs2_on_car * 2)) {
+    case 0:
+        if (ewk->wu.routine_no[1] != 1 && ewk->wu.routine_no[2] != 0) {
+            ewk->wu.routine_no[2] = 0;
+            ewk->wu.routine_no[3] = 2;
+        }
+
+        break;
+
+    case 3:
+        if (ewk->wu.routine_no[1] != 1 && ewk->wu.routine_no[2] != 1) {
+            ewk->wu.routine_no[2] = 1;
+            ewk->wu.routine_no[3] = 2;
+        }
+
+        break;
+
+    case 1:
+        if (ewk->wu.routine_no[1] != 1 || ewk->wu.routine_no[2] != 0) {
+            ewk->wu.routine_no[1] = 0;
+            ewk->wu.routine_no[2] = 0;
+            ewk->wu.routine_no[3] = 0;
+        }
+
+        break;
+
+    case 2:
+        if (ewk->wu.routine_no[1] != 1 || ewk->wu.routine_no[2] != 0) {
+            ewk->wu.routine_no[1] = 0;
+            ewk->wu.routine_no[2] = 1;
+            ewk->wu.routine_no[3] = 0;
+        }
+
+        break;
+    }
+}
+
 void effC2_main_process_first(WORK_Other* ewk, PLW* twk) {
     if (EXE_flag == 0 && Game_pause == 0) {
-        switch (ewk->wu.direction + (twk->bs2_on_car * 2)) {
-        case 0:
-            if (ewk->wu.routine_no[1] != 1 && ewk->wu.routine_no[2] != 0) {
-                ewk->wu.routine_no[2] = 0;
-                ewk->wu.routine_no[3] = 2;
-            }
-
-            break;
-
-        case 3:
-            if (ewk->wu.routine_no[1] != 1 && ewk->wu.routine_no[2] != 1) {
-                ewk->wu.routine_no[2] = 1;
-                ewk->wu.routine_no[3] = 2;
-            }
-
-            break;
-
-        case 1:
-            if (ewk->wu.routine_no[1] != 1 || ewk->wu.routine_no[2] != 0) {
-                ewk->wu.routine_no[1] = 0;
-                ewk->wu.routine_no[2] = 0;
-                ewk->wu.routine_no[3] = 0;
-            }
-
-            break;
-
-        case 2:
-            if (ewk->wu.routine_no[1] != 1 || ewk->wu.routine_no[2] != 0) {
-                ewk->wu.routine_no[1] = 0;
-                ewk->wu.routine_no[2] = 1;
-                ewk->wu.routine_no[3] = 0;
-            }
-
-            break;
-        }
+        select_c2_first_process_state(ewk, twk);
 
         ewk->wu.old_pos[0] = ewk->wu.old_pos[1] = 0;
 
