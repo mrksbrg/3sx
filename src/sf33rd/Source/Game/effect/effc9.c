@@ -29,6 +29,10 @@ const s16 judge_gals_kage_tbl[8][4];
 const u8 ag_sel_table[22][4][4];
 u32* ag_char_table[];
 
+static s32 should_end_effect(const WORK_Other* ewk) {
+    return (ewk->wu.dead_f == 1) || (Suicide[0] != 0);
+}
+
 void effect_C9_move(WORK_Other* ewk) {
     s16 scrc;
 
@@ -65,7 +69,7 @@ void effect_C9_move(WORK_Other* ewk) {
         break;
 
     case 1:
-        if ((ewk->wu.dead_f == 1) || (Suicide[0] != 0)) {
+        if (should_end_effect(ewk)) {
             ewk->wu.disp_flag = 0;
             ewk->wu.routine_no[0] = 2;
             break;

@@ -17,6 +17,10 @@
 
 void effect_j6_hit_sub(WORK_Other* ewk);
 
+static s32 can_update_effect(void) {
+    return !EXE_flag && !Game_pause && !EXE_obroll;
+}
+
 void effect_J6_move(WORK_Other* ewk) {
     WORK_Other* oya_ptr;
 
@@ -49,7 +53,7 @@ void effect_J6_move(WORK_Other* ewk) {
         break;
 
     case 2:
-        if (!EXE_flag && !Game_pause && !EXE_obroll) {
+        if (can_update_effect()) {
             effect_j6_hit_sub(ewk);
         }
 

@@ -34,6 +34,16 @@ const s16 eff12_data_tbl5[16] = { 0, 2, 8492, 575, 80, 74, 20, 0, 0, 2, 8492, 46
 const s16* scr_obj_data12[6] = { eff12_data_tbl0, eff12_data_tbl1, eff12_data_tbl2,
                                  eff12_data_tbl3, eff12_data_tbl4, eff12_data_tbl5 };
 
+static s32 game_is_active(void) {
+    return !EXE_flag && !Game_pause;
+}
+
+
+static s32 needs_large_render_region(s16 type, s16 index) {
+    return type == 3 && index == 2;
+}
+
+
 void effect_12_move(WORK_Other* ewk) {
     if (obr_no_disp_check()) {
         return;
@@ -53,7 +63,7 @@ void effect_12_move(WORK_Other* ewk) {
             break;
         }
 
-        if (!EXE_flag && !Game_pause) {
+if (game_is_active()) {
             char_move(&ewk->wu);
         }
 
@@ -105,7 +115,7 @@ s32 effect_12_init(s16 type) {
         ewk->wu.my_mts = 7;
         ewk->wu.my_trans_mode = get_my_trans_mode(ewk->wu.my_mts);
 
-        if (type == 3 && i == 2) {
+        if (needs_large_render_region(type, i)) {
             ewk->wu.my_mr_flag = 1;
             ewk->wu.my_mr.size.x = 127;
             ewk->wu.my_mr.size.y = 127;

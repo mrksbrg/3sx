@@ -18,6 +18,16 @@
 #include "sf33rd/Source/Game/stage/bg_sub.h"
 #include "sf33rd/Source/Game/stage/ta_sub.h"
 
+static s32 game_is_active(void) {
+    return !EXE_flag && !Game_pause;
+}
+
+
+static s32 animation_can_advance(void) {
+    return !EXE_flag && !Game_pause;
+}
+
+
 void effect_82_move(WORK_Other* ewk) {
     WORK* oya_ptr = (WORK*)ewk->my_master;
     s16 work;
@@ -33,7 +43,7 @@ void effect_82_move(WORK_Other* ewk) {
         break;
 
     case 1:
-        if (!EXE_flag && !Game_pause) {
+        if (game_is_active()) {
             ewk->wu.old_rno[0]--;
             add_x_sub(&ewk->wu);
             add_y_sub(&ewk->wu);
@@ -55,7 +65,7 @@ void effect_82_move(WORK_Other* ewk) {
         break;
 
     case 2:
-        if (!EXE_flag && !Game_pause) {
+        if (animation_can_advance()) {
             char_move(&ewk->wu);
             add_x_sub(&ewk->wu);
             add_y_sub(&ewk->wu);

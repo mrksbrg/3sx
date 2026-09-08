@@ -17,6 +17,16 @@
 #include "sf33rd/Source/Game/stage/bg_sub.h"
 #include "sf33rd/Source/Game/stage/ta_sub.h"
 
+static s32 game_is_inactive(void) {
+    return EXE_flag || Game_pause;
+}
+
+
+static s32 effect_is_blocked_by_stage(void) {
+    return EXE_flag || Game_pause || bg_w.bgw[1].xy[1].disp.pos >= 104;
+}
+
+
 void effect_34_move(WORK_Other* ewk) {
     WORK* oya_ptr = (WORK*)ewk->my_master;
 
@@ -35,7 +45,7 @@ void effect_34_move(WORK_Other* ewk) {
         break;
 
     case 1:
-        if (EXE_flag || Game_pause || bg_w.bgw[1].xy[1].disp.pos >= 104) {
+        if (effect_is_blocked_by_stage()) {
             suzi_sync_pos_set(ewk);
             sort_push_request(&ewk->wu);
             break;
@@ -54,7 +64,7 @@ void effect_34_move(WORK_Other* ewk) {
         break;
 
     case 2:
-        if (EXE_flag || Game_pause) {
+if (game_is_inactive()) {
             suzi_sync_pos_set(ewk);
             sort_push_request(&ewk->wu);
             break;

@@ -16,6 +16,17 @@
 #include "sf33rd/Source/Game/stage/bg_sub.h"
 #include "sf33rd/Source/Game/stage/ta_sub.h"
 
+static s32 game_is_active(void) {
+    return !EXE_flag && !Game_pause;
+}
+
+
+static s32 player_reached_target_state(const WORK_Other* ewk) {
+    return plw[ewk->master_id].wu.routine_no[2] == 1 &&
+           plw[ewk->master_id].wu.routine_no[3] == 0;
+}
+
+
 void effect_97_move(WORK_Other* ewk) {
     switch (ewk->wu.routine_no[0]) {
     case 0:
@@ -25,10 +36,10 @@ void effect_97_move(WORK_Other* ewk) {
         /* fallthrough */
 
     case 1:
-        if (!EXE_flag && !Game_pause) {
+        if (game_is_active()) {
             char_move(&ewk->wu);
 
-            if (plw[ewk->master_id].wu.routine_no[2] == 1 && plw[ewk->master_id].wu.routine_no[3] == 0) {
+            if (player_reached_target_state(ewk)) {
                 ewk->wu.routine_no[0]++;
                 ewk->wu.old_rno[0] = 16;
             }

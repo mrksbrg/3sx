@@ -28,6 +28,16 @@ const s8 eff94_2000_1_tbl[16] = { 0, 1, 0, 0, 1, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 1
 
 const s16 eff94_3000_tbl[4][3] = { { 328, 304, 0 }, { 288, 240, 1 }, { 280, 320, 0 }, { 352, 264, 1 } };
 
+static s32 can_update_effect(void) {
+    return !EXE_flag && !Game_pause && !EXE_obroll;
+}
+
+
+static s32 should_spawn_extra_effects(s16 work, const WORK_Other* ewk) {
+    return work == 7 && ewk->wu.old_rno[3];
+}
+
+
 void effect_94_move(WORK_Other* ewk) {
     void (*const eff94_move_jp[5])(WORK_Other*) = {
         eff94_0000, eff94_1000, eff94_2000, eff94_3000, eff94_4000,
@@ -41,7 +51,7 @@ void effect_94_move(WORK_Other* ewk) {
         break;
 
     case 1:
-        if (!EXE_flag && !Game_pause && !EXE_obroll) {
+        if (can_update_effect()) {
             eff94_move_jp[ewk->wu.routine_no[1]](ewk);
         }
 
@@ -180,7 +190,7 @@ void eff94_2000_1(WORK_Other* ewk) {
         return;
     }
 
-    if (work == 7 && ewk->wu.old_rno[3]) {
+    if (should_spawn_extra_effects(work, ewk)) {
         effect_94_init(4);
         effect_94_init(4);
         effect_94_init(4);

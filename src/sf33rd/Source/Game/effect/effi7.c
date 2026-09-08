@@ -31,6 +31,10 @@ const s16 ex_sign_data[69][4] = {
     { -56, 65, 121, 0 }, { -37, 78, 121, 1 }, { -18, 58, 121, 1 },  { -42, 84, 121, 1 }
 };
 
+static s32 game_is_active(void) {
+    return EXE_flag == 0 && Game_pause == 0;
+}
+
 void effect_I7_move(WORK_Other* ewk) {
     PLW* mwk = (PLW*)ewk->my_master;
 
@@ -53,7 +57,7 @@ void effect_I7_move(WORK_Other* ewk) {
             break;
         }
 
-        if (EXE_flag == 0 && Game_pause == 0) {
+        if (game_is_active()) {
             if (ewk->wu.hit_stop) {
                 ewk->wu.hit_stop--;
             } else {

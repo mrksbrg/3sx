@@ -13,14 +13,27 @@
 #include "sf33rd/Source/Game/system/sysdir.h"
 #include "sf33rd/Source/Game/system/work_sys.h"
 
+static s32 should_disable_new_challenger_vibration(const PLW* mwk) {
+    return mwk->wu.id == New_Challenger && Training[0].contents[0][0][0] != 4;
+}
+
+
+static s32 effect_should_stop(const WORK_Other* ewk, const PLW* mwk) {
+    return (mwk->wu.E3_work_index != ewk->wu.myself || ewk->wu.dead_f != 0) ||
+           (Mode_Type != MODE_NORMAL_TRAINING && Mode_Type != MODE_PARRY_TRAINING);
+}
+
+static s32 is_airborne_action_window(const PLW* mwk) {
+    return (mwk->wu.routine_no[1] == 1 && mwk->wu.routine_no[2] >= 4) && mwk->wu.routine_no[2] < 14;
+}
+
 void effect_E3_move(WORK_Other* ewk) {
     PLW* mwk = (PLW*)ewk->my_master;
     s16 num;
 
     switch (ewk->wu.routine_no[0]) {
     case 0:
-        if ((mwk->wu.E3_work_index != ewk->wu.myself || ewk->wu.dead_f != 0) ||
-            (Mode_Type != MODE_NORMAL_TRAINING && Mode_Type != MODE_PARRY_TRAINING)) {
+        if (effect_should_stop(ewk, mwk)) {
             ewk->wu.routine_no[0] = 2;
             break;
         }
@@ -35,7 +48,7 @@ void effect_E3_move(WORK_Other* ewk) {
             break;
         }
 
-        if (mwk->wu.id == New_Challenger && Training[0].contents[0][0][0] != 4) {
+        if (should_disable_new_challenger_vibration(mwk)) {
             vib_sel[mwk->wu.id] = 0;
         }
 
@@ -127,8 +140,7 @@ void effect_E3_move(WORK_Other* ewk) {
         /* fallthrough */
 
     case 1:
-        if ((mwk->wu.E3_work_index != ewk->wu.myself || ewk->wu.dead_f != 0) ||
-            (Mode_Type != MODE_NORMAL_TRAINING && Mode_Type != MODE_PARRY_TRAINING)) {
+        if (effect_should_stop(ewk, mwk)) {
             ewk->wu.routine_no[0] = 2;
             break;
         }
@@ -234,7 +246,7 @@ void effect_E3_move(WORK_Other* ewk) {
                 break;
 
             case 4:
-                if ((mwk->wu.routine_no[1] == 1 && mwk->wu.routine_no[2] >= 4) && mwk->wu.routine_no[2] < 14) {
+                if (is_airborne_action_window(mwk)) {
                     ewk->wu.dm_vital = 1;
                     ewk->wu.dir_timer = 12;
                 } else {

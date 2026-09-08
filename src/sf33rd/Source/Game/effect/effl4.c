@@ -18,6 +18,10 @@
 const s16 effl4_data_tbl[24] = { 143, 96,  73, 9,  223, 120, 73, 10, 303, 104, 73, 11,
                                  367, 112, 73, 12, 399, 144, 73, 13, 487, 120, 73, 14 };
 
+static s32 game_is_active(void) {
+    return !EXE_flag && !Game_pause;
+}
+
 void effect_L4_move(WORK_Other* ewk) {
     switch (ewk->wu.routine_no[0]) {
     case 0:
@@ -27,7 +31,7 @@ void effect_L4_move(WORK_Other* ewk) {
         break;
 
     case 1:
-        if (!EXE_flag && !Game_pause) {
+        if (game_is_active()) {
             char_move(&ewk->wu);
         }
 

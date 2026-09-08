@@ -33,6 +33,27 @@ void (*const EFFK6_Jmp_Tbl[6])() = {
     EFFK6_WAIT, EFFK6_SLIDE_IN, EFFK6_SLIDE_OUT, EFFK6_SUDDENLY, EFFK6_MOVE, EFFK6_KILL
 };
 
+static s32 uses_special_direction(const WORK_Other* ewk) {
+    return ewk->wu.dir_old == 27 || ewk->wu.dir_old == 28;
+}
+
+static s16 get_center_name_position(s16 master_id, s16 get_type, s16 play_style) {
+    if (play_style == 1) {
+        if (get_type == 0) {
+            return master_id == 0 ? -160 : 160;
+        }
+
+        return master_id == 0 ? 44 : 189;
+    }
+
+    if (get_type == 0) {
+        return -152;
+    }
+
+    return 208;
+}
+
+
 void effect_K6_move(WORK_Other* ewk) {
     EFFK6_Jmp_Tbl[ewk->wu.routine_no[0]](ewk);
     ewk->wu.position_x = ewk->wu.xyz[0].disp.pos & 0xFFFF;
@@ -64,7 +85,7 @@ void EFFK6_SLIDE_IN(WORK_Other* ewk) {
         ewk->wu.routine_no[1]++;
         ewk->wu.disp_flag = 1;
 
-        if (ewk->wu.dir_old == 27 || ewk->wu.dir_old == 28) {
+        if (uses_special_direction(ewk)) {
             xx = ID_of_Face[Cursor_Y[ewk->master_id]][Cursor_X[ewk->master_id]];
             Setup_1st_PosK6(ewk, xx, Play_Type);
         } else {
@@ -189,7 +210,7 @@ void EFFK6_SUDDENLY(WORK_Other* ewk) {
         break;
 
     default:
-        if (ewk->wu.dir_old == 27 || ewk->wu.dir_old == 28) {
+        if (uses_special_direction(ewk)) {
             Order[ewk->wu.dir_old] = 4;
             ewk->wu.routine_no[0] = 4;
             ewk->wu.routine_no[6] = 0;
@@ -313,19 +334,7 @@ s16 Get_PosK6(WORK_Other* ewk, s16 Who, s16 Get_Type, s16 Play_Style) {
 
         case 31:
         case 35:
-            if (Play_Style == 1) {
-                if (Get_Type == 0) {
-                    return -160;
-                } else {
-                    return 44;
-                }
-            } else {
-                if (Get_Type == 0) {
-                    return -152;
-                } else {
-                    return 208;
-                }
-            }
+            return get_center_name_position(ewk->master_id, Get_Type, Play_Style);
         }
     } else {
         switch (ewk->wu.direction) {
@@ -337,19 +346,7 @@ s16 Get_PosK6(WORK_Other* ewk, s16 Who, s16 Get_Type, s16 Play_Style) {
 
         case 31:
         case 35:
-            if (Play_Style == 1) {
-                if (Get_Type == 0) {
-                    return 160;
-                } else {
-                    return 189;
-                }
-            } else {
-                if (Get_Type == 0) {
-                    return -152;
-                } else {
-                    return 208;
-                }
-            }
+            return get_center_name_position(ewk->master_id, Get_Type, Play_Style);
         }
     }
 }

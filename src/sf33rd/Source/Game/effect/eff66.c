@@ -35,6 +35,12 @@ const s16 EFF66_Half_OBJ_Data[15][7] = {
 
 void (*const EFF66_Jmp_Tbl[7])();
 
+static s32 uses_standard_priority(const WORK_Other* ewk) {
+    return ewk->master_priority != -0x3FFC && ewk->master_priority != -0x3FFB &&
+           ewk->master_priority != -0x3FF6;
+}
+
+
 void effect_66_move(WORK_Other* ewk) {
     if (Menu_Suicide[ewk->master_player]) {
         push_effect_work(&ewk->wu);
@@ -52,7 +58,7 @@ void effect_66_move(WORK_Other* ewk) {
         return;
     }
 
-    if (ewk->master_priority != -0x3FFC && ewk->master_priority != -0x3FFB && ewk->master_priority != -0x3FF6) {
+    if (uses_standard_priority(ewk)) {
         ewk->wu.position_x = ewk->wu.xyz[0].disp.pos & 0xFFFF;
         ewk->wu.position_y = ewk->wu.xyz[1].disp.pos & 0xFFFF;
     }

@@ -91,6 +91,11 @@ const s8* Menu_Letter_Data[67] = { "ARCADE",
 
 void (*const EFF61_Jmp_Tbl[4])() = { EFF61_WAIT, EFF61_SLIDE_IN, EFF61_SLIDE_OUT, EFF61_SUDDENLY };
 
+static s32 uses_primary_character_range(const WORK_Other_CONN* ewk) {
+    return ewk->wu.char_index >= 37 && ewk->wu.char_index < 43;
+}
+
+
 void effect_61_move(WORK_Other_CONN* ewk) {
     if (Check_Die_61((WORK_Other*)ewk)) {
         push_effect_work(&ewk->wu);
@@ -106,7 +111,7 @@ void effect_61_move(WORK_Other_CONN* ewk) {
     ewk->wu.position_x = ewk->wu.xyz[0].disp.pos & 0xFFFF;
     ewk->wu.position_y = ewk->wu.xyz[1].disp.pos & 0xFFFF;
 
-    if (ewk->wu.char_index >= 37 && ewk->wu.char_index < 43) {
+    if (uses_primary_character_range(ewk)) {
         if (Menu_Cursor_Y[ewk->master_id] == ewk->wu.type) {
             if (Menu_Cursor_X[ewk->master_id]) {
                 ewk->wu.my_clear_level = 0;

@@ -22,10 +22,14 @@
 #include "sf33rd/Source/Game/stage/bg_sub.h"
 #include "sf33rd/Source/Game/stage/ta_sub.h"
 
+static s32 game_is_active(void) {
+    return !EXE_flag && !Game_pause;
+}
+
 void effect_C5_move(WORK_Other* ewk) {
     switch (ewk->wu.routine_no[0]) {
     case 0:
-        if (!EXE_flag && !Game_pause) {
+        if (game_is_active()) {
             ewk->wu.routine_no[0]++;
             ewk->wu.disp_flag = 1;
             set_char_move_init(&ewk->wu, 0, ewk->wu.char_index);

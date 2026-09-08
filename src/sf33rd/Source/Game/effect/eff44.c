@@ -49,6 +49,16 @@ const s16 eff44_data_tbl9[16] = { 0, 2, 8492, 720, 80, 83, 5, 0, 0, 2, 300, 286,
 const s16* scr_obj_data44[10] = { eff44_data_tbl0, eff44_data_tbl1, eff44_data_tbl2, eff44_data_tbl3, eff44_data_tbl4,
                                   eff44_data_tbl5, eff44_data_tbl6, eff44_data_tbl7, eff44_data_tbl8, eff44_data_tbl9 };
 
+static s32 can_update_effect(void) {
+    return !EXE_flag && !Game_pause && !EXE_obroll;
+}
+
+
+static s32 needs_large_render_region(s16 type, s16 index) {
+    return type == 6 && index == 2;
+}
+
+
 void effect_44_move(WORK_Other* ewk) {
     if (obr_no_disp_check()) {
         return;
@@ -68,7 +78,7 @@ void effect_44_move(WORK_Other* ewk) {
             break;
         }
 
-        if (!EXE_flag && !Game_pause && !EXE_obroll) {
+if (can_update_effect()) {
             char_move(&ewk->wu);
         }
 
@@ -126,7 +136,7 @@ s32 effect_44_init(s16 type) {
         ewk->wu.my_mts = 7;
         ewk->wu.my_trans_mode = get_my_trans_mode(ewk->wu.my_mts);
 
-        if (type == 6 && i == 2) {
+        if (needs_large_render_region(type, i)) {
             ewk->wu.my_mr_flag = 1;
             ewk->wu.my_mr.size.x = 127;
             ewk->wu.my_mr.size.y = 127;

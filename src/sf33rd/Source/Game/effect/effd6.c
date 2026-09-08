@@ -31,6 +31,10 @@ const s16 hana_delta_hosei[4][6] = { { -64, -72, -80, -72, -88, -80 },
                                      { -64, -72, -80, -72, -88, -80 },
                                      { -64, -72, -80, -72, -88, -80 } };
 
+static s32 game_is_active(void) {
+    return EXE_flag == 0 && Game_pause == 0;
+}
+
 void effect_D6_move(WORK_Other* ewk) {
     switch (ewk->wu.routine_no[0]) {
     case 0:
@@ -48,7 +52,7 @@ void effect_D6_move(WORK_Other* ewk) {
         }
 
         if (sa_stop_check() == 0) {
-            if (EXE_flag == 0 && Game_pause == 0) {
+            if (game_is_active()) {
                 switch (ewk->wu.routine_no[1]) {
                 case 0:
                     ewk->wu.dir_old += ewk->wu.dir_step;

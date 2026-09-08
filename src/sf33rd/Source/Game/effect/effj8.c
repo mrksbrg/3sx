@@ -17,6 +17,10 @@
 #include "sf33rd/Source/Game/stage/bg_sub.h"
 #include "sf33rd/Source/Game/stage/ta_sub.h"
 
+static s32 can_update_effect(void) {
+    return !EXE_flag && !Game_pause && !EXE_obroll;
+}
+
 void effect_J8_move(WORK_Other* ewk) {
     if (obr_no_disp_check()) {
         return;
@@ -36,7 +40,7 @@ void effect_J8_move(WORK_Other* ewk) {
             break;
         }
 
-        if (!EXE_flag && !Game_pause && !EXE_obroll) {
+        if (can_update_effect()) {
             dragonfly_move(ewk);
         }
 

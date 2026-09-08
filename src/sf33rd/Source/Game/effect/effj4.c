@@ -12,6 +12,10 @@
 #include "sf33rd/Source/Game/rendering/aboutspr.h"
 #include "sf33rd/Source/Game/stage/bg_data.h"
 
+static s32 should_end_effect(const WORK_Other* ewk) {
+    return ewk->wu.dead_f == 1 || Suicide[0] != 0;
+}
+
 void effect_J4_move(WORK_Other* ewk) {
     switch (ewk->wu.routine_no[0]) {
     case 0:
@@ -39,7 +43,7 @@ void effect_J4_move(WORK_Other* ewk) {
         break;
 
     case 1:
-        if (ewk->wu.dead_f == 1 || Suicide[0] != 0) {
+        if (should_end_effect(ewk)) {
             goto jump;
         }
 

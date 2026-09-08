@@ -13,6 +13,11 @@
 void push_image_buff(WORK_Other* wk, ImageBuff* image_buff);
 void init_image_buff(WORK_Other* wk, ImageBuff* image_buff);
 
+static s32 master_effect_has_finished(const WORK_Other* mwk) {
+    return mwk->wu.routine_no[0] >= 2 || mwk->wu.routine_no[1] >= 2;
+}
+
+
 void effect_I9_move(WORK_Other* ewk) {
     WORK* sub_w = (WORK*)ewk->wu.target_adrs;
     ImageBuff* image_buff = (ImageBuff*)(sub_w->routine_no);
@@ -39,7 +44,7 @@ void effect_I9_move(WORK_Other* ewk) {
             break;
         }
 
-        if (mwk->wu.routine_no[0] >= 2 || mwk->wu.routine_no[1] >= 2) {
+        if (master_effect_has_finished(mwk)) {
             ewk->wu.routine_no[0] = 2;
             ewk->wu.disp_flag = 0;
             break;

@@ -52,6 +52,10 @@ s32 effect_A0_init(s16 type, u16 disp_target, s16 pos_index, s16 old_rno, s16 ze
     return 0;
 }
 
+static s32 is_hidden_zero_digit(s16 zero, s16 digit) {
+    return zero == 0 && digit == 0;
+}
+
 void Setup_A0_Sub(WORK_Other_CONN* ewk, s16 old_rno, s16 zero) {
     ewk->num_of_conn = old_rno;
     ewk->conn[0].nx = 0;
@@ -63,13 +67,13 @@ void Setup_A0_Sub(WORK_Other_CONN* ewk, s16 old_rno, s16 zero) {
     case 3:
         ewk->conn[0].chr = ewk->wu.old_rno[2] + 0x70D7;
 
-        if (zero == 0 && ewk->wu.old_rno[2] == 0) {
+        if (is_hidden_zero_digit(zero, ewk->wu.old_rno[2])) {
             ewk->conn[0].ny -= 256;
         }
 
         ewk->conn[1].chr = ewk->wu.old_rno[1] + 0x70D7;
 
-        if (zero == 0 && ewk->wu.old_rno[1] == 0 && ewk->wu.old_rno[2] == 0) {
+        if (is_hidden_zero_digit(zero, ewk->wu.old_rno[1]) && ewk->wu.old_rno[2] == 0) {
             ewk->conn[1].ny -= 256;
         }
 
@@ -81,7 +85,7 @@ void Setup_A0_Sub(WORK_Other_CONN* ewk, s16 old_rno, s16 zero) {
     case 2:
         ewk->conn[0].chr = ewk->wu.old_rno[1] + 0x70D7;
 
-        if (zero == 0 && ewk->wu.old_rno[1] == 0) {
+        if (is_hidden_zero_digit(zero, ewk->wu.old_rno[1])) {
             ewk->conn[1].ny -= 256;
         }
 

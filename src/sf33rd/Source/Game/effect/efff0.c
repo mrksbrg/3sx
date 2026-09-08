@@ -9,11 +9,16 @@
 #include "sf33rd/Source/Game/rendering/aboutspr.h"
 #include "sf33rd/Source/Game/rendering/texcash.h"
 
+static s32 should_end_effect(const WORK_Other* ewk, const WORK* mwk) {
+    return (ewk->wu.dead_f == 1) || (ewk->wu.dir_old != mwk->now_koc);
+}
+
+
 void effect_F0_move(WORK_Other* ewk) {
     WORK* mwk = (WORK*)ewk->my_master;
 
     if (!ewk->wu.routine_no[0]) {
-        if ((ewk->wu.dead_f == 1) || (ewk->wu.dir_old != mwk->now_koc)) {
+        if (should_end_effect(ewk, mwk)) {
             ewk->wu.disp_flag = 0;
             push_effect_work(&ewk->wu);
             return;

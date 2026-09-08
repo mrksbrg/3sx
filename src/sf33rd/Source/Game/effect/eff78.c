@@ -17,6 +17,16 @@
 #include "sf33rd/Source/Game/stage/bg.h"
 #include "sf33rd/Source/Game/stage/ta_sub.h"
 
+static s32 can_update_crow_fuss(WORK_Other* ewk) {
+    return !EXE_flag && !Game_pause && !EXE_obroll && crow_fuss_check(ewk);
+}
+
+
+static s32 effect_can_advance(void) {
+    return !EXE_flag && !Game_pause && !EXE_obroll;
+}
+
+
 void effect_78_move(WORK_Other* ewk) {
     switch (ewk->wu.routine_no[0]) {
     case 0:
@@ -26,7 +36,7 @@ void effect_78_move(WORK_Other* ewk) {
         break;
 
     case 1:
-        if (!EXE_flag && !Game_pause && !EXE_obroll && crow_fuss_check(ewk)) {
+if (can_update_crow_fuss(ewk)) {
             char_move(&ewk->wu);
         }
 
@@ -34,7 +44,7 @@ void effect_78_move(WORK_Other* ewk) {
         break;
 
     case 2:
-        if (!EXE_flag && !Game_pause && !EXE_obroll) {
+        if (effect_can_advance()) {
             crow_fuss_move(ewk);
         }
 

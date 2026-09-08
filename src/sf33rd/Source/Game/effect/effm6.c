@@ -14,6 +14,10 @@
 #include "sf33rd/Source/Game/rendering/texcash.h"
 #include "sf33rd/Source/Game/stage/bg_sub.h"
 
+static s32 game_is_active(void) {
+    return !EXE_flag && !Game_pause;
+}
+
 void effect_M6_move(WORK_Other* ewk) {
     WORK_Other* oya = (WORK_Other*)ewk->my_master;
 
@@ -25,7 +29,7 @@ void effect_M6_move(WORK_Other* ewk) {
         break;
 
     case 1:
-        if (!EXE_flag && !Game_pause) {
+        if (game_is_active()) {
             if (oya->wu.routine_no[0] >= 2) {
                 ewk->wu.routine_no[0]++;
                 set_char_move_init(&ewk->wu, 0, 0x6A);

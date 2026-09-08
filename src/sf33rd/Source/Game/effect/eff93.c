@@ -19,6 +19,11 @@ extern const Eff93_Jmp_Tbl_t Eff93_Jmp_Tbl[4];
 
 // Funcs
 
+static s32 background_reached_target(s32 arrived_x, s32 arrived_y) {
+    return (arrived_x != 0) && (arrived_y != 0);
+}
+
+
 void effect_93_move(WORK_Other* ewk) {
     Eff93_Jmp_Tbl[ewk->wu.routine_no[0]](ewk);
 }
@@ -105,7 +110,7 @@ void Eff93_SLIDE_R(WORK_Other* ewk) {
             arrived_y = 1;
         }
 
-        if ((arrived_x != 0) && (arrived_y != 0)) {
+        if (background_reached_target(arrived_x, arrived_y)) {
             Face_Move = 0;
             push_effect_work(&ewk->wu);
         }

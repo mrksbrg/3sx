@@ -16,6 +16,11 @@
 void K7_move_type_0(WORK_Other* ewk, PLW* mwk);
 s16 K7_mt0_rebirth_check(PLW* mwk);
 
+static s32 should_end_effect(const WORK_Other* ewk, const PLW* mwk) {
+    return ewk->wu.dead_f != 0 || mwk->metamor_index != ewk->wu.myself;
+}
+
+
 void effect_K7_move(WORK_Other* ewk) {
     PLW* mwk = (PLW*)ewk->my_master;
 
@@ -25,7 +30,7 @@ void effect_K7_move(WORK_Other* ewk) {
         break;
 
     case 1:
-        if (ewk->wu.dead_f != 0 || mwk->metamor_index != ewk->wu.myself) {
+        if (should_end_effect(ewk, mwk)) {
             ewk->wu.routine_no[0] = 3;
             metamor_color_restore(mwk->wu.id);
             mwk->metamorphose = 0;

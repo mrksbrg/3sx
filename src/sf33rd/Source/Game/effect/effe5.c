@@ -49,6 +49,31 @@ const u16 illusion_setup_table[13][2] = {
 s32 check_new_after_image(WORK_Other* ewk, PLW* mwk);
 void setup_illusion_data(WORK_Other* ewk, PLW* mwk);
 
+static s32 uses_alternate_block_image(const PLW* mwk) {
+    return mwk->image_data_index == 11 && mwk->kind_of_blocking == 2;
+}
+
+static s32 after_image_should_reset(WORK_Other* ewk, const PLW* mwk) {
+    return (ewk->wu.dir_old & 1 && EXE_flag == 0 && Game_pause == 0 && mwk->wu.hit_stop <= 0 &&
+            --ewk->wu.direction == 0) ||
+           (ewk->wu.dir_old & 2 &&
+            (ewk->wu.routine_no[5] != mwk->wu.routine_no[1] ||
+             ewk->wu.routine_no[6] != mwk->wu.routine_no[2]) &&
+            (mwk->image_data_index != 11 || mwk->wu.routine_no[1] != 4 || mwk->wu.routine_no[3] != 0)) ||
+           (ewk->wu.dir_old & 4 && mwk->sa->ok != -1) ||
+           (ewk->wu.dir_old & 8 && ((WORK*)mwk->wu.target_adrs)->routine_no[1] != 4 &&
+            ((WORK*)mwk->wu.target_adrs)->routine_no[1] != 2) ||
+           (ewk->wu.dir_old & 0x10 && mwk->wu.routine_no[1] != 4 && mwk->wu.routine_no[1] != 2) ||
+           (ewk->wu.dir_old & 0x20 && ewk->wu.total_att_set != ((WORK*)mwk->wu.target_adrs)->kind_of_waza) ||
+           (ewk->wu.dir_old & 0x40 && ewk->wu.total_paring != mwk->wu.kind_of_waza) ||
+           (ewk->wu.dir_old & 0x80 && pcon_dp_flag) || !mwk->image_setup_flag;
+}
+
+static s32 after_image_timer_expired(WORK_Other* ewk) {
+    return EXE_flag == 0 && Game_pause == 0 && --ewk->wu.dir_step <= 0;
+}
+
+
 void effect_E5_move(WORK_Other* ewk) {
     PLW* mwk = (PLW*)ewk->my_master;
     s16 i;
@@ -65,7 +90,7 @@ void effect_E5_move(WORK_Other* ewk) {
             break;
         }
 
-        if (mwk->image_data_index == 11 && mwk->kind_of_blocking == 2) {
+        if (uses_alternate_block_image(mwk)) {
             mwk->image_data_index = 33;
         }
 
@@ -92,18 +117,7 @@ void effect_E5_move(WORK_Other* ewk) {
             goto jump;
         }
 
-        if ((ewk->wu.dir_old & 1 && EXE_flag == 0 && Game_pause == 0 && mwk->wu.hit_stop <= 0 &&
-             --ewk->wu.direction == 0) ||
-            (ewk->wu.dir_old & 2 &&
-             (ewk->wu.routine_no[5] != mwk->wu.routine_no[1] || ewk->wu.routine_no[6] != mwk->wu.routine_no[2]) &&
-             (mwk->image_data_index != 11 || mwk->wu.routine_no[1] != 4 || mwk->wu.routine_no[3] != 0)) ||
-            (ewk->wu.dir_old & 4 && mwk->sa->ok != -1) ||
-            (ewk->wu.dir_old & 8 && ((WORK*)mwk->wu.target_adrs)->routine_no[1] != 4 &&
-             ((WORK*)mwk->wu.target_adrs)->routine_no[1] != 2) ||
-            (ewk->wu.dir_old & 0x10 && mwk->wu.routine_no[1] != 4 && mwk->wu.routine_no[1] != 2) ||
-            (ewk->wu.dir_old & 0x20 && ewk->wu.total_att_set != ((WORK*)mwk->wu.target_adrs)->kind_of_waza) ||
-            (ewk->wu.dir_old & 0x40 && ewk->wu.total_paring != mwk->wu.kind_of_waza) ||
-            (ewk->wu.dir_old & 0x80 && pcon_dp_flag) || !mwk->image_setup_flag) {
+        if (after_image_should_reset(ewk, mwk)) {
             mwk->image_setup_flag = 0;
         jump:
             ewk->wu.routine_no[0] = ewk->wu.routine_no[1] = ewk->wu.routine_no[2] = 0;
@@ -130,7 +144,7 @@ void effect_E5_move(WORK_Other* ewk) {
                 /* fallthrough */
 
             case 2:
-                if (EXE_flag == 0 && Game_pause == 0 && --ewk->wu.dir_step <= 0) {
+                if (after_image_timer_expired(ewk)) {
                     effect_E7_init(ewk, mwk);
                     ewk->wu.routine_no[2] = 1;
                 }

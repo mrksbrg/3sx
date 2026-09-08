@@ -40,6 +40,11 @@ const s32 eff24_quake_speed_x_tbl[4][8] = { { 0x1200, 0x1200, 0x1400, 0x1400, 0x
 
 const s16 dog24_x_data[8] = { 0, 0, 0, 6, 10, 16, 32, 40 };
 
+static s32 can_update_effect(void) {
+    return !EXE_flag && !Game_pause && !EXE_obroll;
+}
+
+
 void effect_24_move(WORK_Other* ewk) {
     switch (ewk->wu.routine_no[0]) {
     case 0:
@@ -50,7 +55,7 @@ void effect_24_move(WORK_Other* ewk) {
         break;
 
     case 1:
-        if (!EXE_flag && !Game_pause && !EXE_obroll) {
+if (can_update_effect()) {
             eff24_quake_sub(ewk);
         }
 
@@ -105,7 +110,9 @@ void eff24_quake_sub(WORK_Other* ewk) {
         ewk->wu.xyz[1].disp.pos = ewk->wu.old_rno[2];
         ewk->wu.xyz[1].disp.low = 0;
 
-        if (ewk->wu.type == 0 && ewk->wu.old_rno[1] > 2) {
+        const s32 primary_effect_is_past_intro = ewk->wu.type == 0 && ewk->wu.old_rno[1] > 2;
+
+        if (primary_effect_is_past_intro) {
             ewk->wu.routine_no[1]++;
             dog24_data_set(ewk);
 

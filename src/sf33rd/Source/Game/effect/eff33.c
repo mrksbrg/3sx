@@ -17,6 +17,16 @@
 
 const s16 WinLoseID[2][2];
 
+static s32 game_is_active(void) {
+    return !EXE_flag && !Game_pause;
+}
+
+
+static s32 judgement_is_blocked(void) {
+    return EXE_flag || Game_pause || pcon_rno[2] != 1 || Event_Judge_Gals != -1 || !Complete_Judgement;
+}
+
+
 void effect_33_move(WORK_Other* ewk) {
     switch (ewk->wu.routine_no[0]) {
     case 0:
@@ -34,7 +44,7 @@ void effect_33_move(WORK_Other* ewk) {
         suzi_sync_pos_set(ewk);
         sort_push_request(&ewk->wu);
 
-        if (EXE_flag || Game_pause || pcon_rno[2] != 1 || Event_Judge_Gals != -1 || !Complete_Judgement) {
+        if (judgement_is_blocked()) {
             break;
         }
 
@@ -42,7 +52,7 @@ void effect_33_move(WORK_Other* ewk) {
         break;
 
     case 2:
-        if (!EXE_flag && !Game_pause) {
+if (game_is_active()) {
             ewk->wu.routine_no[0]++;
             ewk->wu.char_index = WinLoseID[ewk->master_id][Winner_id] + 10;
             set_char_move_init(&ewk->wu, 0, ewk->wu.char_index);

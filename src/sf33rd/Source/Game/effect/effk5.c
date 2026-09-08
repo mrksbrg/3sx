@@ -63,6 +63,19 @@ u32 decode_mvsw(u16 flag);
 
 // Funcs
 
+static s32 image_data_needs_refresh(const WORK_Other* ewk, const WORK* mwk) {
+    return mwk->K5_init_flag || (ewk->wu.old_rno[1] != mwk->cg_hit_ix);
+}
+
+static s32 frame_uses_extended_timing(const WORK* mwk) {
+    return (mwk->cgd_type != 2) && (mwk->cg_ja.mf.full & 0x1010);
+}
+
+static s32 encoded_delay_is_valid(u8 delay) {
+    return (delay != 0xFF) || (delay < 0xC8);
+}
+
+
 void effect_K5_move(WORK_Other* ewk) {
     WORK* mwk = (WORK*)ewk->my_master;
     MVJ* mvj;
@@ -109,7 +122,7 @@ void effect_K5_move(WORK_Other* ewk) {
         if (mwk->K5_exec_ok) {
             mwk->K5_exec_ok = 0;
 
-            if (mwk->K5_init_flag || (ewk->wu.old_rno[1] != mwk->cg_hit_ix)) {
+            if (image_data_needs_refresh(ewk, mwk)) {
                 mwk->K5_init_flag = 0;
                 ewk->wu.old_rno[1] = mwk->cg_hit_ix;
                 ewk->wu.routine_no[1] = 0;
@@ -166,7 +179,7 @@ void get_okuri_time(WORK* ewk, WORK* mwk, MVJ* mvj) {
     s16 exc;
     u16 now_mf;
 
-    if ((mwk->cgd_type != 2) && (mwk->cg_ja.mf.full & 0x1010)) {
+    if (frame_uses_extended_timing(mwk)) {
         now_mf = mwk->cg_ja.mf.full;
         exc = 0;
         ewk->old_rno[0] = mwk->cg_ctr;
@@ -182,7 +195,7 @@ void get_okuri_time(WORK* ewk, WORK* mwk, MVJ* mvj) {
                 ewk->cg_hit_ix = st.w.h & 0x1FF;
 
                 if (ewk->old_rno[1] == ewk->cg_hit_ix) {
-                    if ((gotcp.cpc[1] != 0xFF) || (gotcp.cpc[1] < 0xC8)) {
+                    if (encoded_delay_is_valid(gotcp.cpc[1])) {
                         ewk->old_rno[0] += gotcp.cpc[1];
                     }
 

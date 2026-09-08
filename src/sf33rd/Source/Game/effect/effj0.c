@@ -10,6 +10,11 @@
 #include "sf33rd/Source/Game/engine/workuser.h"
 #include "sf33rd/Source/Game/rendering/aboutspr.h"
 
+static s32 master_effect_has_finished(const WORK_Other* mwk) {
+    return mwk->wu.routine_no[0] >= 2 || mwk->wu.routine_no[1] >= 2;
+}
+
+
 void effect_J0_move(WORK_Other* ewk) {
     WORK_Other* mwk = (WORK_Other*)ewk->my_master;
     WORK_Other* cwk = (WORK_Other*)ewk->wu.target_adrs;
@@ -31,7 +36,7 @@ void effect_J0_move(WORK_Other* ewk) {
             break;
         }
 
-        if (mwk->wu.routine_no[0] >= 2 || mwk->wu.routine_no[1] >= 2) {
+        if (master_effect_has_finished(mwk)) {
             ewk->wu.routine_no[0] = 2;
             ewk->wu.disp_flag = 0;
             break;

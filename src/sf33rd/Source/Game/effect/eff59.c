@@ -28,6 +28,11 @@ void EFF59_Trans(WORK_Other* ewk);
 void Check_Under_Name(WORK_Other* ewk);
 s32 Check_Break_Into_59(WORK_Other* ewk);
 
+static s32 break_check_is_irrelevant(const WORK_Other* ewk) {
+    return ewk->wu.dm_vital != 4 || ewk->wu.routine_no[0] == 4;
+}
+
+
 void effect_59_move(WORK_Other* ewk) {
     WORK_Other* mwk = (WORK_Other*)ewk->my_master;
 
@@ -88,8 +93,13 @@ void effect_59_move(WORK_Other* ewk) {
     EFF59_Trans(ewk);
 }
 
+static s32 is_eff59_damage_state(const WORK_Other* ewk) {
+    return ewk->wu.dm_vital == 4 || ewk->wu.dm_vital == 5;
+}
+
+
 void EFF59_Trans(WORK_Other* ewk) {
-    if (ewk->wu.dm_vital == 4 || ewk->wu.dm_vital == 5) {
+if (is_eff59_damage_state(ewk)) {
         sort_push_requestA(&ewk->wu);
     } else {
         sort_push_request4(&ewk->wu);
@@ -170,7 +180,7 @@ s32 effect_59_init(WORK_Other* mwk, s16 Synchro_BG, s16 ID, s16 direction) {
 }
 
 s32 Check_Break_Into_59(WORK_Other* ewk) {
-    if (ewk->wu.dm_vital != 4 || ewk->wu.routine_no[0] == 4) {
+    if (break_check_is_irrelevant(ewk)) {
         return 0;
     }
 

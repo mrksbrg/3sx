@@ -15,6 +15,16 @@
 
 const s16 eff71_time_tbl[8] = { 2, 8, 12, 9, 4, 6, 50, 3 };
 
+static s32 can_update_effect(void) {
+    return !EXE_flag && !Game_pause && !EXE_obroll;
+}
+
+
+static s32 effect_can_advance(void) {
+    return !EXE_flag && !Game_pause && !EXE_obroll;
+}
+
+
 void effect_71_move(WORK_Other* ewk) {
     s16 work;
 
@@ -24,7 +34,7 @@ void effect_71_move(WORK_Other* ewk) {
 
     switch (ewk->wu.routine_no[0]) {
     case 0:
-        if (!EXE_flag && !Game_pause && !EXE_obroll) {
+if (can_update_effect()) {
             ewk->wu.old_rno[0]--;
 
             if (ewk->wu.old_rno[0] <= 0) {
@@ -39,7 +49,7 @@ void effect_71_move(WORK_Other* ewk) {
         break;
 
     case 1:
-        if (!EXE_flag && !Game_pause && !EXE_obroll) {
+        if (effect_can_advance()) {
             ewk->wu.routine_no[0] = 0;
             ewk->wu.old_rno[1] = 0;
             work = random_16();
