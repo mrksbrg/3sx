@@ -1681,6 +1681,26 @@ void jijii_win_tama_sub(WORK_Other* ewk) {
     ewk->wu.position_z = oya_ptr->position_z + 2;
 }
 
+static void advance_eff09_27000_landing(WORK_Other* ewk) {
+    if (!EXE_flag && !Game_pause) {
+        add_x_sub(&ewk->wu);
+        add_y_sub(&ewk->wu);
+
+        if (ewk->wu.xyz[1].disp.pos < -8) {
+            ewk->wu.routine_no[1]++;
+            ewk->wu.xyz[1].cal = -0x80000;
+            ewk->wu.mvxy.a[0].sp = -0x38000;
+            ewk->wu.mvxy.d[0].sp = 0;
+
+            if (ewk->wu.rl_flag) {
+                ewk->wu.mvxy.a[0].sp = -ewk->wu.mvxy.a[0].sp;
+            }
+
+            set_char_move_init2(&ewk->wu, 0, 107, 2, 0);
+        }
+    }
+}
+
 void eff09_27000(WORK_Other* ewk) {
     switch (ewk->wu.routine_no[1]) {
     case 0:
@@ -1705,24 +1725,7 @@ void eff09_27000(WORK_Other* ewk) {
         break;
 
     case 1:
-        if (!EXE_flag && !Game_pause) {
-            add_x_sub(&ewk->wu);
-            add_y_sub(&ewk->wu);
-
-            if (ewk->wu.xyz[1].disp.pos < -8) {
-                ewk->wu.routine_no[1]++;
-                ewk->wu.xyz[1].cal = -0x80000;
-                ewk->wu.mvxy.a[0].sp = -0x38000;
-                ewk->wu.mvxy.d[0].sp = 0;
-
-                if (ewk->wu.rl_flag) {
-                    ewk->wu.mvxy.a[0].sp = -ewk->wu.mvxy.a[0].sp;
-                }
-
-                set_char_move_init2(&ewk->wu, 0, 107, 2, 0);
-            }
-        }
-
+        advance_eff09_27000_landing(ewk);
         pl_eff_trans_entry(ewk);
         break;
 
