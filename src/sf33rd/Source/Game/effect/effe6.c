@@ -1246,6 +1246,22 @@ void effe6_0028(WORK_Other* ewk) {
     }
 }
 
+static void grow_effe6_0029_marker(WORK_Other* ewk) {
+    ewk->wu.old_rno[2]--;
+
+    if (ewk->wu.old_rno[2] <= 0) {
+        ewk->wu.old_rno[2] = 5;
+        ewk->wu.my_mr.size.x++;
+        ewk->wu.my_mr.size.y++;
+
+        if (ewk->wu.my_mr.size.x >= 127) {
+            ewk->wu.routine_no[1]++;
+            ewk->wu.my_mr.size.x = 127;
+            ewk->wu.my_mr.size.y = 127;
+        }
+    }
+}
+
 void effe6_0029(WORK_Other* ewk) {
     if (ewk->wu.old_rno[6] < end_w.r_no_2) {
         ewk->wu.routine_no[2] = 99;
@@ -1267,19 +1283,7 @@ void effe6_0029(WORK_Other* ewk) {
         if (ewk->wu.xyz[0].disp.pos < 224) {
             ewk->wu.routine_no[2] = 99;
         } else {
-            ewk->wu.old_rno[2]--;
-
-            if (ewk->wu.old_rno[2] <= 0) {
-                ewk->wu.old_rno[2] = 5;
-                ewk->wu.my_mr.size.x++;
-                ewk->wu.my_mr.size.y++;
-
-                if (ewk->wu.my_mr.size.x >= 127) {
-                    ewk->wu.routine_no[1]++;
-                    ewk->wu.my_mr.size.x = 127;
-                    ewk->wu.my_mr.size.y = 127;
-                }
-            }
+            grow_effe6_0029_marker(ewk);
         }
 
         disp_pos_trans_entry5(ewk);
