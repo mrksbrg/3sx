@@ -851,13 +851,17 @@ void setup_parts_break2(WORK* wk) {
 
 s32 check_parts_break_level(WORK* wk) {
     WORK* c2wk = (WORK*)wk->my_effadrs;
+    s32 should_add_break_score;
     s16 i;
 
     if (wk->vital_old == c2wk->cmwk[wk->type]) {
         return 0;
     }
 
-    if ((wk->id != 0x7A || c2wk->dir_timer != 0) && wk->vital_old < c2wk->cmwk[wk->type]) {
+    should_add_break_score =
+        (wk->id != 0x7A || c2wk->dir_timer != 0) && wk->vital_old < c2wk->cmwk[wk->type];
+
+    if (should_add_break_score) {
         for (i = wk->vital_old; i < c2wk->cmwk[wk->type]; i++) {
             Additinal_Score_DM((WORK_Other*)wk->target_adrs, pbs_table[wk->type][i]);
         }
