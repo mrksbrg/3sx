@@ -83,6 +83,52 @@ static s32 game_is_active(void) {
     return EXE_flag == 0 && Game_pause == 0;
 }
 
+static void advance_c2_last_character(WORK_Other* ewk) {
+    switch (ewk->wu.routine_no[2]) {
+    case 0:
+        char_move(&ewk->wu);
+        add_mvxy_speed(&ewk->wu);
+        cal_mvxy_speed(&ewk->wu);
+
+        if (ewk->wu.mvxy.a[1].sp <= 0 && (ewk->wu.xyz[1].disp.pos <= ewk->wu.next_y)) {
+            ewk->wu.xyz[1].disp.pos = ewk->wu.next_y;
+            ewk->wu.routine_no[2] = 1;
+            char_move_cmja(&ewk->wu);
+        }
+
+        break;
+
+    case 1:
+        char_move(&ewk->wu);
+
+        switch (ewk->wu.cg_type) {
+        case 1:
+            if (ewk->wu.mvxy.a[0].sp > 0) {
+                add_mvxy_speed_direct(&ewk->wu, 128, 0);
+            } else {
+                add_mvxy_speed_direct(&ewk->wu, -128, 0);
+            }
+
+            break;
+
+        case 2:
+            if (ewk->wu.mvxy.a[0].sp > 0) {
+                add_mvxy_speed_direct(&ewk->wu, 256, 0);
+            } else {
+                add_mvxy_speed_direct(&ewk->wu, -256, 0);
+            }
+
+            break;
+
+        case 0xFF:
+            ewk->wu.routine_no[2] = 2;
+            break;
+        }
+
+        break;
+    }
+}
+
 void effect_C2_move(WORK_Other* ewk) {
     switch (ewk->wu.routine_no[0]) {
     case 0:
@@ -154,50 +200,7 @@ void effect_C2_move(WORK_Other* ewk) {
                 break;
 
             case 9:
-                switch (ewk->wu.routine_no[2]) {
-                case 0:
-                    char_move(&ewk->wu);
-                    add_mvxy_speed(&ewk->wu);
-                    cal_mvxy_speed(&ewk->wu);
-
-                    if (ewk->wu.mvxy.a[1].sp <= 0 && (ewk->wu.xyz[1].disp.pos <= ewk->wu.next_y)) {
-                        ewk->wu.xyz[1].disp.pos = ewk->wu.next_y;
-                        ewk->wu.routine_no[2] = 1;
-                        char_move_cmja(&ewk->wu);
-                    }
-
-                    break;
-
-                case 1:
-                    char_move(&ewk->wu);
-
-                    switch (ewk->wu.cg_type) {
-                    case 1:
-                        if (ewk->wu.mvxy.a[0].sp > 0) {
-                            add_mvxy_speed_direct(&ewk->wu, 128, 0);
-                        } else {
-                            add_mvxy_speed_direct(&ewk->wu, -128, 0);
-                        }
-
-                        break;
-
-                    case 2:
-                        if (ewk->wu.mvxy.a[0].sp > 0) {
-                            add_mvxy_speed_direct(&ewk->wu, 256, 0);
-                        } else {
-                            add_mvxy_speed_direct(&ewk->wu, -256, 0);
-                        }
-
-                        break;
-
-                    case 0xFF:
-                        ewk->wu.routine_no[2] = 2;
-                        break;
-                    }
-
-                    break;
-                }
-
+                advance_c2_last_character(ewk);
                 break;
 
             default:
@@ -221,43 +224,47 @@ void effect_C2_move(WORK_Other* ewk) {
     }
 }
 
+static void select_c2_first_process_state(WORK_Other* ewk, PLW* twk) {
+    switch (ewk->wu.direction + (twk->bs2_on_car * 2)) {
+    case 0:
+        if (ewk->wu.routine_no[1] != 1 && ewk->wu.routine_no[2] != 0) {
+            ewk->wu.routine_no[2] = 0;
+            ewk->wu.routine_no[3] = 2;
+        }
+
+        break;
+
+    case 3:
+        if (ewk->wu.routine_no[1] != 1 && ewk->wu.routine_no[2] != 1) {
+            ewk->wu.routine_no[2] = 1;
+            ewk->wu.routine_no[3] = 2;
+        }
+
+        break;
+
+    case 1:
+        if (ewk->wu.routine_no[1] != 1 || ewk->wu.routine_no[2] != 0) {
+            ewk->wu.routine_no[1] = 0;
+            ewk->wu.routine_no[2] = 0;
+            ewk->wu.routine_no[3] = 0;
+        }
+
+        break;
+
+    case 2:
+        if (ewk->wu.routine_no[1] != 1 || ewk->wu.routine_no[2] != 0) {
+            ewk->wu.routine_no[1] = 0;
+            ewk->wu.routine_no[2] = 1;
+            ewk->wu.routine_no[3] = 0;
+        }
+
+        break;
+    }
+}
+
 void effC2_main_process_first(WORK_Other* ewk, PLW* twk) {
     if (EXE_flag == 0 && Game_pause == 0) {
-        switch (ewk->wu.direction + (twk->bs2_on_car * 2)) {
-        case 0:
-            if (ewk->wu.routine_no[1] != 1 && ewk->wu.routine_no[2] != 0) {
-                ewk->wu.routine_no[2] = 0;
-                ewk->wu.routine_no[3] = 2;
-            }
-
-            break;
-
-        case 3:
-            if (ewk->wu.routine_no[1] != 1 && ewk->wu.routine_no[2] != 1) {
-                ewk->wu.routine_no[2] = 1;
-                ewk->wu.routine_no[3] = 2;
-            }
-
-            break;
-
-        case 1:
-            if (ewk->wu.routine_no[1] != 1 || ewk->wu.routine_no[2] != 0) {
-                ewk->wu.routine_no[1] = 0;
-                ewk->wu.routine_no[2] = 0;
-                ewk->wu.routine_no[3] = 0;
-            }
-
-            break;
-
-        case 2:
-            if (ewk->wu.routine_no[1] != 1 || ewk->wu.routine_no[2] != 0) {
-                ewk->wu.routine_no[1] = 0;
-                ewk->wu.routine_no[2] = 1;
-                ewk->wu.routine_no[3] = 0;
-            }
-
-            break;
-        }
+        select_c2_first_process_state(ewk, twk);
 
         ewk->wu.old_pos[0] = ewk->wu.old_pos[1] = 0;
 
@@ -442,122 +449,140 @@ jump:
     adr3->before = bf[2];
 }
 
+static void update_c2_second_launch(WORK_Other* ewk, PLW* twk) {
+    if (ewk->wu.hit_stop == 0) {
+        illegal_setup_effK2(&ewk->wu, 0);
+    }
+
+    if (--ewk->wu.hit_stop < 0) {
+        Time_Stop = 1;
+        setup_demojump(twk, 0);
+        ewk->wu.routine_no[2]++;
+        ewk->wu.mvxy.a[1].sp = 0x20000;
+        ewk->wu.mvxy.d[1].sp = -0x8000;
+        ewk->wu.xyz[1].disp.pos = 64;
+        set_char_move_init(&ewk->wu, 0, 71);
+        ewk->wu.disp_flag = 1;
+        bs2_score_add_next(&ewk->wu);
+        set_1st_Bonus_Game_result(&ewk->wu);
+    }
+}
+
+static void update_c2_second_landing(WORK_Other* ewk) {
+    char_move(&ewk->wu);
+
+    switch (ewk->wu.cg_type) {
+    case 2:
+        illegal_setup_effK2(&ewk->wu, 2);
+        ewk->wu.cg_type = 0;
+        break;
+
+    case 3:
+        illegal_setup_effK2(&ewk->wu, 3);
+        ewk->wu.cg_type = 0;
+        break;
+    }
+
+    if (ewk->wu.cg_type == 0xFF) {
+        set_char_move_init(&ewk->wu, 0, 70);
+        ewk->wu.dir_old = 0;
+        ewk->wu.routine_no[2] = 0;
+        ewk->wu.original_vitality = ewk->wu.shell_ix[0] = 0x640;
+        ewk->wu.vital_old = 0;
+        Time_Stop = 0;
+    }
+}
+
+static void update_c2_second_damage(WORK_Other* ewk) {
+    if (Time_Over) {
+        ewk->wu.dm_vital = 0;
+    }
+
+    ewk->wu.shell_ix[0] -= ewk->wu.dm_vital;
+    ewk->wu.dm_vital = 0;
+    ewk->wu.hit_stop = ewk->wu.dm_stop;
+
+    if (ewk->wu.hit_stop < 0) {
+        ewk->wu.hit_stop = -ewk->wu.hit_stop;
+    }
+
+    ewk->wu.hit_stop /= 2;
+    ewk->wu.routine_no[2] = 1;
+    setup_parts_break2(&ewk->wu);
+
+    if (check_parts_break_level(&ewk->wu) != 0) {
+        char_move_z(&ewk->wu);
+        setup_effK2(&ewk->wu);
+    }
+
+    setup_effK4(&ewk->wu);
+
+    if (ewk->wu.shell_ix[0] < 0 || ewk->wu.cg_type == 0xFF) {
+        ewk->wu.dir_old = 1;
+        ewk->wu.routine_no[0] = 2;
+        ewk->wu.routine_no[1] = 0;
+        ewk->wu.routine_no[2] = 0;
+        ewk->wu.cg_type = 0;
+        Time_Stop = 1;
+    }
+}
+
+static void update_c2_second_fall(WORK_Other* ewk) {
+    add_mvxy_speed(&ewk->wu);
+    cal_mvxy_speed(&ewk->wu);
+
+    if (ewk->wu.xyz[1].disp.pos <= 0) {
+        ewk->wu.routine_no[2]++;
+        ewk->wu.position_y = 0;
+        ewk->wu.xyz[1].cal = 0;
+        ewk->wu.mvxy.a[1].sp = 0;
+        reset_mvxy_data(&ewk->wu);
+        char_move_z(&ewk->wu);
+        illegal_setup_effK2(&ewk->wu, 1);
+    }
+}
+
+static void update_c2_second_hit_stop(WORK_Other* ewk) {
+    if (--ewk->wu.hit_stop <= 0) {
+        ewk->wu.routine_no[1] = 0;
+        ewk->wu.routine_no[2] = 0;
+    }
+}
+
+static void update_c2_second_end_sequence(WORK_Other* ewk, PLW* twk) {
+    switch (ewk->wu.routine_no[2]) {
+    case 0:
+        break;
+
+    case 9:
+        update_c2_second_launch(ewk, twk);
+        break;
+
+    case 10:
+        update_c2_second_fall(ewk);
+        break;
+
+    case 11:
+        update_c2_second_landing(ewk);
+        break;
+    }
+}
+
 void effC2_main_process_second(WORK_Other* ewk, PLW* twk) {
     if (EXE_flag == 0 && Game_pause == 0) {
         switch (ewk->wu.routine_no[1]) {
         case 0:
-            switch (ewk->wu.routine_no[2]) {
-            case 0:
-                break;
-
-            case 9:
-                if (ewk->wu.hit_stop == 0) {
-                    illegal_setup_effK2(&ewk->wu, 0);
-                }
-
-                if (--ewk->wu.hit_stop < 0) {
-                    Time_Stop = 1;
-                    setup_demojump(twk, 0);
-                    ewk->wu.routine_no[2]++;
-                    ewk->wu.mvxy.a[1].sp = 0x20000;
-                    ewk->wu.mvxy.d[1].sp = -0x8000;
-                    ewk->wu.xyz[1].disp.pos = 64;
-                    set_char_move_init(&ewk->wu, 0, 71);
-                    ewk->wu.disp_flag = 1;
-                    bs2_score_add_next(&ewk->wu);
-                    set_1st_Bonus_Game_result(&ewk->wu);
-                }
-
-                break;
-
-            case 10:
-                add_mvxy_speed(&ewk->wu);
-                cal_mvxy_speed(&ewk->wu);
-
-                if (ewk->wu.xyz[1].disp.pos <= 0) {
-                    ewk->wu.routine_no[2]++;
-                    ewk->wu.position_y = 0;
-                    ewk->wu.xyz[1].cal = 0;
-                    ewk->wu.mvxy.a[1].sp = 0;
-                    reset_mvxy_data(&ewk->wu);
-                    char_move_z(&ewk->wu);
-                    illegal_setup_effK2(&ewk->wu, 1);
-                }
-
-                break;
-
-            case 11:
-                char_move(&ewk->wu);
-
-                switch (ewk->wu.cg_type) {
-                case 2:
-                    illegal_setup_effK2(&ewk->wu, 2);
-                    ewk->wu.cg_type = 0;
-                    break;
-
-                case 3:
-                    illegal_setup_effK2(&ewk->wu, 3);
-                    ewk->wu.cg_type = 0;
-                    break;
-                }
-
-                if (ewk->wu.cg_type == 0xFF) {
-                    set_char_move_init(&ewk->wu, 0, 70);
-                    ewk->wu.dir_old = 0;
-                    ewk->wu.routine_no[2] = 0;
-                    ewk->wu.original_vitality = ewk->wu.shell_ix[0] = 0x640;
-                    ewk->wu.vital_old = 0;
-                    Time_Stop = 0;
-                }
-
-                break;
-            }
-
+            update_c2_second_end_sequence(ewk, twk);
             break;
 
         case 1:
             switch (ewk->wu.routine_no[2]) {
             case 0:
-                if (Time_Over) {
-                    ewk->wu.dm_vital = 0;
-                }
-
-                ewk->wu.shell_ix[0] -= ewk->wu.dm_vital;
-                ewk->wu.dm_vital = 0;
-                ewk->wu.hit_stop = ewk->wu.dm_stop;
-
-                if (ewk->wu.hit_stop < 0) {
-                    ewk->wu.hit_stop = -ewk->wu.hit_stop;
-                }
-
-                ewk->wu.hit_stop /= 2;
-                ewk->wu.routine_no[2] = 1;
-                setup_parts_break2(&ewk->wu);
-
-                if (check_parts_break_level(&ewk->wu) != 0) {
-                    char_move_z(&ewk->wu);
-                    setup_effK2(&ewk->wu);
-                }
-
-                setup_effK4(&ewk->wu);
-
-                if (ewk->wu.shell_ix[0] < 0 || ewk->wu.cg_type == 0xFF) {
-                    ewk->wu.dir_old = 1;
-                    ewk->wu.routine_no[0] = 2;
-                    ewk->wu.routine_no[1] = 0;
-                    ewk->wu.routine_no[2] = 0;
-                    ewk->wu.cg_type = 0;
-                    Time_Stop = 1;
-                }
-
+                update_c2_second_damage(ewk);
                 break;
 
             case 1:
-                if (--ewk->wu.hit_stop <= 0) {
-                    ewk->wu.routine_no[1] = 0;
-                    ewk->wu.routine_no[2] = 0;
-                }
-
+                update_c2_second_hit_stop(ewk);
                 break;
             }
 
@@ -605,6 +630,8 @@ s16 c2_last_dir_select(PLW* wk, WORK* efw) {
 }
 
 void setup_demojump(PLW* twk, s16 ix) {
+    s32 should_reset_demo_jump;
+
     switch (ix) {
     case 0:
         if (twk->wu.xyz[1].disp.pos > 3) {
@@ -625,7 +652,10 @@ void setup_demojump(PLW* twk, s16 ix) {
         break;
 
     case 2:
-        if ((twk->wu.pat_status >= 14 && twk->wu.pat_status <= 30) || twk->bs2_on_car) {
+        should_reset_demo_jump =
+            (twk->wu.pat_status >= 14 && twk->wu.pat_status <= 30) || twk->bs2_on_car;
+
+        if (should_reset_demo_jump) {
             twk->wu.routine_no[1] = 0;
             twk->wu.routine_no[2] = 56;
             twk->wu.routine_no[3] = 0;
@@ -839,13 +869,17 @@ void setup_parts_break2(WORK* wk) {
 
 s32 check_parts_break_level(WORK* wk) {
     WORK* c2wk = (WORK*)wk->my_effadrs;
+    s32 should_add_break_score;
     s16 i;
 
     if (wk->vital_old == c2wk->cmwk[wk->type]) {
         return 0;
     }
 
-    if ((wk->id != 0x7A || c2wk->dir_timer != 0) && wk->vital_old < c2wk->cmwk[wk->type]) {
+    should_add_break_score =
+        (wk->id != 0x7A || c2wk->dir_timer != 0) && wk->vital_old < c2wk->cmwk[wk->type];
+
+    if (should_add_break_score) {
         for (i = wk->vital_old; i < c2wk->cmwk[wk->type]; i++) {
             Additinal_Score_DM((WORK_Other*)wk->target_adrs, pbs_table[wk->type][i]);
         }

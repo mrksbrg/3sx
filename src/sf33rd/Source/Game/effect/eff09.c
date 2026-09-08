@@ -1191,9 +1191,34 @@ void eff09_19000(WORK_Other* ewk) {
     }
 }
 
+static void advance_eff09_20000(WORK_Other* ewk, WORK* oya_ptr) {
+    s16 pos_work;
+
+    if (!EXE_flag && !Game_pause) {
+        char_move(&ewk->wu);
+
+        if (oya_ptr->id) {
+            pos_work = bg_w.bgw[1].wxy[0].disp.pos - bg_w.pos_offset;
+            pos_work -= 64;
+
+            if (ewk->wu.xyz[0].disp.pos < pos_work) {
+                oya_ptr->cmwk[1] = 1;
+                ewk->wu.routine_no[1]++;
+            }
+        } else {
+            pos_work = bg_w.bgw[1].wxy[0].disp.pos + bg_w.pos_offset;
+            pos_work += 64;
+
+            if (ewk->wu.xyz[0].disp.pos > pos_work) {
+                oya_ptr->cmwk[1] = 1;
+                ewk->wu.routine_no[1]++;
+            }
+        }
+    }
+}
+
 void eff09_20000(WORK_Other* ewk) {
     WORK* oya_ptr;
-    s16 pos_work;
 
     if (test_flag) {
         ewk->wu.routine_no[1] = 99;
@@ -1216,28 +1241,7 @@ void eff09_20000(WORK_Other* ewk) {
         break;
 
     case 1:
-        if (!EXE_flag && !Game_pause) {
-            char_move(&ewk->wu);
-
-            if (oya_ptr->id) {
-                pos_work = bg_w.bgw[1].wxy[0].disp.pos - bg_w.pos_offset;
-                pos_work -= 64;
-
-                if (ewk->wu.xyz[0].disp.pos < pos_work) {
-                    oya_ptr->cmwk[1] = 1;
-                    ewk->wu.routine_no[1]++;
-                }
-            } else {
-                pos_work = bg_w.bgw[1].wxy[0].disp.pos + bg_w.pos_offset;
-                pos_work += 64;
-
-                if (ewk->wu.xyz[0].disp.pos > pos_work) {
-                    oya_ptr->cmwk[1] = 1;
-                    ewk->wu.routine_no[1]++;
-                }
-            }
-        }
-
+        advance_eff09_20000(ewk, oya_ptr);
         disp_pos_trans_entry(ewk);
         break;
 
@@ -1382,6 +1386,10 @@ void eff09_22000(WORK_Other* ewk) {
     }
 }
 
+static s32 eff09_23000_parent_animation_started(const WORK* oya_ptr) {
+    return !EXE_flag && !Game_pause && oya_ptr->cg_type == 1;
+}
+
 void eff09_23000(WORK_Other* ewk) {
     WORK* oya_ptr;
 
@@ -1405,7 +1413,7 @@ void eff09_23000(WORK_Other* ewk) {
         break;
 
     case 1:
-        if (!EXE_flag && !Game_pause && oya_ptr->cg_type == 1) {
+        if (eff09_23000_parent_animation_started(oya_ptr)) {
             ewk->wu.routine_no[1]++;
         }
 
@@ -1452,6 +1460,10 @@ void eff09_23000(WORK_Other* ewk) {
     }
 }
 
+static s32 eff09_24000_parent_animation_started(const WORK* oya_ptr) {
+    return !EXE_flag && !Game_pause && (oya_ptr->cg_type == 1);
+}
+
 void eff09_24000(WORK_Other* ewk) {
     WORK* oya_ptr;
 
@@ -1475,7 +1487,7 @@ void eff09_24000(WORK_Other* ewk) {
         return;
 
     case 1:
-        if (!EXE_flag && !Game_pause && (oya_ptr->cg_type == 1)) {
+        if (eff09_24000_parent_animation_started(oya_ptr)) {
             ewk->wu.routine_no[1]++;
 
             if (ewk->wu.type == 38) {
@@ -1673,6 +1685,26 @@ void jijii_win_tama_sub(WORK_Other* ewk) {
     ewk->wu.position_z = oya_ptr->position_z + 2;
 }
 
+static void advance_eff09_27000_landing(WORK_Other* ewk) {
+    if (!EXE_flag && !Game_pause) {
+        add_x_sub(&ewk->wu);
+        add_y_sub(&ewk->wu);
+
+        if (ewk->wu.xyz[1].disp.pos < -8) {
+            ewk->wu.routine_no[1]++;
+            ewk->wu.xyz[1].cal = -0x80000;
+            ewk->wu.mvxy.a[0].sp = -0x38000;
+            ewk->wu.mvxy.d[0].sp = 0;
+
+            if (ewk->wu.rl_flag) {
+                ewk->wu.mvxy.a[0].sp = -ewk->wu.mvxy.a[0].sp;
+            }
+
+            set_char_move_init2(&ewk->wu, 0, 107, 2, 0);
+        }
+    }
+}
+
 void eff09_27000(WORK_Other* ewk) {
     switch (ewk->wu.routine_no[1]) {
     case 0:
@@ -1697,24 +1729,7 @@ void eff09_27000(WORK_Other* ewk) {
         break;
 
     case 1:
-        if (!EXE_flag && !Game_pause) {
-            add_x_sub(&ewk->wu);
-            add_y_sub(&ewk->wu);
-
-            if (ewk->wu.xyz[1].disp.pos < -8) {
-                ewk->wu.routine_no[1]++;
-                ewk->wu.xyz[1].cal = -0x80000;
-                ewk->wu.mvxy.a[0].sp = -0x38000;
-                ewk->wu.mvxy.d[0].sp = 0;
-
-                if (ewk->wu.rl_flag) {
-                    ewk->wu.mvxy.a[0].sp = -ewk->wu.mvxy.a[0].sp;
-                }
-
-                set_char_move_init2(&ewk->wu, 0, 107, 2, 0);
-            }
-        }
-
+        advance_eff09_27000_landing(ewk);
         pl_eff_trans_entry(ewk);
         break;
 

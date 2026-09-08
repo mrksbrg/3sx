@@ -289,6 +289,49 @@ void set_tengu_init_pos(WORK* ewk, WORK* mwk) {
     ewk->xyz[1].disp.pos = ewk->direction;
 }
 
+static void resolve_kotp_00_hit(WORK_Other* ewk, TAMA* twk) {
+    ewk->wu.vital_new -= ewk->wu.dm_vital;
+    ewk->wu.dm_vital = 0;
+
+    if (ewk->wu.vital_new < 0x100) {
+        if (ewk->wu.hf.hit.player) {
+            if (ewk->wu.hf.hit.player & 0xF0) {
+                set_char_move_init(&ewk->wu, 0, twk->erdf);
+            } else {
+                set_char_move_init(&ewk->wu, 0, twk->erht);
+            }
+        } else {
+            set_char_move_init(&ewk->wu, 0, twk->erex);
+        }
+
+        ewk->wu.routine_no[1] = 2;
+        ewk->wu.routine_no[2] = 1;
+        ewk->wu.kage_flag = 0;
+        ewk->wu.hit_stop = 0;
+    } else {
+        ewk->wu.routine_no[1] = 0;
+
+        if (ewk->wu.hf.hit.player) {
+            if (ewk->wu.hf.hit.player & 0xF0) {
+                effect_96_init(&ewk->wu, twk->erdf, ewk->wu.disp_flag, ewk->wu.hit_stop);
+            } else {
+                effect_96_init(&ewk->wu, twk->erht, ewk->wu.disp_flag, ewk->wu.hit_stop);
+            }
+        } else {
+            effect_96_init(&ewk->wu, twk->erex, ewk->wu.disp_flag, ewk->wu.hit_stop);
+        }
+
+        if (ewk->dm_refrect) {
+            ewk->master_id = (ewk->master_id + 1) & 1;
+            ewk->wu.rl_flag = (ewk->wu.rl_flag + 1) & 1;
+            ewk->dm_refrect = 0;
+        }
+    }
+
+    ewk->wu.hf.hit_flag = 0;
+    ewk->wu.hit_quake = 0;
+}
+
 void kotp_00000(WORK_Other* ewk, TAMA* twk) {
     if (ewk->wu.hf.hit_flag) {
         ewk->wu.routine_no[1] = 1;
@@ -342,46 +385,7 @@ void kotp_00000(WORK_Other* ewk, TAMA* twk) {
         break;
 
     case 1:
-        ewk->wu.vital_new -= ewk->wu.dm_vital;
-        ewk->wu.dm_vital = 0;
-
-        if (ewk->wu.vital_new < 0x100) {
-            if (ewk->wu.hf.hit.player) {
-                if (ewk->wu.hf.hit.player & 0xF0) {
-                    set_char_move_init(&ewk->wu, 0, twk->erdf);
-                } else {
-                    set_char_move_init(&ewk->wu, 0, twk->erht);
-                }
-            } else {
-                set_char_move_init(&ewk->wu, 0, twk->erex);
-            }
-
-            ewk->wu.routine_no[1] = 2;
-            ewk->wu.routine_no[2] = 1;
-            ewk->wu.kage_flag = 0;
-            ewk->wu.hit_stop = 0;
-        } else {
-            ewk->wu.routine_no[1] = 0;
-
-            if (ewk->wu.hf.hit.player) {
-                if (ewk->wu.hf.hit.player & 0xF0) {
-                    effect_96_init(&ewk->wu, twk->erdf, ewk->wu.disp_flag, ewk->wu.hit_stop);
-                } else {
-                    effect_96_init(&ewk->wu, twk->erht, ewk->wu.disp_flag, ewk->wu.hit_stop);
-                }
-            } else {
-                effect_96_init(&ewk->wu, twk->erex, ewk->wu.disp_flag, ewk->wu.hit_stop);
-            }
-
-            if (ewk->dm_refrect) {
-                ewk->master_id = (ewk->master_id + 1) & 1;
-                ewk->wu.rl_flag = (ewk->wu.rl_flag + 1) & 1;
-                ewk->dm_refrect = 0;
-            }
-        }
-
-        ewk->wu.hf.hit_flag = 0;
-        ewk->wu.hit_quake = 0;
+        resolve_kotp_00_hit(ewk, twk);
         break;
 
     case 2:
@@ -850,6 +854,43 @@ void kotp_05000(WORK_Other* ewk, TAMA* twk) {
     }
 }
 
+static void resolve_kotp_06_hit(WORK_Other* ewk, TAMA* twk) {
+    ewk->wu.vital_new -= ewk->wu.dm_vital;
+    ewk->wu.dm_vital = 0;
+
+    if (ewk->wu.vital_new < 256) {
+        if (ewk->wu.hf.hit.player) {
+            if (ewk->wu.hf.hit.player & 0xF0) {
+                set_char_move_init(&ewk->wu, 0, twk->erdf);
+            } else {
+                set_char_move_init(&ewk->wu, 0, twk->erht);
+            }
+        } else {
+            set_char_move_init(&ewk->wu, 0, twk->erex);
+        }
+
+        ewk->wu.routine_no[1] = 2;
+        ewk->wu.routine_no[2] = 1;
+        ewk->wu.kage_flag = 0;
+        ewk->wu.hit_stop = 0;
+    } else {
+        ewk->wu.routine_no[1] = 0;
+
+        if (ewk->wu.hf.hit.player) {
+            if (ewk->wu.hf.hit.player & 0xF0) {
+                effect_96_init(&ewk->wu, twk->erdf, ewk->wu.disp_flag, ewk->wu.hit_stop);
+            } else {
+                effect_96_init(&ewk->wu, twk->erht, ewk->wu.disp_flag, ewk->wu.hit_stop);
+            }
+        } else {
+            effect_96_init(&ewk->wu, twk->erex, ewk->wu.disp_flag, ewk->wu.hit_stop);
+        }
+    }
+
+    ewk->wu.hf.hit_flag = 0;
+    ewk->wu.hit_quake = 0;
+}
+
 void kotp_06000(WORK_Other* ewk, TAMA* twk) {
     PLW* mwk;
     PLW* emwk;
@@ -940,40 +981,7 @@ void kotp_06000(WORK_Other* ewk, TAMA* twk) {
         break;
 
     case 1:
-        ewk->wu.vital_new -= ewk->wu.dm_vital;
-        ewk->wu.dm_vital = 0;
-
-        if (ewk->wu.vital_new < 256) {
-            if (ewk->wu.hf.hit.player) {
-                if (ewk->wu.hf.hit.player & 0xF0) {
-                    set_char_move_init(&ewk->wu, 0, twk->erdf);
-                } else {
-                    set_char_move_init(&ewk->wu, 0, twk->erht);
-                }
-            } else {
-                set_char_move_init(&ewk->wu, 0, twk->erex);
-            }
-
-            ewk->wu.routine_no[1] = 2;
-            ewk->wu.routine_no[2] = 1;
-            ewk->wu.kage_flag = 0;
-            ewk->wu.hit_stop = 0;
-        } else {
-            ewk->wu.routine_no[1] = 0;
-
-            if (ewk->wu.hf.hit.player) {
-                if (ewk->wu.hf.hit.player & 0xF0) {
-                    effect_96_init(&ewk->wu, twk->erdf, ewk->wu.disp_flag, ewk->wu.hit_stop);
-                } else {
-                    effect_96_init(&ewk->wu, twk->erht, ewk->wu.disp_flag, ewk->wu.hit_stop);
-                }
-            } else {
-                effect_96_init(&ewk->wu, twk->erex, ewk->wu.disp_flag, ewk->wu.hit_stop);
-            }
-        }
-
-        ewk->wu.hf.hit_flag = 0;
-        ewk->wu.hit_quake = 0;
+        resolve_kotp_06_hit(ewk, twk);
         break;
 
     case 2:
@@ -998,9 +1006,69 @@ void kotp_06000(WORK_Other* ewk, TAMA* twk) {
     }
 }
 
-void kotp_07000(WORK_Other* ewk, TAMA* twk) {
+static void resolve_kotp_07_hit(WORK_Other* ewk, TAMA* twk) {
     WORK* awk;
     s16 dsst;
+
+    if (ewk->wu.hf.hit_flag == 0) {
+        awk = (WORK*)ewk->wu.dmg_adrs;
+
+        if (awk->work_id == 1) {
+            dsst = 3;
+
+            if (!(ewk->wu.dm_kind_of_waza & 0xF8)) {
+                dsst = (ewk->wu.dm_kind_of_waza / 2) & 3;
+            }
+
+            ewk->wu.dm_vital = kotp_07_dm_vital[dsst];
+        } else {
+            ewk->wu.dm_vital = kotp_07_dm_vital[2];
+        }
+    }
+
+    ewk->wu.vital_new -= ewk->wu.dm_vital;
+    ewk->wu.dm_vital = 0;
+
+    if (ewk->wu.vital_new < 0x100) {
+        if (ewk->wu.hf.hit.player) {
+            if (ewk->wu.hf.hit.player & 0xF0) {
+                set_char_move_init(&ewk->wu, 0, twk->erdf);
+            } else {
+                set_char_move_init(&ewk->wu, 0, twk->erht);
+            }
+        } else {
+            set_char_move_init(&ewk->wu, 0, twk->erex);
+        }
+
+        ewk->wu.routine_no[1] = 2;
+        ewk->wu.routine_no[2] = 1;
+        ewk->wu.kage_flag = 0;
+        ewk->wu.hit_stop = 0;
+    } else {
+        ewk->wu.routine_no[1] = 0;
+
+        if (ewk->wu.hf.hit.player) {
+            if (ewk->wu.hf.hit.player & 0xF0) {
+                effect_96_init(&ewk->wu, twk->erdf, ewk->wu.disp_flag, ewk->wu.hit_stop);
+            } else {
+                effect_96_init(&ewk->wu, twk->erht, ewk->wu.disp_flag, ewk->wu.hit_stop);
+            }
+        } else {
+            effect_96_init(&ewk->wu, twk->erex, ewk->wu.disp_flag, ewk->wu.hit_stop);
+        }
+
+        if (ewk->dm_refrect) {
+            ewk->master_id = (ewk->master_id + 1) & 1;
+            ewk->wu.rl_flag = (ewk->wu.rl_flag + 1) & 1;
+            ewk->dm_refrect = 0;
+        }
+    }
+
+    ewk->wu.hf.hit_flag = 0;
+    ewk->wu.hit_quake = 0;
+}
+
+void kotp_07000(WORK_Other* ewk, TAMA* twk) {
     PLW* mwk;
     PLW* emwk;
     s16 tama_x;
@@ -1050,62 +1118,7 @@ void kotp_07000(WORK_Other* ewk, TAMA* twk) {
         break;
 
     case 1:
-        if (ewk->wu.hf.hit_flag == 0) {
-            awk = (WORK*)ewk->wu.dmg_adrs;
-
-            if (awk->work_id == 1) {
-                dsst = 3;
-
-                if (!(ewk->wu.dm_kind_of_waza & 0xF8)) {
-                    dsst = (ewk->wu.dm_kind_of_waza / 2) & 3;
-                }
-
-                ewk->wu.dm_vital = kotp_07_dm_vital[dsst];
-            } else {
-                ewk->wu.dm_vital = kotp_07_dm_vital[2];
-            }
-        }
-
-        ewk->wu.vital_new -= ewk->wu.dm_vital;
-        ewk->wu.dm_vital = 0;
-
-        if (ewk->wu.vital_new < 0x100) {
-            if (ewk->wu.hf.hit.player) {
-                if (ewk->wu.hf.hit.player & 0xF0) {
-                    set_char_move_init(&ewk->wu, 0, twk->erdf);
-                } else {
-                    set_char_move_init(&ewk->wu, 0, twk->erht);
-                }
-            } else {
-                set_char_move_init(&ewk->wu, 0, twk->erex);
-            }
-
-            ewk->wu.routine_no[1] = 2;
-            ewk->wu.routine_no[2] = 1;
-            ewk->wu.kage_flag = 0;
-            ewk->wu.hit_stop = 0;
-        } else {
-            ewk->wu.routine_no[1] = 0;
-
-            if (ewk->wu.hf.hit.player) {
-                if (ewk->wu.hf.hit.player & 0xF0) {
-                    effect_96_init(&ewk->wu, twk->erdf, ewk->wu.disp_flag, ewk->wu.hit_stop);
-                } else {
-                    effect_96_init(&ewk->wu, twk->erht, ewk->wu.disp_flag, ewk->wu.hit_stop);
-                }
-            } else {
-                effect_96_init(&ewk->wu, twk->erex, ewk->wu.disp_flag, ewk->wu.hit_stop);
-            }
-
-            if (ewk->dm_refrect) {
-                ewk->master_id = (ewk->master_id + 1) & 1;
-                ewk->wu.rl_flag = (ewk->wu.rl_flag + 1) & 1;
-                ewk->dm_refrect = 0;
-            }
-        }
-
-        ewk->wu.hf.hit_flag = 0;
-        ewk->wu.hit_quake = 0;
+        resolve_kotp_07_hit(ewk, twk);
         break;
 
     case 2:
@@ -1238,6 +1251,54 @@ void kotp_08000(WORK_Other* ewk, TAMA* twk) {
     }
 }
 
+static void resolve_kotp_09_hit(WORK_Other* ewk, TAMA* twk) {
+    ewk->wu.vital_new -= ewk->wu.dm_vital;
+    ewk->wu.dm_vital = 0;
+
+    if (ewk->wu.vital_new < 256) {
+        if (ewk->wu.hf.hit.player) {
+            if (ewk->wu.hf.hit.player & 0xF0) {
+                set_char_move_init(&ewk->wu, 0, twk->erdf);
+            } else {
+                set_char_move_init(&ewk->wu, 0, twk->erht);
+            }
+        } else {
+            set_char_move_init(&ewk->wu, 0, twk->erex);
+        }
+
+        ewk->wu.routine_no[1] = 2;
+        ewk->wu.routine_no[2] = 1;
+        ewk->wu.kage_flag = 0;
+        ewk->wu.hit_stop = 0;
+    } else {
+        ewk->wu.routine_no[1] = 0;
+
+        if (ewk->wu.hf.hit.player) {
+            if (ewk->wu.hf.hit.player & 0xF0) {
+                set_char_move_init(&ewk->wu, 0, twk->erdf);
+            } else {
+                set_char_move_init(&ewk->wu, 0, twk->erht);
+            }
+
+            ewk->wu.routine_no[1] = 2;
+            ewk->wu.routine_no[2] = 1;
+            ewk->wu.kage_flag = 0;
+            ewk->wu.hit_stop = 0;
+        } else {
+            effect_96_init(&ewk->wu, twk->erex, ewk->wu.disp_flag, ewk->wu.hit_stop);
+        }
+
+        if (ewk->dm_refrect) {
+            ewk->master_id = (ewk->master_id + 1) & 1;
+            ewk->wu.rl_flag = (ewk->wu.rl_flag) + 1 & 1;
+            ewk->dm_refrect = 0;
+        }
+    }
+
+    ewk->wu.hf.hit_flag = 0;
+    ewk->wu.hit_quake = 0;
+}
+
 void kotp_09000(WORK_Other* ewk, TAMA* twk) {
     if (ewk->wu.hf.hit_flag) {
         ewk->wu.routine_no[1] = 1;
@@ -1285,51 +1346,7 @@ void kotp_09000(WORK_Other* ewk, TAMA* twk) {
         break;
 
     case 1:
-        ewk->wu.vital_new -= ewk->wu.dm_vital;
-        ewk->wu.dm_vital = 0;
-
-        if (ewk->wu.vital_new < 256) {
-            if (ewk->wu.hf.hit.player) {
-                if (ewk->wu.hf.hit.player & 0xF0) {
-                    set_char_move_init(&ewk->wu, 0, twk->erdf);
-                } else {
-                    set_char_move_init(&ewk->wu, 0, twk->erht);
-                }
-            } else {
-                set_char_move_init(&ewk->wu, 0, twk->erex);
-            }
-
-            ewk->wu.routine_no[1] = 2;
-            ewk->wu.routine_no[2] = 1;
-            ewk->wu.kage_flag = 0;
-            ewk->wu.hit_stop = 0;
-        } else {
-            ewk->wu.routine_no[1] = 0;
-
-            if (ewk->wu.hf.hit.player) {
-                if (ewk->wu.hf.hit.player & 0xF0) {
-                    set_char_move_init(&ewk->wu, 0, twk->erdf);
-                } else {
-                    set_char_move_init(&ewk->wu, 0, twk->erht);
-                }
-
-                ewk->wu.routine_no[1] = 2;
-                ewk->wu.routine_no[2] = 1;
-                ewk->wu.kage_flag = 0;
-                ewk->wu.hit_stop = 0;
-            } else {
-                effect_96_init(&ewk->wu, twk->erex, ewk->wu.disp_flag, ewk->wu.hit_stop);
-            }
-
-            if (ewk->dm_refrect) {
-                ewk->master_id = (ewk->master_id + 1) & 1;
-                ewk->wu.rl_flag = (ewk->wu.rl_flag) + 1 & 1;
-                ewk->dm_refrect = 0;
-            }
-        }
-
-        ewk->wu.hf.hit_flag = 0;
-        ewk->wu.hit_quake = 0;
+        resolve_kotp_09_hit(ewk, twk);
         break;
 
     case 2:
@@ -1411,6 +1428,49 @@ void kotp_11000(WORK_Other* ewk, TAMA* twk) {
     ewk->wu.position_z = ewk->wu.next_z;
 }
 
+static void resolve_kotp_12_hit(WORK_Other* ewk, TAMA* twk) {
+    ewk->wu.vital_new -= ewk->wu.dm_vital;
+    ewk->wu.dm_vital = 0;
+
+    if (ewk->wu.vital_new < 256) {
+        if (ewk->wu.hf.hit.player) {
+            if (ewk->wu.hf.hit.player & 0xF0) {
+                set_char_move_init(&ewk->wu, 0, twk->erdf);
+            } else {
+                set_char_move_init(&ewk->wu, 0, twk->erht);
+            }
+        } else {
+            set_char_move_init(&ewk->wu, 0, twk->erex);
+        }
+
+        ewk->wu.routine_no[1] = 2;
+        ewk->wu.routine_no[2] = 1;
+        ewk->wu.kage_flag = 0;
+        ewk->wu.hit_stop = 0;
+    } else {
+        ewk->wu.routine_no[1] = 0;
+
+        if (ewk->wu.hf.hit.player) {
+            if (ewk->wu.hf.hit.player & 0xF0) {
+                effect_96_init(&ewk->wu, twk->erdf, ewk->wu.disp_flag, ewk->wu.hit_stop);
+            } else {
+                effect_96_init(&ewk->wu, twk->erht, ewk->wu.disp_flag, ewk->wu.hit_stop);
+            }
+        } else {
+            effect_96_init(&ewk->wu, twk->erex, ewk->wu.disp_flag, ewk->wu.hit_stop);
+        }
+
+        if (ewk->dm_refrect) {
+            ewk->master_id = (ewk->master_id + 1) & 1;
+            ewk->wu.rl_flag = (ewk->wu.rl_flag + 1) & 1;
+            ewk->dm_refrect = 0;
+        }
+    }
+
+    ewk->wu.hf.hit_flag = 0;
+    ewk->wu.hit_quake = 0;
+}
+
 void kotp_12000(WORK_Other* ewk, TAMA* twk) {
     if (ewk->wu.hf.hit_flag) {
         ewk->wu.routine_no[1] = 1;
@@ -1470,46 +1530,7 @@ void kotp_12000(WORK_Other* ewk, TAMA* twk) {
         break;
 
     case 1:
-        ewk->wu.vital_new -= ewk->wu.dm_vital;
-        ewk->wu.dm_vital = 0;
-
-        if (ewk->wu.vital_new < 256) {
-            if (ewk->wu.hf.hit.player) {
-                if (ewk->wu.hf.hit.player & 0xF0) {
-                    set_char_move_init(&ewk->wu, 0, twk->erdf);
-                } else {
-                    set_char_move_init(&ewk->wu, 0, twk->erht);
-                }
-            } else {
-                set_char_move_init(&ewk->wu, 0, twk->erex);
-            }
-
-            ewk->wu.routine_no[1] = 2;
-            ewk->wu.routine_no[2] = 1;
-            ewk->wu.kage_flag = 0;
-            ewk->wu.hit_stop = 0;
-        } else {
-            ewk->wu.routine_no[1] = 0;
-
-            if (ewk->wu.hf.hit.player) {
-                if (ewk->wu.hf.hit.player & 0xF0) {
-                    effect_96_init(&ewk->wu, twk->erdf, ewk->wu.disp_flag, ewk->wu.hit_stop);
-                } else {
-                    effect_96_init(&ewk->wu, twk->erht, ewk->wu.disp_flag, ewk->wu.hit_stop);
-                }
-            } else {
-                effect_96_init(&ewk->wu, twk->erex, ewk->wu.disp_flag, ewk->wu.hit_stop);
-            }
-
-            if (ewk->dm_refrect) {
-                ewk->master_id = (ewk->master_id + 1) & 1;
-                ewk->wu.rl_flag = (ewk->wu.rl_flag + 1) & 1;
-                ewk->dm_refrect = 0;
-            }
-        }
-
-        ewk->wu.hf.hit_flag = 0;
-        ewk->wu.hit_quake = 0;
+        resolve_kotp_12_hit(ewk, twk);
         break;
 
     case 2:
@@ -1708,6 +1729,49 @@ void kotp_15000(WORK_Other* ewk, TAMA* twk) {
     }
 }
 
+static void resolve_kotp_16_hit(WORK_Other* ewk, TAMA* twk) {
+    ewk->wu.vital_new -= ewk->wu.dm_vital;
+    ewk->wu.dm_vital = 0;
+
+    if (ewk->wu.vital_new < 256) {
+        if (ewk->wu.hf.hit.player) {
+            if (ewk->wu.hf.hit.player & 0xF0) {
+                set_char_move_init(&ewk->wu, 0, twk->erdf);
+            } else {
+                set_char_move_init(&ewk->wu, 0, twk->erht);
+            }
+        } else {
+            set_char_move_init(&ewk->wu, 0, twk->erex);
+        }
+
+        ewk->wu.routine_no[1] = 2;
+        ewk->wu.routine_no[2] = 1;
+        ewk->wu.kage_flag = 0;
+        ewk->wu.hit_stop = 0;
+    } else {
+        ewk->wu.routine_no[1] = 0;
+
+        if (ewk->wu.hf.hit.player) {
+            if (ewk->wu.hf.hit.player & 0xF0) {
+                effect_96_init(&ewk->wu, twk->erdf, ewk->wu.disp_flag, ewk->wu.hit_stop);
+            } else {
+                effect_96_init(&ewk->wu, twk->erht, ewk->wu.disp_flag, ewk->wu.hit_stop);
+            }
+        } else {
+            effect_96_init(&ewk->wu, twk->erex, ewk->wu.disp_flag, ewk->wu.hit_stop);
+        }
+
+        if (ewk->dm_refrect) {
+            ewk->master_id = (ewk->master_id + 1) & 1;
+            ewk->wu.rl_flag = (ewk->wu.rl_flag + 1) & 1;
+            ewk->dm_refrect = 0;
+        }
+    }
+
+    ewk->wu.hf.hit_flag = 0;
+    ewk->wu.hit_quake = 0;
+}
+
 void kotp_16000(WORK_Other* ewk, TAMA* twk) {
     if (ewk->wu.hf.hit_flag) {
         ewk->wu.routine_no[1] = 1;
@@ -1764,46 +1828,7 @@ void kotp_16000(WORK_Other* ewk, TAMA* twk) {
         break;
 
     case 1:
-        ewk->wu.vital_new -= ewk->wu.dm_vital;
-        ewk->wu.dm_vital = 0;
-
-        if (ewk->wu.vital_new < 256) {
-            if (ewk->wu.hf.hit.player) {
-                if (ewk->wu.hf.hit.player & 0xF0) {
-                    set_char_move_init(&ewk->wu, 0, twk->erdf);
-                } else {
-                    set_char_move_init(&ewk->wu, 0, twk->erht);
-                }
-            } else {
-                set_char_move_init(&ewk->wu, 0, twk->erex);
-            }
-
-            ewk->wu.routine_no[1] = 2;
-            ewk->wu.routine_no[2] = 1;
-            ewk->wu.kage_flag = 0;
-            ewk->wu.hit_stop = 0;
-        } else {
-            ewk->wu.routine_no[1] = 0;
-
-            if (ewk->wu.hf.hit.player) {
-                if (ewk->wu.hf.hit.player & 0xF0) {
-                    effect_96_init(&ewk->wu, twk->erdf, ewk->wu.disp_flag, ewk->wu.hit_stop);
-                } else {
-                    effect_96_init(&ewk->wu, twk->erht, ewk->wu.disp_flag, ewk->wu.hit_stop);
-                }
-            } else {
-                effect_96_init(&ewk->wu, twk->erex, ewk->wu.disp_flag, ewk->wu.hit_stop);
-            }
-
-            if (ewk->dm_refrect) {
-                ewk->master_id = (ewk->master_id + 1) & 1;
-                ewk->wu.rl_flag = (ewk->wu.rl_flag + 1) & 1;
-                ewk->dm_refrect = 0;
-            }
-        }
-
-        ewk->wu.hf.hit_flag = 0;
-        ewk->wu.hit_quake = 0;
+        resolve_kotp_16_hit(ewk, twk);
         break;
 
     case 2:

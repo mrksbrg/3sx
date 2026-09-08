@@ -335,25 +335,44 @@ void effe6_0006(WORK_Other* ewk) {
     }
 }
 
+static void set_effe6_0007_color(WORK_Other* ewk) {
+    switch (ewk->wu.type) {
+    case 22:
+        ewk->wu.my_col_code = 0x12C;
+        break;
+
+    case 23:
+        ewk->wu.my_col_code = 0x12D;
+        break;
+
+    case 24:
+    case 27:
+    case 28:
+        ewk->wu.my_col_code = 0x12E;
+        break;
+    }
+}
+
+static void display_effe6_0007(WORK_Other* ewk) {
+    switch (ewk->wu.type) {
+    case 22:
+    case 23:
+    case 24:
+    case 27:
+    case 28:
+        disp_pos_trans_entry_r4(ewk);
+        break;
+
+    default:
+        disp_pos_trans_entry_r(ewk);
+        break;
+    }
+}
+
 void effe6_0007(WORK_Other* ewk) {
     switch (ewk->wu.routine_no[1]) {
     case 0:
-        switch (ewk->wu.type) {
-        case 22:
-            ewk->wu.my_col_code = 0x12C;
-            break;
-
-        case 23:
-            ewk->wu.my_col_code = 0x12D;
-            break;
-
-        case 24:
-        case 27:
-        case 28:
-            ewk->wu.my_col_code = 0x12E;
-            break;
-        }
-
+        set_effe6_0007_color(ewk);
         ewk->wu.my_col_mode = 0x200;
         effe6_init_common(ewk);
         disp_pos_trans_entry(ewk);
@@ -366,20 +385,7 @@ void effe6_0007(WORK_Other* ewk) {
             char_move(&ewk->wu);
         }
 
-        switch (ewk->wu.type) {
-        case 22:
-        case 23:
-        case 24:
-        case 27:
-        case 28:
-            disp_pos_trans_entry_r4(ewk);
-            break;
-
-        default:
-            disp_pos_trans_entry_r(ewk);
-            break;
-        }
-
+        display_effe6_0007(ewk);
         break;
     }
 }
@@ -579,6 +585,24 @@ void effe6_0013(WORK_Other* ewk) {
     }
 }
 
+static void update_effe6_0014_first_shrink(WORK_Other* ewk) {
+    ewk->wu.old_rno[2]--;
+
+    if (ewk->wu.old_rno[2] < 0) {
+        ewk->wu.old_rno[2] = 2;
+        ewk->wu.my_mr.size.x--;
+        ewk->wu.my_mr.size.y--;
+
+        if (ewk->wu.my_mr.size.x < 60) {
+            ewk->wu.routine_no[1]++;
+            set_char_move_init2(&ewk->wu, 0, 21, 9, 0);
+            ewk->wu.old_rno[2] = 4;
+        } else {
+            ewk->wu.old_rno[2] = 3;
+        }
+    }
+}
+
 void effe6_0014(WORK_Other* ewk) {
     if (ewk->wu.old_rno[6] < end_w.r_no_2) {
         ewk->wu.routine_no[2] = 99;
@@ -606,22 +630,7 @@ void effe6_0014(WORK_Other* ewk) {
         break;
 
     case 2:
-        ewk->wu.old_rno[2]--;
-
-        if (ewk->wu.old_rno[2] < 0) {
-            ewk->wu.old_rno[2] = 2;
-            ewk->wu.my_mr.size.x--;
-            ewk->wu.my_mr.size.y--;
-
-            if (ewk->wu.my_mr.size.x < 60) {
-                ewk->wu.routine_no[1]++;
-                set_char_move_init2(&ewk->wu, 0, 21, 9, 0);
-                ewk->wu.old_rno[2] = 4;
-            } else {
-                ewk->wu.old_rno[2] = 3;
-            }
-        }
-
+        update_effe6_0014_first_shrink(ewk);
         disp_pos_trans_entry5(ewk);
         break;
 
@@ -715,6 +724,23 @@ void effe6_0015(WORK_Other* ewk) {
     }
 }
 
+static void update_effe6_0016_animation(WORK_Other* ewk) {
+    char_move(&ewk->wu);
+
+    if (ewk->wu.cg_type == 9) {
+        if (ewk->wu.routine_no[1] == 1) {
+            ewk->wu.old_rno[2] = 10;
+        } else {
+            ewk->wu.old_rno[2] = 80;
+        }
+
+        ewk->wu.routine_no[1]++;
+        char_move_z(&ewk->wu);
+    } else {
+        disp_pos_trans_entry(ewk);
+    }
+}
+
 void effe6_0016(WORK_Other* ewk) {
     if (ewk->wu.old_rno[6] < end_w.r_no_2) {
         ewk->wu.routine_no[2] = 99;
@@ -727,21 +753,7 @@ void effe6_0016(WORK_Other* ewk) {
 
     case 1:
     case 3:
-        char_move(&ewk->wu);
-
-        if (ewk->wu.cg_type == 9) {
-            if (ewk->wu.routine_no[1] == 1) {
-                ewk->wu.old_rno[2] = 10;
-            } else {
-                ewk->wu.old_rno[2] = 80;
-            }
-
-            ewk->wu.routine_no[1]++;
-            char_move_z(&ewk->wu);
-        } else {
-            disp_pos_trans_entry(ewk);
-        }
-
+        update_effe6_0016_animation(ewk);
         break;
 
     case 2:
@@ -1061,8 +1073,67 @@ void effe6_0024(WORK_Other* ewk) {
     }
 }
 
-void effe6_0025(WORK_Other* ewk) {
+static void set_effe6_0025_position(WORK_Other* ewk) {
+    switch (ewk->wu.old_rno[2]) {
+    case 0:
+        ewk->wu.xyz[0].disp.pos = 608;
+        break;
+
+    case 1:
+        ewk->wu.xyz[0].disp.pos = 609;
+        break;
+
+    case 2:
+        ewk->wu.xyz[0].disp.pos = 610;
+        break;
+
+    case 3:
+        ewk->wu.xyz[0].disp.pos = 607;
+        break;
+
+    case 4:
+        ewk->wu.xyz[0].disp.pos = 606;
+        break;
+
+    case 5:
+        ewk->wu.xyz[0].disp.pos = 611;
+    }
+}
+
+static void update_effe6_0025_player_two(WORK_Other* ewk) {
     u16 work;
+
+    if (p2sw_0 & 8) {
+        ewk->wu.xyz[0].disp.pos++;
+    }
+
+    if (p2sw_0 & 4) {
+        ewk->wu.xyz[0].disp.pos--;
+    }
+
+    if (p2sw_0 & 1) {
+        ewk->wu.xyz[1].disp.pos++;
+    }
+
+    if (p2sw_0 & 2) {
+        ewk->wu.xyz[1].disp.pos--;
+    }
+
+    work = p2sw_0 & ~p2sw_1;
+
+    if (work & 0x10) {
+        char_move_z(&ewk->wu);
+        ewk->wu.old_rno[2]++;
+
+        if (ewk->wu.old_rno[2] >= 7) {
+            ewk->wu.old_rno[2] = 0;
+        }
+    }
+
+    set_effe6_0025_position(ewk);
+}
+
+void effe6_0025(WORK_Other* ewk) {
 
     switch (ewk->wu.routine_no[1]) {
     case 0:
@@ -1089,57 +1160,7 @@ void effe6_0025(WORK_Other* ewk) {
                 ewk->wu.xyz[1].disp.pos--;
             }
         } else {
-            if (p2sw_0 & 8) {
-                ewk->wu.xyz[0].disp.pos++;
-            }
-
-            if (p2sw_0 & 4) {
-                ewk->wu.xyz[0].disp.pos--;
-            }
-
-            if (p2sw_0 & 1) {
-                ewk->wu.xyz[1].disp.pos++;
-            }
-
-            if (p2sw_0 & 2) {
-                ewk->wu.xyz[1].disp.pos--;
-            }
-
-            work = p2sw_0 & ~p2sw_1;
-
-            if (work & 0x10) {
-                char_move_z(&ewk->wu);
-                ewk->wu.old_rno[2]++;
-
-                if (ewk->wu.old_rno[2] >= 7) {
-                    ewk->wu.old_rno[2] = 0;
-                }
-            }
-
-            switch (ewk->wu.old_rno[2]) {
-            case 0:
-                ewk->wu.xyz[0].disp.pos = 608;
-                break;
-
-            case 1:
-                ewk->wu.xyz[0].disp.pos = 609;
-                break;
-
-            case 2:
-                ewk->wu.xyz[0].disp.pos = 610;
-                break;
-
-            case 3:
-                ewk->wu.xyz[0].disp.pos = 607;
-                break;
-
-            case 4:
-                ewk->wu.xyz[0].disp.pos = 606;
-                break;
-
-            case 5:
-                ewk->wu.xyz[0].disp.pos = 611;
-            }
+            update_effe6_0025_player_two(ewk);
         }
 
         disp_pos_trans_entry(ewk);
@@ -1241,6 +1262,22 @@ void effe6_0028(WORK_Other* ewk) {
     }
 }
 
+static void grow_effe6_0029_marker(WORK_Other* ewk) {
+    ewk->wu.old_rno[2]--;
+
+    if (ewk->wu.old_rno[2] <= 0) {
+        ewk->wu.old_rno[2] = 5;
+        ewk->wu.my_mr.size.x++;
+        ewk->wu.my_mr.size.y++;
+
+        if (ewk->wu.my_mr.size.x >= 127) {
+            ewk->wu.routine_no[1]++;
+            ewk->wu.my_mr.size.x = 127;
+            ewk->wu.my_mr.size.y = 127;
+        }
+    }
+}
+
 void effe6_0029(WORK_Other* ewk) {
     if (ewk->wu.old_rno[6] < end_w.r_no_2) {
         ewk->wu.routine_no[2] = 99;
@@ -1262,19 +1299,7 @@ void effe6_0029(WORK_Other* ewk) {
         if (ewk->wu.xyz[0].disp.pos < 224) {
             ewk->wu.routine_no[2] = 99;
         } else {
-            ewk->wu.old_rno[2]--;
-
-            if (ewk->wu.old_rno[2] <= 0) {
-                ewk->wu.old_rno[2] = 5;
-                ewk->wu.my_mr.size.x++;
-                ewk->wu.my_mr.size.y++;
-
-                if (ewk->wu.my_mr.size.x >= 127) {
-                    ewk->wu.routine_no[1]++;
-                    ewk->wu.my_mr.size.x = 127;
-                    ewk->wu.my_mr.size.y = 127;
-                }
-            }
+            grow_effe6_0029_marker(ewk);
         }
 
         disp_pos_trans_entry5(ewk);
@@ -1290,9 +1315,56 @@ void effe6_0029(WORK_Other* ewk) {
     }
 }
 
-void effe6_0030(WORK_Other* ewk) {
+static void start_effe6_0030_fade(WORK_Other* ewk) {
     s16 i;
 
+    ewk->wu.routine_no[1]++;
+
+    for (i = 0; i < 64; i++) {
+        ColorRAM[327][i] = ColorRAM[343][i];
+    }
+
+    for (i = 0; i < 64; i++) {
+        ColorRAM[328][i] = ColorRAM[343][i];
+    }
+
+    for (i = 0; i < 64; i++) {
+        ColorRAM[329][i] = ColorRAM[343][i];
+    }
+
+    for (i = 0; i < 64; i++) {
+        ColorRAM[330][i] = ColorRAM[343][i];
+    }
+
+    ewk->wu.disp_flag = 2;
+    ewk->wu.blink_timing = 1;
+    ewk->wu.old_rno[2] = 30;
+    palUpdateGhostCP3(0x147, 4);
+}
+
+static void update_effe6_0030_color(WORK_Other* ewk) {
+    if (end_w.r_no_2 == 4 && bg_w.bgw[0].r_no_1 == 1) {
+        switch (bg_w.bgw[0].l_limit) {
+        case 0:
+            ewk->wu.my_col_code = 0x130;
+            break;
+
+        case 1:
+            ewk->wu.my_col_code = 0x134;
+            break;
+
+        case 2:
+            ewk->wu.my_col_code = 0x138;
+            break;
+
+        case 3:
+            ewk->wu.my_col_code = 0x13C;
+            break;
+        }
+    }
+}
+
+void effe6_0030(WORK_Other* ewk) {
     if (ewk->wu.old_rno[6] < end_w.r_no_2) {
         ewk->wu.routine_no[2] = 99;
     }
@@ -1304,49 +1376,10 @@ void effe6_0030(WORK_Other* ewk) {
         break;
 
     case 1:
-        if (end_w.r_no_2 == 4 && bg_w.bgw[0].r_no_1 == 1) {
-            switch (bg_w.bgw[0].l_limit) {
-            case 0:
-                ewk->wu.my_col_code = 0x130;
-                break;
-
-            case 1:
-                ewk->wu.my_col_code = 0x134;
-                break;
-
-            case 2:
-                ewk->wu.my_col_code = 0x138;
-                break;
-
-            case 3:
-                ewk->wu.my_col_code = 0x13C;
-                break;
-            }
-        }
+        update_effe6_0030_color(ewk);
 
         if (end_etc_flag) {
-            ewk->wu.routine_no[1]++;
-
-            for (i = 0; i < 64; i++) {
-                ColorRAM[327][i] = ColorRAM[343][i];
-            }
-
-            for (i = 0; i < 64; i++) {
-                ColorRAM[328][i] = ColorRAM[343][i];
-            }
-
-            for (i = 0; i < 64; i++) {
-                ColorRAM[329][i] = ColorRAM[343][i];
-            }
-
-            for (i = 0; i < 64; i++) {
-                ColorRAM[330][i] = ColorRAM[343][i];
-            }
-
-            ewk->wu.disp_flag = 2;
-            ewk->wu.blink_timing = 1;
-            ewk->wu.old_rno[2] = 30;
-            palUpdateGhostCP3(0x147, 4);
+            start_effe6_0030_fade(ewk);
         }
 
         disp_pos_trans_entry(ewk);
