@@ -1329,6 +1329,28 @@ static void start_effe6_0030_fade(WORK_Other* ewk) {
     palUpdateGhostCP3(0x147, 4);
 }
 
+static void update_effe6_0030_color(WORK_Other* ewk) {
+    if (end_w.r_no_2 == 4 && bg_w.bgw[0].r_no_1 == 1) {
+        switch (bg_w.bgw[0].l_limit) {
+        case 0:
+            ewk->wu.my_col_code = 0x130;
+            break;
+
+        case 1:
+            ewk->wu.my_col_code = 0x134;
+            break;
+
+        case 2:
+            ewk->wu.my_col_code = 0x138;
+            break;
+
+        case 3:
+            ewk->wu.my_col_code = 0x13C;
+            break;
+        }
+    }
+}
+
 void effe6_0030(WORK_Other* ewk) {
     if (ewk->wu.old_rno[6] < end_w.r_no_2) {
         ewk->wu.routine_no[2] = 99;
@@ -1341,25 +1363,7 @@ void effe6_0030(WORK_Other* ewk) {
         break;
 
     case 1:
-        if (end_w.r_no_2 == 4 && bg_w.bgw[0].r_no_1 == 1) {
-            switch (bg_w.bgw[0].l_limit) {
-            case 0:
-                ewk->wu.my_col_code = 0x130;
-                break;
-
-            case 1:
-                ewk->wu.my_col_code = 0x134;
-                break;
-
-            case 2:
-                ewk->wu.my_col_code = 0x138;
-                break;
-
-            case 3:
-                ewk->wu.my_col_code = 0x13C;
-                break;
-            }
-        }
+        update_effe6_0030_color(ewk);
 
         if (end_etc_flag) {
             start_effe6_0030_fade(ewk);
