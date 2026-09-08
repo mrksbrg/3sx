@@ -493,6 +493,40 @@ static void update_c2_second_landing(WORK_Other* ewk) {
     }
 }
 
+static void update_c2_second_damage(WORK_Other* ewk) {
+    if (Time_Over) {
+        ewk->wu.dm_vital = 0;
+    }
+
+    ewk->wu.shell_ix[0] -= ewk->wu.dm_vital;
+    ewk->wu.dm_vital = 0;
+    ewk->wu.hit_stop = ewk->wu.dm_stop;
+
+    if (ewk->wu.hit_stop < 0) {
+        ewk->wu.hit_stop = -ewk->wu.hit_stop;
+    }
+
+    ewk->wu.hit_stop /= 2;
+    ewk->wu.routine_no[2] = 1;
+    setup_parts_break2(&ewk->wu);
+
+    if (check_parts_break_level(&ewk->wu) != 0) {
+        char_move_z(&ewk->wu);
+        setup_effK2(&ewk->wu);
+    }
+
+    setup_effK4(&ewk->wu);
+
+    if (ewk->wu.shell_ix[0] < 0 || ewk->wu.cg_type == 0xFF) {
+        ewk->wu.dir_old = 1;
+        ewk->wu.routine_no[0] = 2;
+        ewk->wu.routine_no[1] = 0;
+        ewk->wu.routine_no[2] = 0;
+        ewk->wu.cg_type = 0;
+        Time_Stop = 1;
+    }
+}
+
 void effC2_main_process_second(WORK_Other* ewk, PLW* twk) {
     if (EXE_flag == 0 && Game_pause == 0) {
         switch (ewk->wu.routine_no[1]) {
@@ -531,38 +565,7 @@ void effC2_main_process_second(WORK_Other* ewk, PLW* twk) {
         case 1:
             switch (ewk->wu.routine_no[2]) {
             case 0:
-                if (Time_Over) {
-                    ewk->wu.dm_vital = 0;
-                }
-
-                ewk->wu.shell_ix[0] -= ewk->wu.dm_vital;
-                ewk->wu.dm_vital = 0;
-                ewk->wu.hit_stop = ewk->wu.dm_stop;
-
-                if (ewk->wu.hit_stop < 0) {
-                    ewk->wu.hit_stop = -ewk->wu.hit_stop;
-                }
-
-                ewk->wu.hit_stop /= 2;
-                ewk->wu.routine_no[2] = 1;
-                setup_parts_break2(&ewk->wu);
-
-                if (check_parts_break_level(&ewk->wu) != 0) {
-                    char_move_z(&ewk->wu);
-                    setup_effK2(&ewk->wu);
-                }
-
-                setup_effK4(&ewk->wu);
-
-                if (ewk->wu.shell_ix[0] < 0 || ewk->wu.cg_type == 0xFF) {
-                    ewk->wu.dir_old = 1;
-                    ewk->wu.routine_no[0] = 2;
-                    ewk->wu.routine_no[1] = 0;
-                    ewk->wu.routine_no[2] = 0;
-                    ewk->wu.cg_type = 0;
-                    Time_Stop = 1;
-                }
-
+                update_c2_second_damage(ewk);
                 break;
 
             case 1:
