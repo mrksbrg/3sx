@@ -1302,9 +1302,34 @@ void effe6_0029(WORK_Other* ewk) {
     }
 }
 
-void effe6_0030(WORK_Other* ewk) {
+static void start_effe6_0030_fade(WORK_Other* ewk) {
     s16 i;
 
+    ewk->wu.routine_no[1]++;
+
+    for (i = 0; i < 64; i++) {
+        ColorRAM[327][i] = ColorRAM[343][i];
+    }
+
+    for (i = 0; i < 64; i++) {
+        ColorRAM[328][i] = ColorRAM[343][i];
+    }
+
+    for (i = 0; i < 64; i++) {
+        ColorRAM[329][i] = ColorRAM[343][i];
+    }
+
+    for (i = 0; i < 64; i++) {
+        ColorRAM[330][i] = ColorRAM[343][i];
+    }
+
+    ewk->wu.disp_flag = 2;
+    ewk->wu.blink_timing = 1;
+    ewk->wu.old_rno[2] = 30;
+    palUpdateGhostCP3(0x147, 4);
+}
+
+void effe6_0030(WORK_Other* ewk) {
     if (ewk->wu.old_rno[6] < end_w.r_no_2) {
         ewk->wu.routine_no[2] = 99;
     }
@@ -1337,28 +1362,7 @@ void effe6_0030(WORK_Other* ewk) {
         }
 
         if (end_etc_flag) {
-            ewk->wu.routine_no[1]++;
-
-            for (i = 0; i < 64; i++) {
-                ColorRAM[327][i] = ColorRAM[343][i];
-            }
-
-            for (i = 0; i < 64; i++) {
-                ColorRAM[328][i] = ColorRAM[343][i];
-            }
-
-            for (i = 0; i < 64; i++) {
-                ColorRAM[329][i] = ColorRAM[343][i];
-            }
-
-            for (i = 0; i < 64; i++) {
-                ColorRAM[330][i] = ColorRAM[343][i];
-            }
-
-            ewk->wu.disp_flag = 2;
-            ewk->wu.blink_timing = 1;
-            ewk->wu.old_rno[2] = 30;
-            palUpdateGhostCP3(0x147, 4);
+            start_effe6_0030_fade(ewk);
         }
 
         disp_pos_trans_entry(ewk);
