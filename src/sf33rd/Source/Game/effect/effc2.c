@@ -449,6 +449,25 @@ jump:
     adr3->before = bf[2];
 }
 
+static void update_c2_second_launch(WORK_Other* ewk, PLW* twk) {
+    if (ewk->wu.hit_stop == 0) {
+        illegal_setup_effK2(&ewk->wu, 0);
+    }
+
+    if (--ewk->wu.hit_stop < 0) {
+        Time_Stop = 1;
+        setup_demojump(twk, 0);
+        ewk->wu.routine_no[2]++;
+        ewk->wu.mvxy.a[1].sp = 0x20000;
+        ewk->wu.mvxy.d[1].sp = -0x8000;
+        ewk->wu.xyz[1].disp.pos = 64;
+        set_char_move_init(&ewk->wu, 0, 71);
+        ewk->wu.disp_flag = 1;
+        bs2_score_add_next(&ewk->wu);
+        set_1st_Bonus_Game_result(&ewk->wu);
+    }
+}
+
 void effC2_main_process_second(WORK_Other* ewk, PLW* twk) {
     if (EXE_flag == 0 && Game_pause == 0) {
         switch (ewk->wu.routine_no[1]) {
@@ -458,23 +477,7 @@ void effC2_main_process_second(WORK_Other* ewk, PLW* twk) {
                 break;
 
             case 9:
-                if (ewk->wu.hit_stop == 0) {
-                    illegal_setup_effK2(&ewk->wu, 0);
-                }
-
-                if (--ewk->wu.hit_stop < 0) {
-                    Time_Stop = 1;
-                    setup_demojump(twk, 0);
-                    ewk->wu.routine_no[2]++;
-                    ewk->wu.mvxy.a[1].sp = 0x20000;
-                    ewk->wu.mvxy.d[1].sp = -0x8000;
-                    ewk->wu.xyz[1].disp.pos = 64;
-                    set_char_move_init(&ewk->wu, 0, 71);
-                    ewk->wu.disp_flag = 1;
-                    bs2_score_add_next(&ewk->wu);
-                    set_1st_Bonus_Game_result(&ewk->wu);
-                }
-
+                update_c2_second_launch(ewk, twk);
                 break;
 
             case 10:
