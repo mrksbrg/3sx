@@ -1717,6 +1717,49 @@ void kotp_15000(WORK_Other* ewk, TAMA* twk) {
     }
 }
 
+static void resolve_kotp_16_hit(WORK_Other* ewk, TAMA* twk) {
+    ewk->wu.vital_new -= ewk->wu.dm_vital;
+    ewk->wu.dm_vital = 0;
+
+    if (ewk->wu.vital_new < 256) {
+        if (ewk->wu.hf.hit.player) {
+            if (ewk->wu.hf.hit.player & 0xF0) {
+                set_char_move_init(&ewk->wu, 0, twk->erdf);
+            } else {
+                set_char_move_init(&ewk->wu, 0, twk->erht);
+            }
+        } else {
+            set_char_move_init(&ewk->wu, 0, twk->erex);
+        }
+
+        ewk->wu.routine_no[1] = 2;
+        ewk->wu.routine_no[2] = 1;
+        ewk->wu.kage_flag = 0;
+        ewk->wu.hit_stop = 0;
+    } else {
+        ewk->wu.routine_no[1] = 0;
+
+        if (ewk->wu.hf.hit.player) {
+            if (ewk->wu.hf.hit.player & 0xF0) {
+                effect_96_init(&ewk->wu, twk->erdf, ewk->wu.disp_flag, ewk->wu.hit_stop);
+            } else {
+                effect_96_init(&ewk->wu, twk->erht, ewk->wu.disp_flag, ewk->wu.hit_stop);
+            }
+        } else {
+            effect_96_init(&ewk->wu, twk->erex, ewk->wu.disp_flag, ewk->wu.hit_stop);
+        }
+
+        if (ewk->dm_refrect) {
+            ewk->master_id = (ewk->master_id + 1) & 1;
+            ewk->wu.rl_flag = (ewk->wu.rl_flag + 1) & 1;
+            ewk->dm_refrect = 0;
+        }
+    }
+
+    ewk->wu.hf.hit_flag = 0;
+    ewk->wu.hit_quake = 0;
+}
+
 void kotp_16000(WORK_Other* ewk, TAMA* twk) {
     if (ewk->wu.hf.hit_flag) {
         ewk->wu.routine_no[1] = 1;
@@ -1773,46 +1816,7 @@ void kotp_16000(WORK_Other* ewk, TAMA* twk) {
         break;
 
     case 1:
-        ewk->wu.vital_new -= ewk->wu.dm_vital;
-        ewk->wu.dm_vital = 0;
-
-        if (ewk->wu.vital_new < 256) {
-            if (ewk->wu.hf.hit.player) {
-                if (ewk->wu.hf.hit.player & 0xF0) {
-                    set_char_move_init(&ewk->wu, 0, twk->erdf);
-                } else {
-                    set_char_move_init(&ewk->wu, 0, twk->erht);
-                }
-            } else {
-                set_char_move_init(&ewk->wu, 0, twk->erex);
-            }
-
-            ewk->wu.routine_no[1] = 2;
-            ewk->wu.routine_no[2] = 1;
-            ewk->wu.kage_flag = 0;
-            ewk->wu.hit_stop = 0;
-        } else {
-            ewk->wu.routine_no[1] = 0;
-
-            if (ewk->wu.hf.hit.player) {
-                if (ewk->wu.hf.hit.player & 0xF0) {
-                    effect_96_init(&ewk->wu, twk->erdf, ewk->wu.disp_flag, ewk->wu.hit_stop);
-                } else {
-                    effect_96_init(&ewk->wu, twk->erht, ewk->wu.disp_flag, ewk->wu.hit_stop);
-                }
-            } else {
-                effect_96_init(&ewk->wu, twk->erex, ewk->wu.disp_flag, ewk->wu.hit_stop);
-            }
-
-            if (ewk->dm_refrect) {
-                ewk->master_id = (ewk->master_id + 1) & 1;
-                ewk->wu.rl_flag = (ewk->wu.rl_flag + 1) & 1;
-                ewk->dm_refrect = 0;
-            }
-        }
-
-        ewk->wu.hf.hit_flag = 0;
-        ewk->wu.hit_quake = 0;
+        resolve_kotp_16_hit(ewk, twk);
         break;
 
     case 2:
