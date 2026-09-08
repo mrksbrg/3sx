@@ -724,6 +724,23 @@ void effe6_0015(WORK_Other* ewk) {
     }
 }
 
+static void update_effe6_0016_animation(WORK_Other* ewk) {
+    char_move(&ewk->wu);
+
+    if (ewk->wu.cg_type == 9) {
+        if (ewk->wu.routine_no[1] == 1) {
+            ewk->wu.old_rno[2] = 10;
+        } else {
+            ewk->wu.old_rno[2] = 80;
+        }
+
+        ewk->wu.routine_no[1]++;
+        char_move_z(&ewk->wu);
+    } else {
+        disp_pos_trans_entry(ewk);
+    }
+}
+
 void effe6_0016(WORK_Other* ewk) {
     if (ewk->wu.old_rno[6] < end_w.r_no_2) {
         ewk->wu.routine_no[2] = 99;
@@ -736,21 +753,7 @@ void effe6_0016(WORK_Other* ewk) {
 
     case 1:
     case 3:
-        char_move(&ewk->wu);
-
-        if (ewk->wu.cg_type == 9) {
-            if (ewk->wu.routine_no[1] == 1) {
-                ewk->wu.old_rno[2] = 10;
-            } else {
-                ewk->wu.old_rno[2] = 80;
-            }
-
-            ewk->wu.routine_no[1]++;
-            char_move_z(&ewk->wu);
-        } else {
-            disp_pos_trans_entry(ewk);
-        }
-
+        update_effe6_0016_animation(ewk);
         break;
 
     case 2:
