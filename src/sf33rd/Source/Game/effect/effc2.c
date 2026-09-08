@@ -542,6 +542,13 @@ static void update_c2_second_fall(WORK_Other* ewk) {
     }
 }
 
+static void update_c2_second_hit_stop(WORK_Other* ewk) {
+    if (--ewk->wu.hit_stop <= 0) {
+        ewk->wu.routine_no[1] = 0;
+        ewk->wu.routine_no[2] = 0;
+    }
+}
+
 void effC2_main_process_second(WORK_Other* ewk, PLW* twk) {
     if (EXE_flag == 0 && Game_pause == 0) {
         switch (ewk->wu.routine_no[1]) {
@@ -572,11 +579,7 @@ void effC2_main_process_second(WORK_Other* ewk, PLW* twk) {
                 break;
 
             case 1:
-                if (--ewk->wu.hit_stop <= 0) {
-                    ewk->wu.routine_no[1] = 0;
-                    ewk->wu.routine_no[2] = 0;
-                }
-
+                update_c2_second_hit_stop(ewk);
                 break;
             }
 
