@@ -1070,6 +1070,33 @@ void effe6_0024(WORK_Other* ewk) {
     }
 }
 
+static void set_effe6_0025_position(WORK_Other* ewk) {
+    switch (ewk->wu.old_rno[2]) {
+    case 0:
+        ewk->wu.xyz[0].disp.pos = 608;
+        break;
+
+    case 1:
+        ewk->wu.xyz[0].disp.pos = 609;
+        break;
+
+    case 2:
+        ewk->wu.xyz[0].disp.pos = 610;
+        break;
+
+    case 3:
+        ewk->wu.xyz[0].disp.pos = 607;
+        break;
+
+    case 4:
+        ewk->wu.xyz[0].disp.pos = 606;
+        break;
+
+    case 5:
+        ewk->wu.xyz[0].disp.pos = 611;
+    }
+}
+
 static void update_effe6_0025_player_two(WORK_Other* ewk) {
     u16 work;
 
@@ -1100,30 +1127,7 @@ static void update_effe6_0025_player_two(WORK_Other* ewk) {
         }
     }
 
-    switch (ewk->wu.old_rno[2]) {
-    case 0:
-        ewk->wu.xyz[0].disp.pos = 608;
-        break;
-
-    case 1:
-        ewk->wu.xyz[0].disp.pos = 609;
-        break;
-
-    case 2:
-        ewk->wu.xyz[0].disp.pos = 610;
-        break;
-
-    case 3:
-        ewk->wu.xyz[0].disp.pos = 607;
-        break;
-
-    case 4:
-        ewk->wu.xyz[0].disp.pos = 606;
-        break;
-
-    case 5:
-        ewk->wu.xyz[0].disp.pos = 611;
-    }
+    set_effe6_0025_position(ewk);
 }
 
 void effe6_0025(WORK_Other* ewk) {
