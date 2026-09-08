@@ -468,6 +468,31 @@ static void update_c2_second_launch(WORK_Other* ewk, PLW* twk) {
     }
 }
 
+static void update_c2_second_landing(WORK_Other* ewk) {
+    char_move(&ewk->wu);
+
+    switch (ewk->wu.cg_type) {
+    case 2:
+        illegal_setup_effK2(&ewk->wu, 2);
+        ewk->wu.cg_type = 0;
+        break;
+
+    case 3:
+        illegal_setup_effK2(&ewk->wu, 3);
+        ewk->wu.cg_type = 0;
+        break;
+    }
+
+    if (ewk->wu.cg_type == 0xFF) {
+        set_char_move_init(&ewk->wu, 0, 70);
+        ewk->wu.dir_old = 0;
+        ewk->wu.routine_no[2] = 0;
+        ewk->wu.original_vitality = ewk->wu.shell_ix[0] = 0x640;
+        ewk->wu.vital_old = 0;
+        Time_Stop = 0;
+    }
+}
+
 void effC2_main_process_second(WORK_Other* ewk, PLW* twk) {
     if (EXE_flag == 0 && Game_pause == 0) {
         switch (ewk->wu.routine_no[1]) {
@@ -497,29 +522,7 @@ void effC2_main_process_second(WORK_Other* ewk, PLW* twk) {
                 break;
 
             case 11:
-                char_move(&ewk->wu);
-
-                switch (ewk->wu.cg_type) {
-                case 2:
-                    illegal_setup_effK2(&ewk->wu, 2);
-                    ewk->wu.cg_type = 0;
-                    break;
-
-                case 3:
-                    illegal_setup_effK2(&ewk->wu, 3);
-                    ewk->wu.cg_type = 0;
-                    break;
-                }
-
-                if (ewk->wu.cg_type == 0xFF) {
-                    set_char_move_init(&ewk->wu, 0, 70);
-                    ewk->wu.dir_old = 0;
-                    ewk->wu.routine_no[2] = 0;
-                    ewk->wu.original_vitality = ewk->wu.shell_ix[0] = 0x640;
-                    ewk->wu.vital_old = 0;
-                    Time_Stop = 0;
-                }
-
+                update_c2_second_landing(ewk);
                 break;
             }
 
