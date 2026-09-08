@@ -612,6 +612,8 @@ s16 c2_last_dir_select(PLW* wk, WORK* efw) {
 }
 
 void setup_demojump(PLW* twk, s16 ix) {
+    s32 should_reset_demo_jump;
+
     switch (ix) {
     case 0:
         if (twk->wu.xyz[1].disp.pos > 3) {
@@ -632,7 +634,10 @@ void setup_demojump(PLW* twk, s16 ix) {
         break;
 
     case 2:
-        if ((twk->wu.pat_status >= 14 && twk->wu.pat_status <= 30) || twk->bs2_on_car) {
+        should_reset_demo_jump =
+            (twk->wu.pat_status >= 14 && twk->wu.pat_status <= 30) || twk->bs2_on_car;
+
+        if (should_reset_demo_jump) {
             twk->wu.routine_no[1] = 0;
             twk->wu.routine_no[2] = 56;
             twk->wu.routine_no[3] = 0;
