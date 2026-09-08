@@ -83,6 +83,52 @@ static s32 game_is_active(void) {
     return EXE_flag == 0 && Game_pause == 0;
 }
 
+static void advance_c2_last_character(WORK_Other* ewk) {
+    switch (ewk->wu.routine_no[2]) {
+    case 0:
+        char_move(&ewk->wu);
+        add_mvxy_speed(&ewk->wu);
+        cal_mvxy_speed(&ewk->wu);
+
+        if (ewk->wu.mvxy.a[1].sp <= 0 && (ewk->wu.xyz[1].disp.pos <= ewk->wu.next_y)) {
+            ewk->wu.xyz[1].disp.pos = ewk->wu.next_y;
+            ewk->wu.routine_no[2] = 1;
+            char_move_cmja(&ewk->wu);
+        }
+
+        break;
+
+    case 1:
+        char_move(&ewk->wu);
+
+        switch (ewk->wu.cg_type) {
+        case 1:
+            if (ewk->wu.mvxy.a[0].sp > 0) {
+                add_mvxy_speed_direct(&ewk->wu, 128, 0);
+            } else {
+                add_mvxy_speed_direct(&ewk->wu, -128, 0);
+            }
+
+            break;
+
+        case 2:
+            if (ewk->wu.mvxy.a[0].sp > 0) {
+                add_mvxy_speed_direct(&ewk->wu, 256, 0);
+            } else {
+                add_mvxy_speed_direct(&ewk->wu, -256, 0);
+            }
+
+            break;
+
+        case 0xFF:
+            ewk->wu.routine_no[2] = 2;
+            break;
+        }
+
+        break;
+    }
+}
+
 void effect_C2_move(WORK_Other* ewk) {
     switch (ewk->wu.routine_no[0]) {
     case 0:
@@ -154,50 +200,7 @@ void effect_C2_move(WORK_Other* ewk) {
                 break;
 
             case 9:
-                switch (ewk->wu.routine_no[2]) {
-                case 0:
-                    char_move(&ewk->wu);
-                    add_mvxy_speed(&ewk->wu);
-                    cal_mvxy_speed(&ewk->wu);
-
-                    if (ewk->wu.mvxy.a[1].sp <= 0 && (ewk->wu.xyz[1].disp.pos <= ewk->wu.next_y)) {
-                        ewk->wu.xyz[1].disp.pos = ewk->wu.next_y;
-                        ewk->wu.routine_no[2] = 1;
-                        char_move_cmja(&ewk->wu);
-                    }
-
-                    break;
-
-                case 1:
-                    char_move(&ewk->wu);
-
-                    switch (ewk->wu.cg_type) {
-                    case 1:
-                        if (ewk->wu.mvxy.a[0].sp > 0) {
-                            add_mvxy_speed_direct(&ewk->wu, 128, 0);
-                        } else {
-                            add_mvxy_speed_direct(&ewk->wu, -128, 0);
-                        }
-
-                        break;
-
-                    case 2:
-                        if (ewk->wu.mvxy.a[0].sp > 0) {
-                            add_mvxy_speed_direct(&ewk->wu, 256, 0);
-                        } else {
-                            add_mvxy_speed_direct(&ewk->wu, -256, 0);
-                        }
-
-                        break;
-
-                    case 0xFF:
-                        ewk->wu.routine_no[2] = 2;
-                        break;
-                    }
-
-                    break;
-                }
-
+                advance_c2_last_character(ewk);
                 break;
 
             default:
