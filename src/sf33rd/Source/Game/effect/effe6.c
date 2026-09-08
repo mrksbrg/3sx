@@ -353,6 +353,22 @@ static void set_effe6_0007_color(WORK_Other* ewk) {
     }
 }
 
+static void display_effe6_0007(WORK_Other* ewk) {
+    switch (ewk->wu.type) {
+    case 22:
+    case 23:
+    case 24:
+    case 27:
+    case 28:
+        disp_pos_trans_entry_r4(ewk);
+        break;
+
+    default:
+        disp_pos_trans_entry_r(ewk);
+        break;
+    }
+}
+
 void effe6_0007(WORK_Other* ewk) {
     switch (ewk->wu.routine_no[1]) {
     case 0:
@@ -369,20 +385,7 @@ void effe6_0007(WORK_Other* ewk) {
             char_move(&ewk->wu);
         }
 
-        switch (ewk->wu.type) {
-        case 22:
-        case 23:
-        case 24:
-        case 27:
-        case 28:
-            disp_pos_trans_entry_r4(ewk);
-            break;
-
-        default:
-            disp_pos_trans_entry_r(ewk);
-            break;
-        }
-
+        display_effe6_0007(ewk);
         break;
     }
 }
