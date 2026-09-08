@@ -527,6 +527,21 @@ static void update_c2_second_damage(WORK_Other* ewk) {
     }
 }
 
+static void update_c2_second_fall(WORK_Other* ewk) {
+    add_mvxy_speed(&ewk->wu);
+    cal_mvxy_speed(&ewk->wu);
+
+    if (ewk->wu.xyz[1].disp.pos <= 0) {
+        ewk->wu.routine_no[2]++;
+        ewk->wu.position_y = 0;
+        ewk->wu.xyz[1].cal = 0;
+        ewk->wu.mvxy.a[1].sp = 0;
+        reset_mvxy_data(&ewk->wu);
+        char_move_z(&ewk->wu);
+        illegal_setup_effK2(&ewk->wu, 1);
+    }
+}
+
 void effC2_main_process_second(WORK_Other* ewk, PLW* twk) {
     if (EXE_flag == 0 && Game_pause == 0) {
         switch (ewk->wu.routine_no[1]) {
@@ -540,19 +555,7 @@ void effC2_main_process_second(WORK_Other* ewk, PLW* twk) {
                 break;
 
             case 10:
-                add_mvxy_speed(&ewk->wu);
-                cal_mvxy_speed(&ewk->wu);
-
-                if (ewk->wu.xyz[1].disp.pos <= 0) {
-                    ewk->wu.routine_no[2]++;
-                    ewk->wu.position_y = 0;
-                    ewk->wu.xyz[1].cal = 0;
-                    ewk->wu.mvxy.a[1].sp = 0;
-                    reset_mvxy_data(&ewk->wu);
-                    char_move_z(&ewk->wu);
-                    illegal_setup_effK2(&ewk->wu, 1);
-                }
-
+                update_c2_second_fall(ewk);
                 break;
 
             case 11:
