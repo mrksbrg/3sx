@@ -742,6 +742,10 @@ void eff09_9000(WORK_Other* ewk) {
     }
 }
 
+static s32 eff09_10000_animation_updates_enabled(const WORK_Other* ewk) {
+    return !EXE_flag && !Game_pause && ewk->wu.hit_stop;
+}
+
 void eff09_10000(WORK_Other* ewk) {
     switch (ewk->wu.routine_no[1]) {
     case 0:
@@ -761,7 +765,7 @@ void eff09_10000(WORK_Other* ewk) {
         break;
 
     case 1:
-        if (!EXE_flag && !Game_pause && ewk->wu.hit_stop) {
+        if (eff09_10000_animation_updates_enabled(ewk)) {
             char_move(&ewk->wu);
 
             if (ewk->wu.cg_type) {
