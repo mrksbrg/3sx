@@ -1407,6 +1407,30 @@ static s32 eff09_21000_updates_enabled() {
     return !EXE_flag && !Game_pause;
 }
 
+static void initialize_eff09_21000_type_29(WORK_Other* ewk, s16* arrive_x, s16* arrive_y) {
+    ewk->wu.old_rno[0] = 70;
+
+    if (ewk->wu.rl_flag) {
+        *arrive_x = ewk->wu.xyz[0].disp.pos + 42;
+    } else {
+        *arrive_x = ewk->wu.xyz[0].disp.pos - 42;
+    }
+
+    *arrive_y = (ewk->wu.xyz[1].disp.pos + 6);
+}
+
+static void initialize_eff09_21000_winner(WORK_Other* ewk, s16* arrive_x, s16* arrive_y) {
+    ewk->wu.old_rno[0] = 64;
+
+    if (plw[Winner_id].wu.rl_flag) {
+        *arrive_x = plw[Winner_id].wu.xyz[0].disp.pos + 28;
+    } else {
+        *arrive_x = plw[Winner_id].wu.xyz[0].disp.pos - 28;
+    }
+
+    *arrive_y = plw[Winner_id].wu.xyz[1].disp.pos + 162;
+}
+
 static void initialize_eff09_21000(WORK_Other* ewk) {
     s16 arrive_x;
     s16 arrive_y;
@@ -1419,25 +1443,9 @@ static void initialize_eff09_21000(WORK_Other* ewk) {
     ewk->wu.mvxy.d[1].sp = -0x8000;
 
     if (ewk->wu.type == 29) {
-        ewk->wu.old_rno[0] = 70;
-
-        if (ewk->wu.rl_flag) {
-            arrive_x = ewk->wu.xyz[0].disp.pos + 42;
-        } else {
-            arrive_x = ewk->wu.xyz[0].disp.pos - 42;
-        }
-
-        arrive_y = (ewk->wu.xyz[1].disp.pos + 6);
+        initialize_eff09_21000_type_29(ewk, &arrive_x, &arrive_y);
     } else {
-        ewk->wu.old_rno[0] = 64;
-
-        if (plw[Winner_id].wu.rl_flag) {
-            arrive_x = plw[Winner_id].wu.xyz[0].disp.pos + 28;
-        } else {
-            arrive_x = plw[Winner_id].wu.xyz[0].disp.pos - 28;
-        }
-
-        arrive_y = plw[Winner_id].wu.xyz[1].disp.pos + 162;
+        initialize_eff09_21000_winner(ewk, &arrive_x, &arrive_y);
     }
 
     cal_all_speed_data(&ewk->wu, ewk->wu.old_rno[0], arrive_x, arrive_y, 2, 2);
