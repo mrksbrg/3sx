@@ -80,7 +80,9 @@ def read_trace(path: Path) -> list[tuple[int, str]]:
 
 
 def read_complete_trace(gameplay_path: Path) -> list[TraceRow]:
-    boot_rows = [("boot", frame, checksum) for frame, checksum in read_trace(gameplay_path.parent / BOOT_TRACE_NAME)]
+    boot_path = gameplay_path.parent / BOOT_TRACE_NAME
+    boot_trace = read_trace(boot_path) if boot_path.exists() else []
+    boot_rows = [("boot", frame, checksum) for frame, checksum in boot_trace]
     gameplay_rows = [("gameplay", frame, checksum) for frame, checksum in read_trace(gameplay_path)]
     return boot_rows + gameplay_rows
 
