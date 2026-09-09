@@ -1197,9 +1197,7 @@ static void update_op_108_final_transition(void) {
 void op_108_move() {
     switch (op_w.r_no_2) {
     case 0:
-        op_w.r_no_2 += 1;
-        op_work_clear();
-        op_w.index = 41;
+        advance_opening_step(41);
         op_bg_move(41);
         op_w.mv_ctr = 0;
         effect_36_init(0);
