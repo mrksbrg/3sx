@@ -1333,28 +1333,38 @@ void eff09_19000(WORK_Other* ewk) {
     }
 }
 
-static void advance_eff09_20000(WORK_Other* ewk, WORK* oya_ptr) {
+static void advance_eff09_20000_left(WORK_Other* ewk, WORK* oya_ptr) {
     s16 pos_work;
 
+    pos_work = bg_w.bgw[1].wxy[0].disp.pos - bg_w.pos_offset;
+    pos_work -= 64;
+
+    if (ewk->wu.xyz[0].disp.pos < pos_work) {
+        oya_ptr->cmwk[1] = 1;
+        ewk->wu.routine_no[1]++;
+    }
+}
+
+static void advance_eff09_20000_right(WORK_Other* ewk, WORK* oya_ptr) {
+    s16 pos_work;
+
+    pos_work = bg_w.bgw[1].wxy[0].disp.pos + bg_w.pos_offset;
+    pos_work += 64;
+
+    if (ewk->wu.xyz[0].disp.pos > pos_work) {
+        oya_ptr->cmwk[1] = 1;
+        ewk->wu.routine_no[1]++;
+    }
+}
+
+static void advance_eff09_20000(WORK_Other* ewk, WORK* oya_ptr) {
     if (!EXE_flag && !Game_pause) {
         char_move(&ewk->wu);
 
         if (oya_ptr->id) {
-            pos_work = bg_w.bgw[1].wxy[0].disp.pos - bg_w.pos_offset;
-            pos_work -= 64;
-
-            if (ewk->wu.xyz[0].disp.pos < pos_work) {
-                oya_ptr->cmwk[1] = 1;
-                ewk->wu.routine_no[1]++;
-            }
+            advance_eff09_20000_left(ewk, oya_ptr);
         } else {
-            pos_work = bg_w.bgw[1].wxy[0].disp.pos + bg_w.pos_offset;
-            pos_work += 64;
-
-            if (ewk->wu.xyz[0].disp.pos > pos_work) {
-                oya_ptr->cmwk[1] = 1;
-                ewk->wu.routine_no[1]++;
-            }
+            advance_eff09_20000_right(ewk, oya_ptr);
         }
     }
 }
