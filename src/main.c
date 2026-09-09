@@ -157,6 +157,14 @@ static void appCopyKeyData() {
     PLsw[1][0] = p2sw_buff;
 }
 
+static bool should_process_replay_inputs() {
+    return (Game_pause != 0x81) && (Mode_Type == MODE_VERSUS) && (Play_Mode == 1);
+}
+
+static bool should_reset_replay_input(int player) {
+    return (plw[player].wu.operator == 0) && (CPU_Rec[player] == 0) && (Replay_Status[player] == 1);
+}
+
 void njUserMain() {
     CPU_Time_Lag[0] = 0;
     CPU_Time_Lag[1] = 0;
@@ -168,19 +176,27 @@ void njUserMain() {
 
     cpLoopTask();
 
-    if ((Game_pause != 0x81) && (Mode_Type == MODE_VERSUS) && (Play_Mode == 1)) {
-        if ((plw[0].wu.operator == 0) && (CPU_Rec[0] == 0) && (Replay_Status[0] == 1)) {
+    if (should_process_replay_inputs()) {
+        if (should_reset_replay_input(0)) {
             p1sw_0 = 0;
 
             Check_Replay_Status(0, 1);
         }
 
-        if ((plw[1].wu.operator == 0) && (CPU_Rec[1] == 0) && (Replay_Status[1] == 1)) {
+        if (should_reset_replay_input(1)) {
             p2sw_0 = 0;
 
             Check_Replay_Status(1, 1);
         }
     }
+}
+
+static bool should_copy_frame_inputs() {
+    return (Play_Mode != 3 && Play_Mode != 1) || (Game_pause != 0x81);
+}
+
+static bool should_swap_parry_training_inputs() {
+    return (task[TASK_MENU].condition == 1) && (Mode_Type == MODE_PARRY_TRAINING) && (Play_Mode == 1);
 }
 
 void Main_StepFrame() {
@@ -193,7 +209,7 @@ void Main_StepFrame() {
     Stress_InjectBootInput();
 #endif
 
-    if ((Play_Mode != 3 && Play_Mode != 1) || (Game_pause != 0x81)) {
+    if (should_copy_frame_inputs()) {
         p1sw_1 = p1sw_0;
         p2sw_1 = p2sw_0;
         p3sw_1 = p3sw_0;
@@ -203,7 +219,7 @@ void Main_StepFrame() {
         p3sw_0 = p3sw_buff;
         p4sw_0 = p4sw_buff;
 
-        if ((task[TASK_MENU].condition == 1) && (Mode_Type == MODE_PARRY_TRAINING) && (Play_Mode == 1)) {
+        if (should_swap_parry_training_inputs()) {
             const u16 sw_buff = p2sw_0;
             p2sw_0 = p1sw_0;
             p1sw_0 = sw_buff;
