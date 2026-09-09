@@ -420,6 +420,30 @@ void ball_bound_set(WORK_Other* ewk) {
     }
 }
 
+static void advance_eff09_3000_arrival(WORK_Other* ewk) {
+    if (!EXE_flag && !Game_pause) {
+        ewk->wu.old_rno[0]--;
+
+        if (ewk->wu.old_rno[0] <= 0) {
+            ewk->wu.routine_no[1]++;
+        } else {
+            add_y_sub(&ewk->wu);
+        }
+
+        char_move(&ewk->wu);
+    }
+}
+
+static void advance_eff09_3000_animation(WORK_Other* ewk) {
+    if (Exec_Wipe) {
+        Sound_SE((Winner_id * 0x300) + 0x130);
+    }
+
+    if (!EXE_flag && !Game_pause) {
+        char_move(&ewk->wu);
+    }
+}
+
 void eff09_3000(WORK_Other* ewk) {
     switch (ewk->wu.routine_no[1]) {
     case 0:
@@ -437,31 +461,13 @@ void eff09_3000(WORK_Other* ewk) {
         break;
 
     case 1:
-        if (!EXE_flag && !Game_pause) {
-            ewk->wu.old_rno[0]--;
-
-            if (ewk->wu.old_rno[0] <= 0) {
-                ewk->wu.routine_no[1]++;
-            } else {
-                add_y_sub(&ewk->wu);
-            }
-
-            char_move(&ewk->wu);
-        }
-
+        advance_eff09_3000_arrival(ewk);
         suzi_sync_pos_set(ewk);
         sort_push_request(&ewk->wu);
         break;
 
     case 2:
-        if (Exec_Wipe) {
-            Sound_SE((Winner_id * 0x300) + 0x130);
-        }
-
-        if (!EXE_flag && !Game_pause) {
-            char_move(&ewk->wu);
-        }
-
+        advance_eff09_3000_animation(ewk);
         suzi_sync_pos_set(ewk);
         sort_push_request(&ewk->wu);
         break;
