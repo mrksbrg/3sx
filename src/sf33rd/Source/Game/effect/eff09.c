@@ -1616,6 +1616,10 @@ void eff09_25000(WORK_Other* ewk) {
     }
 }
 
+static s32 eff09_26000_updates_enabled() {
+    return !EXE_flag && !Game_pause;
+}
+
 void eff09_26000(WORK_Other* ewk) {
     WORK* oya_ptr;
 
@@ -1636,7 +1640,7 @@ void eff09_26000(WORK_Other* ewk) {
         break;
 
     case 1:
-        if (!EXE_flag && !Game_pause) {
+        if (eff09_26000_updates_enabled()) {
             char_move(&ewk->wu);
 
             if (ewk->wu.cg_type == 9) {
@@ -1650,7 +1654,7 @@ void eff09_26000(WORK_Other* ewk) {
         break;
 
     case 2:
-        if (!EXE_flag && !Game_pause) {
+        if (eff09_26000_updates_enabled()) {
             char_move(&ewk->wu);
 
             if (ewk->wu.cg_type == 0xFF) {
@@ -1664,7 +1668,7 @@ void eff09_26000(WORK_Other* ewk) {
         break;
 
     case 3:
-        if (!EXE_flag && !Game_pause) {
+        if (eff09_26000_updates_enabled()) {
             char_move(&ewk->wu);
 
             if (oya_ptr->cmwk[0] == 2) {
@@ -1677,7 +1681,7 @@ void eff09_26000(WORK_Other* ewk) {
         break;
 
     case 4:
-        if (!EXE_flag && !Game_pause) {
+        if (eff09_26000_updates_enabled()) {
             char_move(&ewk->wu);
         }
 
