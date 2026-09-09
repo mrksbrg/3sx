@@ -1206,6 +1206,45 @@ void eff09_18000(WORK_Other* ewk) {
     }
 }
 
+static void initialize_eff09_19000(WORK_Other* ewk) {
+    ewk->wu.disp_flag = 1;
+    ewk->wu.dead_f = 1;
+    set_char_move_init(&ewk->wu, 0, ewk->wu.char_index);
+    ewk->wu.mvxy.a[0].sp = eff09_19000_tbl[ewk->wu.routine_no[1]][0];
+    ewk->wu.mvxy.d[0].sp = eff09_19000_tbl[ewk->wu.routine_no[1]][1];
+    ewk->wu.mvxy.a[1].sp = eff09_19000_tbl[ewk->wu.routine_no[1]][2];
+    ewk->wu.mvxy.d[1].sp = eff09_19000_tbl[ewk->wu.routine_no[1]][3];
+    ewk->wu.routine_no[1]++;
+}
+
+static void advance_eff09_19000_bounce(WORK_Other* ewk) {
+    if (!EXE_flag && !Game_pause) {
+        add_x_sub(&ewk->wu);
+        add_y_sub(&ewk->wu);
+
+        if (ewk->wu.xyz[1].disp.pos < 64) {
+            ewk->wu.xyz[1].cal = 0x3F0000;
+            ewk->wu.mvxy.a[0].sp = eff09_19000_tbl[ewk->wu.routine_no[1]][0];
+            ewk->wu.mvxy.d[0].sp = eff09_19000_tbl[ewk->wu.routine_no[1]][1];
+            ewk->wu.mvxy.a[1].sp = eff09_19000_tbl[ewk->wu.routine_no[1]][2];
+            ewk->wu.mvxy.d[1].sp = eff09_19000_tbl[ewk->wu.routine_no[1]][3];
+            ewk->wu.routine_no[1]++;
+        }
+    }
+}
+
+static void advance_eff09_19000_exit(WORK_Other* ewk) {
+    if (!EXE_flag && !Game_pause) {
+        add_x_sub(&ewk->wu);
+        add_y_sub(&ewk->wu);
+
+        if (ewk->wu.xyz[1].disp.pos < 64) {
+            ewk->wu.routine_no[1]++;
+            ewk->wu.disp_flag = 0;
+        }
+    }
+}
+
 void eff09_19000(WORK_Other* ewk) {
     if (obr_no_disp_check()) {
         return;
@@ -1213,47 +1252,18 @@ void eff09_19000(WORK_Other* ewk) {
 
     switch (ewk->wu.routine_no[1]) {
     case 0:
-        ewk->wu.disp_flag = 1;
-        ewk->wu.dead_f = 1;
-        set_char_move_init(&ewk->wu, 0, ewk->wu.char_index);
-        ewk->wu.mvxy.a[0].sp = eff09_19000_tbl[ewk->wu.routine_no[1]][0];
-        ewk->wu.mvxy.d[0].sp = eff09_19000_tbl[ewk->wu.routine_no[1]][1];
-        ewk->wu.mvxy.a[1].sp = eff09_19000_tbl[ewk->wu.routine_no[1]][2];
-        ewk->wu.mvxy.d[1].sp = eff09_19000_tbl[ewk->wu.routine_no[1]][3];
-        ewk->wu.routine_no[1]++;
+        initialize_eff09_19000(ewk);
         disp_pos_trans_entry(ewk);
         return;
 
     case 1:
     case 2:
-        if (!EXE_flag && !Game_pause) {
-            add_x_sub(&ewk->wu);
-            add_y_sub(&ewk->wu);
-
-            if (ewk->wu.xyz[1].disp.pos < 64) {
-                ewk->wu.xyz[1].cal = 0x3F0000;
-                ewk->wu.mvxy.a[0].sp = eff09_19000_tbl[ewk->wu.routine_no[1]][0];
-                ewk->wu.mvxy.d[0].sp = eff09_19000_tbl[ewk->wu.routine_no[1]][1];
-                ewk->wu.mvxy.a[1].sp = eff09_19000_tbl[ewk->wu.routine_no[1]][2];
-                ewk->wu.mvxy.d[1].sp = eff09_19000_tbl[ewk->wu.routine_no[1]][3];
-                ewk->wu.routine_no[1]++;
-            }
-        }
-
+        advance_eff09_19000_bounce(ewk);
         disp_pos_trans_entry(ewk);
         return;
 
     case 3:
-        if (!EXE_flag && !Game_pause) {
-            add_x_sub(&ewk->wu);
-            add_y_sub(&ewk->wu);
-
-            if (ewk->wu.xyz[1].disp.pos < 64) {
-                ewk->wu.routine_no[1]++;
-                ewk->wu.disp_flag = 0;
-            }
-        }
-
+        advance_eff09_19000_exit(ewk);
         disp_pos_trans_entry(ewk);
         return;
 
