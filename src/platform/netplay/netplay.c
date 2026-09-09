@@ -468,6 +468,19 @@ static void gather_state(State* dst) {
     es->frwctr_min = frwctr_min;
 }
 
+void Netplay_RecordStressBootState() {
+#if DEBUG
+    if (!Stress_IsRequested() || Stress_IsRunning()) {
+        return;
+    }
+
+    State state;
+    gather_state(&state);
+    clean_state_pointers(&state);
+    Stress_RecordBootState(calculate_checksum(&state));
+#endif
+}
+
 static void save_state(GekkoGameEvent* event) {
     *event->data.save.state_len = sizeof(State);
     State* dst = (State*)event->data.save.state;

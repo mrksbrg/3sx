@@ -77,8 +77,9 @@ When Statcheck encounters a mismatch, it stops execution and prints a message wi
 
 When CPS3 RAM archives are unavailable, the netplay stress player can compare a
 candidate build with a baseline build. It drives both players with identical
-seeded input, runs without a window, and records a normalized rollback-state
-checksum after every gameplay frame.
+seeded input, runs without a window, and records normalized rollback-state
+checksums throughout the opening, title screen, menus, character select, fight
+transition, and every gameplay frame.
 
 Build both revisions in separate Debug build directories as described in the
 [README developer validation setup](../README.md#developer-validation-setup),

@@ -30,6 +30,7 @@ bool Netplay_IsMatchmakingPending(); // true while searching, false once matched
 void Netplay_FindMatch();
 void Netplay_CancelMatchmaking();
 void Netplay_Run();
+void Netplay_RecordStressBootState();
 NetplaySessionState Netplay_GetSessionState();
 void Netplay_HandleMenuExit();
 void Netplay_GetNetworkStats(NetworkStats* stats);
