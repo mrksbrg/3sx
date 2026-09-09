@@ -937,6 +937,8 @@ static void steer_kotp_06(WORK_Other* ewk, const TAMA* twk, const PLW* mwk, cons
     }
 }
 
+static void finish_kotp_07(WORK_Other* ewk);
+
 void kotp_06000(WORK_Other* ewk, TAMA* twk) {
     PLW* mwk;
     PLW* emwk;
@@ -988,23 +990,7 @@ void kotp_06000(WORK_Other* ewk, TAMA* twk) {
         break;
 
     case 2:
-        switch (ewk->wu.routine_no[2]) {
-        case 0:
-            add_mvxy_speed(&ewk->wu);
-            cal_mvxy_speed(&ewk->wu);
-            /* fallthrough */
-
-        case 1:
-            char_move(&ewk->wu);
-
-            if (ewk->wu.cg_type == 0xFF) {
-                ewk->wu.disp_flag = 0;
-                ewk->wu.routine_no[0] = 2;
-            }
-
-            break;
-        }
-
+        finish_kotp_07(ewk);
         break;
     }
 }
