@@ -1092,6 +1092,39 @@ void eff09_16000(WORK_Other* ewk) {
     }
 }
 
+static void initialize_eff09_17000(WORK_Other* ewk) {
+    ewk->wu.routine_no[1]++;
+    ewk->wu.disp_flag = 1;
+    ewk->wu.dead_f = 1;
+    ewk->wu.rl_flag = 0;
+    ewk->wu.xyz[1].disp.pos += base_y_pos;
+    set_char_move_init(&ewk->wu, 0, ewk->wu.char_index);
+}
+
+static void advance_eff09_17000(WORK_Other* ewk, const WORK* oya_ptr) {
+    if (!EXE_flag && !Game_pause) {
+        char_move(&ewk->wu);
+
+        if (oya_ptr->cg_type == 9) {
+            ewk->wu.routine_no[1]++;
+            ewk->wu.disp_flag = 0;
+        } else if (oya_ptr->routine_no[1] != 4 || oya_ptr->routine_no[2] != 30) {
+            ewk->wu.routine_no[1]++;
+            ewk->wu.disp_flag = 0;
+        }
+    }
+
+    ewk->wu.xyz[0].disp.pos = oya_ptr->xyz[0].disp.pos;
+
+    if (oya_ptr->rl_flag) {
+        ewk->wu.xyz[0].disp.pos -= eff09_data2[21][2];
+    } else {
+        ewk->wu.xyz[0].disp.pos += eff09_data2[21][2];
+    }
+
+    disp_pos_trans_entry_rs(ewk);
+}
+
 void eff09_17000(WORK_Other* ewk) {
     WORK* oya_ptr;
 
@@ -1103,36 +1136,11 @@ void eff09_17000(WORK_Other* ewk) {
 
     switch (ewk->wu.routine_no[1]) {
     case 0:
-        ewk->wu.routine_no[1]++;
-        ewk->wu.disp_flag = 1;
-        ewk->wu.dead_f = 1;
-        ewk->wu.rl_flag = 0;
-        ewk->wu.xyz[1].disp.pos += base_y_pos;
-        set_char_move_init(&ewk->wu, 0, ewk->wu.char_index);
+        initialize_eff09_17000(ewk);
         break;
 
     case 1:
-        if (!EXE_flag && !Game_pause) {
-            char_move(&ewk->wu);
-
-            if (oya_ptr->cg_type == 9) {
-                ewk->wu.routine_no[1]++;
-                ewk->wu.disp_flag = 0;
-            } else if (oya_ptr->routine_no[1] != 4 || oya_ptr->routine_no[2] != 30) {
-                ewk->wu.routine_no[1]++;
-                ewk->wu.disp_flag = 0;
-            }
-        }
-
-        ewk->wu.xyz[0].disp.pos = oya_ptr->xyz[0].disp.pos;
-
-        if (oya_ptr->rl_flag) {
-            ewk->wu.xyz[0].disp.pos -= eff09_data2[21][2];
-        } else {
-            ewk->wu.xyz[0].disp.pos += eff09_data2[21][2];
-        }
-
-        disp_pos_trans_entry_rs(ewk);
+        advance_eff09_17000(ewk, oya_ptr);
         break;
 
     case 2:
