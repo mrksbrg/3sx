@@ -1145,6 +1145,44 @@ void eff09_17000(WORK_Other* ewk) {
     }
 }
 
+static void initialize_eff09_18000(WORK_Other* ewk, const WORK* oya_ptr) {
+    ewk->wu.routine_no[1]++;
+    ewk->wu.disp_flag = 1;
+    ewk->wu.dead_f = 1;
+    set_char_move_init(&ewk->wu, 0, ewk->wu.char_index);
+
+    if (oya_ptr->rl_flag) {
+        if (oya_ptr->xyz[0].disp.pos < bg_w.bgw[1].wxy[0].disp.pos) {
+            ewk->wu.xyz[0].disp.pos = oya_ptr->xyz[0].disp.pos - 256;
+        } else {
+            ewk->wu.xyz[0].disp.pos = bg_w.bgw[1].wxy[0].disp.pos - (bg_w.pos_offset + 32);
+        }
+    } else if (oya_ptr->xyz[0].disp.pos > bg_w.bgw[1].wxy[0].disp.pos) {
+        ewk->wu.xyz[0].disp.pos = oya_ptr->xyz[0].disp.pos + 256;
+    } else {
+        ewk->wu.xyz[0].disp.pos = bg_w.bgw[1].wxy[0].disp.pos + (bg_w.pos_offset + 32);
+    }
+
+    ewk->wu.xyz[1].disp.pos = base_y_pos + 160;
+    ewk->wu.old_rno[0] = 35;
+    ewk->wu.old_rno[1] = oya_ptr->xyz[1].disp.pos + 106 + base_y_pos;
+    cal_all_speed_data(&ewk->wu, ewk->wu.old_rno[0], oya_ptr->xyz[0].disp.pos, ewk->wu.old_rno[1], 0, 0);
+}
+
+static void advance_eff09_18000(WORK_Other* ewk) {
+    if (!EXE_flag && !Game_pause) {
+        char_move(&ewk->wu);
+        ewk->wu.old_rno[0]--;
+
+        if (ewk->wu.old_rno[0] <= 0) {
+            ewk->wu.routine_no[1]++;
+        } else {
+            add_x_sub2(&ewk->wu);
+            add_y_sub2(&ewk->wu);
+        }
+    }
+}
+
 void eff09_18000(WORK_Other* ewk) {
     WORK* oya_ptr;
 
@@ -1156,42 +1194,11 @@ void eff09_18000(WORK_Other* ewk) {
 
     switch (ewk->wu.routine_no[1]) {
     case 0:
-        ewk->wu.routine_no[1]++;
-        ewk->wu.disp_flag = 1;
-        ewk->wu.dead_f = 1;
-        set_char_move_init(&ewk->wu, 0, ewk->wu.char_index);
-
-        if (oya_ptr->rl_flag) {
-            if (oya_ptr->xyz[0].disp.pos < bg_w.bgw[1].wxy[0].disp.pos) {
-                ewk->wu.xyz[0].disp.pos = oya_ptr->xyz[0].disp.pos - 256;
-            } else {
-                ewk->wu.xyz[0].disp.pos = bg_w.bgw[1].wxy[0].disp.pos - (bg_w.pos_offset + 32);
-            }
-        } else if (oya_ptr->xyz[0].disp.pos > bg_w.bgw[1].wxy[0].disp.pos) {
-            ewk->wu.xyz[0].disp.pos = oya_ptr->xyz[0].disp.pos + 256;
-        } else {
-            ewk->wu.xyz[0].disp.pos = bg_w.bgw[1].wxy[0].disp.pos + (bg_w.pos_offset + 32);
-        }
-
-        ewk->wu.xyz[1].disp.pos = base_y_pos + 160;
-        ewk->wu.old_rno[0] = 35;
-        ewk->wu.old_rno[1] = oya_ptr->xyz[1].disp.pos + 106 + base_y_pos;
-        cal_all_speed_data(&ewk->wu, ewk->wu.old_rno[0], oya_ptr->xyz[0].disp.pos, ewk->wu.old_rno[1], 0, 0);
+        initialize_eff09_18000(ewk, oya_ptr);
         break;
 
     case 1:
-        if (!EXE_flag && !Game_pause) {
-            char_move(&ewk->wu);
-            ewk->wu.old_rno[0]--;
-
-            if (ewk->wu.old_rno[0] <= 0) {
-                ewk->wu.routine_no[1]++;
-            } else {
-                add_x_sub2(&ewk->wu);
-                add_y_sub2(&ewk->wu);
-            }
-        }
-
+        advance_eff09_18000(ewk);
         disp_pos_trans_entry_rs(ewk);
         break;
 
