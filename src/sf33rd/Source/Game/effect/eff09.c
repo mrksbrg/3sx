@@ -1704,46 +1704,52 @@ void eff09_24000(WORK_Other* ewk) {
     }
 }
 
+static void initialize_eff09_25000(WORK_Other* ewk) {
+    ewk->wu.routine_no[1]++;
+    ewk->wu.disp_flag = 1;
+    ewk->wu.dead_f = 1;
+    set_char_move_init(&ewk->wu, 0, ewk->wu.char_index);
+    ewk->wu.mvxy.d[0].sp = 0;
+    ewk->wu.mvxy.d[1].sp = -0x6000;
+
+    if (ewk->wu.type == 36) {
+        ewk->wu.mvxy.a[0].sp = 0x48000;
+        ewk->wu.mvxy.a[1].sp = 0x10000;
+    } else {
+        ewk->wu.mvxy.a[0].sp = 0x28000;
+        ewk->wu.mvxy.a[1].sp = 0x30000;
+    }
+
+    if (ewk->wu.rl_flag) {
+        ewk->wu.mvxy.a[0].sp = -ewk->wu.mvxy.a[0].sp;
+    }
+}
+
+static void advance_eff09_25000(WORK_Other* ewk) {
+    if (!EXE_flag && !Game_pause) {
+        char_move(&ewk->wu);
+        add_x_sub(&ewk->wu);
+        add_y_sub(&ewk->wu);
+
+        if (range_x_check3(ewk, 16) == 0) {
+            ewk->wu.routine_no[1]++;
+        } else if (ewk->wu.xyz[1].disp.pos < 0) {
+            ewk->wu.xyz[1].cal = 0;
+            ewk->wu.mvxy.a[1].sp = 0x40000;
+            Sound_SE((ewk->master_id * 0x300) + 0x157);
+        }
+    }
+}
+
 void eff09_25000(WORK_Other* ewk) {
     switch (ewk->wu.routine_no[1]) {
     case 0:
-        ewk->wu.routine_no[1]++;
-        ewk->wu.disp_flag = 1;
-        ewk->wu.dead_f = 1;
-        set_char_move_init(&ewk->wu, 0, ewk->wu.char_index);
-        ewk->wu.mvxy.d[0].sp = 0;
-        ewk->wu.mvxy.d[1].sp = -0x6000;
-
-        if (ewk->wu.type == 36) {
-            ewk->wu.mvxy.a[0].sp = 0x48000;
-            ewk->wu.mvxy.a[1].sp = 0x10000;
-        } else {
-            ewk->wu.mvxy.a[0].sp = 0x28000;
-            ewk->wu.mvxy.a[1].sp = 0x30000;
-        }
-
-        if (ewk->wu.rl_flag) {
-            ewk->wu.mvxy.a[0].sp = -ewk->wu.mvxy.a[0].sp;
-        }
-
+        initialize_eff09_25000(ewk);
         pl_eff_trans_entry(ewk);
         break;
 
     case 1:
-        if (!EXE_flag && !Game_pause) {
-            char_move(&ewk->wu);
-            add_x_sub(&ewk->wu);
-            add_y_sub(&ewk->wu);
-
-            if (range_x_check3(ewk, 16) == 0) {
-                ewk->wu.routine_no[1]++;
-            } else if (ewk->wu.xyz[1].disp.pos < 0) {
-                ewk->wu.xyz[1].cal = 0;
-                ewk->wu.mvxy.a[1].sp = 0x40000;
-                Sound_SE((ewk->master_id * 0x300) + 0x157);
-            }
-        }
-
+        advance_eff09_25000(ewk);
         pl_eff_trans_entry(ewk);
         break;
 
