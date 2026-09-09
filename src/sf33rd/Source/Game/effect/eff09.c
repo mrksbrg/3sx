@@ -1886,27 +1886,43 @@ static void advance_eff09_27000_landing(WORK_Other* ewk) {
     }
 }
 
+static void initialize_eff09_27000(WORK_Other* ewk) {
+    ewk->wu.routine_no[1]++;
+    ewk->wu.disp_flag = 1;
+    ewk->wu.dead_f = 1;
+    ewk->wu.kage_flag = 1;
+    ewk->wu.kage_hx = -8;
+    ewk->wu.kage_hy = -11;
+    ewk->wu.kage_prio = 71;
+    ewk->wu.kage_char = 8;
+    ewk->wu.mvxy.a[0].sp = -0x80000;
+    ewk->wu.mvxy.d[0].sp = 0;
+    ewk->wu.mvxy.a[1].sp = 0;
+    ewk->wu.mvxy.d[1].sp = -0x6000;
+
+    if (ewk->wu.rl_flag) {
+        ewk->wu.mvxy.a[0].sp = -ewk->wu.mvxy.a[0].sp;
+    }
+
+    set_char_move_init(&ewk->wu, 0, ewk->wu.char_index);
+}
+
+static void advance_eff09_27000_exit(WORK_Other* ewk) {
+    if (!EXE_flag && !Game_pause) {
+        char_move(&ewk->wu);
+        add_x_sub(&ewk->wu);
+
+        if (range_x_check3(ewk, 36) == 0) {
+            ewk->wu.routine_no[1]++;
+            ewk->wu.disp_flag = 0;
+        }
+    }
+}
+
 void eff09_27000(WORK_Other* ewk) {
     switch (ewk->wu.routine_no[1]) {
     case 0:
-        ewk->wu.routine_no[1]++;
-        ewk->wu.disp_flag = 1;
-        ewk->wu.dead_f = 1;
-        ewk->wu.kage_flag = 1;
-        ewk->wu.kage_hx = -8;
-        ewk->wu.kage_hy = -11;
-        ewk->wu.kage_prio = 71;
-        ewk->wu.kage_char = 8;
-        ewk->wu.mvxy.a[0].sp = -0x80000;
-        ewk->wu.mvxy.d[0].sp = 0;
-        ewk->wu.mvxy.a[1].sp = 0;
-        ewk->wu.mvxy.d[1].sp = -0x6000;
-
-        if (ewk->wu.rl_flag) {
-            ewk->wu.mvxy.a[0].sp = -ewk->wu.mvxy.a[0].sp;
-        }
-
-        set_char_move_init(&ewk->wu, 0, ewk->wu.char_index);
+        initialize_eff09_27000(ewk);
         break;
 
     case 1:
@@ -1915,16 +1931,7 @@ void eff09_27000(WORK_Other* ewk) {
         break;
 
     case 2:
-        if (!EXE_flag && !Game_pause) {
-            char_move(&ewk->wu);
-            add_x_sub(&ewk->wu);
-
-            if (range_x_check3(ewk, 36) == 0) {
-                ewk->wu.routine_no[1]++;
-                ewk->wu.disp_flag = 0;
-            }
-        }
-
+        advance_eff09_27000_exit(ewk);
         pl_eff_trans_entry(ewk);
         break;
 
