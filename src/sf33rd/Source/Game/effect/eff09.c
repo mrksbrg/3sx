@@ -1858,6 +1858,17 @@ static void advance_eff09_26000_parent_wait(WORK_Other* ewk, const WORK* oya_ptr
     }
 }
 
+static void advance_eff09_26000_tracking(WORK_Other* ewk, const WORK* oya_ptr) {
+    if (eff09_26000_updates_enabled()) {
+        char_move(&ewk->wu);
+    }
+
+    ewk->wu.xyz[1].disp.pos = oya_ptr->position_y + base_y_pos;
+    ewk->wu.xyz[1].disp.pos -= 42;
+    jijii_win_tama_sub(ewk);
+    disp_pos_trans_entry(ewk);
+}
+
 void eff09_26000(WORK_Other* ewk) {
     WORK* oya_ptr;
 
@@ -1891,14 +1902,7 @@ void eff09_26000(WORK_Other* ewk) {
         break;
 
     case 4:
-        if (eff09_26000_updates_enabled()) {
-            char_move(&ewk->wu);
-        }
-
-        ewk->wu.xyz[1].disp.pos = oya_ptr->position_y + base_y_pos;
-        ewk->wu.xyz[1].disp.pos -= 42;
-        jijii_win_tama_sub(ewk);
-        disp_pos_trans_entry(ewk);
+        advance_eff09_26000_tracking(ewk, oya_ptr);
         break;
 
     default:
