@@ -891,18 +891,58 @@ static void resolve_kotp_06_hit(WORK_Other* ewk, TAMA* twk) {
     ewk->wu.hit_quake = 0;
 }
 
+static void steer_kotp_06(WORK_Other* ewk, const TAMA* twk, const PLW* mwk, const PLW* emwk) {
+    s16 dir;
+    s16 emdir;
+    s16* target_x = &ewk->wu.E3_work_index;
+    s16* target_y = &ewk->wu.E4_work_index;
+
+    switch (ewk->wu.routine_no[3]) {
+    case 0:
+        ewk->wu.routine_no[3]++;
+        ewk->wu.kezurare_flag = 6;
+        ewk->wu.direction = ewk->wu.rl_flag ? twk->data01 : 256 - twk->data01 & 0xFF;
+        effect_I9_init(ewk, 2, 3, 0x77);
+        break;
+
+    case 1:
+        if (ewk->wu.kezurare_flag--) {
+            break;
+        }
+
+        ewk->wu.routine_no[3]++;
+        ewk->wu.kezurare_flag = 0x70;
+        /* fallthrough */
+
+    case 2:
+        *target_x = homing_empos_hos[0][ewk->master_player][0];
+        *target_x = mwk->wu.rl_flag ? emwk->wu.xyz[0].disp.pos - *target_x : emwk->wu.xyz[0].disp.pos + *target_x;
+        *target_y = homing_empos_hos[0][ewk->master_player][1] + emwk->wu.xyz[1].disp.pos;
+        dir = ewk->wu.direction;
+        emdir = caldir_pos_256(ewk->wu.xyz[0].disp.pos, ewk->wu.xyz[1].disp.pos, *target_x, *target_y);
+        dir += (emdir - (dir - 0x80) & 0xFF) > 0x80 ? 4 : -4;
+        dir = dir & 0xFF;
+        ewk->wu.mvxy.a[0].sp = (rate_256_table[dir][0] * 480) / 256;
+        ewk->wu.mvxy.a[0].sp *= ewk->wu.rl_flag ? 1 : -1;
+        ewk->wu.mvxy.a[1].sp = (rate_256_table[dir][1] * 512) / 256;
+        ewk->wu.direction = dir;
+
+        if (ewk->wu.mvxy.a[0].sp < 0) {
+            ewk->wu.routine_no[3]++;
+        } else if (!ewk->wu.kezurare_flag--) {
+            ewk->wu.routine_no[3]++;
+        }
+
+        break;
+    }
+}
+
 void kotp_06000(WORK_Other* ewk, TAMA* twk) {
     PLW* mwk;
     PLW* emwk;
-    s16 dir;
-    s16 emdir;
-    s16* target_x;
-    s16* target_y;
 
     mwk = (PLW*)ewk->my_master;
     emwk = (PLW*)mwk->wu.target_adrs;
-    target_x = &ewk->wu.E3_work_index;
-    target_y = &ewk->wu.E4_work_index;
 
     if (ewk->wu.hf.hit_flag) {
         ewk->wu.routine_no[1] = 1;
@@ -915,44 +955,7 @@ void kotp_06000(WORK_Other* ewk, TAMA* twk) {
             break;
         }
 
-        switch (ewk->wu.routine_no[3]) {
-        case 0:
-            ewk->wu.routine_no[3]++;
-            ewk->wu.kezurare_flag = 6;
-            ewk->wu.direction = ewk->wu.rl_flag ? twk->data01 : 256 - twk->data01 & 0xFF;
-            effect_I9_init(ewk, 2, 3, 0x77);
-            break;
-
-        case 1:
-            if (ewk->wu.kezurare_flag--) {
-                break;
-            }
-
-            ewk->wu.routine_no[3]++;
-            ewk->wu.kezurare_flag = 0x70;
-            /* fallthrough */
-
-        case 2:
-            *target_x = homing_empos_hos[0][ewk->master_player][0];
-            *target_x = mwk->wu.rl_flag ? emwk->wu.xyz[0].disp.pos - *target_x : emwk->wu.xyz[0].disp.pos + *target_x;
-            *target_y = homing_empos_hos[0][ewk->master_player][1] + emwk->wu.xyz[1].disp.pos;
-            dir = ewk->wu.direction;
-            emdir = caldir_pos_256(ewk->wu.xyz[0].disp.pos, ewk->wu.xyz[1].disp.pos, *target_x, *target_y);
-            dir += (emdir - (dir - 0x80) & 0xFF) > 0x80 ? 4 : -4;
-            dir = dir & 0xFF;
-            ewk->wu.mvxy.a[0].sp = (rate_256_table[dir][0] * 480) / 256;
-            ewk->wu.mvxy.a[0].sp *= ewk->wu.rl_flag ? 1 : -1;
-            ewk->wu.mvxy.a[1].sp = (rate_256_table[dir][1] * 512) / 256;
-            ewk->wu.direction = dir;
-
-            if (ewk->wu.mvxy.a[0].sp < 0) {
-                ewk->wu.routine_no[3]++;
-            } else if (!ewk->wu.kezurare_flag--) {
-                ewk->wu.routine_no[3]++;
-            }
-
-            break;
-        }
+        steer_kotp_06(ewk, twk, mwk, emwk);
 
         add_mvxy_speed(&ewk->wu);
         cal_mvxy_speed(&ewk->wu);
