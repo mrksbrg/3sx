@@ -1014,10 +1014,6 @@ void eff09_13000(WORK_Other* ewk) {
     }
 }
 
-static s32 eff09_14000_animation_updates_enabled(const WORK_Other* ewk) {
-    return !EXE_flag && !Game_pause && ewk->wu.hit_stop;
-}
-
 void eff09_14000(WORK_Other* ewk) {
     WORK* oya_ptr = (WORK*)ewk->my_master;
 
@@ -1039,7 +1035,7 @@ void eff09_14000(WORK_Other* ewk) {
         break;
 
     case 1:
-        if (eff09_14000_animation_updates_enabled(ewk)) {
+        if (eff09_9000_animation_updates_enabled(ewk)) {
             char_move(&ewk->wu);
 
             if (ewk->wu.cg_type) {
