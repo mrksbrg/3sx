@@ -75,8 +75,9 @@ The repository's pre-commit hook runs two gates:
 
 1. CodeScene blocks a degraded staged file and requires new source files to
    score 10.0.
-2. Changes staged under `src/sf33rd/Source/Game` trigger a short deterministic
-   fight that compares 120 rollback-state snapshots with a build from `main`.
+2. Changes staged under `src/sf33rd/Source/Game` trigger ten deterministic
+   runs of 1,800 gameplay frames each and compare every saved rollback state
+   with a build from `main`.
 
 Install the CodeScene CLI and enable the repository hooks:
 
@@ -115,7 +116,8 @@ THREESX_REPLAY_GUARD_FORCE=1 python3 tools/replay_precommit.py
 The hook rebuilds `build-replay` before each relevant commit. Rebuild
 `build-replay-main` from `main` whenever the base branch changes. A missing
 baseline, candidate, dependency, or AFS file is a failure rather than a skipped
-test.
+test. The gate stops at the first divergence and keeps both traces under
+`build-replay-failures/seed-<seed>` for diagnosis.
 
 Default executable locations are:
 
@@ -129,7 +131,10 @@ Single-configuration Windows builds are also recognized. On Windows the hook
 checks the standard MSYS2 MinGW64 location when `cmake` is not on `PATH`; set
 `CMAKE` if it is installed elsewhere. Custom layouts can use
 `THREESX_REPLAY_GUARD_BASELINE`, `THREESX_REPLAY_GUARD_CANDIDATE`, and
-`THREESX_REPLAY_GUARD_BUILD_DIR`.
+`THREESX_REPLAY_GUARD_BUILD_DIR`. Advanced users can override the comprehensive
+defaults with `THREESX_REPLAY_GUARD_FIRST_SEED`, `THREESX_REPLAY_GUARD_SEEDS`,
+`THREESX_REPLAY_GUARD_FRAMES`, `THREESX_REPLAY_GUARD_TIMEOUT`, and
+`THREESX_REPLAY_GUARD_FAILURE_DIR`.
 
 ### Make, test, and commit a change
 
