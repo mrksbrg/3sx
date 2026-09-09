@@ -874,25 +874,29 @@ void eff09_11000(WORK_Other* ewk) {
     }
 }
 
+static void initialize_eff09_12000(WORK_Other* ewk) {
+    ewk->wu.routine_no[1]++;
+    ewk->wu.disp_flag = 1;
+    ewk->wu.dead_f = 1;
+    set_char_move_init(&ewk->wu, 0, ewk->wu.char_index);
+    ewk->wu.mvxy.a[1].sp = -0x10000;
+    ewk->wu.mvxy.d[1].sp = 0;
+    ewk->wu.mvxy.d[0].sp = 0;
+
+    if (ewk->wu.rl_flag) {
+        ewk->wu.mvxy.a[0].sp = -0x20000;
+    } else {
+        ewk->wu.mvxy.a[0].sp = 0x20000;
+    }
+
+    suzi_sync_pos_set(ewk);
+    sort_push_request(&ewk->wu);
+}
+
 void eff09_12000(WORK_Other* ewk) {
     switch (ewk->wu.routine_no[1]) {
     case 0:
-        ewk->wu.routine_no[1]++;
-        ewk->wu.disp_flag = 1;
-        ewk->wu.dead_f = 1;
-        set_char_move_init(&ewk->wu, 0, ewk->wu.char_index);
-        ewk->wu.mvxy.a[1].sp = -0x10000;
-        ewk->wu.mvxy.d[1].sp = 0;
-        ewk->wu.mvxy.d[0].sp = 0;
-
-        if (ewk->wu.rl_flag) {
-            ewk->wu.mvxy.a[0].sp = -0x20000;
-        } else {
-            ewk->wu.mvxy.a[0].sp = 0x20000;
-        }
-
-        suzi_sync_pos_set(ewk);
-        sort_push_request(&ewk->wu);
+        initialize_eff09_12000(ewk);
         break;
 
     case 1:
