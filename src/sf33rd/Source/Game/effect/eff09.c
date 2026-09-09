@@ -123,6 +123,49 @@ static s32 eff09_1000_can_register_hit(WORK_Other* ewk) {
     return ewk->wu.old_rno[0] && !EXE_flag && !Game_pause && !EXE_obroll && eff_hit_check(ewk, 0);
 }
 
+static void initialize_eff09_1000(WORK_Other* ewk) {
+    ewk->wu.routine_no[1]++;
+    ewk->wu.disp_flag = 1;
+    ewk->wu.my_priority = ewk->wu.position_z = 67;
+    ewk->wu.position_x = ewk->wu.xyz[0].disp.pos & 0xFFFF;
+    ewk->wu.position_y = ewk->wu.xyz[1].disp.pos = 4;
+    ewk->wu.old_rno[0] = random_16();
+    ewk->wu.old_rno[0] &= 1;
+
+    if (ewk->master_id) {
+        ewk->wu.type = 10;
+    } else {
+        ewk->wu.type = 9;
+    }
+
+    if (EXE_obroll) {
+        set_char_move_init(&ewk->wu, 0, 25);
+        ewk->wu.old_rno[0] = 1;
+    } else if (ewk->wu.old_rno[0]) {
+        set_char_move_init(&ewk->wu, 0, 25);
+    } else {
+        set_char_move_init(&ewk->wu, 0, 65);
+    }
+
+    sort_push_request(&ewk->wu);
+}
+
+static void advance_eff09_1000_animation(WORK_Other* ewk) {
+    if (eff09_1000_updates_enabled()) {
+        char_move(&ewk->wu);
+
+        if (ewk->wu.cg_type) {
+            ewk->wu.routine_no[1]++;
+        }
+    }
+}
+
+static void display_eff09_1000(WORK_Other* ewk) {
+    if (!obr_no_disp_check()) {
+        sort_push_request(&ewk->wu);
+    }
+}
+
 void eff09_1000(WORK_Other* ewk) {
     if (obr_no_disp_check()) {
         return;
@@ -130,46 +173,13 @@ void eff09_1000(WORK_Other* ewk) {
 
     switch (ewk->wu.routine_no[1]) {
     case 0:
-        ewk->wu.routine_no[1]++;
-        ewk->wu.disp_flag = 1;
-        ewk->wu.my_priority = ewk->wu.position_z = 67;
-        ewk->wu.position_x = ewk->wu.xyz[0].disp.pos & 0xFFFF;
-        ewk->wu.position_y = ewk->wu.xyz[1].disp.pos = 4;
-        ewk->wu.old_rno[0] = random_16();
-        ewk->wu.old_rno[0] &= 1;
-
-        if (ewk->master_id) {
-            ewk->wu.type = 10;
-        } else {
-            ewk->wu.type = 9;
-        }
-
-        if (EXE_obroll) {
-            set_char_move_init(&ewk->wu, 0, 25);
-            ewk->wu.old_rno[0] = 1;
-        } else if (ewk->wu.old_rno[0]) {
-            set_char_move_init(&ewk->wu, 0, 25);
-        } else {
-            set_char_move_init(&ewk->wu, 0, 65);
-        }
-
-        sort_push_request(&ewk->wu);
+        initialize_eff09_1000(ewk);
         break;
 
     case 1:
     case 3:
-        if (eff09_1000_updates_enabled()) {
-            char_move(&ewk->wu);
-
-            if (ewk->wu.cg_type) {
-                ewk->wu.routine_no[1]++;
-            }
-        }
-
-        if (!obr_no_disp_check()) {
-            sort_push_request(&ewk->wu);
-        }
-
+        advance_eff09_1000_animation(ewk);
+        display_eff09_1000(ewk);
         break;
 
     case 2:
