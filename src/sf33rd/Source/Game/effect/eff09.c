@@ -1802,10 +1802,6 @@ void eff09_25000(WORK_Other* ewk) {
     }
 }
 
-static s32 eff09_26000_updates_enabled() {
-    return !EXE_flag && !Game_pause;
-}
-
 static void initialize_eff09_26000(WORK_Other* ewk) {
     ewk->wu.routine_no[1]++;
     ewk->wu.disp_flag = 1;
@@ -1816,7 +1812,7 @@ static void initialize_eff09_26000(WORK_Other* ewk) {
 }
 
 static void advance_eff09_26000_start_animation(WORK_Other* ewk, WORK* oya_ptr) {
-    if (eff09_26000_updates_enabled()) {
+    if (eff09_2000_updates_enabled()) {
         char_move(&ewk->wu);
 
         if (ewk->wu.cg_type == 9) {
@@ -1827,7 +1823,7 @@ static void advance_eff09_26000_start_animation(WORK_Other* ewk, WORK* oya_ptr) 
 }
 
 static void advance_eff09_26000_transition(WORK_Other* ewk) {
-    if (eff09_26000_updates_enabled()) {
+    if (eff09_2000_updates_enabled()) {
         char_move(&ewk->wu);
 
         if (ewk->wu.cg_type == 0xFF) {
@@ -1838,7 +1834,7 @@ static void advance_eff09_26000_transition(WORK_Other* ewk) {
 }
 
 static void advance_eff09_26000_parent_wait(WORK_Other* ewk, const WORK* oya_ptr) {
-    if (eff09_26000_updates_enabled()) {
+    if (eff09_2000_updates_enabled()) {
         char_move(&ewk->wu);
 
         if (oya_ptr->cmwk[0] == 2) {
@@ -1848,7 +1844,7 @@ static void advance_eff09_26000_parent_wait(WORK_Other* ewk, const WORK* oya_ptr
 }
 
 static void advance_eff09_26000_tracking(WORK_Other* ewk, const WORK* oya_ptr) {
-    if (eff09_26000_updates_enabled()) {
+    if (eff09_2000_updates_enabled()) {
         char_move(&ewk->wu);
     }
 
