@@ -115,6 +115,14 @@ void eff09_0000(WORK_Other* ewk) {
     }
 }
 
+static s32 eff09_1000_updates_enabled() {
+    return !EXE_flag && !Game_pause && !EXE_obroll;
+}
+
+static s32 eff09_1000_can_register_hit(WORK_Other* ewk) {
+    return ewk->wu.old_rno[0] && !EXE_flag && !Game_pause && !EXE_obroll && eff_hit_check(ewk, 0);
+}
+
 void eff09_1000(WORK_Other* ewk) {
     if (obr_no_disp_check()) {
         return;
@@ -150,7 +158,7 @@ void eff09_1000(WORK_Other* ewk) {
 
     case 1:
     case 3:
-        if (!EXE_flag && !Game_pause && !EXE_obroll) {
+        if (eff09_1000_updates_enabled()) {
             char_move(&ewk->wu);
 
             if (ewk->wu.cg_type) {
@@ -169,7 +177,7 @@ void eff09_1000(WORK_Other* ewk) {
             break;
         }
 
-        if (ewk->wu.old_rno[0] && !EXE_flag && !Game_pause && !EXE_obroll && eff_hit_check(ewk, 0)) {
+        if (eff09_1000_can_register_hit(ewk)) {
             ewk->wu.routine_no[1]++;
             set_char_move_init(&ewk->wu, 0, 65);
         }
