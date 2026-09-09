@@ -472,51 +472,58 @@ void eff09_3000(WORK_Other* ewk) {
     }
 }
 
-void eff09_4000(WORK_Other* ewk) {
+static void initialize_eff09_4000(WORK_Other* ewk) {
     s16 work;
     s16 work2;
-    WORK* oya_ptr;
+    WORK* oya_ptr = (WORK*)ewk->my_master;
+
+    ewk->wu.routine_no[1]++;
+    ewk->wu.disp_flag = 1;
+    ewk->wu.kage_flag = 1;
+    ewk->wu.kage_hx = 2;
+    ewk->wu.kage_hy = -3;
+    ewk->wu.kage_prio = 71;
+    ewk->wu.kage_char = 0;
+    ewk->wu.my_col_code = 0x2000;
+    ewk->wu.position_z = ewk->wu.my_priority = 20;
+    set_char_move_init(&ewk->wu, 0, ewk->wu.char_index);
+    ewk->wu.rl_flag = oya_ptr->rl_flag;
+
+    if (oya_ptr->rl_flag) {
+        work = bg_w.bgw[1].xy[0].disp.pos - 272;
+        work2 = oya_ptr->xyz[0].disp.pos - 88;
+    } else {
+        work = bg_w.bgw[1].xy[0].disp.pos + 272;
+        work2 = oya_ptr->xyz[0].disp.pos + 88;
+    }
+
+    ewk->wu.xyz[0].disp.pos = work;
+    ewk->wu.old_rno[0] = 202;
+    cal_all_speed_data(&ewk->wu, ewk->wu.old_rno[0], work2, 0, 0, 2);
+}
+
+static void advance_eff09_4000(WORK_Other* ewk) {
+    if (!EXE_flag && !Game_pause) {
+        char_move(&ewk->wu);
+        add_x_sub(&ewk->wu);
+        ewk->wu.old_rno[0]--;
+
+        if (ewk->wu.old_rno[0] <= 0) {
+            ewk->wu.routine_no[1]++;
+            set_char_move_init(&ewk->wu, 0, 29);
+        }
+    }
+}
+
+void eff09_4000(WORK_Other* ewk) {
 
     switch (ewk->wu.routine_no[1]) {
     case 0:
-        ewk->wu.routine_no[1]++;
-        ewk->wu.disp_flag = 1;
-        ewk->wu.kage_flag = 1;
-        ewk->wu.kage_hx = 2;
-        ewk->wu.kage_hy = -3;
-        ewk->wu.kage_prio = 71;
-        ewk->wu.kage_char = 0;
-        ewk->wu.my_col_code = 0x2000;
-        ewk->wu.position_z = ewk->wu.my_priority = 20;
-        set_char_move_init(&ewk->wu, 0, ewk->wu.char_index);
-        oya_ptr = (WORK*)ewk->my_master;
-        ewk->wu.rl_flag = oya_ptr->rl_flag;
-
-        if (oya_ptr->rl_flag) {
-            work = bg_w.bgw[1].xy[0].disp.pos - 272;
-            work2 = oya_ptr->xyz[0].disp.pos - 88;
-        } else {
-            work = bg_w.bgw[1].xy[0].disp.pos + 272;
-            work2 = oya_ptr->xyz[0].disp.pos + 88;
-        }
-
-        ewk->wu.xyz[0].disp.pos = work;
-        ewk->wu.old_rno[0] = 202;
-        cal_all_speed_data(&ewk->wu, ewk->wu.old_rno[0], work2, 0, 0, 2);
+        initialize_eff09_4000(ewk);
         break;
 
     case 1:
-        if (!EXE_flag && !Game_pause) {
-            char_move(&ewk->wu);
-            add_x_sub(&ewk->wu);
-            ewk->wu.old_rno[0]--;
-
-            if (ewk->wu.old_rno[0] <= 0) {
-                ewk->wu.routine_no[1]++;
-                set_char_move_init(&ewk->wu, 0, 29);
-            }
-        }
-
+        advance_eff09_4000(ewk);
         suzi_sync_pos_set(ewk);
         sort_push_request(&ewk->wu);
         break;
