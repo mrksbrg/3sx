@@ -225,6 +225,14 @@ static s32 eff09_2000_is_outside_bounds(const WORK_Other* ewk) {
            ewk->wu.xyz[1].disp.pos < -56;
 }
 
+static void handle_eff09_2000_horizontal_exit(WORK_Other* ewk) {
+    if (eff09_2000_is_outside_horizontal_bounds(ewk)) {
+        ewk->wu.routine_no[1] = 99;
+        Appear_free[ewk->master_id] = 1;
+        ewk->wu.disp_flag = 0;
+    }
+}
+
 static void initialize_eff09_2000(WORK_Other* ewk, s16* work) {
     const s32* ptr;
     u16 sw_work;
@@ -292,12 +300,7 @@ void eff09_2000(WORK_Other* ewk) {
             char_move(&ewk->wu);
             add_x_sub(&ewk->wu);
             add_y_sub(&ewk->wu);
-
-            if (eff09_2000_is_outside_horizontal_bounds(ewk)) {
-                ewk->wu.routine_no[1] = 99;
-                Appear_free[ewk->master_id] = 1;
-                ewk->wu.disp_flag = 0;
-            }
+            handle_eff09_2000_horizontal_exit(ewk);
 
             if (ewk->master_id) {
                 sw_work = p2sw_0;
