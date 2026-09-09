@@ -13,15 +13,15 @@ sys.path.insert(0, str(TOOLS_DIR))
 from compare_stress_replays import TraceRun, first_difference, read_complete_trace, run_trace
 
 REPO_ROOT = TOOLS_DIR.parent
-GAME_SOURCE_PREFIX = "src/sf33rd/Source/Game/"
-SOURCE_SUFFIXES = {".c", ".h"}
+SOURCE_PREFIX = "src/"
+SOURCE_SUFFIXES = {".c", ".cpp", ".h"}
 DEFAULT_FIRST_SEED = 1
 DEFAULT_SEEDS = 10
 DEFAULT_FRAMES = 1800
 DEFAULT_TIMEOUT = 300
 
 
-def staged_game_sources() -> list[str]:
+def staged_replay_sources() -> list[str]:
     result = subprocess.run(
         ["git", "diff", "--cached", "--name-only", "--diff-filter=ACMR"],
         cwd=REPO_ROOT,
@@ -32,7 +32,7 @@ def staged_game_sources() -> list[str]:
     return [
         path
         for path in result.stdout.splitlines()
-        if path.startswith(GAME_SOURCE_PREFIX) and Path(path).suffix in SOURCE_SUFFIXES
+        if path.startswith(SOURCE_PREFIX) and Path(path).suffix in SOURCE_SUFFIXES
     ]
 
 
@@ -167,7 +167,7 @@ def compare_builds(baseline: Path, candidate: Path) -> int:
 
 
 def main() -> int:
-    changed = staged_game_sources()
+    changed = staged_replay_sources()
 
     if not replay_required(changed):
         print("Replay gate skipped: no staged gameplay source changes.")
