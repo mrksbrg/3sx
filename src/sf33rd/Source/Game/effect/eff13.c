@@ -939,6 +939,12 @@ static void steer_kotp_06(WORK_Other* ewk, const TAMA* twk, const PLW* mwk, cons
 
 static void finish_kotp_07(WORK_Other* ewk);
 
+static void enter_kotp_hit_phase(WORK_Other* ewk) {
+    if (ewk->wu.hf.hit_flag) {
+        ewk->wu.routine_no[1] = 1;
+    }
+}
+
 void kotp_06000(WORK_Other* ewk, TAMA* twk) {
     PLW* mwk;
     PLW* emwk;
@@ -946,9 +952,7 @@ void kotp_06000(WORK_Other* ewk, TAMA* twk) {
     mwk = (PLW*)ewk->my_master;
     emwk = (PLW*)mwk->wu.target_adrs;
 
-    if (ewk->wu.hf.hit_flag) {
-        ewk->wu.routine_no[1] = 1;
-    }
+    enter_kotp_hit_phase(ewk);
 
     switch (ewk->wu.routine_no[1]) {
     case 0:
