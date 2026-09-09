@@ -245,6 +245,15 @@ static void select_eff09_2000_opponent(WORK_Other* ewk, u16* sw_work, PLW** hit_
     }
 }
 
+static void handle_eff09_2000_floor_contact(WORK_Other* ewk) {
+    if (ewk->wu.xyz[1].disp.pos < 0) {
+        Sound_SE((ewk->master_id * 0x300) + 0x157);
+        ewk->wu.routine_no[1]++;
+        ball_bound_set(ewk);
+        Appear_free[ewk->master_id] = 1;
+    }
+}
+
 static void initialize_eff09_2000(WORK_Other* ewk, s16* work) {
     const s32* ptr;
     u16 sw_work;
@@ -330,12 +339,7 @@ void eff09_2000(WORK_Other* ewk) {
                 break;
             }
 
-            if (ewk->wu.xyz[1].disp.pos < 0) {
-                Sound_SE((ewk->master_id * 0x300) + 0x157);
-                ewk->wu.routine_no[1]++;
-                ball_bound_set(ewk);
-                Appear_free[ewk->master_id] = 1;
-            }
+            handle_eff09_2000_floor_contact(ewk);
         }
 
         suzi_sync_pos_set(ewk);
