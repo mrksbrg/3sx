@@ -1308,76 +1308,86 @@ static s32 eff09_21000_updates_enabled() {
     return !EXE_flag && !Game_pause;
 }
 
-void eff09_21000(WORK_Other* ewk) {
+static void initialize_eff09_21000(WORK_Other* ewk) {
     s16 arrive_x;
     s16 arrive_y;
 
+    ewk->wu.routine_no[1]++;
+    ewk->wu.disp_flag = 1;
+    ewk->wu.dead_f = 1;
+    set_char_move_init(&ewk->wu, 0, ewk->wu.char_index);
+    ewk->wu.mvxy.d[0].sp = 0;
+    ewk->wu.mvxy.d[1].sp = -0x8000;
+
+    if (ewk->wu.type == 29) {
+        ewk->wu.old_rno[0] = 70;
+
+        if (ewk->wu.rl_flag) {
+            arrive_x = ewk->wu.xyz[0].disp.pos + 42;
+        } else {
+            arrive_x = ewk->wu.xyz[0].disp.pos - 42;
+        }
+
+        arrive_y = (ewk->wu.xyz[1].disp.pos + 6);
+    } else {
+        ewk->wu.old_rno[0] = 64;
+
+        if (plw[Winner_id].wu.rl_flag) {
+            arrive_x = plw[Winner_id].wu.xyz[0].disp.pos + 28;
+        } else {
+            arrive_x = plw[Winner_id].wu.xyz[0].disp.pos - 28;
+        }
+
+        arrive_y = plw[Winner_id].wu.xyz[1].disp.pos + 162;
+    }
+
+    cal_all_speed_data(&ewk->wu, ewk->wu.old_rno[0], arrive_x, arrive_y, 2, 2);
+}
+
+static void advance_eff09_21000_arrival(WORK_Other* ewk) {
+    if (eff09_21000_updates_enabled()) {
+        char_move(&ewk->wu);
+        ewk->wu.old_rno[0]--;
+
+        if (ewk->wu.old_rno[0] <= 0) {
+            ewk->wu.routine_no[1]++;
+            set_char_move_init(&ewk->wu, 0, 58);
+        } else {
+            add_x_sub(&ewk->wu);
+            add_y_sub(&ewk->wu);
+        }
+    }
+}
+
+static void advance_eff09_21000_animation(WORK_Other* ewk) {
+    if (eff09_21000_updates_enabled()) {
+        char_move(&ewk->wu);
+
+        if (ewk->wu.cg_type) {
+            ewk->wu.routine_no[1]++;
+            ewk->wu.disp_flag = 0;
+            plw[Winner_id].wu.cmwk[0] = 1;
+        }
+    }
+}
+
+void eff09_21000(WORK_Other* ewk) {
     if (Suicide[0]) {
         ewk->wu.routine_no[1] = 99;
     }
 
     switch (ewk->wu.routine_no[1]) {
     case 0:
-        ewk->wu.routine_no[1]++;
-        ewk->wu.disp_flag = 1;
-        ewk->wu.dead_f = 1;
-        set_char_move_init(&ewk->wu, 0, ewk->wu.char_index);
-        ewk->wu.mvxy.d[0].sp = 0;
-        ewk->wu.mvxy.d[1].sp = -0x8000;
-
-        if (ewk->wu.type == 29) {
-            ewk->wu.old_rno[0] = 70;
-
-            if (ewk->wu.rl_flag) {
-                arrive_x = ewk->wu.xyz[0].disp.pos + 42;
-            } else {
-                arrive_x = ewk->wu.xyz[0].disp.pos - 42;
-            }
-
-            arrive_y = (ewk->wu.xyz[1].disp.pos + 6);
-        } else {
-            ewk->wu.old_rno[0] = 64;
-
-            if (plw[Winner_id].wu.rl_flag) {
-                arrive_x = plw[Winner_id].wu.xyz[0].disp.pos + 28;
-            } else {
-                arrive_x = plw[Winner_id].wu.xyz[0].disp.pos - 28;
-            }
-
-            arrive_y = plw[Winner_id].wu.xyz[1].disp.pos + 162;
-        }
-
-        cal_all_speed_data(&ewk->wu, ewk->wu.old_rno[0], arrive_x, arrive_y, 2, 2);
+        initialize_eff09_21000(ewk);
         break;
 
     case 1:
-        if (eff09_21000_updates_enabled()) {
-            char_move(&ewk->wu);
-            ewk->wu.old_rno[0]--;
-
-            if (ewk->wu.old_rno[0] <= 0) {
-                ewk->wu.routine_no[1]++;
-                set_char_move_init(&ewk->wu, 0, 58);
-            } else {
-                add_x_sub(&ewk->wu);
-                add_y_sub(&ewk->wu);
-            }
-        }
-
+        advance_eff09_21000_arrival(ewk);
         disp_pos_trans_entry(ewk);
         break;
 
     case 2:
-        if (eff09_21000_updates_enabled()) {
-            char_move(&ewk->wu);
-
-            if (ewk->wu.cg_type) {
-                ewk->wu.routine_no[1]++;
-                ewk->wu.disp_flag = 0;
-                plw[Winner_id].wu.cmwk[0] = 1;
-            }
-        }
-
+        advance_eff09_21000_animation(ewk);
         disp_pos_trans_entry(ewk);
         break;
 
