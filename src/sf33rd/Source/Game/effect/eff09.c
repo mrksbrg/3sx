@@ -2029,38 +2029,7 @@ static s32 effect_09_init2_is_blocked_test_effect(u8 data) {
     return test_flag && data >= 32 && data < 41;
 }
 
-s32 effect_09_init2(WORK* wk, u8 data) {
-    WORK_Other* ewk;
-    s16 ix;
-    const s16* data_ptr;
-
-    if (effect_09_init2_is_blocked_stage(data)) {
-        return 0;
-    }
-
-    if (effect_09_init2_is_blocked_test_effect(data)) {
-        return 0;
-    }
-
-    if ((ix = pull_effect_work(4)) == -1) {
-        return -1;
-    }
-
-    ewk = (WORK_Other*)frw[ix];
-    ewk->wu.type = data;
-    ewk->my_master = wk;
-    ewk->wu.target_adrs = wk->target_adrs;
-    ewk->wu.be_flag = 1;
-    ewk->wu.id = 9;
-    ewk->wu.work_id = 16;
-    ewk->master_id = wk->id;
-    ewk->wu.cgromtype = 1;
-    *ewk->wu.char_table = _etc_char_table;
-    ewk->wu.my_col_mode = wk->my_col_mode;
-    data_ptr = eff09_data2[ewk->wu.type];
-    ewk->wu.routine_no[0] = *data_ptr++;
-    ewk->wu.my_mts = 14;
-
+static const s16* configure_effect_09_init2(WORK_Other* ewk, const WORK* wk, u8 data, const s16* data_ptr) {
     switch (data) {
     case 18:
     case 19:
@@ -2114,6 +2083,42 @@ s32 effect_09_init2(WORK* wk, u8 data) {
         ewk->wu.my_col_code += wk->my_col_code;
         break;
     }
+
+    return data_ptr;
+}
+
+s32 effect_09_init2(WORK* wk, u8 data) {
+    WORK_Other* ewk;
+    s16 ix;
+    const s16* data_ptr;
+
+    if (effect_09_init2_is_blocked_stage(data)) {
+        return 0;
+    }
+
+    if (effect_09_init2_is_blocked_test_effect(data)) {
+        return 0;
+    }
+
+    if ((ix = pull_effect_work(4)) == -1) {
+        return -1;
+    }
+
+    ewk = (WORK_Other*)frw[ix];
+    ewk->wu.type = data;
+    ewk->my_master = wk;
+    ewk->wu.target_adrs = wk->target_adrs;
+    ewk->wu.be_flag = 1;
+    ewk->wu.id = 9;
+    ewk->wu.work_id = 16;
+    ewk->master_id = wk->id;
+    ewk->wu.cgromtype = 1;
+    *ewk->wu.char_table = _etc_char_table;
+    ewk->wu.my_col_mode = wk->my_col_mode;
+    data_ptr = eff09_data2[ewk->wu.type];
+    ewk->wu.routine_no[0] = *data_ptr++;
+    ewk->wu.my_mts = 14;
+    data_ptr = configure_effect_09_init2(ewk, wk, data, data_ptr);
 
     ewk->wu.my_family = wk->my_family;
 
