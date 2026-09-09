@@ -233,6 +233,18 @@ static void handle_eff09_2000_horizontal_exit(WORK_Other* ewk) {
     }
 }
 
+static void select_eff09_2000_opponent(WORK_Other* ewk, u16* sw_work, PLW** hit_pl, const s16** pl_hit_ptr) {
+    if (ewk->master_id) {
+        *sw_work = p2sw_0;
+        *hit_pl = &plw[0];
+        *pl_hit_ptr = &plw[0].wu.h_bod->body_dm[0][0];
+    } else {
+        *sw_work = p1sw_0;
+        *hit_pl = &plw[1];
+        *pl_hit_ptr = &plw[1].wu.h_bod->body_dm[0][0];
+    }
+}
+
 static void initialize_eff09_2000(WORK_Other* ewk, s16* work) {
     const s32* ptr;
     u16 sw_work;
@@ -301,16 +313,7 @@ void eff09_2000(WORK_Other* ewk) {
             add_x_sub(&ewk->wu);
             add_y_sub(&ewk->wu);
             handle_eff09_2000_horizontal_exit(ewk);
-
-            if (ewk->master_id) {
-                sw_work = p2sw_0;
-                hit_pl = &plw[0];
-                pl_hit_ptr = &plw[0].wu.h_bod->body_dm[0][0];
-            } else {
-                sw_work = p1sw_0;
-                hit_pl = &plw[1];
-                pl_hit_ptr = &plw[1].wu.h_bod->body_dm[0][0];
-            }
+            select_eff09_2000_opponent(ewk, &sw_work, &hit_pl, &pl_hit_ptr);
 
             sean_ball_move(ewk, sw_work);
 
