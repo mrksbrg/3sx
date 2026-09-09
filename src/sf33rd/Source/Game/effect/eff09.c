@@ -183,6 +183,12 @@ static void advance_eff09_1000_hit(WORK_Other* ewk) {
     sort_push_request(&ewk->wu);
 }
 
+static void display_eff09_1000_final(WORK_Other* ewk) {
+    if (obr_no_disp_check() == 0) {
+        sort_push_request(&ewk->wu);
+    }
+}
+
 void eff09_1000(WORK_Other* ewk) {
     if (obr_no_disp_check()) {
         return;
@@ -204,10 +210,7 @@ void eff09_1000(WORK_Other* ewk) {
         break;
 
     case 4:
-        if (obr_no_disp_check() == 0) {
-            sort_push_request(&ewk->wu);
-        }
-
+        display_eff09_1000_final(ewk);
         break;
 
     default:
