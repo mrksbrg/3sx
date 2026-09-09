@@ -211,48 +211,66 @@ static s32 eff09_2000_is_outside_bounds(const WORK_Other* ewk) {
            ewk->wu.xyz[1].disp.pos < -56;
 }
 
+static void initialize_eff09_2000(WORK_Other* ewk, s16* work) {
+    const s32* ptr;
+    u16 sw_work;
+
+    ewk->wu.routine_no[1]++;
+    ewk->wu.disp_flag = 1;
+    set_char_move_init(&ewk->wu, 0, ewk->wu.char_index);
+    Appear_free[ewk->master_id] = 0;
+
+    if (ewk->master_id) {
+        sw_work = p2sw_0;
+    } else {
+        sw_work = p1sw_0;
+    }
+
+    if (sw_work & 0x4000) {
+        *work = 0;
+    } else {
+        *work = random_16();
+        *work &= 1;
+    }
+
+    ewk->wu.dir_step = *work;
+    ptr = eff09_2000_data[ewk->wu.dir_step];
+    ewk->wu.mvxy.a[0].sp = *ptr++;
+    ewk->wu.mvxy.a[1].sp = *ptr++;
+    ewk->wu.mvxy.d[0].sp = *ptr++;
+    ewk->wu.mvxy.d[1].sp = *ptr++;
+
+    if (ewk->wu.rl_flag) {
+        ewk->wu.mvxy.a[0].sp = -ewk->wu.mvxy.a[0].sp;
+        ewk->wu.mvxy.d[0].sp = -ewk->wu.mvxy.d[0].sp;
+    }
+
+    ewk->wu.old_rno[0] = ewk->wu.old_rno[1] = ewk->wu.old_rno[2] = ewk->wu.old_rno[3] = 0;
+    suzi_sync_pos_set(ewk);
+    sort_push_request(&ewk->wu);
+}
+
+static void advance_eff09_2000_bounce(WORK_Other* ewk) {
+    if (eff09_2000_updates_enabled()) {
+        if (eff09_2000_is_outside_bounds(ewk)) {
+            ewk->wu.routine_no[1]++;
+            ewk->wu.disp_flag = 0;
+        } else {
+            add_x_sub(&ewk->wu);
+            add_y_sub(&ewk->wu);
+        }
+    }
+}
+
 void eff09_2000(WORK_Other* ewk) {
     s16 work;
-    const s32* ptr;
     u16 sw_work;
     const s16* pl_hit_ptr;
     PLW* hit_pl;
 
     switch (ewk->wu.routine_no[1]) {
     case 0:
-        ewk->wu.routine_no[1]++;
-        ewk->wu.disp_flag = 1;
-        set_char_move_init(&ewk->wu, 0, ewk->wu.char_index);
-        Appear_free[ewk->master_id] = 0;
-
-        if (ewk->master_id) {
-            sw_work = p2sw_0;
-        } else {
-            sw_work = p1sw_0;
-        }
-
-        if (sw_work & 0x4000) {
-            work = 0;
-        } else {
-            work = random_16();
-            work &= 1;
-        }
-
-        ewk->wu.dir_step = work;
-        ptr = eff09_2000_data[ewk->wu.dir_step];
-        ewk->wu.mvxy.a[0].sp = *ptr++;
-        ewk->wu.mvxy.a[1].sp = *ptr++;
-        ewk->wu.mvxy.d[0].sp = *ptr++;
-        ewk->wu.mvxy.d[1].sp = *ptr++;
-
-        if (ewk->wu.rl_flag) {
-            ewk->wu.mvxy.a[0].sp = -ewk->wu.mvxy.a[0].sp;
-            ewk->wu.mvxy.d[0].sp = -ewk->wu.mvxy.d[0].sp;
-        }
-
-        ewk->wu.old_rno[0] = ewk->wu.old_rno[1] = ewk->wu.old_rno[2] = ewk->wu.old_rno[3] = 0;
-        suzi_sync_pos_set(ewk);
-        sort_push_request(&ewk->wu);
+        initialize_eff09_2000(ewk, &work);
         return;
 
     case 1:
@@ -305,16 +323,7 @@ void eff09_2000(WORK_Other* ewk) {
         break;
 
     case 2:
-        if (eff09_2000_updates_enabled()) {
-            if (eff09_2000_is_outside_bounds(ewk)) {
-                ewk->wu.routine_no[1]++;
-                ewk->wu.disp_flag = 0;
-            } else {
-                add_x_sub(&ewk->wu);
-                add_y_sub(&ewk->wu);
-            }
-        }
-
+        advance_eff09_2000_bounce(ewk);
         suzi_sync_pos_set(ewk);
         sort_push_request(&ewk->wu);
         break;
