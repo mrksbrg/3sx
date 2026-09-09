@@ -1420,9 +1420,41 @@ void eff09_21000(WORK_Other* ewk) {
     }
 }
 
+static void initialize_eff09_22000(WORK_Other* ewk) {
+    ewk->wu.routine_no[1]++;
+    ewk->wu.disp_flag = 1;
+    ewk->wu.dead_f = 1;
+    set_char_move_init(&ewk->wu, 0, ewk->wu.char_index);
+}
+
+static void advance_eff09_22000_parent_animation(WORK_Other* ewk, const WORK* oya_ptr) {
+    s16 work;
+
+    if (!EXE_flag && !Game_pause) {
+        if (oya_ptr->cg_type == 99) {
+            ewk->wu.routine_no[1]++;
+            set_char_move_init(&ewk->wu, 0, 62);
+        } else if (oya_ptr->cg_ix != ewk->wu.cg_ix) {
+            work = oya_ptr->cg_ix / oya_ptr->cgd_type;
+            set_char_move_init2(&ewk->wu, 0, 61, work + 1, 0);
+            ewk->wu.cg_ix = oya_ptr->cg_ix;
+        }
+    }
+}
+
+static void advance_eff09_22000_animation(WORK_Other* ewk) {
+    if (!EXE_flag && !Game_pause) {
+        char_move(&ewk->wu);
+
+        if (ewk->wu.cg_type == 0xFF) {
+            ewk->wu.routine_no[1]++;
+            ewk->wu.disp_flag = 0;
+        }
+    }
+}
+
 void eff09_22000(WORK_Other* ewk) {
     WORK* oya_ptr;
-    s16 work;
 
     if (test_flag) {
         ewk->wu.routine_no[1] = 99;
@@ -1432,37 +1464,16 @@ void eff09_22000(WORK_Other* ewk) {
 
     switch (ewk->wu.routine_no[1]) {
     case 0:
-        ewk->wu.routine_no[1]++;
-        ewk->wu.disp_flag = 1;
-        ewk->wu.dead_f = 1;
-        set_char_move_init(&ewk->wu, 0, ewk->wu.char_index);
+        initialize_eff09_22000(ewk);
         break;
 
     case 1:
-        if (!EXE_flag && !Game_pause) {
-            if (oya_ptr->cg_type == 99) {
-                ewk->wu.routine_no[1]++;
-                set_char_move_init(&ewk->wu, 0, 62);
-            } else if (oya_ptr->cg_ix != ewk->wu.cg_ix) {
-                work = oya_ptr->cg_ix / oya_ptr->cgd_type;
-                set_char_move_init2(&ewk->wu, 0, 61, work + 1, 0);
-                ewk->wu.cg_ix = oya_ptr->cg_ix;
-            }
-        }
-
+        advance_eff09_22000_parent_animation(ewk, oya_ptr);
         pl_eff_trans_entry(ewk);
         break;
 
     case 2:
-        if (!EXE_flag && !Game_pause) {
-            char_move(&ewk->wu);
-
-            if (ewk->wu.cg_type == 0xFF) {
-                ewk->wu.routine_no[1]++;
-                ewk->wu.disp_flag = 0;
-            }
-        }
-
+        advance_eff09_22000_animation(ewk);
         pl_eff_trans_entry(ewk);
         break;
 
