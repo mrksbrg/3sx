@@ -1698,6 +1698,47 @@ static s32 eff09_26000_updates_enabled() {
     return !EXE_flag && !Game_pause;
 }
 
+static void initialize_eff09_26000(WORK_Other* ewk) {
+    ewk->wu.routine_no[1]++;
+    ewk->wu.disp_flag = 1;
+    ewk->wu.dead_f = 1;
+    set_char_move_init(&ewk->wu, 0, 101);
+    ewk->wu.old_rno[0] = 0;
+    ewk->wu.xyz[1].disp.pos += base_y_pos;
+}
+
+static void advance_eff09_26000_start_animation(WORK_Other* ewk, WORK* oya_ptr) {
+    if (eff09_26000_updates_enabled()) {
+        char_move(&ewk->wu);
+
+        if (ewk->wu.cg_type == 9) {
+            ewk->wu.routine_no[1]++;
+            oya_ptr->cmwk[0] = 1;
+        }
+    }
+}
+
+static void advance_eff09_26000_transition(WORK_Other* ewk) {
+    if (eff09_26000_updates_enabled()) {
+        char_move(&ewk->wu);
+
+        if (ewk->wu.cg_type == 0xFF) {
+            ewk->wu.routine_no[1]++;
+            set_char_move_init(&ewk->wu, 0, 102);
+        }
+    }
+}
+
+static void advance_eff09_26000_parent_wait(WORK_Other* ewk, const WORK* oya_ptr) {
+    if (eff09_26000_updates_enabled()) {
+        char_move(&ewk->wu);
+
+        if (oya_ptr->cmwk[0] == 2) {
+            ewk->wu.routine_no[1]++;
+        }
+    }
+}
+
 void eff09_26000(WORK_Other* ewk) {
     WORK* oya_ptr;
 
@@ -1709,51 +1750,23 @@ void eff09_26000(WORK_Other* ewk) {
 
     switch (ewk->wu.routine_no[1]) {
     case 0:
-        ewk->wu.routine_no[1]++;
-        ewk->wu.disp_flag = 1;
-        ewk->wu.dead_f = 1;
-        set_char_move_init(&ewk->wu, 0, 101);
-        ewk->wu.old_rno[0] = 0;
-        ewk->wu.xyz[1].disp.pos += base_y_pos;
+        initialize_eff09_26000(ewk);
         break;
 
     case 1:
-        if (eff09_26000_updates_enabled()) {
-            char_move(&ewk->wu);
-
-            if (ewk->wu.cg_type == 9) {
-                ewk->wu.routine_no[1]++;
-                oya_ptr->cmwk[0] = 1;
-            }
-        }
-
+        advance_eff09_26000_start_animation(ewk, oya_ptr);
         jijii_win_tama_sub(ewk);
         disp_pos_trans_entry(ewk);
         break;
 
     case 2:
-        if (eff09_26000_updates_enabled()) {
-            char_move(&ewk->wu);
-
-            if (ewk->wu.cg_type == 0xFF) {
-                ewk->wu.routine_no[1]++;
-                set_char_move_init(&ewk->wu, 0, 102);
-            }
-        }
-
+        advance_eff09_26000_transition(ewk);
         jijii_win_tama_sub(ewk);
         disp_pos_trans_entry(ewk);
         break;
 
     case 3:
-        if (eff09_26000_updates_enabled()) {
-            char_move(&ewk->wu);
-
-            if (oya_ptr->cmwk[0] == 2) {
-                ewk->wu.routine_no[1]++;
-            }
-        }
-
+        advance_eff09_26000_parent_wait(ewk, oya_ptr);
         jijii_win_tama_sub(ewk);
         disp_pos_trans_entry(ewk);
         break;
