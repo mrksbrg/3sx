@@ -1447,6 +1447,48 @@ static s32 eff09_23000_parent_animation_started(const WORK* oya_ptr) {
     return !EXE_flag && !Game_pause && oya_ptr->cg_type == 1;
 }
 
+static void initialize_eff09_23000(WORK_Other* ewk) {
+    ewk->wu.routine_no[1]++;
+    ewk->wu.disp_flag = 1;
+    ewk->wu.dead_f = 1;
+    ewk->wu.kage_flag = 1;
+    ewk->wu.kage_hx = 1;
+    ewk->wu.kage_hy = -2;
+    ewk->wu.kage_prio = 71;
+    ewk->wu.kage_char = 11;
+    set_char_move_init(&ewk->wu, 0, ewk->wu.char_index);
+}
+
+static void advance_eff09_23000_launch(WORK_Other* ewk) {
+    if (!EXE_flag && !Game_pause) {
+        char_move(&ewk->wu);
+
+        if (ewk->wu.cg_type == 0xFF) {
+            ewk->wu.routine_no[1]++;
+
+            if (ewk->wu.rl_flag) {
+                ewk->wu.mvxy.a[0].sp = -0x20000;
+            } else {
+                ewk->wu.mvxy.a[0].sp = 0x20000;
+            }
+
+            ewk->wu.mvxy.d[0].sp = 0;
+            set_char_move_init(&ewk->wu, 0, 64);
+        }
+    }
+}
+
+static void advance_eff09_23000_exit(WORK_Other* ewk) {
+    if (!EXE_flag && !Game_pause) {
+        char_move(&ewk->wu);
+        add_x_sub(&ewk->wu);
+
+        if (range_x_check3(ewk, 64) == 0) {
+            ewk->wu.routine_no[1]++;
+        }
+    }
+}
+
 void eff09_23000(WORK_Other* ewk) {
     WORK* oya_ptr;
 
@@ -1458,15 +1500,7 @@ void eff09_23000(WORK_Other* ewk) {
 
     switch (ewk->wu.routine_no[1]) {
     case 0:
-        ewk->wu.routine_no[1]++;
-        ewk->wu.disp_flag = 1;
-        ewk->wu.dead_f = 1;
-        ewk->wu.kage_flag = 1;
-        ewk->wu.kage_hx = 1;
-        ewk->wu.kage_hy = -2;
-        ewk->wu.kage_prio = 71;
-        ewk->wu.kage_char = 11;
-        set_char_move_init(&ewk->wu, 0, ewk->wu.char_index);
+        initialize_eff09_23000(ewk);
         break;
 
     case 1:
@@ -1478,36 +1512,12 @@ void eff09_23000(WORK_Other* ewk) {
         break;
 
     case 2:
-        if (!EXE_flag && !Game_pause) {
-            char_move(&ewk->wu);
-
-            if (ewk->wu.cg_type == 0xFF) {
-                ewk->wu.routine_no[1]++;
-
-                if (ewk->wu.rl_flag) {
-                    ewk->wu.mvxy.a[0].sp = -0x20000;
-                } else {
-                    ewk->wu.mvxy.a[0].sp = 0x20000;
-                }
-
-                ewk->wu.mvxy.d[0].sp = 0;
-                set_char_move_init(&ewk->wu, 0, 64);
-            }
-        }
-
+        advance_eff09_23000_launch(ewk);
         pl_eff_trans_entry(ewk);
         break;
 
     case 3:
-        if (!EXE_flag && !Game_pause) {
-            char_move(&ewk->wu);
-            add_x_sub(&ewk->wu);
-
-            if (range_x_check3(ewk, 64) == 0) {
-                ewk->wu.routine_no[1]++;
-            }
-        }
-
+        advance_eff09_23000_exit(ewk);
         pl_eff_trans_entry(ewk);
         break;
 
