@@ -1272,6 +1272,10 @@ void eff09_20000(WORK_Other* ewk) {
     }
 }
 
+static s32 eff09_21000_updates_enabled() {
+    return !EXE_flag && !Game_pause;
+}
+
 void eff09_21000(WORK_Other* ewk) {
     s16 arrive_x;
     s16 arrive_y;
@@ -1315,7 +1319,7 @@ void eff09_21000(WORK_Other* ewk) {
         break;
 
     case 1:
-        if (!EXE_flag && !Game_pause) {
+        if (eff09_21000_updates_enabled()) {
             char_move(&ewk->wu);
             ewk->wu.old_rno[0]--;
 
@@ -1332,7 +1336,7 @@ void eff09_21000(WORK_Other* ewk) {
         break;
 
     case 2:
-        if (!EXE_flag && !Game_pause) {
+        if (eff09_21000_updates_enabled()) {
             char_move(&ewk->wu);
 
             if (ewk->wu.cg_type) {
