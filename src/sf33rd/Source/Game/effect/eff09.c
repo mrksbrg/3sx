@@ -746,22 +746,26 @@ static s32 eff09_10000_animation_updates_enabled(const WORK_Other* ewk) {
     return !EXE_flag && !Game_pause && ewk->wu.hit_stop;
 }
 
+static void initialize_eff09_10000(WORK_Other* ewk) {
+    ewk->wu.routine_no[1]++;
+    ewk->wu.disp_flag = 1;
+    ewk->wu.dead_f = 1;
+
+    if (ewk->wu.rl_flag) {
+        ewk->wu.xyz[0].disp.pos -= 6;
+    } else {
+        ewk->wu.xyz[0].disp.pos -= 2;
+    }
+
+    ewk->wu.rl_flag = 0;
+    ewk->wu.xyz[1].disp.pos += base_y_pos;
+    set_char_move_init(&ewk->wu, 0, ewk->wu.char_index);
+}
+
 void eff09_10000(WORK_Other* ewk) {
     switch (ewk->wu.routine_no[1]) {
     case 0:
-        ewk->wu.routine_no[1]++;
-        ewk->wu.disp_flag = 1;
-        ewk->wu.dead_f = 1;
-
-        if (ewk->wu.rl_flag) {
-            ewk->wu.xyz[0].disp.pos -= 6;
-        } else {
-            ewk->wu.xyz[0].disp.pos -= 2;
-        }
-
-        ewk->wu.rl_flag = 0;
-        ewk->wu.xyz[1].disp.pos += base_y_pos;
-        set_char_move_init(&ewk->wu, 0, ewk->wu.char_index);
+        initialize_eff09_10000(ewk);
         break;
 
     case 1:
