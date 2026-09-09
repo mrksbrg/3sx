@@ -1771,6 +1771,16 @@ static void resolve_kotp_16_hit(WORK_Other* ewk, TAMA* twk) {
     ewk->wu.hit_quake = 0;
 }
 
+static void accelerate_kotp_16(WORK_Other* ewk) {
+    add_mvxy_speed(&ewk->wu);
+
+    if (ewk->wu.rl_flag) {
+        ewk->wu.xyz[0].cal += 0x38000;
+    } else {
+        ewk->wu.xyz[0].cal += -0x38000;
+    }
+}
+
 void kotp_16000(WORK_Other* ewk, TAMA* twk) {
     enter_kotp_hit_phase(ewk);
 
@@ -1784,13 +1794,7 @@ void kotp_16000(WORK_Other* ewk, TAMA* twk) {
                 break;
             }
         } else {
-            add_mvxy_speed(&ewk->wu);
-
-            if (ewk->wu.rl_flag) {
-                ewk->wu.xyz[0].cal += 0x38000;
-            } else {
-                ewk->wu.xyz[0].cal += -0x38000;
-            }
+            accelerate_kotp_16(ewk);
         }
 
         cal_mvxy_speed(&ewk->wu);
