@@ -1521,6 +1521,66 @@ static s32 eff09_24000_parent_animation_started(const WORK* oya_ptr) {
     return !EXE_flag && !Game_pause && (oya_ptr->cg_type == 1);
 }
 
+static void initialize_eff09_24000(WORK_Other* ewk) {
+    ewk->wu.routine_no[1]++;
+    ewk->wu.disp_flag = 1;
+    ewk->wu.dead_f = 1;
+
+    if (ewk->wu.type == 38) {
+        ewk->wu.rl_flag ^= 1;
+    }
+
+    set_char_move_init(&ewk->wu, 0, ewk->wu.char_index);
+}
+
+static void advance_eff09_24000_parent_animation(WORK_Other* ewk, const WORK* oya_ptr) {
+    if (eff09_24000_parent_animation_started(oya_ptr)) {
+        ewk->wu.routine_no[1]++;
+
+        if (ewk->wu.type == 38) {
+            ewk->wu.routine_no[1] = 99;
+        }
+    }
+}
+
+static void advance_eff09_24000_launch(WORK_Other* ewk) {
+    if (!EXE_flag && !Game_pause) {
+        char_move(&ewk->wu);
+
+        if (ewk->wu.cg_type == 9) {
+            ewk->wu.routine_no[1]++;
+            char_move_z(&ewk->wu);
+
+            if (ewk->wu.type == 35) {
+                ewk->wu.mvxy.a[0].sp = 0x18000;
+            } else {
+                ewk->wu.mvxy.a[0].sp = -0x18000;
+            }
+
+            if (ewk->wu.rl_flag) {
+                ewk->wu.mvxy.a[0].sp = -ewk->wu.mvxy.a[0].sp;
+            }
+
+            ewk->wu.mvxy.d[0].sp = 0;
+        }
+    }
+}
+
+static void advance_eff09_24000_exit(WORK_Other* ewk) {
+    if (!EXE_flag && !Game_pause) {
+        char_move(&ewk->wu);
+        add_x_sub(&ewk->wu);
+
+        if (ewk->wu.type == 34) {
+            if (range_x_check3(ewk, 176) == 0) {
+                ewk->wu.routine_no[1]++;
+            }
+        } else if (range_x_check3(ewk, 88) == 0) {
+            ewk->wu.routine_no[1]++;
+        }
+    }
+}
+
 void eff09_24000(WORK_Other* ewk) {
     WORK* oya_ptr;
 
@@ -1532,68 +1592,21 @@ void eff09_24000(WORK_Other* ewk) {
 
     switch (ewk->wu.routine_no[1]) {
     case 0:
-        ewk->wu.routine_no[1]++;
-        ewk->wu.disp_flag = 1;
-        ewk->wu.dead_f = 1;
-
-        if (ewk->wu.type == 38) {
-            ewk->wu.rl_flag ^= 1;
-        }
-
-        set_char_move_init(&ewk->wu, 0, ewk->wu.char_index);
+        initialize_eff09_24000(ewk);
         return;
 
     case 1:
-        if (eff09_24000_parent_animation_started(oya_ptr)) {
-            ewk->wu.routine_no[1]++;
-
-            if (ewk->wu.type == 38) {
-                ewk->wu.routine_no[1] = 99;
-            }
-        }
-
+        advance_eff09_24000_parent_animation(ewk, oya_ptr);
         pl_eff_trans_entry(ewk);
         return;
 
     case 2:
-        if (!EXE_flag && !Game_pause) {
-            char_move(&ewk->wu);
-
-            if (ewk->wu.cg_type == 9) {
-                ewk->wu.routine_no[1]++;
-                char_move_z(&ewk->wu);
-
-                if (ewk->wu.type == 35) {
-                    ewk->wu.mvxy.a[0].sp = 0x18000;
-                } else {
-                    ewk->wu.mvxy.a[0].sp = -0x18000;
-                }
-
-                if (ewk->wu.rl_flag) {
-                    ewk->wu.mvxy.a[0].sp = -ewk->wu.mvxy.a[0].sp;
-                }
-
-                ewk->wu.mvxy.d[0].sp = 0;
-            }
-        }
-
+        advance_eff09_24000_launch(ewk);
         pl_eff_trans_entry(ewk);
         return;
 
     case 3:
-        if (!EXE_flag && !Game_pause) {
-            char_move(&ewk->wu);
-            add_x_sub(&ewk->wu);
-
-            if (ewk->wu.type == 34) {
-                if (range_x_check3(ewk, 176) == 0) {
-                    ewk->wu.routine_no[1]++;
-                }
-            } else if (range_x_check3(ewk, 88) == 0) {
-                ewk->wu.routine_no[1]++;
-            }
-        }
-
+        advance_eff09_24000_exit(ewk);
         pl_eff_trans_entry(ewk);
         return;
 
