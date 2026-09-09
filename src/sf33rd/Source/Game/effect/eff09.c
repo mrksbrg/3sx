@@ -1404,10 +1404,6 @@ void eff09_20000(WORK_Other* ewk) {
     }
 }
 
-static s32 eff09_21000_updates_enabled() {
-    return !EXE_flag && !Game_pause;
-}
-
 static void initialize_eff09_21000_type_29(WORK_Other* ewk, s16* arrive_x, s16* arrive_y) {
     ewk->wu.old_rno[0] = 70;
 
@@ -1453,7 +1449,7 @@ static void initialize_eff09_21000(WORK_Other* ewk) {
 }
 
 static void advance_eff09_21000_arrival(WORK_Other* ewk) {
-    if (eff09_21000_updates_enabled()) {
+    if (eff09_2000_updates_enabled()) {
         char_move(&ewk->wu);
         ewk->wu.old_rno[0]--;
 
@@ -1468,7 +1464,7 @@ static void advance_eff09_21000_arrival(WORK_Other* ewk) {
 }
 
 static void advance_eff09_21000_animation(WORK_Other* ewk) {
-    if (eff09_21000_updates_enabled()) {
+    if (eff09_2000_updates_enabled()) {
         char_move(&ewk->wu);
 
         if (ewk->wu.cg_type) {
