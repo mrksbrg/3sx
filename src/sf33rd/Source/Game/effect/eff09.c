@@ -329,11 +329,7 @@ void eff09_2000(WORK_Other* ewk) {
     }
 }
 
-void sean_ball_move(WORK_Other* ewk, u16 sw_work) {
-    if (!plw[ewk->master_id].wu.operator) {
-        return;
-    }
-
+static void adjust_sean_ball_up(WORK_Other* ewk, u16 sw_work) {
     if (sw_work & 1) {
         ewk->wu.old_rno[0]++;
 
@@ -341,7 +337,9 @@ void sean_ball_move(WORK_Other* ewk, u16 sw_work) {
             ewk->wu.mvxy.d[1].sp += eff09_add_tbl0[ewk->wu.dir_step][0];
         }
     }
+}
 
+static void adjust_sean_ball_down(WORK_Other* ewk, u16 sw_work) {
     if (sw_work & 2) {
         ewk->wu.old_rno[1]++;
 
@@ -349,7 +347,9 @@ void sean_ball_move(WORK_Other* ewk, u16 sw_work) {
             ewk->wu.mvxy.d[1].sp += eff09_add_tbl0[ewk->wu.dir_step][1];
         }
     }
+}
 
+static void adjust_sean_ball_left(WORK_Other* ewk, u16 sw_work) {
     if (sw_work & 4) {
         ewk->wu.old_rno[2]++;
 
@@ -361,7 +361,9 @@ void sean_ball_move(WORK_Other* ewk, u16 sw_work) {
             ewk->wu.mvxy.d[0].sp += eff09_add_tbl2[ewk->wu.dir_step][0];
         }
     }
+}
 
+static void adjust_sean_ball_right(WORK_Other* ewk, u16 sw_work) {
     if (sw_work & 8) {
         ewk->wu.old_rno[3]++;
 
@@ -373,6 +375,17 @@ void sean_ball_move(WORK_Other* ewk, u16 sw_work) {
             ewk->wu.mvxy.d[0].sp += eff09_add_tbl2[ewk->wu.dir_step][1];
         }
     }
+}
+
+void sean_ball_move(WORK_Other* ewk, u16 sw_work) {
+    if (!plw[ewk->master_id].wu.operator) {
+        return;
+    }
+
+    adjust_sean_ball_up(ewk, sw_work);
+    adjust_sean_ball_down(ewk, sw_work);
+    adjust_sean_ball_left(ewk, sw_work);
+    adjust_sean_ball_right(ewk, sw_work);
 }
 
 void ball_bound_set(WORK_Other* ewk) {
