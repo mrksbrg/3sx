@@ -1068,11 +1068,30 @@ static void resolve_kotp_07_hit(WORK_Other* ewk, TAMA* twk) {
     ewk->wu.hit_quake = 0;
 }
 
-void kotp_07000(WORK_Other* ewk, TAMA* twk) {
+static void redirect_kotp_07_velocity(WORK_Other* ewk) {
     PLW* mwk;
     PLW* emwk;
     s16 tama_x;
 
+    if (ewk->wu.cg_type == 20) {
+        setup_mvxy_data(&ewk->wu, ewk->wu.mvxy.index);
+        ewk->wu.mvxy.index++;
+        ewk->wu.cg_type = 0;
+        mwk = (PLW*)ewk->my_master;
+        emwk = (PLW*)mwk->wu.target_adrs;
+        tama_x = ewk->wu.xyz[0].disp.pos;
+
+        if (tama_x > emwk->wu.xyz[0].disp.pos) {
+            ewk->wu.mvxy.a[0].sp *= ewk->wu.rl_flag ? -1 : 1;
+            ewk->wu.mvxy.d[0].sp *= ewk->wu.rl_flag ? -1 : 1;
+        } else {
+            ewk->wu.mvxy.a[0].sp *= ewk->wu.rl_flag ? 1 : -1;
+            ewk->wu.mvxy.d[0].sp *= ewk->wu.rl_flag ? 1 : -1;
+        }
+    }
+}
+
+void kotp_07000(WORK_Other* ewk, TAMA* twk) {
     if (ewk->wu.hf.hit_flag) {
         ewk->wu.routine_no[1] = 1;
     }
@@ -1091,23 +1110,7 @@ void kotp_07000(WORK_Other* ewk, TAMA* twk) {
         if (bg_w.stage == 20) {
             ewk->wu.vs_id = 7;
         }
-
-        if (ewk->wu.cg_type == 20) {
-            setup_mvxy_data(&ewk->wu, ewk->wu.mvxy.index);
-            ewk->wu.mvxy.index++;
-            ewk->wu.cg_type = 0;
-            mwk = (PLW*)ewk->my_master;
-            emwk = (PLW*)mwk->wu.target_adrs;
-            tama_x = ewk->wu.xyz[0].disp.pos;
-
-            if (tama_x > emwk->wu.xyz[0].disp.pos) {
-                ewk->wu.mvxy.a[0].sp *= ewk->wu.rl_flag ? -1 : 1;
-                ewk->wu.mvxy.d[0].sp *= ewk->wu.rl_flag ? -1 : 1;
-            } else {
-                ewk->wu.mvxy.a[0].sp *= ewk->wu.rl_flag ? 1 : -1;
-                ewk->wu.mvxy.d[0].sp *= ewk->wu.rl_flag ? 1 : -1;
-            }
-        }
+        redirect_kotp_07_velocity(ewk);
 
         if (--ewk->wu.dir_timer < 0) {
             set_char_move_init(&ewk->wu, 0, twk->ernm);
