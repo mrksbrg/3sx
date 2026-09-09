@@ -1832,16 +1832,24 @@ s32 effect_09_init(WORK* wk, u8 data) {
     return 0;
 }
 
+static s32 effect_09_init2_is_blocked_stage(u8 data) {
+    return data == 0x1F && bg_w.stage == 0xA;
+}
+
+static s32 effect_09_init2_is_blocked_test_effect(u8 data) {
+    return test_flag && data >= 32 && data < 41;
+}
+
 s32 effect_09_init2(WORK* wk, u8 data) {
     WORK_Other* ewk;
     s16 ix;
     const s16* data_ptr;
 
-    if (data == 0x1F && bg_w.stage == 0xA) {
+    if (effect_09_init2_is_blocked_stage(data)) {
         return 0;
     }
 
-    if (test_flag && data >= 32 && data < 41) {
+    if (effect_09_init2_is_blocked_test_effect(data)) {
         return 0;
     }
 
