@@ -1781,6 +1781,10 @@ static void accelerate_kotp_16(WORK_Other* ewk) {
     }
 }
 
+static s32 kotp_16_remains_on_screen(WORK_Other* ewk) {
+    return --ewk->wu.dir_timer >= 0 && !screen_range_check(&ewk->wu);
+}
+
 void kotp_16000(WORK_Other* ewk, TAMA* twk) {
     enter_kotp_hit_phase(ewk);
 
@@ -1819,7 +1823,7 @@ void kotp_16000(WORK_Other* ewk, TAMA* twk) {
             break;
         }
 
-        if (--ewk->wu.dir_timer >= 0 && !screen_range_check(&ewk->wu)) {
+        if (kotp_16_remains_on_screen(ewk)) {
             break;
         }
 
