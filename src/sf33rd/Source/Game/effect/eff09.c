@@ -888,6 +888,15 @@ void eff09_12000(WORK_Other* ewk) {
     }
 }
 
+static s32 eff09_13000_updates_enabled() {
+    return !EXE_flag && !Game_pause;
+}
+
+static s32 eff09_13000_has_left_play_area(const WORK_Other* ewk) {
+    return ewk->wu.xyz[0].disp.pos < bg_w.bgw[1].pos_x_work - 240 ||
+           ewk->wu.xyz[0].disp.pos > bg_w.bgw[1].pos_x_work + 240 || ewk->wu.xyz[1].disp.pos > 512;
+}
+
 void eff09_13000(WORK_Other* ewk) {
     WORK* oya_ptr = (WORK*)ewk->my_master;
 
@@ -900,7 +909,7 @@ void eff09_13000(WORK_Other* ewk) {
         break;
 
     case 1:
-        if (!EXE_flag && !Game_pause) {
+        if (eff09_13000_updates_enabled()) {
             char_move(&ewk->wu);
 
             if (oya_ptr->cg_type == 99) {
@@ -918,13 +927,12 @@ void eff09_13000(WORK_Other* ewk) {
         break;
 
     case 2:
-        if (!EXE_flag && !Game_pause) {
+        if (eff09_13000_updates_enabled()) {
             char_move(&ewk->wu);
             add_x_sub(&ewk->wu);
             add_y_sub(&ewk->wu);
 
-            if (ewk->wu.xyz[0].disp.pos < bg_w.bgw[1].pos_x_work - 240 ||
-                ewk->wu.xyz[0].disp.pos > bg_w.bgw[1].pos_x_work + 240 || ewk->wu.xyz[1].disp.pos > 512) {
+            if (eff09_13000_has_left_play_area(ewk)) {
                 ewk->wu.routine_no[1]++;
                 ewk->wu.disp_flag = 0;
             }
