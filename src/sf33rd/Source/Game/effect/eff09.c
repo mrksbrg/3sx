@@ -945,6 +945,21 @@ static s32 eff09_13000_has_left_play_area(const WORK_Other* ewk) {
            ewk->wu.xyz[0].disp.pos > bg_w.bgw[1].pos_x_work + 240 || ewk->wu.xyz[1].disp.pos > 512;
 }
 
+static void advance_eff09_13000_intro(WORK_Other* ewk, const WORK* oya_ptr) {
+    if (eff09_13000_updates_enabled()) {
+        char_move(&ewk->wu);
+
+        if (oya_ptr->cg_type == 99) {
+            ewk->wu.routine_no[1]++;
+            set_char_move_init(&ewk->wu, 0, 83);
+            ewk->wu.mvxy.a[0].sp = eff09_13_tbl[ewk->wu.type - 0xF][0];
+            ewk->wu.mvxy.d[0].sp = eff09_13_tbl[ewk->wu.type - 0xF][1];
+            ewk->wu.mvxy.a[1].sp = eff09_13_tbl[ewk->wu.type - 0xF][2];
+            ewk->wu.mvxy.d[1].sp = eff09_13_tbl[ewk->wu.type - 0xF][3];
+        }
+    }
+}
+
 void eff09_13000(WORK_Other* ewk) {
     WORK* oya_ptr = (WORK*)ewk->my_master;
 
@@ -957,18 +972,7 @@ void eff09_13000(WORK_Other* ewk) {
         break;
 
     case 1:
-        if (eff09_13000_updates_enabled()) {
-            char_move(&ewk->wu);
-
-            if (oya_ptr->cg_type == 99) {
-                ewk->wu.routine_no[1]++;
-                set_char_move_init(&ewk->wu, 0, 83);
-                ewk->wu.mvxy.a[0].sp = eff09_13_tbl[ewk->wu.type - 0xF][0];
-                ewk->wu.mvxy.d[0].sp = eff09_13_tbl[ewk->wu.type - 0xF][1];
-                ewk->wu.mvxy.a[1].sp = eff09_13_tbl[ewk->wu.type - 0xF][2];
-                ewk->wu.mvxy.d[1].sp = eff09_13_tbl[ewk->wu.type - 0xF][3];
-            }
-        }
+        advance_eff09_13000_intro(ewk, oya_ptr);
 
         suzi_sync_pos_set(ewk);
         sort_push_request(&ewk->wu);
