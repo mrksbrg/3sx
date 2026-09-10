@@ -357,25 +357,10 @@ static void enter_kotp_hit_phase(WORK_Other* ewk);
 static void finish_kotp_07(WORK_Other* ewk);
 static s32 prepare_kotp_exp_motion(WORK_Other* ewk);
 static s32 kotp_remains_on_screen(WORK_Other* ewk);
+static void resolve_kotp_reflected_hit(WORK_Other* ewk, TAMA* twk, s16 destroyed_threshold);
 
 static void resolve_kotp_00_hit(WORK_Other* ewk, TAMA* twk) {
-    ewk->wu.vital_new -= ewk->wu.dm_vital;
-    ewk->wu.dm_vital = 0;
-
-    if (ewk->wu.vital_new < 0x100) {
-        set_kotp_hit_move(ewk, twk);
-
-        enter_kotp_destroyed_phase(ewk);
-    } else {
-        ewk->wu.routine_no[1] = 0;
-
-        spawn_kotp_hit_effect(ewk, twk);
-
-        apply_kotp_reflection(ewk);
-    }
-
-    ewk->wu.hf.hit_flag = 0;
-    ewk->wu.hit_quake = 0;
+    resolve_kotp_reflected_hit(ewk, twk, 0x100);
 }
 
 static s32 kotp_00_remains_on_screen(WORK_Other* ewk) {
