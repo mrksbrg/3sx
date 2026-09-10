@@ -115,6 +115,19 @@ static void initialize_tama_motion(WORK_Other* ewk, TAMA* tama) {
     }
 }
 
+static void configure_special_tama(WORK_Other* ewk, TAMA* tama) {
+    if (tama->kind_of_tama == 11) {
+        ewk->wu.next_z = 71;
+        ewk->wu.my_mr_flag = 1;
+        ewk->wu.my_mr.size.x = 127;
+        ewk->wu.my_mr.size.y = 127;
+    }
+
+    if (tama->kind_of_tama == 10) {
+        ewk->wu.rl_flag = ((WORK*)ewk->my_master)->rl_waza;
+    }
+}
+
 void effect_13_move(WORK_Other* ewk) {
     TAMA* tama = (TAMA*)ewk->wu.my_effadrs;
 
@@ -142,16 +155,7 @@ void effect_13_move(WORK_Other* ewk) {
 
         initialize_tama_motion(ewk, tama);
 
-        if (tama->kind_of_tama == 11) {
-            ewk->wu.next_z = 71;
-            ewk->wu.my_mr_flag = 1;
-            ewk->wu.my_mr.size.x = 127;
-            ewk->wu.my_mr.size.y = 127;
-        }
-
-        if (tama->kind_of_tama == 10) {
-            ewk->wu.rl_flag = ((WORK*)ewk->my_master)->rl_waza;
-        }
+        configure_special_tama(ewk, tama);
 
         tama_display(&ewk->wu);
         effect_00_init(&ewk->wu);
