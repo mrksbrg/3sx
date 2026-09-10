@@ -372,6 +372,12 @@ static void enter_kotp_exit_phase(WORK_Other* ewk, TAMA* twk) {
     ewk->wu.routine_no[2] = 0;
 }
 
+static void advance_kotp_motion(WORK_Other* ewk) {
+    add_mvxy_speed(&ewk->wu);
+    cal_mvxy_speed(&ewk->wu);
+    char_move(&ewk->wu);
+}
+
 static void enter_kotp_hit_phase(WORK_Other* ewk);
 static void finish_kotp_07(WORK_Other* ewk);
 static s32 prepare_kotp_exp_motion(WORK_Other* ewk);
@@ -720,9 +726,7 @@ void kotp_03000(WORK_Other* ewk, TAMA* twk) {
             break;
         }
 
-        add_mvxy_speed(&ewk->wu);
-        cal_mvxy_speed(&ewk->wu);
-        char_move(&ewk->wu);
+        advance_kotp_motion(ewk);
 
         if ((ewk->wu.xyz[1].disp.pos + ewk->wu.cg_jphos) <= 0) {
             ewk->wu.mvxy.a[0].sp = 0;
@@ -796,9 +800,7 @@ void kotp_05000(WORK_Other* ewk, TAMA* twk) {
             break;
         }
 
-        add_mvxy_speed(&ewk->wu);
-        cal_mvxy_speed(&ewk->wu);
-        char_move(&ewk->wu);
+        advance_kotp_motion(ewk);
 
         if ((ewk->wu.xyz[1].disp.pos + ewk->wu.cg_jphos) <= 0) {
             enter_kotp_landing_phase(ewk, twk);
@@ -896,9 +898,7 @@ void kotp_06000(WORK_Other* ewk, TAMA* twk) {
 
         steer_kotp_06(ewk, twk, mwk, emwk);
 
-        add_mvxy_speed(&ewk->wu);
-        cal_mvxy_speed(&ewk->wu);
-        char_move(&ewk->wu);
+        advance_kotp_motion(ewk);
 
         if ((ewk->wu.xyz[1].disp.pos + ewk->wu.cg_jphos) <= 0) {
             enter_kotp_landing_phase(ewk, twk);
@@ -1019,9 +1019,7 @@ void kotp_07000(WORK_Other* ewk, TAMA* twk) {
             break;
         }
 
-        add_mvxy_speed(&ewk->wu);
-        cal_mvxy_speed(&ewk->wu);
-        char_move(&ewk->wu);
+        advance_kotp_motion(ewk);
 
         if (bg_w.stage == 20) {
             ewk->wu.vs_id = 7;
@@ -1087,9 +1085,7 @@ void kotp_08000(WORK_Other* ewk, TAMA* twk) {
             break;
         }
 
-        add_mvxy_speed(&ewk->wu);
-        cal_mvxy_speed(&ewk->wu);
-        char_move(&ewk->wu);
+        advance_kotp_motion(ewk);
 
         if ((ewk->wu.xyz[1].disp.pos + ewk->wu.cg_jphos) <= 0) {
             enter_kotp_landing_phase(ewk, twk);
@@ -1157,9 +1153,7 @@ void kotp_09000(WORK_Other* ewk, TAMA* twk) {
             break;
         }
 
-        add_mvxy_speed(&ewk->wu);
-        cal_mvxy_speed(&ewk->wu);
-        char_move(&ewk->wu);
+        advance_kotp_motion(ewk);
 
         if (ewk->wu.cg_type == 0xFF) {
             set_char_move_init(&ewk->wu, 0, twk->ernm);
@@ -1437,9 +1431,7 @@ void kotp_15000(WORK_Other* ewk, TAMA* twk) {
             break;
         }
 
-        add_mvxy_speed(&ewk->wu);
-        cal_mvxy_speed(&ewk->wu);
-        char_move(&ewk->wu);
+        advance_kotp_motion(ewk);
 
         if (ewk->wu.cg_type == 0xFF) {
             set_char_move_init(&ewk->wu, 0, twk->ernm);
