@@ -736,23 +736,7 @@ void kotp_03000(WORK_Other* ewk, TAMA* twk) {
         break;
 
     case 2:
-        switch (ewk->wu.routine_no[2]) {
-        case 0:
-            add_mvxy_speed(&ewk->wu);
-            cal_mvxy_speed(&ewk->wu);
-            /* fallthrough */
-
-        case 1:
-            char_move(&ewk->wu);
-
-            if (ewk->wu.cg_type == 0xFF) {
-                ewk->wu.disp_flag = 0;
-                ewk->wu.routine_no[0] = 2;
-            }
-
-            break;
-        }
-
+        finish_kotp_07(ewk);
         break;
     }
 }
@@ -842,23 +826,7 @@ void kotp_05000(WORK_Other* ewk, TAMA* twk) {
         break;
 
     case 2:
-        switch (ewk->wu.routine_no[2]) {
-        case 0:
-            add_mvxy_speed(&ewk->wu);
-            cal_mvxy_speed(&ewk->wu);
-            /* fallthrough */
-
-        case 1:
-            char_move(&ewk->wu);
-
-            if (ewk->wu.cg_type == 0xFF) {
-                ewk->wu.disp_flag = 0;
-                ewk->wu.routine_no[0] = 2;
-            }
-
-            break;
-        }
-
+        finish_kotp_07(ewk);
         break;
     }
 }
@@ -1234,21 +1202,7 @@ void kotp_08000(WORK_Other* ewk, TAMA* twk) {
         break;
 
     case 2:
-        switch (ewk->wu.routine_no[2]) {
-        case 0:
-            add_mvxy_speed(&ewk->wu);
-            cal_mvxy_speed(&ewk->wu);
-            /* fallthrough */
-
-        case 1:
-            char_move(&ewk->wu);
-            if (ewk->wu.cg_type == 0xFF) {
-                ewk->wu.disp_flag = 0;
-                ewk->wu.routine_no[0] = 2;
-            }
-            break;
-        }
-
+        finish_kotp_07(ewk);
         break;
     }
 }
@@ -1686,23 +1640,7 @@ void kotp_15000(WORK_Other* ewk, TAMA* twk) {
         break;
 
     case 2:
-        switch (ewk->wu.routine_no[2]) {
-        case 0:
-            add_mvxy_speed(&ewk->wu);
-            cal_mvxy_speed(&ewk->wu);
-            /* fallthrough */
-
-        case 1:
-            char_move(&ewk->wu);
-
-            if (ewk->wu.cg_type == 0xFF) {
-                ewk->wu.disp_flag = 0;
-                ewk->wu.routine_no[0] = 2;
-            }
-
-            break;
-        }
-
+        finish_kotp_07(ewk);
         break;
     }
 }
