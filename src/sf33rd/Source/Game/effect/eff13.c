@@ -783,6 +783,10 @@ static void resolve_kotp_05_hit(WORK_Other* ewk, TAMA* twk) {
     ewk->wu.hit_quake = 0;
 }
 
+static s32 kotp_05_remains_on_screen(WORK_Other* ewk) {
+    return --ewk->wu.dir_timer >= 0 && screen_x_range_check(&ewk->wu) == 0;
+}
+
 void kotp_05000(WORK_Other* ewk, TAMA* twk) {
     enter_kotp_hit_phase(ewk);
 
@@ -814,7 +818,7 @@ void kotp_05000(WORK_Other* ewk, TAMA* twk) {
             break;
         }
 
-        if (--ewk->wu.dir_timer >= 0 && screen_x_range_check(&ewk->wu) == 0) {
+        if (kotp_05_remains_on_screen(ewk)) {
             break;
         }
 
