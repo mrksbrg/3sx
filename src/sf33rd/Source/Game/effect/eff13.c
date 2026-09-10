@@ -289,6 +289,8 @@ void set_tengu_init_pos(WORK* ewk, WORK* mwk) {
     ewk->xyz[1].disp.pos = ewk->direction;
 }
 
+static void enter_kotp_hit_phase(WORK_Other* ewk);
+
 static void resolve_kotp_00_hit(WORK_Other* ewk, TAMA* twk) {
     ewk->wu.vital_new -= ewk->wu.dm_vital;
     ewk->wu.dm_vital = 0;
@@ -333,9 +335,7 @@ static void resolve_kotp_00_hit(WORK_Other* ewk, TAMA* twk) {
 }
 
 void kotp_00000(WORK_Other* ewk, TAMA* twk) {
-    if (ewk->wu.hf.hit_flag) {
-        ewk->wu.routine_no[1] = 1;
-    }
+    enter_kotp_hit_phase(ewk);
 
     switch (ewk->wu.routine_no[1]) {
     case 0:
