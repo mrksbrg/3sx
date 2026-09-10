@@ -39,6 +39,20 @@ const s16 homing_empos_hos[1][20][2];
 const s16 enemy_pos_hos[1][20][2];
 const s16 X_F_L_A_T_pos_hos[1][20][2];
 
+static void set_tama_color(WORK_Other* ewk, TAMA* tama) {
+    if (ewk->master_id) {
+        if (tama->col_2p == 0) {
+            ewk->wu.my_col_code = ewk->wu.old_rno[7];
+        } else {
+            ewk->wu.my_col_code = tcct[tama->col_2p];
+        }
+    } else if (tama->col_1p == 0) {
+        ewk->wu.my_col_code = ewk->wu.old_rno[7];
+    } else {
+        ewk->wu.my_col_code = tcct[tama->col_1p];
+    }
+}
+
 void effect_13_move(WORK_Other* ewk) {
     TAMA* tama = (TAMA*)ewk->wu.my_effadrs;
     PLW* mwk;
@@ -62,17 +76,7 @@ void effect_13_move(WORK_Other* ewk) {
         ewk->wu.shell_vs_refrect = tama->vs_refrect;
         ewk->wu.charset_id = tama->kind_of_tama;
 
-        if (ewk->master_id) {
-            if (tama->col_2p == 0) {
-                ewk->wu.my_col_code = ewk->wu.old_rno[7];
-            } else {
-                ewk->wu.my_col_code = tcct[tama->col_2p];
-            }
-        } else if (tama->col_1p == 0) {
-            ewk->wu.my_col_code = ewk->wu.old_rno[7];
-        } else {
-            ewk->wu.my_col_code = tcct[tama->col_1p];
-        }
+        set_tama_color(ewk, tama);
 
         if (tama->kage_index) {
             ewk->wu.kage_flag = 1;
