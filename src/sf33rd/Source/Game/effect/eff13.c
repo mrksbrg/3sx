@@ -495,6 +495,15 @@ static void update_tengu_home_phase(WORK_Other* ewk, TAMA* twk, PLW* mwk) {
     }
 }
 
+static void update_tengu_attack_phase(WORK_Other* ewk, TAMA* twk, PLW* mwk) {
+    add_mvxy_speed_no_use_rl(&ewk->wu);
+    cal_mvxy_speed(&ewk->wu);
+
+    if (check_tengu_attack(&ewk->wu, &mwk->wu, twk) == 0 && --ewk->wu.dir_timer < 0) {
+        ewk->wu.routine_no[2] = 2;
+    }
+}
+
 void kotp_02000(WORK_Other* ewk, TAMA* twk) {
     PLW* mwk = (PLW*)ewk->my_master;
 
@@ -525,13 +534,7 @@ void kotp_02000(WORK_Other* ewk, TAMA* twk) {
             break;
 
         case 1:
-            add_mvxy_speed_no_use_rl(&ewk->wu);
-            cal_mvxy_speed(&ewk->wu);
-
-            if (check_tengu_attack(&ewk->wu, &mwk->wu, twk) == 0 && --ewk->wu.dir_timer < 0) {
-                ewk->wu.routine_no[2] = 2;
-            }
-
+            update_tengu_attack_phase(ewk, twk, mwk);
             break;
 
         case 2:
