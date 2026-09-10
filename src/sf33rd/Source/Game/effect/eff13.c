@@ -338,6 +338,13 @@ static void spawn_kotp_hit_effect(WORK_Other* ewk, TAMA* twk) {
     }
 }
 
+static void enter_kotp_destroyed_phase(WORK_Other* ewk) {
+    ewk->wu.routine_no[1] = 2;
+    ewk->wu.routine_no[2] = 1;
+    ewk->wu.kage_flag = 0;
+    ewk->wu.hit_stop = 0;
+}
+
 static void enter_kotp_hit_phase(WORK_Other* ewk);
 static void finish_kotp_07(WORK_Other* ewk);
 static s32 prepare_kotp_exp_motion(WORK_Other* ewk);
@@ -350,10 +357,7 @@ static void resolve_kotp_00_hit(WORK_Other* ewk, TAMA* twk) {
     if (ewk->wu.vital_new < 0x100) {
         set_kotp_hit_move(ewk, twk);
 
-        ewk->wu.routine_no[1] = 2;
-        ewk->wu.routine_no[2] = 1;
-        ewk->wu.kage_flag = 0;
-        ewk->wu.hit_stop = 0;
+        enter_kotp_destroyed_phase(ewk);
     } else {
         ewk->wu.routine_no[1] = 0;
 
@@ -765,10 +769,7 @@ static void resolve_kotp_05_hit(WORK_Other* ewk, TAMA* twk) {
     if (ewk->wu.vital_new < 256) {
         set_kotp_hit_move(ewk, twk);
 
-        ewk->wu.routine_no[1] = 2;
-        ewk->wu.routine_no[2] = 1;
-        ewk->wu.kage_flag = 0;
-        ewk->wu.hit_stop = 0;
+        enter_kotp_destroyed_phase(ewk);
     } else {
         ewk->wu.routine_no[1] = 0;
 
@@ -842,10 +843,7 @@ static void resolve_kotp_06_hit(WORK_Other* ewk, TAMA* twk) {
     if (ewk->wu.vital_new < 256) {
         set_kotp_hit_move(ewk, twk);
 
-        ewk->wu.routine_no[1] = 2;
-        ewk->wu.routine_no[2] = 1;
-        ewk->wu.kage_flag = 0;
-        ewk->wu.hit_stop = 0;
+        enter_kotp_destroyed_phase(ewk);
     } else {
         ewk->wu.routine_no[1] = 0;
 
@@ -996,10 +994,7 @@ static void resolve_kotp_07_hit(WORK_Other* ewk, TAMA* twk) {
     if (ewk->wu.vital_new < 0x100) {
         set_kotp_hit_move(ewk, twk);
 
-        ewk->wu.routine_no[1] = 2;
-        ewk->wu.routine_no[2] = 1;
-        ewk->wu.kage_flag = 0;
-        ewk->wu.hit_stop = 0;
+        enter_kotp_destroyed_phase(ewk);
     } else {
         ewk->wu.routine_no[1] = 0;
 
@@ -1102,10 +1097,7 @@ static void resolve_kotp_08_hit(WORK_Other* ewk, TAMA* twk) {
     if (ewk->wu.vital_new < 256) {
         set_kotp_hit_move(ewk, twk);
 
-        ewk->wu.routine_no[1] = 2;
-        ewk->wu.routine_no[2] = 1;
-        ewk->wu.kage_flag = 0;
-        ewk->wu.hit_stop = 0;
+        enter_kotp_destroyed_phase(ewk);
     } else {
         ewk->wu.routine_no[1] = 0;
 
@@ -1119,10 +1111,7 @@ static void resolve_kotp_08_hit(WORK_Other* ewk, TAMA* twk) {
             effect_96_init(&ewk->wu, twk->erex, ewk->wu.disp_flag, ewk->wu.hit_stop);
         } else {
             set_char_move_init(&ewk->wu, 0, twk->erex);
-            ewk->wu.routine_no[1] = 2;
-            ewk->wu.routine_no[2] = 1;
-            ewk->wu.kage_flag = 0;
-            ewk->wu.hit_stop = 0;
+            enter_kotp_destroyed_phase(ewk);
         }
 
         if (ewk->dm_refrect) {
@@ -1190,10 +1179,7 @@ static void resolve_kotp_09_hit(WORK_Other* ewk, TAMA* twk) {
     if (ewk->wu.vital_new < 256) {
         set_kotp_hit_move(ewk, twk);
 
-        ewk->wu.routine_no[1] = 2;
-        ewk->wu.routine_no[2] = 1;
-        ewk->wu.kage_flag = 0;
-        ewk->wu.hit_stop = 0;
+        enter_kotp_destroyed_phase(ewk);
     } else {
         ewk->wu.routine_no[1] = 0;
 
@@ -1204,10 +1190,7 @@ static void resolve_kotp_09_hit(WORK_Other* ewk, TAMA* twk) {
                 set_char_move_init(&ewk->wu, 0, twk->erht);
             }
 
-            ewk->wu.routine_no[1] = 2;
-            ewk->wu.routine_no[2] = 1;
-            ewk->wu.kage_flag = 0;
-            ewk->wu.hit_stop = 0;
+            enter_kotp_destroyed_phase(ewk);
         } else {
             effect_96_init(&ewk->wu, twk->erex, ewk->wu.disp_flag, ewk->wu.hit_stop);
         }
@@ -1344,10 +1327,7 @@ static void resolve_kotp_12_hit(WORK_Other* ewk, TAMA* twk) {
     if (ewk->wu.vital_new < 256) {
         set_kotp_hit_move(ewk, twk);
 
-        ewk->wu.routine_no[1] = 2;
-        ewk->wu.routine_no[2] = 1;
-        ewk->wu.kage_flag = 0;
-        ewk->wu.hit_stop = 0;
+        enter_kotp_destroyed_phase(ewk);
     } else {
         ewk->wu.routine_no[1] = 0;
 
@@ -1507,10 +1487,7 @@ void kotp_13000(WORK_Other* ewk, TAMA* twk) {
         ewk->wu.dm_vital = 0;
 
         if (ewk->wu.vital_new < 256) {
-            ewk->wu.routine_no[1] = 2;
-            ewk->wu.routine_no[2] = 1;
-            ewk->wu.kage_flag = 0;
-            ewk->wu.hit_stop = 0;
+            enter_kotp_destroyed_phase(ewk);
             ewk->wu.att_hit_ok = 0;
         } else {
             ewk->wu.routine_no[1] = 0;
@@ -1615,10 +1592,7 @@ static void resolve_kotp_16_hit(WORK_Other* ewk, TAMA* twk) {
     if (ewk->wu.vital_new < 256) {
         set_kotp_hit_move(ewk, twk);
 
-        ewk->wu.routine_no[1] = 2;
-        ewk->wu.routine_no[2] = 1;
-        ewk->wu.kage_flag = 0;
-        ewk->wu.hit_stop = 0;
+        enter_kotp_destroyed_phase(ewk);
     } else {
         ewk->wu.routine_no[1] = 0;
 
