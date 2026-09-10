@@ -471,6 +471,30 @@ void kotp_01000(WORK_Other* ewk, TAMA* twk) {
     }
 }
 
+static void update_tengu_home_phase(WORK_Other* ewk, TAMA* twk, PLW* mwk) {
+    ewk->wu.position_z = mwk->wu.position_z + ewk->wu.old_pos[2];
+
+    if (mwk->sa->ok != -1 || ewk->wu.dir_old != mwk->sa->id_arts) {
+        ewk->wu.routine_no[1] = 2;
+        ewk->wu.routine_no[2] = 0;
+        ewk->wu.cg_hit_ix = 0;
+        make_speed_xy_back(&ewk->wu, &mwk->wu, twk);
+        return;
+    }
+
+    if (check_tengu_attack(&ewk->wu, &mwk->wu, twk)) {
+        return;
+    }
+
+    set_tengu_my_home(&ewk->wu, &mwk->wu);
+
+    if (ewk->wu.dir_step > 8) {
+        ewk->wu.routine_no[2] = 1;
+        ewk->wu.dir_timer = 8;
+        cal_all_speed_data(&ewk->wu, ewk->wu.dir_timer, ewk->wu.dmcal_m, ewk->wu.dmcal_d, 2, 2);
+    }
+}
+
 void kotp_02000(WORK_Other* ewk, TAMA* twk) {
     PLW* mwk = (PLW*)ewk->my_master;
 
@@ -511,28 +535,7 @@ void kotp_02000(WORK_Other* ewk, TAMA* twk) {
             break;
 
         case 2:
-            ewk->wu.position_z = mwk->wu.position_z + ewk->wu.old_pos[2];
-
-            if (mwk->sa->ok != -1 || ewk->wu.dir_old != mwk->sa->id_arts) {
-                ewk->wu.routine_no[1] = 2;
-                ewk->wu.routine_no[2] = 0;
-                ewk->wu.cg_hit_ix = 0;
-                make_speed_xy_back(&ewk->wu, &mwk->wu, twk);
-                break;
-            }
-
-            if (check_tengu_attack(&ewk->wu, &mwk->wu, twk)) {
-                break;
-            }
-
-            set_tengu_my_home(&ewk->wu, &mwk->wu);
-
-            if (ewk->wu.dir_step > 8) {
-                ewk->wu.routine_no[2] = 1;
-                ewk->wu.dir_timer = 8;
-                cal_all_speed_data(&ewk->wu, ewk->wu.dir_timer, ewk->wu.dmcal_m, ewk->wu.dmcal_d, 2, 2);
-            }
-
+            update_tengu_home_phase(ewk, twk, mwk);
             break;
 
         case 3:
