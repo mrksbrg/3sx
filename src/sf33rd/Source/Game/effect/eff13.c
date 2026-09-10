@@ -1075,6 +1075,19 @@ static void resolve_kotp_08_hit(WORK_Other* ewk, TAMA* twk) {
     ewk->wu.hit_quake = 0;
 }
 
+static void finish_standard_kotp_trajectory(WORK_Other* ewk, TAMA* twk) {
+    if ((ewk->wu.xyz[1].disp.pos + ewk->wu.cg_jphos) <= 0) {
+        enter_kotp_landing_phase(ewk, twk);
+        return;
+    }
+
+    if (kotp_remains_on_screen(ewk)) {
+        return;
+    }
+
+    enter_kotp_exit_phase(ewk, twk);
+}
+
 void kotp_08000(WORK_Other* ewk, TAMA* twk) {
     enter_kotp_hit_phase(ewk);
 
@@ -1087,16 +1100,7 @@ void kotp_08000(WORK_Other* ewk, TAMA* twk) {
 
         advance_kotp_motion(ewk);
 
-        if ((ewk->wu.xyz[1].disp.pos + ewk->wu.cg_jphos) <= 0) {
-            enter_kotp_landing_phase(ewk, twk);
-            break;
-        }
-
-        if (kotp_remains_on_screen(ewk)) {
-            break;
-        }
-
-        enter_kotp_exit_phase(ewk, twk);
+        finish_standard_kotp_trajectory(ewk, twk);
         break;
 
     case 1:
@@ -1162,16 +1166,7 @@ void kotp_09000(WORK_Other* ewk, TAMA* twk) {
             break;
         }
 
-        if ((ewk->wu.xyz[1].disp.pos + ewk->wu.cg_jphos) <= 0) {
-            enter_kotp_landing_phase(ewk, twk);
-            break;
-        }
-
-        if (kotp_remains_on_screen(ewk)) {
-            break;
-        }
-
-        enter_kotp_exit_phase(ewk, twk);
+        finish_standard_kotp_trajectory(ewk, twk);
         break;
 
     case 1:
