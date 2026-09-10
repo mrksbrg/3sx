@@ -415,9 +415,7 @@ void kotp_00000(WORK_Other* ewk, TAMA* twk) {
 }
 
 void kotp_01000(WORK_Other* ewk, TAMA* twk) {
-    if (ewk->wu.hf.hit_flag) {
-        ewk->wu.routine_no[1] = 1;
-    }
+    enter_kotp_hit_phase(ewk);
 
     switch (ewk->wu.routine_no[1]) {
     case 0:
@@ -569,9 +567,7 @@ static void update_tengu_routine(WORK_Other* ewk, TAMA* twk, PLW* mwk) {
 void kotp_02000(WORK_Other* ewk, TAMA* twk) {
     PLW* mwk = (PLW*)ewk->my_master;
 
-    if (ewk->wu.hf.hit_flag) {
-        ewk->wu.routine_no[1] = 1;
-    }
+    enter_kotp_hit_phase(ewk);
 
     switch (ewk->wu.routine_no[1]) {
     case 0:
@@ -665,9 +661,7 @@ void make_speed_xy_back(WORK* ewk, WORK* mwk, TAMA* twk) {
 }
 
 void kotp_03000(WORK_Other* ewk, TAMA* twk) {
-    if (ewk->wu.hf.hit_flag) {
-        ewk->wu.routine_no[1] = 1;
-    }
+    enter_kotp_hit_phase(ewk);
 
     switch (ewk->wu.routine_no[1]) {
     case 0:
@@ -769,9 +763,7 @@ void kotp_04000(WORK_Other* ewk, TAMA* /* unused */) {
 }
 
 void kotp_05000(WORK_Other* ewk, TAMA* twk) {
-    if (ewk->wu.hf.hit_flag) {
-        ewk->wu.routine_no[1] = 1;
-    }
+    enter_kotp_hit_phase(ewk);
 
     switch (ewk->wu.routine_no[1]) {
     case 0:
@@ -1119,9 +1111,7 @@ static void finish_kotp_07(WORK_Other* ewk) {
 }
 
 void kotp_07000(WORK_Other* ewk, TAMA* twk) {
-    if (ewk->wu.hf.hit_flag) {
-        ewk->wu.routine_no[1] = 1;
-    }
+    enter_kotp_hit_phase(ewk);
 
     switch (ewk->wu.routine_no[1]) {
     case 0:
@@ -1158,9 +1148,7 @@ void kotp_07000(WORK_Other* ewk, TAMA* twk) {
 }
 
 void kotp_08000(WORK_Other* ewk, TAMA* twk) {
-    if (ewk->wu.hf.hit_flag) {
-        ewk->wu.routine_no[1] = 1;
-    }
+    enter_kotp_hit_phase(ewk);
 
     switch (ewk->wu.routine_no[1]) {
     case 0:
@@ -1554,9 +1542,7 @@ void kotp_13000(WORK_Other* ewk, TAMA* twk) {
     PLW* emwk;
     s16 ipos_x;
 
-    if (ewk->wu.hf.hit_flag) {
-        ewk->wu.routine_no[1] = 1;
-    }
+    enter_kotp_hit_phase(ewk);
 
     mwk = (PLW*)ewk->my_master;
 
@@ -1649,9 +1635,7 @@ void kotp_14000(WORK_Other* ewk, TAMA* /* unused */) {
 }
 
 void kotp_15000(WORK_Other* ewk, TAMA* twk) {
-    if (ewk->wu.hf.hit_flag) {
-        ewk->wu.routine_no[1] = 1;
-    }
+    enter_kotp_hit_phase(ewk);
 
     switch (ewk->wu.routine_no[1]) {
     case 0:
