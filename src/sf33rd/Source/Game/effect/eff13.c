@@ -80,37 +80,41 @@ static void initialize_standard_tama_motion(WORK_Other* ewk, TAMA* tama) {
     set_char_move_init(&ewk->wu, 0, tama->chix);
 }
 
-static void initialize_tama_motion(WORK_Other* ewk, TAMA* tama) {
+static void initialize_flat_tama_motion(WORK_Other* ewk, TAMA* tama) {
     PLW* mwk;
     PLW* emwk;
 
+    mwk = (PLW*)ewk->my_master;
+
+    if (tama->data01) {
+        ewk->wu.mvxy.a[0].sp = mwk->wu.mvxy.a[0].sp;
+        ewk->wu.mvxy.a[1].sp = mwk->wu.mvxy.a[1].sp ? mwk->wu.mvxy.a[1].sp : -0x80000;
+        ewk->wu.mvxy.d[0].sp = mwk->wu.mvxy.d[0].sp;
+        ewk->wu.mvxy.d[1].sp = mwk->wu.mvxy.d[1].sp;
+        ewk->wu.mvxy.kop[1] = 0;
+    } else {
+        emwk = (PLW*)mwk->wu.target_adrs;
+        ewk->wu.xyz[0].disp.pos = tama->hos_x;
+        ewk->wu.xyz[0].disp.pos += emwk->wu.xyz[0].disp.pos;
+        ewk->wu.xyz[0].disp.pos += X_F_L_A_T_pos_hos[0][emwk->player_number][0];
+        ewk->wu.xyz[1].disp.pos = tama->hos_y;
+        ewk->wu.xyz[1].disp.pos += emwk->wu.xyz[1].disp.pos;
+        ewk->wu.xyz[1].disp.pos += X_F_L_A_T_pos_hos[0][emwk->player_number][1];
+        ewk->wu.rl_flag = ewk->wu.xyz[0].disp.pos > emwk->wu.xyz[0].disp.pos ? 0 : 1;
+        setup_mvxy_data(&ewk->wu, tama->data00);
+    }
+
+    set_char_move_init(&ewk->wu, 0, tama->chix);
+}
+
+static void initialize_tama_motion(WORK_Other* ewk, TAMA* tama) {
     if (tama->kind_of_tama == 2) {
         set_tengu_init_pos(&ewk->wu, (WORK*)ewk->my_master);
         ewk->wu.disp_flag = 0;
         ewk->wu.dir_old = ((PLW*)ewk->my_master)->sa->id_arts;
         set_char_move_init2(&ewk->wu, 0, tama->chix, random_16() & 7, 0);
     } else if (tama->kind_of_tama == 0xF) {
-        mwk = (PLW*)ewk->my_master;
-
-        if (tama->data01) {
-            ewk->wu.mvxy.a[0].sp = mwk->wu.mvxy.a[0].sp;
-            ewk->wu.mvxy.a[1].sp = mwk->wu.mvxy.a[1].sp ? mwk->wu.mvxy.a[1].sp : -0x80000;
-            ewk->wu.mvxy.d[0].sp = mwk->wu.mvxy.d[0].sp;
-            ewk->wu.mvxy.d[1].sp = mwk->wu.mvxy.d[1].sp;
-            ewk->wu.mvxy.kop[1] = 0;
-        } else {
-            emwk = (PLW*)mwk->wu.target_adrs;
-            ewk->wu.xyz[0].disp.pos = tama->hos_x;
-            ewk->wu.xyz[0].disp.pos += emwk->wu.xyz[0].disp.pos;
-            ewk->wu.xyz[0].disp.pos += X_F_L_A_T_pos_hos[0][emwk->player_number][0];
-            ewk->wu.xyz[1].disp.pos = tama->hos_y;
-            ewk->wu.xyz[1].disp.pos += emwk->wu.xyz[1].disp.pos;
-            ewk->wu.xyz[1].disp.pos += X_F_L_A_T_pos_hos[0][emwk->player_number][1];
-            ewk->wu.rl_flag = ewk->wu.xyz[0].disp.pos > emwk->wu.xyz[0].disp.pos ? 0 : 1;
-            setup_mvxy_data(&ewk->wu, tama->data00);
-        }
-
-        set_char_move_init(&ewk->wu, 0, tama->chix);
+        initialize_flat_tama_motion(ewk, tama);
     } else {
         initialize_standard_tama_motion(ewk, tama);
     }
