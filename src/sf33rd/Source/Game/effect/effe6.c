@@ -151,6 +151,32 @@ static void mark_effe6_for_cleanup_if_stale(WORK_Other* ewk) {
     }
 }
 
+static void update_effe6_0000_color(WORK_Other* ewk) {
+    if (End_PL == 17) {
+        switch (ewk->wu.type) {
+        case 0x74:
+            ewk->wu.my_col_code = bg_w.bgw[0].l_limit ? 0x12E : 0x12C;
+            break;
+
+        case 0x75:
+            ewk->wu.my_col_code = bg_w.bgw[0].l_limit ? 0x130 : 0x12C;
+            break;
+
+        case 0x76:
+            ewk->wu.my_col_code = bg_w.bgw[0].l_limit ? 0x132 : 0x12C;
+            break;
+
+        case 0x78:
+            ewk->wu.my_col_code = bg_w.bgw[0].l_limit ? 0x138 : 0x12C;
+            break;
+
+        case 0xA2:
+            ewk->wu.my_col_code = bg_w.bgw[0].l_limit ? 0x12D : 0x12C;
+            break;
+        }
+    }
+}
+
 void effe6_0000(WORK_Other* ewk) {
     switch (ewk->wu.routine_no[1]) {
     case 0:
@@ -160,31 +186,7 @@ void effe6_0000(WORK_Other* ewk) {
 
     case 1:
         mark_effe6_for_cleanup_if_stale(ewk);
-
-        if (End_PL == 17) {
-            switch (ewk->wu.type) {
-            case 0x74:
-                ewk->wu.my_col_code = bg_w.bgw[0].l_limit ? 0x12E : 0x12C;
-                break;
-
-            case 0x75:
-                ewk->wu.my_col_code = bg_w.bgw[0].l_limit ? 0x130 : 0x12C;
-                break;
-
-            case 0x76:
-                ewk->wu.my_col_code = bg_w.bgw[0].l_limit ? 0x132 : 0x12C;
-                break;
-
-            case 0x78:
-                ewk->wu.my_col_code = bg_w.bgw[0].l_limit ? 0x138 : 0x12C;
-                break;
-
-            case 0xA2:
-                ewk->wu.my_col_code = bg_w.bgw[0].l_limit ? 0x12D : 0x12C;
-                break;
-            }
-        }
-
+        update_effe6_0000_color(ewk);
         disp_pos_trans_entry(ewk);
     }
 }
