@@ -1746,6 +1746,10 @@ void kotp_16000(WORK_Other* ewk, TAMA* twk) {
     }
 }
 
+static s32 uses_second_player_effect_data(WORK* wk) {
+    return wk->work_id == 1 && wk->rl_flag == 1 && ((PLW*)wk)->player_number == 0;
+}
+
 s32 effect_13_init(WORK* wk, u8 data) {
     WORK_Other* ewk;
     s16 ix;
@@ -1757,7 +1761,7 @@ s32 effect_13_init(WORK* wk, u8 data) {
     ewk = (WORK_Other*)frw[ix];
     write_my_shell_ix(wk, ix);
 
-    if (wk->work_id == 1 && wk->rl_flag == 1 && ((PLW*)wk)->player_number == 0) {
+    if (uses_second_player_effect_data(wk)) {
         data++;
     }
 
