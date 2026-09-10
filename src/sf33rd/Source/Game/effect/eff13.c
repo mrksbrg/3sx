@@ -1470,21 +1470,29 @@ static void resolve_kotp_12_hit(WORK_Other* ewk, TAMA* twk) {
     ewk->wu.hit_quake = 0;
 }
 
+static s32 prepare_kotp_12_motion(WORK_Other* ewk) {
+    if (ewk->wu.hit_stop) {
+        if (ewk->wu.hit_stop == 1) {
+            ewk->wu.hit_stop = 0;
+            add_mvxy_speed_exp(&ewk->wu, 2);
+        } else {
+            ewk->wu.hit_stop--;
+            return 0;
+        }
+    } else {
+        add_mvxy_speed(&ewk->wu);
+    }
+
+    return 1;
+}
+
 void kotp_12000(WORK_Other* ewk, TAMA* twk) {
     enter_kotp_hit_phase(ewk);
 
     switch (ewk->wu.routine_no[1]) {
     case 0:
-        if (ewk->wu.hit_stop) {
-            if (ewk->wu.hit_stop == 1) {
-                ewk->wu.hit_stop = 0;
-                add_mvxy_speed_exp(&ewk->wu, 2);
-            } else {
-                ewk->wu.hit_stop--;
-                break;
-            }
-        } else {
-            add_mvxy_speed(&ewk->wu);
+        if (!prepare_kotp_12_motion(ewk)) {
+            break;
         }
 
         cal_mvxy_speed(&ewk->wu);
