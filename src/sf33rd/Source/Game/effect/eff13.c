@@ -5,6 +5,7 @@
 
 #include "sf33rd/Source/Game/effect/eff13.h"
 #include "sf33rd/Source/Game/effect/eff13_internal.h"
+#include "sf33rd/Source/Game/effect/eff13_kotp16.h"
 #include "sf33rd/Source/Game/effect/eff13_tengu.h"
 #include "common.h"
 #include "sf33rd/Source/Game/effect/eff00.h"
@@ -338,7 +339,7 @@ static void apply_kotp_reflection(WORK_Other* ewk) {
     }
 }
 
-static void enter_kotp_landing_phase(WORK_Other* ewk, TAMA* twk) {
+void enter_kotp_landing_phase(WORK_Other* ewk, TAMA* twk) {
     ewk->wu.mvxy.a[0].sp = 0;
     ewk->wu.mvxy.a[1].sp = 0;
     ewk->wu.mvxy.d[0].sp = 0;
@@ -363,9 +364,7 @@ static void advance_kotp_motion(WORK_Other* ewk) {
     char_move(&ewk->wu);
 }
 
-static void finish_kotp_07(WORK_Other* ewk);
 static s32 prepare_kotp_exp_motion(WORK_Other* ewk);
-static s32 kotp_remains_on_screen(WORK_Other* ewk);
 static void resolve_kotp_reflected_hit(WORK_Other* ewk, TAMA* twk, s16 destroyed_threshold);
 
 static void resolve_kotp_00_hit(WORK_Other* ewk, TAMA* twk) {
@@ -784,7 +783,7 @@ static void redirect_kotp_07_velocity(WORK_Other* ewk) {
     }
 }
 
-static void finish_kotp_07(WORK_Other* ewk) {
+void finish_kotp_07(WORK_Other* ewk) {
     switch (ewk->wu.routine_no[2]) {
     case 0:
         add_mvxy_speed(&ewk->wu);
@@ -1033,7 +1032,7 @@ void kotp_11000(WORK_Other* ewk, TAMA* twk) {
     ewk->wu.position_z = ewk->wu.next_z;
 }
 
-static void resolve_kotp_12_hit(WORK_Other* ewk, TAMA* twk) {
+void resolve_kotp_12_hit(WORK_Other* ewk, TAMA* twk) {
     resolve_kotp_reflected_hit(ewk, twk, 256);
 }
 
@@ -1053,7 +1052,7 @@ static s32 prepare_kotp_exp_motion(WORK_Other* ewk) {
     return 1;
 }
 
-static s32 kotp_remains_on_screen(WORK_Other* ewk) {
+s32 kotp_remains_on_screen(WORK_Other* ewk) {
     return --ewk->wu.dir_timer >= 0 && !screen_range_check(&ewk->wu);
 }
 
@@ -1265,73 +1264,6 @@ void kotp_15000(WORK_Other* ewk, TAMA* twk) {
     }
 }
 
-static void accelerate_kotp_16(WORK_Other* ewk) {
-    add_mvxy_speed(&ewk->wu);
-
-    if (ewk->wu.rl_flag) {
-        ewk->wu.xyz[0].cal += 0x38000;
-    } else {
-        ewk->wu.xyz[0].cal += -0x38000;
-    }
-}
-
-static s32 prepare_kotp_16_motion(WORK_Other* ewk) {
-    if (ewk->wu.hit_stop) {
-        if (ewk->wu.hit_stop == 1) {
-            ewk->wu.hit_stop = 0;
-        } else {
-            ewk->wu.hit_stop--;
-            return 0;
-        }
-    } else {
-        accelerate_kotp_16(ewk);
-    }
-
-    return 1;
-}
-
-void kotp_16000(WORK_Other* ewk, TAMA* twk) {
-    enter_kotp_hit_phase(ewk);
-
-    switch (ewk->wu.routine_no[1]) {
-    case 0:
-        if (!prepare_kotp_16_motion(ewk)) {
-            break;
-        }
-
-        cal_mvxy_speed(&ewk->wu);
-        char_move(&ewk->wu);
-
-        if (ewk->wu.cg_type == 0xFF) {
-            set_char_move_init(&ewk->wu, 0, twk->ernm);
-            ewk->wu.routine_no[1] = 2;
-            ewk->wu.routine_no[2] = 0;
-            break;
-        }
-
-        if ((ewk->wu.xyz[1].disp.pos + ewk->wu.cg_jphos) <= 0) {
-            enter_kotp_landing_phase(ewk, twk);
-            break;
-        }
-
-        if (kotp_remains_on_screen(ewk)) {
-            break;
-        }
-
-        set_char_move_init(&ewk->wu, 0, twk->ernm);
-        ewk->wu.routine_no[1] = 2;
-        ewk->wu.routine_no[2] = 0;
-        break;
-
-    case 1:
-        resolve_kotp_12_hit(ewk, twk);
-        break;
-
-    case 2:
-        finish_kotp_07(ewk);
-        break;
-    }
-}
 
 static s32 uses_second_player_effect_data(WORK* wk) {
     return wk->work_id == 1 && wk->rl_flag == 1 && ((PLW*)wk)->player_number == 0;
