@@ -876,11 +876,32 @@ static void resolve_kotp_06_hit(WORK_Other* ewk, TAMA* twk) {
     ewk->wu.hit_quake = 0;
 }
 
-static void steer_kotp_06(WORK_Other* ewk, const TAMA* twk, const PLW* mwk, const PLW* emwk) {
+static void steer_kotp_06_homing(WORK_Other* ewk, const PLW* mwk, const PLW* emwk) {
     s16 dir;
     s16 emdir;
     s16* target_x = &ewk->wu.E3_work_index;
     s16* target_y = &ewk->wu.E4_work_index;
+
+    *target_x = homing_empos_hos[0][ewk->master_player][0];
+    *target_x = mwk->wu.rl_flag ? emwk->wu.xyz[0].disp.pos - *target_x : emwk->wu.xyz[0].disp.pos + *target_x;
+    *target_y = homing_empos_hos[0][ewk->master_player][1] + emwk->wu.xyz[1].disp.pos;
+    dir = ewk->wu.direction;
+    emdir = caldir_pos_256(ewk->wu.xyz[0].disp.pos, ewk->wu.xyz[1].disp.pos, *target_x, *target_y);
+    dir += (emdir - (dir - 0x80) & 0xFF) > 0x80 ? 4 : -4;
+    dir = dir & 0xFF;
+    ewk->wu.mvxy.a[0].sp = (rate_256_table[dir][0] * 480) / 256;
+    ewk->wu.mvxy.a[0].sp *= ewk->wu.rl_flag ? 1 : -1;
+    ewk->wu.mvxy.a[1].sp = (rate_256_table[dir][1] * 512) / 256;
+    ewk->wu.direction = dir;
+
+    if (ewk->wu.mvxy.a[0].sp < 0) {
+        ewk->wu.routine_no[3]++;
+    } else if (!ewk->wu.kezurare_flag--) {
+        ewk->wu.routine_no[3]++;
+    }
+}
+
+static void steer_kotp_06(WORK_Other* ewk, const TAMA* twk, const PLW* mwk, const PLW* emwk) {
 
     switch (ewk->wu.routine_no[3]) {
     case 0:
@@ -900,24 +921,7 @@ static void steer_kotp_06(WORK_Other* ewk, const TAMA* twk, const PLW* mwk, cons
         /* fallthrough */
 
     case 2:
-        *target_x = homing_empos_hos[0][ewk->master_player][0];
-        *target_x = mwk->wu.rl_flag ? emwk->wu.xyz[0].disp.pos - *target_x : emwk->wu.xyz[0].disp.pos + *target_x;
-        *target_y = homing_empos_hos[0][ewk->master_player][1] + emwk->wu.xyz[1].disp.pos;
-        dir = ewk->wu.direction;
-        emdir = caldir_pos_256(ewk->wu.xyz[0].disp.pos, ewk->wu.xyz[1].disp.pos, *target_x, *target_y);
-        dir += (emdir - (dir - 0x80) & 0xFF) > 0x80 ? 4 : -4;
-        dir = dir & 0xFF;
-        ewk->wu.mvxy.a[0].sp = (rate_256_table[dir][0] * 480) / 256;
-        ewk->wu.mvxy.a[0].sp *= ewk->wu.rl_flag ? 1 : -1;
-        ewk->wu.mvxy.a[1].sp = (rate_256_table[dir][1] * 512) / 256;
-        ewk->wu.direction = dir;
-
-        if (ewk->wu.mvxy.a[0].sp < 0) {
-            ewk->wu.routine_no[3]++;
-        } else if (!ewk->wu.kezurare_flag--) {
-            ewk->wu.routine_no[3]++;
-        }
-
+        steer_kotp_06_homing(ewk, mwk, emwk);
         break;
     }
 }
