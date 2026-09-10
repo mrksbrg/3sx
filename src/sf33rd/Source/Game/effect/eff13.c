@@ -128,6 +128,31 @@ static void configure_special_tama(WORK_Other* ewk, TAMA* tama) {
     }
 }
 
+static void update_active_tama(WORK_Other* ewk, TAMA* tama) {
+    if (ewk->wu.dead_f == 1 || Suicide[6] != 0) {
+        ewk->wu.disp_flag = 0;
+        ewk->wu.routine_no[0]++;
+        return;
+    }
+
+    if (ewk->wu.hit_stop < 0) {
+        ewk->wu.hit_stop = -ewk->wu.hit_stop;
+    }
+
+    if (EXE_flag == 0 && Game_pause == 0) {
+        kind_of_tama_process[tama->kind_of_tama](ewk, tama);
+    }
+
+    tama_display(&ewk->wu);
+
+    if (ewk->wu.floor) {
+        ewk->wu.kind_of_waza |= 0x20;
+        ewk->wu.at_koa = 0x80;
+    }
+
+    hit_push_request(&ewk->wu);
+}
+
 void effect_13_move(WORK_Other* ewk) {
     TAMA* tama = (TAMA*)ewk->wu.my_effadrs;
 
@@ -162,28 +187,7 @@ void effect_13_move(WORK_Other* ewk) {
         break;
 
     case 1:
-        if (ewk->wu.dead_f == 1 || Suicide[6] != 0) {
-            ewk->wu.disp_flag = 0;
-            ewk->wu.routine_no[0]++;
-            break;
-        }
-
-        if (ewk->wu.hit_stop < 0) {
-            ewk->wu.hit_stop = -ewk->wu.hit_stop;
-        }
-
-        if (EXE_flag == 0 && Game_pause == 0) {
-            kind_of_tama_process[tama->kind_of_tama](ewk, tama);
-        }
-
-        tama_display(&ewk->wu);
-
-        if (ewk->wu.floor) {
-            ewk->wu.kind_of_waza |= 0x20;
-            ewk->wu.at_koa = 0x80;
-        }
-
-        hit_push_request(&ewk->wu);
+        update_active_tama(ewk, tama);
         break;
 
     case 2:
