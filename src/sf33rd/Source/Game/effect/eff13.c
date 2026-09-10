@@ -27,7 +27,7 @@ void tama_display(WORK* wk);
 void set_tengu_init_pos(WORK* ewk, WORK* mwk);
 void set_tengu_my_home(WORK* ewk, WORK* mwk);
 s32 check_tengu_attack(WORK* ewk, WORK* mwk, TAMA* twk);
-void make_speed_xy_att(WORK* ewk, WORK* mwk, s16 tm, u8 xsw, u8 ysw);
+void make_speed_xy_att(WORK* ewk, WORK* mwk, u8 xsw, u8 ysw);
 void make_speed_xy_back(WORK* ewk, WORK* mwk, TAMA* twk);
 
 const s16 kotp_07_dm_vital[4];
@@ -642,20 +642,20 @@ s32 check_tengu_attack(WORK* ewk, WORK* mwk, TAMA* twk) {
     grade_add_att_renew((WORK_Other*)ewk);
 
     if (mwk->xyz[1].disp.pos > 0) {
-        make_speed_xy_att(ewk, mwk, ewk->dir_timer, 2, 0);
+        make_speed_xy_att(ewk, mwk, 2, 0);
     } else {
-        make_speed_xy_att(ewk, mwk, ewk->dir_timer, 0, 2);
+        make_speed_xy_att(ewk, mwk, 0, 2);
     }
 
     return 1;
 }
 
-void make_speed_xy_att(WORK* ewk, WORK* mwk, s16 tm, u8 xsw, u8 ysw) {
+void make_speed_xy_att(WORK* ewk, WORK* mwk, u8 xsw, u8 ysw) {
     s16 ax;
     s16 ay;
 
     get_target_att_position(mwk, &ax, &ay);
-    cal_all_speed_data(ewk, tm, ax, ay, xsw, ysw);
+    cal_all_speed_data(ewk, ewk->dir_timer, ax, ay, xsw, ysw);
 }
 
 void make_speed_xy_back(WORK* ewk, WORK* mwk, TAMA* twk) {
