@@ -1503,10 +1503,46 @@ void kotp_12000(WORK_Other* ewk, TAMA* twk) {
     }
 }
 
-void kotp_13000(WORK_Other* ewk, TAMA* twk) {
+static void update_kotp_13(WORK_Other* ewk, TAMA* twk) {
     PLW* mwk;
     PLW* emwk;
     s16 ipos_x;
+
+    if (ewk->wu.hit_stop) {
+        ewk->wu.hit_stop--;
+        return;
+    }
+
+    if (!ewk->wu.routine_no[3]) {
+        ewk->wu.xyz[1].disp.pos = 0;
+        ewk->wu.routine_no[3]++;
+
+        if (twk->data00) {
+            mwk = (PLW*)ewk->my_master;
+            emwk = (PLW*)mwk->wu.target_adrs;
+            ipos_x = enemy_pos_hos[0][emwk->player_number][0];
+            ewk->wu.xyz[0].disp.pos =
+                emwk->wu.rl_flag ? emwk->wu.xyz[0].disp.pos + ipos_x : emwk->wu.xyz[0].disp.pos - ipos_x;
+        }
+    }
+
+    char_move(&ewk->wu);
+
+    if (ewk->wu.cg_type == 0xFF) {
+        set_char_move_init(&ewk->wu, 0, twk->ernm);
+        ewk->wu.routine_no[1] = 2;
+        ewk->wu.routine_no[2] = 0;
+        return;
+    }
+
+    if (screen_range_check(&ewk->wu)) {
+        ewk->wu.routine_no[0] = 2;
+        ewk->wu.disp_flag = 0;
+    }
+}
+
+void kotp_13000(WORK_Other* ewk, TAMA* twk) {
+    PLW* mwk;
 
     enter_kotp_hit_phase(ewk);
 
@@ -1520,39 +1556,7 @@ void kotp_13000(WORK_Other* ewk, TAMA* twk) {
 
     switch (ewk->wu.routine_no[1]) {
     case 0:
-        if (ewk->wu.hit_stop) {
-            ewk->wu.hit_stop--;
-            break;
-        }
-
-        if (!ewk->wu.routine_no[3]) {
-            ewk->wu.xyz[1].disp.pos = 0;
-            ewk->wu.routine_no[3]++;
-
-            if (twk->data00) {
-                mwk = (PLW*)ewk->my_master;
-                emwk = (PLW*)mwk->wu.target_adrs;
-                ipos_x = enemy_pos_hos[0][emwk->player_number][0];
-                ewk->wu.xyz[0].disp.pos =
-                    emwk->wu.rl_flag ? emwk->wu.xyz[0].disp.pos + ipos_x : emwk->wu.xyz[0].disp.pos - ipos_x;
-            }
-        }
-
-        char_move(&ewk->wu);
-
-        if (ewk->wu.cg_type == 0xFF) {
-            set_char_move_init(&ewk->wu, 0, twk->ernm);
-            ewk->wu.routine_no[1] = 2;
-            ewk->wu.routine_no[2] = 0;
-            break;
-        }
-
-        if (screen_range_check(&ewk->wu)) {
-            ewk->wu.routine_no[0] = 2;
-            ewk->wu.disp_flag = 0;
-            break;
-        }
-
+        update_kotp_13(ewk, twk);
         break;
 
     case 1:
