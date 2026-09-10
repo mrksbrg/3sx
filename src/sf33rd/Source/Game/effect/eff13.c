@@ -1608,6 +1608,10 @@ void kotp_14000(WORK_Other* ewk, TAMA* /* unused */) {
     }
 }
 
+static s32 kotp_15_remains_on_screen(WORK_Other* ewk) {
+    return --ewk->wu.dir_timer >= 0 && !tama15_screen_check(&ewk->wu);
+}
+
 void kotp_15000(WORK_Other* ewk, TAMA* twk) {
     enter_kotp_hit_phase(ewk);
 
@@ -1629,7 +1633,7 @@ void kotp_15000(WORK_Other* ewk, TAMA* twk) {
             break;
         }
 
-        if (--ewk->wu.dir_timer >= 0 && !tama15_screen_check(&ewk->wu)) {
+        if (kotp_15_remains_on_screen(ewk)) {
             break;
         }
 
