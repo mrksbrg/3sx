@@ -1451,26 +1451,30 @@ void effe6_0031(WORK_Other* ewk) {
     }
 }
 
+static void initialize_effe6_0032(WORK_Other* ewk) {
+    effe6_init_common(ewk);
+    ewk->wu.old_rno[5] = gill_time[2];
+    ewk->wu.old_rno[2] = ewk->wu.old_rno[7] = 0;
+
+    switch (ewk->wu.type) {
+    case 176:
+        ewk->wu.routine_no[1] = 9;
+        break;
+
+    case 177:
+    case 178:
+        ewk->wu.routine_no[1] = 10;
+        ewk->wu.old_rno[5] = gill_time[9];
+        break;
+    }
+
+    disp_pos_trans_entry(ewk);
+}
+
 void effe6_0032(WORK_Other* ewk) {
     switch (ewk->wu.routine_no[1]) {
     case 0:
-        effe6_init_common(ewk);
-        ewk->wu.old_rno[5] = gill_time[2];
-        ewk->wu.old_rno[2] = ewk->wu.old_rno[7] = 0;
-
-        switch (ewk->wu.type) {
-        case 176:
-            ewk->wu.routine_no[1] = 9;
-            break;
-
-        case 177:
-        case 178:
-            ewk->wu.routine_no[1] = 10;
-            ewk->wu.old_rno[5] = gill_time[9];
-            break;
-        }
-
-        disp_pos_trans_entry(ewk);
+        initialize_effe6_0032(ewk);
         break;
 
     case 1:
