@@ -310,6 +310,18 @@ void set_tengu_init_pos(WORK* ewk, WORK* mwk) {
     ewk->xyz[1].disp.pos = ewk->direction;
 }
 
+static void set_kotp_hit_move(WORK_Other* ewk, TAMA* twk) {
+    if (ewk->wu.hf.hit.player) {
+        if (ewk->wu.hf.hit.player & 0xF0) {
+            set_char_move_init(&ewk->wu, 0, twk->erdf);
+        } else {
+            set_char_move_init(&ewk->wu, 0, twk->erht);
+        }
+    } else {
+        set_char_move_init(&ewk->wu, 0, twk->erex);
+    }
+}
+
 static void enter_kotp_hit_phase(WORK_Other* ewk);
 static void finish_kotp_07(WORK_Other* ewk);
 static s32 prepare_kotp_exp_motion(WORK_Other* ewk);
@@ -320,15 +332,7 @@ static void resolve_kotp_00_hit(WORK_Other* ewk, TAMA* twk) {
     ewk->wu.dm_vital = 0;
 
     if (ewk->wu.vital_new < 0x100) {
-        if (ewk->wu.hf.hit.player) {
-            if (ewk->wu.hf.hit.player & 0xF0) {
-                set_char_move_init(&ewk->wu, 0, twk->erdf);
-            } else {
-                set_char_move_init(&ewk->wu, 0, twk->erht);
-            }
-        } else {
-            set_char_move_init(&ewk->wu, 0, twk->erex);
-        }
+        set_kotp_hit_move(ewk, twk);
 
         ewk->wu.routine_no[1] = 2;
         ewk->wu.routine_no[2] = 1;
@@ -415,15 +419,7 @@ void kotp_00000(WORK_Other* ewk, TAMA* twk) {
 }
 
 static void resolve_kotp_01_hit(WORK_Other* ewk, TAMA* twk) {
-    if (ewk->wu.hf.hit.player) {
-        if (ewk->wu.hf.hit.player & 0xF0) {
-            set_char_move_init(&ewk->wu, 0, twk->erdf);
-        } else {
-            set_char_move_init(&ewk->wu, 0, twk->erht);
-        }
-    } else {
-        set_char_move_init(&ewk->wu, 0, twk->erex);
-    }
+    set_kotp_hit_move(ewk, twk);
 
     ewk->wu.routine_no[1] = 2;
     ewk->wu.routine_no[2] = 0;
@@ -759,15 +755,7 @@ static void resolve_kotp_05_hit(WORK_Other* ewk, TAMA* twk) {
     ewk->wu.dm_vital = 0;
 
     if (ewk->wu.vital_new < 256) {
-        if (ewk->wu.hf.hit.player) {
-            if (ewk->wu.hf.hit.player & 0xF0) {
-                set_char_move_init(&ewk->wu, 0, twk->erdf);
-            } else {
-                set_char_move_init(&ewk->wu, 0, twk->erht);
-            }
-        } else {
-            set_char_move_init(&ewk->wu, 0, twk->erex);
-        }
+        set_kotp_hit_move(ewk, twk);
 
         ewk->wu.routine_no[1] = 2;
         ewk->wu.routine_no[2] = 1;
@@ -852,15 +840,7 @@ static void resolve_kotp_06_hit(WORK_Other* ewk, TAMA* twk) {
     ewk->wu.dm_vital = 0;
 
     if (ewk->wu.vital_new < 256) {
-        if (ewk->wu.hf.hit.player) {
-            if (ewk->wu.hf.hit.player & 0xF0) {
-                set_char_move_init(&ewk->wu, 0, twk->erdf);
-            } else {
-                set_char_move_init(&ewk->wu, 0, twk->erht);
-            }
-        } else {
-            set_char_move_init(&ewk->wu, 0, twk->erex);
-        }
+        set_kotp_hit_move(ewk, twk);
 
         ewk->wu.routine_no[1] = 2;
         ewk->wu.routine_no[2] = 1;
@@ -1022,15 +1002,7 @@ static void resolve_kotp_07_hit(WORK_Other* ewk, TAMA* twk) {
     ewk->wu.dm_vital = 0;
 
     if (ewk->wu.vital_new < 0x100) {
-        if (ewk->wu.hf.hit.player) {
-            if (ewk->wu.hf.hit.player & 0xF0) {
-                set_char_move_init(&ewk->wu, 0, twk->erdf);
-            } else {
-                set_char_move_init(&ewk->wu, 0, twk->erht);
-            }
-        } else {
-            set_char_move_init(&ewk->wu, 0, twk->erex);
-        }
+        set_kotp_hit_move(ewk, twk);
 
         ewk->wu.routine_no[1] = 2;
         ewk->wu.routine_no[2] = 1;
@@ -1144,15 +1116,7 @@ static void resolve_kotp_08_hit(WORK_Other* ewk, TAMA* twk) {
     ewk->wu.dm_vital = 0;
 
     if (ewk->wu.vital_new < 256) {
-        if (ewk->wu.hf.hit.player) {
-            if (ewk->wu.hf.hit.player & 0xF0) {
-                set_char_move_init(&ewk->wu, 0, twk->erdf);
-            } else {
-                set_char_move_init(&ewk->wu, 0, twk->erht);
-            }
-        } else {
-            set_char_move_init(&ewk->wu, 0, twk->erex);
-        }
+        set_kotp_hit_move(ewk, twk);
 
         ewk->wu.routine_no[1] = 2;
         ewk->wu.routine_no[2] = 1;
@@ -1240,15 +1204,7 @@ static void resolve_kotp_09_hit(WORK_Other* ewk, TAMA* twk) {
     ewk->wu.dm_vital = 0;
 
     if (ewk->wu.vital_new < 256) {
-        if (ewk->wu.hf.hit.player) {
-            if (ewk->wu.hf.hit.player & 0xF0) {
-                set_char_move_init(&ewk->wu, 0, twk->erdf);
-            } else {
-                set_char_move_init(&ewk->wu, 0, twk->erht);
-            }
-        } else {
-            set_char_move_init(&ewk->wu, 0, twk->erex);
-        }
+        set_kotp_hit_move(ewk, twk);
 
         ewk->wu.routine_no[1] = 2;
         ewk->wu.routine_no[2] = 1;
@@ -1402,15 +1358,7 @@ static void resolve_kotp_12_hit(WORK_Other* ewk, TAMA* twk) {
     ewk->wu.dm_vital = 0;
 
     if (ewk->wu.vital_new < 256) {
-        if (ewk->wu.hf.hit.player) {
-            if (ewk->wu.hf.hit.player & 0xF0) {
-                set_char_move_init(&ewk->wu, 0, twk->erdf);
-            } else {
-                set_char_move_init(&ewk->wu, 0, twk->erht);
-            }
-        } else {
-            set_char_move_init(&ewk->wu, 0, twk->erex);
-        }
+        set_kotp_hit_move(ewk, twk);
 
         ewk->wu.routine_no[1] = 2;
         ewk->wu.routine_no[2] = 1;
@@ -1689,15 +1637,7 @@ static void resolve_kotp_16_hit(WORK_Other* ewk, TAMA* twk) {
     ewk->wu.dm_vital = 0;
 
     if (ewk->wu.vital_new < 256) {
-        if (ewk->wu.hf.hit.player) {
-            if (ewk->wu.hf.hit.player & 0xF0) {
-                set_char_move_init(&ewk->wu, 0, twk->erdf);
-            } else {
-                set_char_move_init(&ewk->wu, 0, twk->erht);
-            }
-        } else {
-            set_char_move_init(&ewk->wu, 0, twk->erex);
-        }
+        set_kotp_hit_move(ewk, twk);
 
         ewk->wu.routine_no[1] = 2;
         ewk->wu.routine_no[2] = 1;
