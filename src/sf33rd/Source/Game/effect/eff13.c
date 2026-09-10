@@ -504,6 +504,19 @@ static void update_tengu_attack_phase(WORK_Other* ewk, TAMA* twk, PLW* mwk) {
     }
 }
 
+static void update_tengu_return_phase(WORK_Other* ewk, TAMA* twk, PLW* mwk) {
+    add_mvxy_speed_no_use_rl(&ewk->wu);
+    cal_mvxy_speed(&ewk->wu);
+
+    if (--ewk->wu.dir_timer < 0) {
+        ewk->wu.routine_no[2] = 4;
+        ewk->wu.att_hit_ok = 0;
+        ewk->wu.dir_timer = twk->hos_x;
+        set_tengu_my_home(&ewk->wu, &mwk->wu);
+        cal_all_speed_data(&ewk->wu, ewk->wu.dir_timer, ewk->wu.dmcal_m, ewk->wu.dmcal_d, 2, 2);
+    }
+}
+
 static void update_tengu_routine(WORK_Other* ewk, TAMA* twk, PLW* mwk) {
     switch (ewk->wu.routine_no[2]) {
     case 0:
@@ -527,17 +540,7 @@ static void update_tengu_routine(WORK_Other* ewk, TAMA* twk, PLW* mwk) {
         break;
 
     case 3:
-        add_mvxy_speed_no_use_rl(&ewk->wu);
-        cal_mvxy_speed(&ewk->wu);
-
-        if (--ewk->wu.dir_timer < 0) {
-            ewk->wu.routine_no[2] = 4;
-            ewk->wu.att_hit_ok = 0;
-            ewk->wu.dir_timer = twk->hos_x;
-            set_tengu_my_home(&ewk->wu, &mwk->wu);
-            cal_all_speed_data(&ewk->wu, ewk->wu.dir_timer, ewk->wu.dmcal_m, ewk->wu.dmcal_d, 2, 2);
-        }
-
+        update_tengu_return_phase(ewk, twk, mwk);
         break;
 
     case 4:
