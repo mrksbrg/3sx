@@ -1279,9 +1279,7 @@ static void resolve_kotp_09_hit(WORK_Other* ewk, TAMA* twk) {
 }
 
 void kotp_09000(WORK_Other* ewk, TAMA* twk) {
-    if (ewk->wu.hf.hit_flag) {
-        ewk->wu.routine_no[1] = 1;
-    }
+    enter_kotp_hit_phase(ewk);
 
     switch (ewk->wu.routine_no[1]) {
     case 0:
