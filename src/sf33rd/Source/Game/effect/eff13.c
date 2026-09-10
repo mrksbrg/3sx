@@ -971,13 +971,11 @@ static void prepare_kotp_07_damage(WORK_Other* ewk) {
     }
 }
 
-static void resolve_kotp_07_hit(WORK_Other* ewk, TAMA* twk) {
-    prepare_kotp_07_damage(ewk);
-
+static void resolve_kotp_reflected_hit(WORK_Other* ewk, TAMA* twk, s16 destroyed_threshold) {
     ewk->wu.vital_new -= ewk->wu.dm_vital;
     ewk->wu.dm_vital = 0;
 
-    if (ewk->wu.vital_new < 0x100) {
+    if (ewk->wu.vital_new < destroyed_threshold) {
         set_kotp_hit_move(ewk, twk);
 
         enter_kotp_destroyed_phase(ewk);
@@ -991,6 +989,11 @@ static void resolve_kotp_07_hit(WORK_Other* ewk, TAMA* twk) {
 
     ewk->wu.hf.hit_flag = 0;
     ewk->wu.hit_quake = 0;
+}
+
+static void resolve_kotp_07_hit(WORK_Other* ewk, TAMA* twk) {
+    prepare_kotp_07_damage(ewk);
+    resolve_kotp_reflected_hit(ewk, twk, 0x100);
 }
 
 static void redirect_kotp_07_velocity(WORK_Other* ewk) {
@@ -1299,23 +1302,7 @@ void kotp_11000(WORK_Other* ewk, TAMA* twk) {
 }
 
 static void resolve_kotp_12_hit(WORK_Other* ewk, TAMA* twk) {
-    ewk->wu.vital_new -= ewk->wu.dm_vital;
-    ewk->wu.dm_vital = 0;
-
-    if (ewk->wu.vital_new < 256) {
-        set_kotp_hit_move(ewk, twk);
-
-        enter_kotp_destroyed_phase(ewk);
-    } else {
-        ewk->wu.routine_no[1] = 0;
-
-        spawn_kotp_hit_effect(ewk, twk);
-
-        apply_kotp_reflection(ewk);
-    }
-
-    ewk->wu.hf.hit_flag = 0;
-    ewk->wu.hit_quake = 0;
+    resolve_kotp_reflected_hit(ewk, twk, 256);
 }
 
 static s32 prepare_kotp_exp_motion(WORK_Other* ewk) {
