@@ -1785,20 +1785,28 @@ static s32 kotp_16_remains_on_screen(WORK_Other* ewk) {
     return --ewk->wu.dir_timer >= 0 && !screen_range_check(&ewk->wu);
 }
 
+static s32 prepare_kotp_16_motion(WORK_Other* ewk) {
+    if (ewk->wu.hit_stop) {
+        if (ewk->wu.hit_stop == 1) {
+            ewk->wu.hit_stop = 0;
+        } else {
+            ewk->wu.hit_stop--;
+            return 0;
+        }
+    } else {
+        accelerate_kotp_16(ewk);
+    }
+
+    return 1;
+}
+
 void kotp_16000(WORK_Other* ewk, TAMA* twk) {
     enter_kotp_hit_phase(ewk);
 
     switch (ewk->wu.routine_no[1]) {
     case 0:
-        if (ewk->wu.hit_stop) {
-            if (ewk->wu.hit_stop == 1) {
-                ewk->wu.hit_stop = 0;
-            } else {
-                ewk->wu.hit_stop--;
-                break;
-            }
-        } else {
-            accelerate_kotp_16(ewk);
+        if (!prepare_kotp_16_motion(ewk)) {
+            break;
         }
 
         cal_mvxy_speed(&ewk->wu);
