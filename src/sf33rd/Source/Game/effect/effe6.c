@@ -676,6 +676,27 @@ void effe6_0014(WORK_Other* ewk) {
     }
 }
 
+static void update_effe6_0015_approach(WORK_Other* ewk) {
+    if (ewk->wu.old_rno[6] == end_w.r_no_2) {
+        ewk->wu.routine_no[1] = 3;
+        ewk->wu.xyz[0].disp.pos = 544;
+        ewk->wu.xyz[1].disp.pos = 48;
+    } else {
+        ewk->wu.old_rno[2]--;
+
+        if (ewk->wu.old_rno[2] <= 0) {
+            ewk->wu.routine_no[1]++;
+            ewk->wu.xyz[0].disp.pos = 544;
+            ewk->wu.xyz[1].disp.pos = 48;
+        } else {
+            add_x_sub(&ewk->wu);
+            add_y_sub(&ewk->wu);
+        }
+    }
+
+    disp_pos_trans_entry(ewk);
+}
+
 void effe6_0015(WORK_Other* ewk) {
     mark_effe6_for_cleanup_if_stale(ewk);
 
@@ -687,24 +708,7 @@ void effe6_0015(WORK_Other* ewk) {
         break;
 
     case 1:
-        if (ewk->wu.old_rno[6] == end_w.r_no_2) {
-            ewk->wu.routine_no[1] = 3;
-            ewk->wu.xyz[0].disp.pos = 544;
-            ewk->wu.xyz[1].disp.pos = 48;
-        } else {
-            ewk->wu.old_rno[2]--;
-
-            if (ewk->wu.old_rno[2] <= 0) {
-                ewk->wu.routine_no[1]++;
-                ewk->wu.xyz[0].disp.pos = 544;
-                ewk->wu.xyz[1].disp.pos = 48;
-            } else {
-                add_x_sub(&ewk->wu);
-                add_y_sub(&ewk->wu);
-            }
-        }
-
-        disp_pos_trans_entry(ewk);
+        update_effe6_0015_approach(ewk);
         break;
 
     case 2:
