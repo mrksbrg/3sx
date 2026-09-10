@@ -353,6 +353,17 @@ static void apply_kotp_reflection(WORK_Other* ewk) {
     }
 }
 
+static void enter_kotp_landing_phase(WORK_Other* ewk, TAMA* twk) {
+    ewk->wu.mvxy.a[0].sp = 0;
+    ewk->wu.mvxy.a[1].sp = 0;
+    ewk->wu.mvxy.d[0].sp = 0;
+    ewk->wu.mvxy.d[1].sp = 0;
+    set_char_move_init(&ewk->wu, 0, twk->erex);
+    ewk->wu.routine_no[1] = 2;
+    ewk->wu.routine_no[2] = 1;
+    ewk->wu.xyz[1].disp.pos = -ewk->wu.cg_jphos;
+}
+
 static void enter_kotp_hit_phase(WORK_Other* ewk);
 static void finish_kotp_07(WORK_Other* ewk);
 static s32 prepare_kotp_exp_motion(WORK_Other* ewk);
@@ -387,14 +398,7 @@ void kotp_00000(WORK_Other* ewk, TAMA* twk) {
         }
 
         if ((ewk->wu.xyz[1].disp.pos + ewk->wu.cg_jphos) <= 0) {
-            ewk->wu.mvxy.a[0].sp = 0;
-            ewk->wu.mvxy.a[1].sp = 0;
-            ewk->wu.mvxy.d[0].sp = 0;
-            ewk->wu.mvxy.d[1].sp = 0;
-            set_char_move_init(&ewk->wu, 0, twk->erex);
-            ewk->wu.routine_no[1] = 2;
-            ewk->wu.routine_no[2] = 1;
-            ewk->wu.xyz[1].disp.pos = -ewk->wu.cg_jphos;
+            enter_kotp_landing_phase(ewk, twk);
             break;
         }
 
@@ -793,14 +797,7 @@ void kotp_05000(WORK_Other* ewk, TAMA* twk) {
         char_move(&ewk->wu);
 
         if ((ewk->wu.xyz[1].disp.pos + ewk->wu.cg_jphos) <= 0) {
-            ewk->wu.mvxy.a[0].sp = 0;
-            ewk->wu.mvxy.a[1].sp = 0;
-            ewk->wu.mvxy.d[0].sp = 0;
-            ewk->wu.mvxy.d[1].sp = 0;
-            set_char_move_init(&ewk->wu, 0, twk->erex);
-            ewk->wu.routine_no[1] = 2;
-            ewk->wu.routine_no[2] = 1;
-            ewk->wu.xyz[1].disp.pos = -ewk->wu.cg_jphos;
+            enter_kotp_landing_phase(ewk, twk);
             break;
         }
 
@@ -904,14 +901,7 @@ void kotp_06000(WORK_Other* ewk, TAMA* twk) {
         char_move(&ewk->wu);
 
         if ((ewk->wu.xyz[1].disp.pos + ewk->wu.cg_jphos) <= 0) {
-            ewk->wu.mvxy.a[0].sp = 0;
-            ewk->wu.mvxy.a[1].sp = 0;
-            ewk->wu.mvxy.d[0].sp = 0;
-            ewk->wu.mvxy.d[1].sp = 0;
-            set_char_move_init(&ewk->wu, 0, twk->erex);
-            ewk->wu.routine_no[1] = 2;
-            ewk->wu.routine_no[2] = 1;
-            ewk->wu.xyz[1].disp.pos = -ewk->wu.cg_jphos;
+            enter_kotp_landing_phase(ewk, twk);
             return;
         }
 
@@ -1106,14 +1096,7 @@ void kotp_08000(WORK_Other* ewk, TAMA* twk) {
         char_move(&ewk->wu);
 
         if ((ewk->wu.xyz[1].disp.pos + ewk->wu.cg_jphos) <= 0) {
-            ewk->wu.mvxy.a[0].sp = 0;
-            ewk->wu.mvxy.a[1].sp = 0;
-            ewk->wu.mvxy.d[0].sp = 0;
-            ewk->wu.mvxy.d[1].sp = 0;
-            set_char_move_init(&ewk->wu, 0, twk->erex);
-            ewk->wu.routine_no[1] = 2;
-            ewk->wu.routine_no[2] = 1;
-            ewk->wu.xyz[1].disp.pos = -ewk->wu.cg_jphos;
+            enter_kotp_landing_phase(ewk, twk);
             break;
         }
 
@@ -1194,14 +1177,7 @@ void kotp_09000(WORK_Other* ewk, TAMA* twk) {
         }
 
         if ((ewk->wu.xyz[1].disp.pos + ewk->wu.cg_jphos) <= 0) {
-            ewk->wu.mvxy.a[0].sp = 0;
-            ewk->wu.mvxy.a[1].sp = 0;
-            ewk->wu.mvxy.d[0].sp = 0;
-            ewk->wu.mvxy.d[1].sp = 0;
-            set_char_move_init(&ewk->wu, 0, twk->erex);
-            ewk->wu.routine_no[1] = 2;
-            ewk->wu.routine_no[2] = 1;
-            ewk->wu.xyz[1].disp.pos = -ewk->wu.cg_jphos;
+            enter_kotp_landing_phase(ewk, twk);
             break;
         }
 
@@ -1332,14 +1308,7 @@ static void update_kotp_12(WORK_Other* ewk, TAMA* twk) {
     }
 
     if ((ewk->wu.xyz[1].disp.pos + ewk->wu.cg_jphos) <= 0) {
-        ewk->wu.mvxy.a[0].sp = 0;
-        ewk->wu.mvxy.a[1].sp = 0;
-        ewk->wu.mvxy.d[0].sp = 0;
-        ewk->wu.mvxy.d[1].sp = 0;
-        set_char_move_init(&ewk->wu, 0, twk->erex);
-        ewk->wu.routine_no[1] = 2;
-        ewk->wu.routine_no[2] = 1;
-        ewk->wu.xyz[1].disp.pos = -ewk->wu.cg_jphos;
+        enter_kotp_landing_phase(ewk, twk);
         return;
     }
 
@@ -1576,14 +1545,7 @@ void kotp_16000(WORK_Other* ewk, TAMA* twk) {
         }
 
         if ((ewk->wu.xyz[1].disp.pos + ewk->wu.cg_jphos) <= 0) {
-            ewk->wu.mvxy.a[0].sp = 0;
-            ewk->wu.mvxy.a[1].sp = 0;
-            ewk->wu.mvxy.d[0].sp = 0;
-            ewk->wu.mvxy.d[1].sp = 0;
-            set_char_move_init(&ewk->wu, 0, twk->erex);
-            ewk->wu.routine_no[1] = 2;
-            ewk->wu.routine_no[2] = 1;
-            ewk->wu.xyz[1].disp.pos = -ewk->wu.cg_jphos;
+            enter_kotp_landing_phase(ewk, twk);
             break;
         }
 
