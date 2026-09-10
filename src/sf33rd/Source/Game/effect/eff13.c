@@ -364,6 +364,14 @@ static void enter_kotp_landing_phase(WORK_Other* ewk, TAMA* twk) {
     ewk->wu.xyz[1].disp.pos = -ewk->wu.cg_jphos;
 }
 
+static void enter_kotp_exit_phase(WORK_Other* ewk, TAMA* twk) {
+    ewk->wu.mvxy.a[0].sp /= 4;
+    ewk->wu.mvxy.a[1].sp /= 4;
+    set_char_move_init(&ewk->wu, 0, twk->ernm);
+    ewk->wu.routine_no[1] = 2;
+    ewk->wu.routine_no[2] = 0;
+}
+
 static void enter_kotp_hit_phase(WORK_Other* ewk);
 static void finish_kotp_07(WORK_Other* ewk);
 static s32 prepare_kotp_exp_motion(WORK_Other* ewk);
@@ -406,11 +414,7 @@ void kotp_00000(WORK_Other* ewk, TAMA* twk) {
             break;
         }
 
-        ewk->wu.mvxy.a[0].sp /= 4;
-        ewk->wu.mvxy.a[1].sp /= 4;
-        set_char_move_init(&ewk->wu, 0, twk->ernm);
-        ewk->wu.routine_no[1] = 2;
-        ewk->wu.routine_no[2] = 0;
+        enter_kotp_exit_phase(ewk, twk);
         break;
 
     case 1:
@@ -805,11 +809,7 @@ void kotp_05000(WORK_Other* ewk, TAMA* twk) {
             break;
         }
 
-        ewk->wu.mvxy.a[0].sp /= 4;
-        ewk->wu.mvxy.a[1].sp /= 4;
-        set_char_move_init(&ewk->wu, 0, twk->ernm);
-        ewk->wu.routine_no[1] = 2;
-        ewk->wu.routine_no[2] = 0;
+        enter_kotp_exit_phase(ewk, twk);
         break;
 
     case 1:
@@ -906,11 +906,7 @@ void kotp_06000(WORK_Other* ewk, TAMA* twk) {
         }
 
         if (--ewk->wu.dir_timer < 0 || screen_range_check(&ewk->wu) != 0) {
-            ewk->wu.mvxy.a[0].sp /= 4;
-            ewk->wu.mvxy.a[1].sp /= 4;
-            set_char_move_init(&ewk->wu, 0, twk->ernm);
-            ewk->wu.routine_no[1] = 2;
-            ewk->wu.routine_no[2] = 0;
+            enter_kotp_exit_phase(ewk, twk);
         }
 
         break;
@@ -1104,11 +1100,7 @@ void kotp_08000(WORK_Other* ewk, TAMA* twk) {
             break;
         }
 
-        ewk->wu.mvxy.a[0].sp /= 4;
-        ewk->wu.mvxy.a[1].sp /= 4;
-        set_char_move_init(&ewk->wu, 0, twk->ernm);
-        ewk->wu.routine_no[1] = 2;
-        ewk->wu.routine_no[2] = 0;
+        enter_kotp_exit_phase(ewk, twk);
         break;
 
     case 1:
@@ -1185,11 +1177,7 @@ void kotp_09000(WORK_Other* ewk, TAMA* twk) {
             break;
         }
 
-        ewk->wu.mvxy.a[0].sp /= 4;
-        ewk->wu.mvxy.a[1].sp /= 4;
-        set_char_move_init(&ewk->wu, 0, twk->ernm);
-        ewk->wu.routine_no[1] = 2;
-        ewk->wu.routine_no[2] = 0;
+        enter_kotp_exit_phase(ewk, twk);
         break;
 
     case 1:
@@ -1316,11 +1304,7 @@ static void update_kotp_12(WORK_Other* ewk, TAMA* twk) {
         return;
     }
 
-    ewk->wu.mvxy.a[0].sp /= 4;
-    ewk->wu.mvxy.a[1].sp /= 4;
-    set_char_move_init(&ewk->wu, 0, twk->ernm);
-    ewk->wu.routine_no[1] = 2;
-    ewk->wu.routine_no[2] = 0;
+    enter_kotp_exit_phase(ewk, twk);
 }
 
 void kotp_12000(WORK_Other* ewk, TAMA* twk) {
