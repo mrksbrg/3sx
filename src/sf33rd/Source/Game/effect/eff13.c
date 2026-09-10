@@ -664,6 +664,47 @@ void make_speed_xy_back(WORK* ewk, WORK* mwk, TAMA* twk) {
     cal_initial_speed(ewk, ewk->dir_timer, bx, by);
 }
 
+static void resolve_kotp_03_hit(WORK_Other* ewk, TAMA* twk) {
+    ewk->wu.vital_new -= ewk->wu.dm_vital;
+    ewk->wu.hit_stop = 0;
+    ewk->wu.hit_quake = 0;
+
+    if (ewk->wu.vital_new < 0x100) {
+        if (ewk->wu.hf.hit.player) {
+            if (ewk->wu.hf.hit.player & 0xF0) {
+                set_char_move_init(&ewk->wu, 0, twk->erdf);
+            } else {
+                set_char_move_init(&ewk->wu, 0, twk->erht);
+                ewk->wu.routine_no[1] = 2;
+                ewk->wu.routine_no[2] = 1;
+                ewk->wu.mvxy.a[0].sp = 0;
+                ewk->wu.mvxy.a[1].sp = 0;
+                ewk->wu.mvxy.d[0].sp = 0;
+                ewk->wu.mvxy.d[1].sp = 0;
+                ewk->wu.hf.hit_flag = 0;
+                ewk->wu.kage_flag = 0;
+                return;
+            }
+        } else {
+            set_char_move_init(&ewk->wu, 0, twk->erex);
+        }
+
+        ewk->wu.routine_no[1] = 2;
+        ewk->wu.routine_no[2] = 0;
+        ewk->wu.disp_flag = 2;
+        ewk->wu.mvxy.a[0].sp = -ewk->wu.mvxy.a[0].sp;
+        ewk->wu.mvxy.a[0].sp /= 3;
+        ewk->wu.mvxy.a[1].sp = 0;
+        ewk->wu.mvxy.d[0].sp = 0;
+        ewk->wu.hf.hit_flag = 0;
+        ewk->wu.kage_flag = 0;
+        return;
+    }
+
+    ewk->wu.routine_no[1] = 0;
+    ewk->wu.hf.hit_flag = 0;
+}
+
 void kotp_03000(WORK_Other* ewk, TAMA* twk) {
     enter_kotp_hit_phase(ewk);
 
@@ -699,44 +740,7 @@ void kotp_03000(WORK_Other* ewk, TAMA* twk) {
         break;
 
     case 1:
-        ewk->wu.vital_new -= ewk->wu.dm_vital;
-        ewk->wu.hit_stop = 0;
-        ewk->wu.hit_quake = 0;
-
-        if (ewk->wu.vital_new < 0x100) {
-            if (ewk->wu.hf.hit.player) {
-                if (ewk->wu.hf.hit.player & 0xF0) {
-                    set_char_move_init(&ewk->wu, 0, twk->erdf);
-                } else {
-                    set_char_move_init(&ewk->wu, 0, twk->erht);
-                    ewk->wu.routine_no[1] = 2;
-                    ewk->wu.routine_no[2] = 1;
-                    ewk->wu.mvxy.a[0].sp = 0;
-                    ewk->wu.mvxy.a[1].sp = 0;
-                    ewk->wu.mvxy.d[0].sp = 0;
-                    ewk->wu.mvxy.d[1].sp = 0;
-                    ewk->wu.hf.hit_flag = 0;
-                    ewk->wu.kage_flag = 0;
-                    break;
-                }
-            } else {
-                set_char_move_init(&ewk->wu, 0, twk->erex);
-            }
-
-            ewk->wu.routine_no[1] = 2;
-            ewk->wu.routine_no[2] = 0;
-            ewk->wu.disp_flag = 2;
-            ewk->wu.mvxy.a[0].sp = -ewk->wu.mvxy.a[0].sp;
-            ewk->wu.mvxy.a[0].sp /= 3;
-            ewk->wu.mvxy.a[1].sp = 0;
-            ewk->wu.mvxy.d[0].sp = 0;
-            ewk->wu.hf.hit_flag = 0;
-            ewk->wu.kage_flag = 0;
-            break;
-        }
-
-        ewk->wu.routine_no[1] = 0;
-        ewk->wu.hf.hit_flag = 0;
+        resolve_kotp_03_hit(ewk, twk);
         break;
 
     case 2:
