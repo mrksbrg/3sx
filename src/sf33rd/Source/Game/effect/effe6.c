@@ -603,6 +603,22 @@ static void update_effe6_0014_first_shrink(WORK_Other* ewk) {
     }
 }
 
+static void update_effe6_0014_second_shrink(WORK_Other* ewk) {
+    ewk->wu.old_rno[2]--;
+
+    if (ewk->wu.old_rno[2] < 0) {
+        ewk->wu.old_rno[2] = 3;
+        ewk->wu.my_mr.size.x--;
+        ewk->wu.my_mr.size.y--;
+
+        if (ewk->wu.my_mr.size.x < 56) {
+            ewk->wu.routine_no[1]++;
+            set_char_move_init2(&ewk->wu, 0, 21, 10, 0);
+            ewk->wu.old_rno[2] = 4;
+        }
+    }
+}
+
 void effe6_0014(WORK_Other* ewk) {
     mark_effe6_for_cleanup_if_stale(ewk);
 
@@ -633,20 +649,7 @@ void effe6_0014(WORK_Other* ewk) {
         break;
 
     case 3:
-        ewk->wu.old_rno[2]--;
-
-        if (ewk->wu.old_rno[2] < 0) {
-            ewk->wu.old_rno[2] = 3;
-            ewk->wu.my_mr.size.x--;
-            ewk->wu.my_mr.size.y--;
-
-            if (ewk->wu.my_mr.size.x < 56) {
-                ewk->wu.routine_no[1]++;
-                set_char_move_init2(&ewk->wu, 0, 21, 10, 0);
-                ewk->wu.old_rno[2] = 4;
-            }
-        }
-
+        update_effe6_0014_second_shrink(ewk);
         disp_pos_trans_entry5(ewk);
         break;
 
