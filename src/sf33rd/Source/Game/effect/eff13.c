@@ -1334,27 +1334,30 @@ void kotp_10000(WORK_Other* ewk, TAMA* twk) {
     }
 }
 
+static void update_kotp_11_descent(WORK_Other* ewk, TAMA* twk, PLW* mwk) {
+    if (mwk->sa_stop_flag == 1) {
+        return;
+    }
+
+    char_move(&ewk->wu);
+    add_mvxy_speed(&ewk->wu);
+    cal_mvxy_speed(&ewk->wu);
+
+    if (ewk->wu.xyz[1].disp.pos <= 0) {
+        ewk->wu.mvxy.a[1].sp = ewk->wu.mvxy.d[1].sp = ewk->wu.mvxy.kop[1] = 0;
+        set_char_move_init(&ewk->wu, 0, twk->erex);
+        ewk->wu.xyz[1].disp.pos = 0;
+        ewk->wu.routine_no[1] = 2;
+    }
+}
+
 void kotp_11000(WORK_Other* ewk, TAMA* twk) {
     PLW* mwk = (PLW*)ewk->my_master;
 
     switch (ewk->wu.routine_no[1]) {
     case 0:
     case 1:
-        if (mwk->sa_stop_flag == 1) {
-            break;
-        }
-
-        char_move(&ewk->wu);
-        add_mvxy_speed(&ewk->wu);
-        cal_mvxy_speed(&ewk->wu);
-
-        if (ewk->wu.xyz[1].disp.pos <= 0) {
-            ewk->wu.mvxy.a[1].sp = ewk->wu.mvxy.d[1].sp = ewk->wu.mvxy.kop[1] = 0;
-            set_char_move_init(&ewk->wu, 0, twk->erex);
-            ewk->wu.xyz[1].disp.pos = 0;
-            ewk->wu.routine_no[1] = 2;
-        }
-
+        update_kotp_11_descent(ewk, twk, mwk);
         break;
 
     case 2:
