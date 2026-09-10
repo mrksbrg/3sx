@@ -1490,52 +1490,56 @@ static s32 kotp_12_remains_on_screen(WORK_Other* ewk) {
     return --ewk->wu.dir_timer >= 0 && !screen_range_check(&ewk->wu);
 }
 
+static void update_kotp_12(WORK_Other* ewk, TAMA* twk) {
+    if (!prepare_kotp_12_motion(ewk)) {
+        return;
+    }
+
+    cal_mvxy_speed(&ewk->wu);
+    char_move(&ewk->wu);
+
+    if (ewk->wu.cg_type == 10) {
+        add_to_mvxy_data(&ewk->wu, twk->data01);
+        ewk->wu.cg_type = 0;
+        return;
+    }
+
+    if (ewk->wu.cg_type == 0xFF) {
+        set_char_move_init(&ewk->wu, 0, twk->ernm);
+        ewk->wu.routine_no[1] = 2;
+        ewk->wu.routine_no[2] = 0;
+        return;
+    }
+
+    if ((ewk->wu.xyz[1].disp.pos + ewk->wu.cg_jphos) <= 0) {
+        ewk->wu.mvxy.a[0].sp = 0;
+        ewk->wu.mvxy.a[1].sp = 0;
+        ewk->wu.mvxy.d[0].sp = 0;
+        ewk->wu.mvxy.d[1].sp = 0;
+        set_char_move_init(&ewk->wu, 0, twk->erex);
+        ewk->wu.routine_no[1] = 2;
+        ewk->wu.routine_no[2] = 1;
+        ewk->wu.xyz[1].disp.pos = -ewk->wu.cg_jphos;
+        return;
+    }
+
+    if (kotp_12_remains_on_screen(ewk)) {
+        return;
+    }
+
+    ewk->wu.mvxy.a[0].sp /= 4;
+    ewk->wu.mvxy.a[1].sp /= 4;
+    set_char_move_init(&ewk->wu, 0, twk->ernm);
+    ewk->wu.routine_no[1] = 2;
+    ewk->wu.routine_no[2] = 0;
+}
+
 void kotp_12000(WORK_Other* ewk, TAMA* twk) {
     enter_kotp_hit_phase(ewk);
 
     switch (ewk->wu.routine_no[1]) {
     case 0:
-        if (!prepare_kotp_12_motion(ewk)) {
-            break;
-        }
-
-        cal_mvxy_speed(&ewk->wu);
-        char_move(&ewk->wu);
-
-        if (ewk->wu.cg_type == 10) {
-            add_to_mvxy_data(&ewk->wu, twk->data01);
-            ewk->wu.cg_type = 0;
-            break;
-        }
-
-        if (ewk->wu.cg_type == 0xFF) {
-            set_char_move_init(&ewk->wu, 0, twk->ernm);
-            ewk->wu.routine_no[1] = 2;
-            ewk->wu.routine_no[2] = 0;
-            break;
-        }
-
-        if ((ewk->wu.xyz[1].disp.pos + ewk->wu.cg_jphos) <= 0) {
-            ewk->wu.mvxy.a[0].sp = 0;
-            ewk->wu.mvxy.a[1].sp = 0;
-            ewk->wu.mvxy.d[0].sp = 0;
-            ewk->wu.mvxy.d[1].sp = 0;
-            set_char_move_init(&ewk->wu, 0, twk->erex);
-            ewk->wu.routine_no[1] = 2;
-            ewk->wu.routine_no[2] = 1;
-            ewk->wu.xyz[1].disp.pos = -ewk->wu.cg_jphos;
-            break;
-        }
-
-        if (kotp_12_remains_on_screen(ewk)) {
-            break;
-        }
-
-        ewk->wu.mvxy.a[0].sp /= 4;
-        ewk->wu.mvxy.a[1].sp /= 4;
-        set_char_move_init(&ewk->wu, 0, twk->ernm);
-        ewk->wu.routine_no[1] = 2;
-        ewk->wu.routine_no[2] = 0;
+        update_kotp_12(ewk, twk);
         break;
 
     case 1:
