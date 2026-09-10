@@ -994,7 +994,7 @@ void kotp_06000(WORK_Other* ewk, TAMA* twk) {
     }
 }
 
-static void resolve_kotp_07_hit(WORK_Other* ewk, TAMA* twk) {
+static void prepare_kotp_07_damage(WORK_Other* ewk) {
     WORK* awk;
     s16 dsst;
 
@@ -1013,6 +1013,10 @@ static void resolve_kotp_07_hit(WORK_Other* ewk, TAMA* twk) {
             ewk->wu.dm_vital = kotp_07_dm_vital[2];
         }
     }
+}
+
+static void resolve_kotp_07_hit(WORK_Other* ewk, TAMA* twk) {
+    prepare_kotp_07_damage(ewk);
 
     ewk->wu.vital_new -= ewk->wu.dm_vital;
     ewk->wu.dm_vital = 0;
