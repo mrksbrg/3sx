@@ -1474,15 +1474,15 @@ static void update_effe6_0032_outro_motion(WORK_Other* ewk) {
     disp_pos_trans_entry(ewk);
 }
 
-void effe6_0032(WORK_Other* ewk) {
+static bool update_effe6_0032_intro(WORK_Other* ewk) {
     switch (ewk->wu.routine_no[1]) {
     case 0:
         initialize_effe6_0032(ewk);
-        break;
+        return true;
 
     case 1:
         update_effe6_0032_intro_motion(ewk);
-        break;
+        return true;
 
     case 2:
         mark_effe6_for_cleanup_if_stale(ewk);
@@ -1501,13 +1501,25 @@ void effe6_0032(WORK_Other* ewk) {
         }
 
         disp_pos_trans_entry(ewk);
-        break;
+        return true;
 
     case 4:
         mark_effe6_for_cleanup_if_stale(ewk);
 
         disp_pos_trans_entry(ewk);
-        break;
+        return true;
+
+    default:
+        return false;
+    }
+}
+
+void effe6_0032(WORK_Other* ewk) {
+    if (update_effe6_0032_intro(ewk)) {
+        return;
+    }
+
+    switch (ewk->wu.routine_no[1]) {
 
     case 9:
         char_move(&ewk->wu);
