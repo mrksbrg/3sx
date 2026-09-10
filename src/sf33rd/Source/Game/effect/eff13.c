@@ -53,6 +53,18 @@ static void set_tama_color(WORK_Other* ewk, TAMA* tama) {
     }
 }
 
+static void configure_tama_shadow(WORK_Other* ewk, TAMA* tama) {
+    if (tama->kage_index) {
+        ewk->wu.kage_flag = 1;
+        ewk->wu.kage_hx = kage_tbl[tama->kage_index][0];
+        ewk->wu.kage_hy = kage_tbl[tama->kage_index][1];
+        ewk->wu.kage_prio = kage_tbl[tama->kage_index][2];
+        ewk->wu.kage_char = kage_tbl[tama->kage_index][3];
+    } else {
+        ewk->wu.kage_flag = 0;
+    }
+}
+
 void effect_13_move(WORK_Other* ewk) {
     TAMA* tama = (TAMA*)ewk->wu.my_effadrs;
     PLW* mwk;
@@ -78,15 +90,7 @@ void effect_13_move(WORK_Other* ewk) {
 
         set_tama_color(ewk, tama);
 
-        if (tama->kage_index) {
-            ewk->wu.kage_flag = 1;
-            ewk->wu.kage_hx = kage_tbl[tama->kage_index][0];
-            ewk->wu.kage_hy = kage_tbl[tama->kage_index][1];
-            ewk->wu.kage_prio = kage_tbl[tama->kage_index][2];
-            ewk->wu.kage_char = kage_tbl[tama->kage_index][3];
-        } else {
-            ewk->wu.kage_flag = 0;
-        }
+        configure_tama_shadow(ewk, tama);
 
         if (tama->kind_of_tama == 2) {
             set_tengu_init_pos(&ewk->wu, (WORK*)ewk->my_master);
