@@ -326,6 +326,18 @@ static void set_kotp_hit_move(WORK_Other* ewk, TAMA* twk) {
     }
 }
 
+static void spawn_kotp_hit_effect(WORK_Other* ewk, TAMA* twk) {
+    if (ewk->wu.hf.hit.player) {
+        if (ewk->wu.hf.hit.player & 0xF0) {
+            effect_96_init(&ewk->wu, twk->erdf, ewk->wu.disp_flag, ewk->wu.hit_stop);
+        } else {
+            effect_96_init(&ewk->wu, twk->erht, ewk->wu.disp_flag, ewk->wu.hit_stop);
+        }
+    } else {
+        effect_96_init(&ewk->wu, twk->erex, ewk->wu.disp_flag, ewk->wu.hit_stop);
+    }
+}
+
 static void enter_kotp_hit_phase(WORK_Other* ewk);
 static void finish_kotp_07(WORK_Other* ewk);
 static s32 prepare_kotp_exp_motion(WORK_Other* ewk);
@@ -345,15 +357,7 @@ static void resolve_kotp_00_hit(WORK_Other* ewk, TAMA* twk) {
     } else {
         ewk->wu.routine_no[1] = 0;
 
-        if (ewk->wu.hf.hit.player) {
-            if (ewk->wu.hf.hit.player & 0xF0) {
-                effect_96_init(&ewk->wu, twk->erdf, ewk->wu.disp_flag, ewk->wu.hit_stop);
-            } else {
-                effect_96_init(&ewk->wu, twk->erht, ewk->wu.disp_flag, ewk->wu.hit_stop);
-            }
-        } else {
-            effect_96_init(&ewk->wu, twk->erex, ewk->wu.disp_flag, ewk->wu.hit_stop);
-        }
+        spawn_kotp_hit_effect(ewk, twk);
 
         if (ewk->dm_refrect) {
             ewk->master_id = (ewk->master_id + 1) & 1;
@@ -768,15 +772,7 @@ static void resolve_kotp_05_hit(WORK_Other* ewk, TAMA* twk) {
     } else {
         ewk->wu.routine_no[1] = 0;
 
-        if (ewk->wu.hf.hit.player) {
-            if (ewk->wu.hf.hit.player & 0xF0) {
-                effect_96_init(&ewk->wu, twk->erdf, ewk->wu.disp_flag, ewk->wu.hit_stop);
-            } else {
-                effect_96_init(&ewk->wu, twk->erht, ewk->wu.disp_flag, ewk->wu.hit_stop);
-            }
-        } else {
-            effect_96_init(&ewk->wu, twk->erex, ewk->wu.disp_flag, ewk->wu.hit_stop);
-        }
+        spawn_kotp_hit_effect(ewk, twk);
     }
 
     ewk->wu.hf.hit_flag = 0;
@@ -853,15 +849,7 @@ static void resolve_kotp_06_hit(WORK_Other* ewk, TAMA* twk) {
     } else {
         ewk->wu.routine_no[1] = 0;
 
-        if (ewk->wu.hf.hit.player) {
-            if (ewk->wu.hf.hit.player & 0xF0) {
-                effect_96_init(&ewk->wu, twk->erdf, ewk->wu.disp_flag, ewk->wu.hit_stop);
-            } else {
-                effect_96_init(&ewk->wu, twk->erht, ewk->wu.disp_flag, ewk->wu.hit_stop);
-            }
-        } else {
-            effect_96_init(&ewk->wu, twk->erex, ewk->wu.disp_flag, ewk->wu.hit_stop);
-        }
+        spawn_kotp_hit_effect(ewk, twk);
     }
 
     ewk->wu.hf.hit_flag = 0;
@@ -1015,15 +1003,7 @@ static void resolve_kotp_07_hit(WORK_Other* ewk, TAMA* twk) {
     } else {
         ewk->wu.routine_no[1] = 0;
 
-        if (ewk->wu.hf.hit.player) {
-            if (ewk->wu.hf.hit.player & 0xF0) {
-                effect_96_init(&ewk->wu, twk->erdf, ewk->wu.disp_flag, ewk->wu.hit_stop);
-            } else {
-                effect_96_init(&ewk->wu, twk->erht, ewk->wu.disp_flag, ewk->wu.hit_stop);
-            }
-        } else {
-            effect_96_init(&ewk->wu, twk->erex, ewk->wu.disp_flag, ewk->wu.hit_stop);
-        }
+        spawn_kotp_hit_effect(ewk, twk);
 
         if (ewk->dm_refrect) {
             ewk->master_id = (ewk->master_id + 1) & 1;
@@ -1371,15 +1351,7 @@ static void resolve_kotp_12_hit(WORK_Other* ewk, TAMA* twk) {
     } else {
         ewk->wu.routine_no[1] = 0;
 
-        if (ewk->wu.hf.hit.player) {
-            if (ewk->wu.hf.hit.player & 0xF0) {
-                effect_96_init(&ewk->wu, twk->erdf, ewk->wu.disp_flag, ewk->wu.hit_stop);
-            } else {
-                effect_96_init(&ewk->wu, twk->erht, ewk->wu.disp_flag, ewk->wu.hit_stop);
-            }
-        } else {
-            effect_96_init(&ewk->wu, twk->erex, ewk->wu.disp_flag, ewk->wu.hit_stop);
-        }
+        spawn_kotp_hit_effect(ewk, twk);
 
         if (ewk->dm_refrect) {
             ewk->master_id = (ewk->master_id + 1) & 1;
@@ -1650,15 +1622,7 @@ static void resolve_kotp_16_hit(WORK_Other* ewk, TAMA* twk) {
     } else {
         ewk->wu.routine_no[1] = 0;
 
-        if (ewk->wu.hf.hit.player) {
-            if (ewk->wu.hf.hit.player & 0xF0) {
-                effect_96_init(&ewk->wu, twk->erdf, ewk->wu.disp_flag, ewk->wu.hit_stop);
-            } else {
-                effect_96_init(&ewk->wu, twk->erht, ewk->wu.disp_flag, ewk->wu.hit_stop);
-            }
-        } else {
-            effect_96_init(&ewk->wu, twk->erex, ewk->wu.disp_flag, ewk->wu.hit_stop);
-        }
+        spawn_kotp_hit_effect(ewk, twk);
 
         if (ewk->dm_refrect) {
             ewk->master_id = (ewk->master_id + 1) & 1;
