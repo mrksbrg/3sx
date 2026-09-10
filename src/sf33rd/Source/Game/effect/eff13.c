@@ -65,6 +65,24 @@ static void configure_tama_shadow(WORK_Other* ewk, TAMA* tama) {
     }
 }
 
+static void initialize_standard_tama_motion(WORK_Other* ewk, TAMA* tama) {
+    if (ewk->wu.rl_flag) {
+        ewk->wu.xyz[0].disp.pos -= tama->hos_x;
+    } else {
+        ewk->wu.xyz[0].disp.pos += tama->hos_x;
+    }
+
+    ewk->wu.xyz[1].disp.pos += tama->hos_y;
+    ewk->wu.position_z = ewk->wu.my_priority;
+
+    if (tama->kind_of_tama == 7) {
+        ewk->wu.position_z += 2;
+    }
+
+    setup_mvxy_data(&ewk->wu, tama->data00);
+    set_char_move_init(&ewk->wu, 0, tama->chix);
+}
+
 static void initialize_tama_motion(WORK_Other* ewk, TAMA* tama) {
     PLW* mwk;
     PLW* emwk;
@@ -97,21 +115,7 @@ static void initialize_tama_motion(WORK_Other* ewk, TAMA* tama) {
 
         set_char_move_init(&ewk->wu, 0, tama->chix);
     } else {
-        if (ewk->wu.rl_flag) {
-            ewk->wu.xyz[0].disp.pos -= tama->hos_x;
-        } else {
-            ewk->wu.xyz[0].disp.pos += tama->hos_x;
-        }
-
-        ewk->wu.xyz[1].disp.pos += tama->hos_y;
-        ewk->wu.position_z = ewk->wu.my_priority;
-
-        if (tama->kind_of_tama == 7) {
-            ewk->wu.position_z += 2;
-        }
-
-        setup_mvxy_data(&ewk->wu, tama->data00);
-        set_char_move_init(&ewk->wu, 0, tama->chix);
+        initialize_standard_tama_motion(ewk, tama);
     }
 }
 
