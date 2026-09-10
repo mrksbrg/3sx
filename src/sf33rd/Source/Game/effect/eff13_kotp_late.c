@@ -27,6 +27,25 @@
 
 extern const s16 enemy_pos_hos[1][20][2];
 
+static void resolve_surviving_kotp_08_hit(WORK_Other* ewk, TAMA* twk) {
+    ewk->wu.routine_no[1] = 0;
+
+    if (ewk->wu.hf.hit.player) {
+        if (ewk->wu.hf.hit.player & 0xF0) {
+            effect_96_init(&ewk->wu, twk->erdf, ewk->wu.disp_flag, ewk->wu.hit_stop);
+        } else {
+            effect_96_init(&ewk->wu, twk->erht, ewk->wu.disp_flag, ewk->wu.hit_stop);
+        }
+    } else if (ewk->dm_refrect) {
+        effect_96_init(&ewk->wu, twk->erex, ewk->wu.disp_flag, ewk->wu.hit_stop);
+    } else {
+        set_char_move_init(&ewk->wu, 0, twk->erex);
+        enter_kotp_destroyed_phase(ewk);
+    }
+
+    apply_kotp_reflection(ewk);
+}
+
 static void resolve_kotp_08_hit(WORK_Other* ewk, TAMA* twk) {
     ewk->wu.vital_new -= ewk->wu.dm_vital;
     ewk->wu.dm_vital = 0;
@@ -36,22 +55,7 @@ static void resolve_kotp_08_hit(WORK_Other* ewk, TAMA* twk) {
 
         enter_kotp_destroyed_phase(ewk);
     } else {
-        ewk->wu.routine_no[1] = 0;
-
-        if (ewk->wu.hf.hit.player) {
-            if (ewk->wu.hf.hit.player & 0xF0) {
-                effect_96_init(&ewk->wu, twk->erdf, ewk->wu.disp_flag, ewk->wu.hit_stop);
-            } else {
-                effect_96_init(&ewk->wu, twk->erht, ewk->wu.disp_flag, ewk->wu.hit_stop);
-            }
-        } else if (ewk->dm_refrect) {
-            effect_96_init(&ewk->wu, twk->erex, ewk->wu.disp_flag, ewk->wu.hit_stop);
-        } else {
-            set_char_move_init(&ewk->wu, 0, twk->erex);
-            enter_kotp_destroyed_phase(ewk);
-        }
-
-        apply_kotp_reflection(ewk);
+        resolve_surviving_kotp_08_hit(ewk, twk);
     }
 
     ewk->wu.hf.hit_flag = 0;
