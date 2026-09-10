@@ -407,6 +407,23 @@ static s32 kotp_15_remains_on_screen(WORK_Other* ewk) {
     return --ewk->wu.dir_timer >= 0 && !tama15_screen_check(&ewk->wu);
 }
 
+static void resolve_kotp_15_hit(WORK_Other* ewk, TAMA* twk) {
+    ewk->wu.vital_new -= ewk->wu.dm_vital;
+    ewk->wu.dm_vital = 0;
+
+    if (ewk->wu.vital_new < 256) {
+        set_char_move_init(&ewk->wu, 0, twk->ernm);
+        ewk->wu.routine_no[1] = 2;
+        ewk->wu.routine_no[2] = 0;
+    } else {
+        ewk->wu.routine_no[1] = 0;
+    }
+
+    ewk->wu.hf.hit_flag = 0;
+    ewk->wu.hit_quake = 0;
+    pp_pulpara_hit((WORK*)ewk->my_master);
+}
+
 void kotp_15000(WORK_Other* ewk, TAMA* twk) {
     enter_kotp_hit_phase(ewk);
 
@@ -440,20 +457,7 @@ void kotp_15000(WORK_Other* ewk, TAMA* twk) {
         break;
 
     case 1:
-        ewk->wu.vital_new -= ewk->wu.dm_vital;
-        ewk->wu.dm_vital = 0;
-
-        if (ewk->wu.vital_new < 256) {
-            set_char_move_init(&ewk->wu, 0, twk->ernm);
-            ewk->wu.routine_no[1] = 2;
-            ewk->wu.routine_no[2] = 0;
-        } else {
-            ewk->wu.routine_no[1] = 0;
-        }
-
-        ewk->wu.hf.hit_flag = 0;
-        ewk->wu.hit_quake = 0;
-        pp_pulpara_hit((WORK*)ewk->my_master);
+        resolve_kotp_15_hit(ewk, twk);
         break;
 
     case 2:
