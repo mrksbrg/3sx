@@ -840,24 +840,6 @@ void kotp_05000(WORK_Other* ewk, TAMA* twk) {
     }
 }
 
-static void resolve_kotp_06_hit(WORK_Other* ewk, TAMA* twk) {
-    ewk->wu.vital_new -= ewk->wu.dm_vital;
-    ewk->wu.dm_vital = 0;
-
-    if (ewk->wu.vital_new < 256) {
-        set_kotp_hit_move(ewk, twk);
-
-        enter_kotp_destroyed_phase(ewk);
-    } else {
-        ewk->wu.routine_no[1] = 0;
-
-        spawn_kotp_hit_effect(ewk, twk);
-    }
-
-    ewk->wu.hf.hit_flag = 0;
-    ewk->wu.hit_quake = 0;
-}
-
 static void steer_kotp_06_homing(WORK_Other* ewk, const PLW* mwk, const PLW* emwk) {
     s16 dir;
     s16 emdir;
@@ -959,7 +941,7 @@ void kotp_06000(WORK_Other* ewk, TAMA* twk) {
         break;
 
     case 1:
-        resolve_kotp_06_hit(ewk, twk);
+        resolve_kotp_05_hit(ewk, twk);
         break;
 
     case 2:
