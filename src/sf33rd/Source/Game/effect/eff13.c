@@ -345,6 +345,14 @@ static void enter_kotp_destroyed_phase(WORK_Other* ewk) {
     ewk->wu.hit_stop = 0;
 }
 
+static void apply_kotp_reflection(WORK_Other* ewk) {
+    if (ewk->dm_refrect) {
+        ewk->master_id = (ewk->master_id + 1) & 1;
+        ewk->wu.rl_flag = (ewk->wu.rl_flag + 1) & 1;
+        ewk->dm_refrect = 0;
+    }
+}
+
 static void enter_kotp_hit_phase(WORK_Other* ewk);
 static void finish_kotp_07(WORK_Other* ewk);
 static s32 prepare_kotp_exp_motion(WORK_Other* ewk);
@@ -363,11 +371,7 @@ static void resolve_kotp_00_hit(WORK_Other* ewk, TAMA* twk) {
 
         spawn_kotp_hit_effect(ewk, twk);
 
-        if (ewk->dm_refrect) {
-            ewk->master_id = (ewk->master_id + 1) & 1;
-            ewk->wu.rl_flag = (ewk->wu.rl_flag + 1) & 1;
-            ewk->dm_refrect = 0;
-        }
+        apply_kotp_reflection(ewk);
     }
 
     ewk->wu.hf.hit_flag = 0;
@@ -1000,11 +1004,7 @@ static void resolve_kotp_07_hit(WORK_Other* ewk, TAMA* twk) {
 
         spawn_kotp_hit_effect(ewk, twk);
 
-        if (ewk->dm_refrect) {
-            ewk->master_id = (ewk->master_id + 1) & 1;
-            ewk->wu.rl_flag = (ewk->wu.rl_flag + 1) & 1;
-            ewk->dm_refrect = 0;
-        }
+        apply_kotp_reflection(ewk);
     }
 
     ewk->wu.hf.hit_flag = 0;
@@ -1114,11 +1114,7 @@ static void resolve_kotp_08_hit(WORK_Other* ewk, TAMA* twk) {
             enter_kotp_destroyed_phase(ewk);
         }
 
-        if (ewk->dm_refrect) {
-            ewk->master_id = (ewk->master_id + 1) & 1;
-            ewk->wu.rl_flag = (ewk->wu.rl_flag + 1) & 1;
-            ewk->dm_refrect = 0;
-        }
+        apply_kotp_reflection(ewk);
     }
 
     ewk->wu.hf.hit_flag = 0;
@@ -1333,11 +1329,7 @@ static void resolve_kotp_12_hit(WORK_Other* ewk, TAMA* twk) {
 
         spawn_kotp_hit_effect(ewk, twk);
 
-        if (ewk->dm_refrect) {
-            ewk->master_id = (ewk->master_id + 1) & 1;
-            ewk->wu.rl_flag = (ewk->wu.rl_flag + 1) & 1;
-            ewk->dm_refrect = 0;
-        }
+        apply_kotp_reflection(ewk);
     }
 
     ewk->wu.hf.hit_flag = 0;
@@ -1598,11 +1590,7 @@ static void resolve_kotp_16_hit(WORK_Other* ewk, TAMA* twk) {
 
         spawn_kotp_hit_effect(ewk, twk);
 
-        if (ewk->dm_refrect) {
-            ewk->master_id = (ewk->master_id + 1) & 1;
-            ewk->wu.rl_flag = (ewk->wu.rl_flag + 1) & 1;
-            ewk->dm_refrect = 0;
-        }
+        apply_kotp_reflection(ewk);
     }
 
     ewk->wu.hf.hit_flag = 0;
