@@ -145,6 +145,42 @@ void effect_E6_move(WORK_Other* ewk) {
     }
 }
 
+static void mark_effe6_for_cleanup_if_stale(WORK_Other* ewk) {
+    if (ewk->wu.old_rno[6] < end_w.r_no_2) {
+        ewk->wu.routine_no[2] = 99;
+    }
+}
+
+static s16 select_effe6_0000_color(s16 active_color) {
+    return bg_w.bgw[0].l_limit ? active_color : 0x12C;
+}
+
+static void update_effe6_0000_color(WORK_Other* ewk) {
+    if (End_PL == 17) {
+    switch (ewk->wu.type) {
+    case 0x74:
+        ewk->wu.my_col_code = select_effe6_0000_color(0x12E);
+        break;
+
+    case 0x75:
+        ewk->wu.my_col_code = select_effe6_0000_color(0x130);
+        break;
+
+    case 0x76:
+        ewk->wu.my_col_code = select_effe6_0000_color(0x132);
+        break;
+
+    case 0x78:
+        ewk->wu.my_col_code = select_effe6_0000_color(0x138);
+        break;
+
+    case 0xA2:
+        ewk->wu.my_col_code = select_effe6_0000_color(0x12D);
+        break;
+        }
+    }
+}
+
 void effe6_0000(WORK_Other* ewk) {
     switch (ewk->wu.routine_no[1]) {
     case 0:
@@ -153,34 +189,8 @@ void effe6_0000(WORK_Other* ewk) {
         break;
 
     case 1:
-        if (ewk->wu.old_rno[6] < end_w.r_no_2) {
-            ewk->wu.routine_no[2] = 99;
-        }
-
-        if (End_PL == 17) {
-            switch (ewk->wu.type) {
-            case 0x74:
-                ewk->wu.my_col_code = bg_w.bgw[0].l_limit ? 0x12E : 0x12C;
-                break;
-
-            case 0x75:
-                ewk->wu.my_col_code = bg_w.bgw[0].l_limit ? 0x130 : 0x12C;
-                break;
-
-            case 0x76:
-                ewk->wu.my_col_code = bg_w.bgw[0].l_limit ? 0x132 : 0x12C;
-                break;
-
-            case 0x78:
-                ewk->wu.my_col_code = bg_w.bgw[0].l_limit ? 0x138 : 0x12C;
-                break;
-
-            case 0xA2:
-                ewk->wu.my_col_code = bg_w.bgw[0].l_limit ? 0x12D : 0x12C;
-                break;
-            }
-        }
-
+        mark_effe6_for_cleanup_if_stale(ewk);
+        update_effe6_0000_color(ewk);
         disp_pos_trans_entry(ewk);
     }
 }
@@ -227,9 +237,7 @@ void effe6_0002(WORK_Other* ewk) {
 }
 
 void effe6_0003(WORK_Other* ewk) {
-    if (ewk->wu.old_rno[6] < end_w.r_no_2) {
-        ewk->wu.routine_no[2] = 99;
-    }
+    mark_effe6_for_cleanup_if_stale(ewk);
 
     switch (ewk->wu.routine_no[1]) {
     case 0:
@@ -391,9 +399,7 @@ void effe6_0007(WORK_Other* ewk) {
 }
 
 void effe6_0009(WORK_Other* ewk) {
-    if (ewk->wu.old_rno[6] < end_w.r_no_2) {
-        ewk->wu.routine_no[2] = 99;
-    }
+    mark_effe6_for_cleanup_if_stale(ewk);
 
     switch (ewk->wu.routine_no[1]) {
     case 0:
@@ -424,9 +430,7 @@ void effe6_0009(WORK_Other* ewk) {
 }
 
 void effe6_0010(WORK_Other* ewk) {
-    if (ewk->wu.old_rno[6] < end_w.r_no_2) {
-        ewk->wu.routine_no[2] = 99;
-    }
+    mark_effe6_for_cleanup_if_stale(ewk);
 
     switch (ewk->wu.routine_no[1]) {
     case 0:
@@ -515,9 +519,7 @@ void effe6_0011(WORK_Other* ewk) {
 }
 
 void effe6_0012(WORK_Other* ewk) {
-    if (ewk->wu.old_rno[6] < end_w.r_no_2) {
-        ewk->wu.routine_no[2] = 99;
-    }
+    mark_effe6_for_cleanup_if_stale(ewk);
 
     switch (ewk->wu.routine_no[1]) {
     case 0:
@@ -550,9 +552,7 @@ void effe6_0012(WORK_Other* ewk) {
 }
 
 void effe6_0013(WORK_Other* ewk) {
-    if (ewk->wu.old_rno[6] < end_w.r_no_2) {
-        ewk->wu.routine_no[2] = 99;
-    }
+    mark_effe6_for_cleanup_if_stale(ewk);
 
     switch (ewk->wu.routine_no[1]) {
     case 0:
@@ -603,10 +603,40 @@ static void update_effe6_0014_first_shrink(WORK_Other* ewk) {
     }
 }
 
-void effe6_0014(WORK_Other* ewk) {
-    if (ewk->wu.old_rno[6] < end_w.r_no_2) {
-        ewk->wu.routine_no[2] = 99;
+static void update_effe6_0014_second_shrink(WORK_Other* ewk) {
+    ewk->wu.old_rno[2]--;
+
+    if (ewk->wu.old_rno[2] < 0) {
+        ewk->wu.old_rno[2] = 3;
+        ewk->wu.my_mr.size.x--;
+        ewk->wu.my_mr.size.y--;
+
+        if (ewk->wu.my_mr.size.x < 56) {
+            ewk->wu.routine_no[1]++;
+            set_char_move_init2(&ewk->wu, 0, 21, 10, 0);
+            ewk->wu.old_rno[2] = 4;
+        }
     }
+}
+
+static void update_effe6_0014_final_shrink(WORK_Other* ewk) {
+    ewk->wu.old_rno[2]--;
+
+    if (ewk->wu.old_rno[2] < 0) {
+        ewk->wu.old_rno[2] = 4;
+        ewk->wu.my_mr.size.x--;
+        ewk->wu.my_mr.size.y--;
+
+        if (ewk->wu.my_mr.size.x <= 0) {
+            ewk->wu.routine_no[2] = 99;
+            ewk->wu.my_mr.size.x = 0;
+            ewk->wu.my_mr.size.y = 0;
+        }
+    }
+}
+
+void effe6_0014(WORK_Other* ewk) {
+    mark_effe6_for_cleanup_if_stale(ewk);
 
     switch (ewk->wu.routine_no[1]) {
     case 0:
@@ -635,47 +665,40 @@ void effe6_0014(WORK_Other* ewk) {
         break;
 
     case 3:
-        ewk->wu.old_rno[2]--;
-
-        if (ewk->wu.old_rno[2] < 0) {
-            ewk->wu.old_rno[2] = 3;
-            ewk->wu.my_mr.size.x--;
-            ewk->wu.my_mr.size.y--;
-
-            if (ewk->wu.my_mr.size.x < 56) {
-                ewk->wu.routine_no[1]++;
-                set_char_move_init2(&ewk->wu, 0, 21, 10, 0);
-                ewk->wu.old_rno[2] = 4;
-            }
-        }
-
+        update_effe6_0014_second_shrink(ewk);
         disp_pos_trans_entry5(ewk);
         break;
 
     case 4:
-        ewk->wu.old_rno[2]--;
-
-        if (ewk->wu.old_rno[2] < 0) {
-            ewk->wu.old_rno[2] = 4;
-            ewk->wu.my_mr.size.x--;
-            ewk->wu.my_mr.size.y--;
-
-            if (ewk->wu.my_mr.size.x <= 0) {
-                ewk->wu.routine_no[2] = 99;
-                ewk->wu.my_mr.size.x = 0;
-                ewk->wu.my_mr.size.y = 0;
-            }
-        }
-
+        update_effe6_0014_final_shrink(ewk);
         disp_pos_trans_entry5(ewk);
         break;
     }
 }
 
-void effe6_0015(WORK_Other* ewk) {
-    if (ewk->wu.old_rno[6] < end_w.r_no_2) {
-        ewk->wu.routine_no[2] = 99;
+static void update_effe6_0015_approach(WORK_Other* ewk) {
+    if (ewk->wu.old_rno[6] == end_w.r_no_2) {
+        ewk->wu.routine_no[1] = 3;
+        ewk->wu.xyz[0].disp.pos = 544;
+        ewk->wu.xyz[1].disp.pos = 48;
+    } else {
+        ewk->wu.old_rno[2]--;
+
+        if (ewk->wu.old_rno[2] <= 0) {
+            ewk->wu.routine_no[1]++;
+            ewk->wu.xyz[0].disp.pos = 544;
+            ewk->wu.xyz[1].disp.pos = 48;
+        } else {
+            add_x_sub(&ewk->wu);
+            add_y_sub(&ewk->wu);
+        }
     }
+
+    disp_pos_trans_entry(ewk);
+}
+
+void effe6_0015(WORK_Other* ewk) {
+    mark_effe6_for_cleanup_if_stale(ewk);
 
     switch (ewk->wu.routine_no[1]) {
     case 0:
@@ -685,24 +708,7 @@ void effe6_0015(WORK_Other* ewk) {
         break;
 
     case 1:
-        if (ewk->wu.old_rno[6] == end_w.r_no_2) {
-            ewk->wu.routine_no[1] = 3;
-            ewk->wu.xyz[0].disp.pos = 544;
-            ewk->wu.xyz[1].disp.pos = 48;
-        } else {
-            ewk->wu.old_rno[2]--;
-
-            if (ewk->wu.old_rno[2] <= 0) {
-                ewk->wu.routine_no[1]++;
-                ewk->wu.xyz[0].disp.pos = 544;
-                ewk->wu.xyz[1].disp.pos = 48;
-            } else {
-                add_x_sub(&ewk->wu);
-                add_y_sub(&ewk->wu);
-            }
-        }
-
-        disp_pos_trans_entry(ewk);
+        update_effe6_0015_approach(ewk);
         break;
 
     case 2:
@@ -742,9 +748,7 @@ static void update_effe6_0016_animation(WORK_Other* ewk) {
 }
 
 void effe6_0016(WORK_Other* ewk) {
-    if (ewk->wu.old_rno[6] < end_w.r_no_2) {
-        ewk->wu.routine_no[2] = 99;
-    }
+    mark_effe6_for_cleanup_if_stale(ewk);
 
     switch (ewk->wu.routine_no[1]) {
     case 0:
@@ -779,9 +783,7 @@ void effe6_0016(WORK_Other* ewk) {
 }
 
 void effe6_0017(WORK_Other* ewk) {
-    if (ewk->wu.old_rno[6] < end_w.r_no_2) {
-        ewk->wu.routine_no[2] = 99;
-    }
+    mark_effe6_for_cleanup_if_stale(ewk);
 
     switch (ewk->wu.routine_no[1]) {
     case 0:
@@ -816,9 +818,7 @@ void effe6_0017(WORK_Other* ewk) {
 }
 
 void effe6_0018(WORK_Other* ewk) {
-    if (ewk->wu.old_rno[6] < end_w.r_no_2) {
-        ewk->wu.routine_no[2] = 99;
-    }
+    mark_effe6_for_cleanup_if_stale(ewk);
 
     switch (ewk->wu.routine_no[1]) {
     case 0:
@@ -902,9 +902,7 @@ void effe6_0019(WORK_Other* ewk) {
 }
 
 void effe6_0020(WORK_Other* ewk) {
-    if (ewk->wu.old_rno[6] < end_w.r_no_2) {
-        ewk->wu.routine_no[2] = 99;
-    }
+    mark_effe6_for_cleanup_if_stale(ewk);
 
     switch (ewk->wu.routine_no[1]) {
     case 0:
@@ -939,9 +937,7 @@ void effe6_0020(WORK_Other* ewk) {
 }
 
 void effe6_0021(WORK_Other* ewk) {
-    if (ewk->wu.old_rno[6] < end_w.r_no_2) {
-        ewk->wu.routine_no[2] = 99;
-    }
+    mark_effe6_for_cleanup_if_stale(ewk);
 
     switch (ewk->wu.routine_no[1]) {
     case 0:
@@ -970,9 +966,7 @@ void effe6_0021(WORK_Other* ewk) {
 }
 
 void effe6_0022(WORK_Other* ewk) {
-    if (ewk->wu.old_rno[6] < end_w.r_no_2) {
-        ewk->wu.routine_no[2] = 99;
-    }
+    mark_effe6_for_cleanup_if_stale(ewk);
 
     switch (ewk->wu.routine_no[1]) {
     case 0:
@@ -1008,9 +1002,7 @@ void effe6_0022(WORK_Other* ewk) {
 }
 
 void effe6_0023(WORK_Other* ewk) {
-    if (ewk->wu.old_rno[6] < end_w.r_no_2) {
-        ewk->wu.routine_no[2] = 99;
-    }
+    mark_effe6_for_cleanup_if_stale(ewk);
 
     switch (ewk->wu.routine_no[1]) {
     case 0:
@@ -1035,9 +1027,7 @@ void effe6_0023(WORK_Other* ewk) {
 }
 
 void effe6_0024(WORK_Other* ewk) {
-    if (ewk->wu.old_rno[6] < end_w.r_no_2) {
-        ewk->wu.routine_no[2] = 99;
-    }
+    mark_effe6_for_cleanup_if_stale(ewk);
 
     switch (ewk->wu.routine_no[1]) {
     case 0:
@@ -1173,9 +1163,7 @@ void effe6_0025(WORK_Other* ewk) {
 }
 
 void effe6_0026(WORK_Other* ewk) {
-    if (ewk->wu.old_rno[6] < end_w.r_no_2) {
-        ewk->wu.routine_no[2] = 99;
-    }
+    mark_effe6_for_cleanup_if_stale(ewk);
 
     switch (ewk->wu.routine_no[1]) {
     case 0:
@@ -1203,9 +1191,7 @@ void effe6_0026(WORK_Other* ewk) {
 }
 
 void effe6_0027(WORK_Other* ewk) {
-    if (ewk->wu.old_rno[6] < end_w.r_no_2) {
-        ewk->wu.routine_no[2] = 99;
-    }
+    mark_effe6_for_cleanup_if_stale(ewk);
 
     switch (ewk->wu.routine_no[1]) {
     case 0:
@@ -1234,9 +1220,7 @@ void effe6_0027(WORK_Other* ewk) {
 }
 
 void effe6_0028(WORK_Other* ewk) {
-    if (ewk->wu.old_rno[6] < end_w.r_no_2) {
-        ewk->wu.routine_no[2] = 99;
-    }
+    mark_effe6_for_cleanup_if_stale(ewk);
 
     switch (ewk->wu.routine_no[1]) {
     case 0:
@@ -1279,9 +1263,7 @@ static void grow_effe6_0029_marker(WORK_Other* ewk) {
 }
 
 void effe6_0029(WORK_Other* ewk) {
-    if (ewk->wu.old_rno[6] < end_w.r_no_2) {
-        ewk->wu.routine_no[2] = 99;
-    }
+    mark_effe6_for_cleanup_if_stale(ewk);
 
     switch (ewk->wu.routine_no[1]) {
     case 0:
@@ -1365,9 +1347,7 @@ static void update_effe6_0030_color(WORK_Other* ewk) {
 }
 
 void effe6_0030(WORK_Other* ewk) {
-    if (ewk->wu.old_rno[6] < end_w.r_no_2) {
-        ewk->wu.routine_no[2] = 99;
-    }
+    mark_effe6_for_cleanup_if_stale(ewk);
 
     switch (ewk->wu.routine_no[1]) {
     case 0:
@@ -1442,72 +1422,93 @@ void effe6_0031(WORK_Other* ewk) {
         break;
 
     case 4:
-        if (ewk->wu.old_rno[6] < end_w.r_no_2) {
-            ewk->wu.routine_no[2] = 99;
-        }
+        mark_effe6_for_cleanup_if_stale(ewk);
 
         disp_pos_trans_entry(ewk);
         break;
     }
 }
 
-void effe6_0032(WORK_Other* ewk) {
+static void initialize_effe6_0032(WORK_Other* ewk) {
+    effe6_init_common(ewk);
+    ewk->wu.old_rno[5] = gill_time[2];
+    ewk->wu.old_rno[2] = ewk->wu.old_rno[7] = 0;
+
+    switch (ewk->wu.type) {
+    case 176:
+        ewk->wu.routine_no[1] = 9;
+        break;
+
+    case 177:
+    case 178:
+        ewk->wu.routine_no[1] = 10;
+        ewk->wu.old_rno[5] = gill_time[9];
+        break;
+    }
+
+    disp_pos_trans_entry(ewk);
+}
+
+static void update_effe6_0032_intro_motion(WORK_Other* ewk) {
+    mark_effe6_for_cleanup_if_stale(ewk);
+
+    switch (ewk->wu.type) {
+    case 174:
+        ewk->wu.xyz[1].cal -= gill_range[2] / gill_time[2];
+        break;
+
+    case 175:
+        ewk->wu.xyz[1].cal -= gill_range[3] / gill_time[2];
+        break;
+    }
+
+    if (!ewk->wu.old_rno[5]--) {
+        ewk->wu.routine_no[1]++;
+    }
+
+    disp_pos_trans_entry(ewk);
+}
+
+static void update_effe6_0032_outro_motion(WORK_Other* ewk) {
+    mark_effe6_for_cleanup_if_stale(ewk);
+
+    switch (ewk->wu.type) {
+    case 177:
+        ewk->wu.xyz[0].cal -= gill_range[5] / gill_time[4];
+        break;
+
+    case 178:
+        ewk->wu.xyz[0].cal += gill_range[6] / gill_time[4];
+        break;
+    }
+
+    if (!ewk->wu.old_rno[5]--) {
+        ewk->wu.routine_no[1]++;
+    }
+
+    char_move(&ewk->wu);
+    disp_pos_trans_entry(ewk);
+}
+
+static bool update_effe6_0032_intro(WORK_Other* ewk) {
     switch (ewk->wu.routine_no[1]) {
     case 0:
-        effe6_init_common(ewk);
-        ewk->wu.old_rno[5] = gill_time[2];
-        ewk->wu.old_rno[2] = ewk->wu.old_rno[7] = 0;
-
-        switch (ewk->wu.type) {
-        case 176:
-            ewk->wu.routine_no[1] = 9;
-            break;
-
-        case 177:
-        case 178:
-            ewk->wu.routine_no[1] = 10;
-            ewk->wu.old_rno[5] = gill_time[9];
-            break;
-        }
-
-        disp_pos_trans_entry(ewk);
-        break;
+        initialize_effe6_0032(ewk);
+        return true;
 
     case 1:
-        if (ewk->wu.old_rno[6] < end_w.r_no_2) {
-            ewk->wu.routine_no[2] = 99;
-        }
-
-        switch (ewk->wu.type) {
-        case 174:
-            ewk->wu.xyz[1].cal -= gill_range[2] / gill_time[2];
-            break;
-
-        case 175:
-            ewk->wu.xyz[1].cal -= gill_range[3] / gill_time[2];
-            break;
-        }
-
-        if (!ewk->wu.old_rno[5]--) {
-            ewk->wu.routine_no[1]++;
-        }
-
-        disp_pos_trans_entry(ewk);
-        break;
+        update_effe6_0032_intro_motion(ewk);
+        return true;
 
     case 2:
-        if (ewk->wu.old_rno[6] < end_w.r_no_2) {
-            ewk->wu.routine_no[2] = 99;
-        }
+        mark_effe6_for_cleanup_if_stale(ewk);
 
         ewk->wu.routine_no[1]++;
         ewk->wu.old_rno[5] = gill_time[3];
         disp_pos_trans_entry(ewk);
 
     case 3:
-        if (ewk->wu.old_rno[6] < end_w.r_no_2) {
-            ewk->wu.routine_no[2] = 99;
-        }
+        mark_effe6_for_cleanup_if_stale(ewk);
 
         ewk->wu.xyz[1].cal -= gill_range[4] / gill_time[3];
 
@@ -1516,15 +1517,25 @@ void effe6_0032(WORK_Other* ewk) {
         }
 
         disp_pos_trans_entry(ewk);
-        break;
+        return true;
 
     case 4:
-        if (ewk->wu.old_rno[6] < end_w.r_no_2) {
-            ewk->wu.routine_no[2] = 99;
-        }
+        mark_effe6_for_cleanup_if_stale(ewk);
 
         disp_pos_trans_entry(ewk);
-        break;
+        return true;
+
+    default:
+        return false;
+    }
+}
+
+void effe6_0032(WORK_Other* ewk) {
+    if (update_effe6_0032_intro(ewk)) {
+        return;
+    }
+
+    switch (ewk->wu.routine_no[1]) {
 
     case 9:
         char_move(&ewk->wu);
@@ -1541,9 +1552,7 @@ void effe6_0032(WORK_Other* ewk) {
         break;
 
     case 10:
-        if (ewk->wu.old_rno[6] < end_w.r_no_2) {
-            ewk->wu.routine_no[2] = 99;
-        }
+        mark_effe6_for_cleanup_if_stale(ewk);
 
         ewk->wu.routine_no[1]++;
         ewk->wu.old_rno[5] = gill_time[4];
@@ -1552,32 +1561,11 @@ void effe6_0032(WORK_Other* ewk) {
         break;
 
     case 11:
-        if (ewk->wu.old_rno[6] < end_w.r_no_2) {
-            ewk->wu.routine_no[2] = 99;
-        }
-
-        switch (ewk->wu.type) {
-        case 177:
-            ewk->wu.xyz[0].cal -= gill_range[5] / gill_time[4];
-            break;
-
-        case 178:
-            ewk->wu.xyz[0].cal += gill_range[6] / gill_time[4];
-            break;
-        }
-
-        if (!ewk->wu.old_rno[5]--) {
-            ewk->wu.routine_no[1]++;
-        }
-
-        char_move(&ewk->wu);
-        disp_pos_trans_entry(ewk);
+        update_effe6_0032_outro_motion(ewk);
         break;
 
     case 12:
-        if (ewk->wu.old_rno[6] < end_w.r_no_2) {
-            ewk->wu.routine_no[2] = 99;
-        }
+        mark_effe6_for_cleanup_if_stale(ewk);
 
         char_move(&ewk->wu);
         disp_pos_trans_entry(ewk);
@@ -1595,9 +1583,7 @@ void effe6_0033(WORK_Other* ewk) {
         break;
 
     case 1:
-        if (ewk->wu.old_rno[6] < end_w.r_no_2) {
-            ewk->wu.routine_no[2] = 99;
-        }
+        mark_effe6_for_cleanup_if_stale(ewk);
 
         if (!ewk->wu.old_rno[5]--) {
             ewk->wu.routine_no[1]++;
@@ -1607,9 +1593,7 @@ void effe6_0033(WORK_Other* ewk) {
         break;
 
     case 2:
-        if (ewk->wu.old_rno[6] < end_w.r_no_2) {
-            ewk->wu.routine_no[2] = 99;
-        }
+        mark_effe6_for_cleanup_if_stale(ewk);
 
         ewk->wu.my_clear_level -= 256 / gill_time[7];
 
@@ -1622,9 +1606,7 @@ void effe6_0033(WORK_Other* ewk) {
         break;
 
     case 3:
-        if (ewk->wu.old_rno[6] < end_w.r_no_2) {
-            ewk->wu.routine_no[2] = 99;
-        }
+        mark_effe6_for_cleanup_if_stale(ewk);
 
         disp_pos_trans_entry(ewk);
         break;
