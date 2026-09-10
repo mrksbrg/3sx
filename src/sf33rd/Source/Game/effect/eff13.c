@@ -291,6 +291,7 @@ void set_tengu_init_pos(WORK* ewk, WORK* mwk) {
 
 static void enter_kotp_hit_phase(WORK_Other* ewk);
 static void finish_kotp_07(WORK_Other* ewk);
+static s32 prepare_kotp_exp_motion(WORK_Other* ewk);
 
 static void resolve_kotp_00_hit(WORK_Other* ewk, TAMA* twk) {
     ewk->wu.vital_new -= ewk->wu.dm_vital;
@@ -340,16 +341,8 @@ void kotp_00000(WORK_Other* ewk, TAMA* twk) {
 
     switch (ewk->wu.routine_no[1]) {
     case 0:
-        if (ewk->wu.hit_stop) {
-            if (ewk->wu.hit_stop == 1) {
-                ewk->wu.hit_stop = 0;
-                add_mvxy_speed_exp(&ewk->wu, 2);
-            } else {
-                ewk->wu.hit_stop--;
-                break;
-            }
-        } else {
-            add_mvxy_speed(&ewk->wu);
+        if (!prepare_kotp_exp_motion(ewk)) {
+            break;
         }
 
         cal_mvxy_speed(&ewk->wu);
@@ -1453,7 +1446,7 @@ static void resolve_kotp_12_hit(WORK_Other* ewk, TAMA* twk) {
     ewk->wu.hit_quake = 0;
 }
 
-static s32 prepare_kotp_12_motion(WORK_Other* ewk) {
+static s32 prepare_kotp_exp_motion(WORK_Other* ewk) {
     if (ewk->wu.hit_stop) {
         if (ewk->wu.hit_stop == 1) {
             ewk->wu.hit_stop = 0;
@@ -1474,7 +1467,7 @@ static s32 kotp_12_remains_on_screen(WORK_Other* ewk) {
 }
 
 static void update_kotp_12(WORK_Other* ewk, TAMA* twk) {
-    if (!prepare_kotp_12_motion(ewk)) {
+    if (!prepare_kotp_exp_motion(ewk)) {
         return;
     }
 
