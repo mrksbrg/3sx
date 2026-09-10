@@ -414,6 +414,23 @@ void kotp_00000(WORK_Other* ewk, TAMA* twk) {
     }
 }
 
+static void resolve_kotp_01_hit(WORK_Other* ewk, TAMA* twk) {
+    if (ewk->wu.hf.hit.player) {
+        if (ewk->wu.hf.hit.player & 0xF0) {
+            set_char_move_init(&ewk->wu, 0, twk->erdf);
+        } else {
+            set_char_move_init(&ewk->wu, 0, twk->erht);
+        }
+    } else {
+        set_char_move_init(&ewk->wu, 0, twk->erex);
+    }
+
+    ewk->wu.routine_no[1] = 2;
+    ewk->wu.routine_no[2] = 0;
+    ewk->wu.hf.hit_flag = 0;
+    ewk->wu.hit_quake = 0;
+}
+
 void kotp_01000(WORK_Other* ewk, TAMA* twk) {
     enter_kotp_hit_phase(ewk);
 
@@ -441,20 +458,7 @@ void kotp_01000(WORK_Other* ewk, TAMA* twk) {
         break;
 
     case 1:
-        if (ewk->wu.hf.hit.player) {
-            if (ewk->wu.hf.hit.player & 0xF0) {
-                set_char_move_init(&ewk->wu, 0, twk->erdf);
-            } else {
-                set_char_move_init(&ewk->wu, 0, twk->erht);
-            }
-        } else {
-            set_char_move_init(&ewk->wu, 0, twk->erex);
-        }
-
-        ewk->wu.routine_no[1] = 2;
-        ewk->wu.routine_no[2] = 0;
-        ewk->wu.hf.hit_flag = 0;
-        ewk->wu.hit_quake = 0;
+        resolve_kotp_01_hit(ewk, twk);
         break;
 
     case 2:
