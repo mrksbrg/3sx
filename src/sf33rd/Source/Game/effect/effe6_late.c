@@ -50,32 +50,6 @@ void effe6_0026(WORK_Other* ewk) {
 }
 
 
-void effe6_0028(WORK_Other* ewk) {
-    mark_effe6_for_cleanup_if_stale(ewk);
-
-    switch (ewk->wu.routine_no[1]) {
-    case 0:
-        effe6_init_common(ewk);
-        disp_pos_trans_entry(ewk);
-        break;
-
-    case 1:
-        char_move(&ewk->wu);
-
-        if (ewk->wu.cg_type == 9) {
-            ewk->wu.disp_flag = 0;
-        } else {
-            ewk->wu.disp_flag = 1;
-        }
-
-        disp_pos_trans_entry(ewk);
-        break;
-
-    default:
-        push_effect_work(&ewk->wu);
-        break;
-    }
-}
 
 static void grow_effe6_0029_marker(WORK_Other* ewk) {
     ewk->wu.old_rno[2]--;

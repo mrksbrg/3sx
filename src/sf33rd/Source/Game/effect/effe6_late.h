@@ -4,7 +4,6 @@
 #include "structs.h"
 
 void effe6_0026(WORK_Other* ewk);
-void effe6_0028(WORK_Other* ewk);
 void effe6_0029(WORK_Other* ewk);
 void effe6_0030(WORK_Other* ewk);
 void effe6_0031(WORK_Other* ewk);
