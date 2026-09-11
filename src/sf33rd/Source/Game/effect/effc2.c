@@ -425,32 +425,38 @@ void effC2_main_process_first(WORK_Other* ewk, PLW* twk) {
     }
 }
 
-void effc2_parts_work_chain_check(s16 flag) {
-    WORK* adr0;
-    WORK* adr1;
-    WORK* adr2;
-    WORK* adr3;
+static WORK* find_c2_parts_chain_node(void) {
     s16 wix = search_effect_index(1, 0, 0x7B);
-    s16 bf[4];
-    s16 bh[4];
 
     if (wix == -1) {
-        return;
+        return NULL;
     }
 
     while (wix != -1) {
-        adr1 = (WORK*)frw[wix];
+        WORK* adr1 = (WORK*)frw[wix];
 
         if (adr1->type == 4 || adr1->type == 5) {
-            goto jump;
+            return adr1;
         }
 
         wix = adr1->behind;
     }
 
-    return;
+    return NULL;
+}
 
-jump:
+void effc2_parts_work_chain_check(s16 flag) {
+    WORK* adr0;
+    WORK* adr1 = find_c2_parts_chain_node();
+    WORK* adr2;
+    WORK* adr3;
+    s16 bf[4];
+    s16 bh[4];
+
+    if (adr1 == NULL) {
+        return;
+    }
+
     if (flag) {
         if (adr1->type == 4) {
             return;
