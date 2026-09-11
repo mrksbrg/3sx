@@ -8,6 +8,7 @@
 #include "sf33rd/Source/Game/effect/effe6_early.h"
 #include "sf33rd/Source/Game/effect/effe6_internal.h"
 #include "sf33rd/Source/Game/effect/effe6_late.h"
+#include "sf33rd/Source/Game/effect/effe6_late_alternate.h"
 #include "sf33rd/Source/Game/effect/effe6_middle.h"
 #include "sf33rd/Source/Game/effect/effe6_transition.h"
 #include "bin2obj/char_table.h"
