@@ -297,10 +297,14 @@ static void populate_h6_connections(WORK_Other_CONN* ewk, s8* su, s16 Original_C
     ewk->num_of_conn = x;
 }
 
-s32 effect_H6_init(s16 timer, s8* str, s16 X, s16 Y, s16 Original_Color, s32 /* unused */) {
+s32 effect_H6_init(const H6InitArgs* args) {
     WORK_Other_CONN* ewk;
     s16 x;
-    s8* su = str;
+    s16 timer = args->timer;
+    s8* su = args->str;
+    s16 X = args->x;
+    s16 Y = args->y;
+    s16 Original_Color = args->original_color;
 
     if ((x = pull_effect_work(4)) == -1) {
         return -1;
