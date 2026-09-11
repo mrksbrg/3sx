@@ -544,11 +544,41 @@ static s16 select_h6_standard_character(s8 character, s16 c) {
     return chr;
 }
 
-s32 effect_H6_init(s16 timer, s8* str, s16 X, s16 Y, s16 Original_Color, s32 /* unused */) {
-    WORK_Other_CONN* ewk;
+static void populate_h6_connections(WORK_Other_CONN* ewk, s8* su, s16 Original_Color) {
     s16 i;
     s16 x;
     s16 c;
+
+    ewk->wu.my_col_code = 0;
+
+    for (x = 0, i = 0; *su != '\0'; i += 9, su++) {
+        if ((c = code_tab[*su]) == -1) {
+            continue;
+        }
+
+        ewk->conn[x].nx = i;
+        ewk->conn[x].ny = 0;
+
+        switch (Original_Color) {
+        case 8:
+            ewk->conn[x].chr = select_h6_alternate_character(*su, c);
+            break;
+
+        default:
+            ewk->conn[x].chr = select_h6_standard_character(*su, c);
+            break;
+        }
+
+        ewk->conn[x].col = 0x202B;
+        x++;
+    }
+
+    ewk->num_of_conn = x;
+}
+
+s32 effect_H6_init(s16 timer, s8* str, s16 X, s16 Y, s16 Original_Color, s32 /* unused */) {
+    WORK_Other_CONN* ewk;
+    s16 x;
     s8* su = str;
 
     if ((x = pull_effect_work(4)) == -1) {
@@ -579,31 +609,7 @@ s32 effect_H6_init(s16 timer, s8* str, s16 X, s16 Y, s16 Original_Color, s32 /* 
         configure_h6_heading(ewk, X, Y, Original_Color);
     } else {
         Original_Color = configure_h6_text_path(ewk, X, Y, Original_Color);
-        ewk->wu.my_col_code = 0;
-
-        for (x = 0, i = 0; *su != '\0'; i += 9, su++) {
-            if ((c = code_tab[*su]) == -1) {
-                continue;
-            }
-
-            ewk->conn[x].nx = i;
-            ewk->conn[x].ny = 0;
-
-            switch (Original_Color) {
-            case 8:
-                ewk->conn[x].chr = select_h6_alternate_character(*su, c);
-                break;
-
-            default:
-                ewk->conn[x].chr = select_h6_standard_character(*su, c);
-                break;
-            }
-
-            ewk->conn[x].col = 0x202B;
-            x++;
-        }
-
-        ewk->num_of_conn = x;
+        populate_h6_connections(ewk, su, Original_Color);
     }
 
     return 0;
