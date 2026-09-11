@@ -14,6 +14,7 @@
 #include "sf33rd/Source/Game/effect/effe6_late_alternate.h"
 #include "sf33rd/Source/Game/effect/effe6_middle.h"
 #include "sf33rd/Source/Game/effect/effe6_palette.h"
+#include "sf33rd/Source/Game/effect/effe6_shrink.h"
 #include "sf33rd/Source/Game/effect/effe6_transition.h"
 #include "sf33rd/Source/Game/effect/effe6_visibility.h"
 #include "bin2obj/char_table.h"
