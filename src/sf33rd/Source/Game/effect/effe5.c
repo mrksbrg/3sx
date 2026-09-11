@@ -183,6 +183,35 @@ static bool initialize_after_image(WORK_Other* ewk, PLW* mwk) {
     return true;
 }
 
+static void update_after_image(WORK_Other* ewk, PLW* mwk) {
+    if (ewk->wu.dead_f == 1) {
+        ewk->wu.routine_no[0] = 2;
+        mwk->image_setup_flag = 0;
+        return;
+    }
+
+    if (check_new_after_image(ewk, mwk) != 0) {
+        goto jump;
+    }
+
+    if (after_image_should_reset(ewk, mwk)) {
+        mwk->image_setup_flag = 0;
+    jump:
+        ewk->wu.routine_no[0] = ewk->wu.routine_no[1] = ewk->wu.routine_no[2] = 0;
+        return;
+    }
+
+    switch (ewk->wu.routine_no[1]) {
+    case 0:
+        update_repeating_after_image(ewk, mwk);
+        break;
+
+    case 1:
+        initialize_static_after_images(ewk, mwk);
+        break;
+    }
+}
+
 
 void effect_E5_move(WORK_Other* ewk) {
     PLW* mwk = (PLW*)ewk->my_master;
@@ -195,33 +224,7 @@ void effect_E5_move(WORK_Other* ewk) {
         /* fallthrough */
 
     case 1:
-        if (ewk->wu.dead_f == 1) {
-            ewk->wu.routine_no[0] = 2;
-            mwk->image_setup_flag = 0;
-            break;
-        }
-
-        if (check_new_after_image(ewk, mwk) != 0) {
-            goto jump;
-        }
-
-        if (after_image_should_reset(ewk, mwk)) {
-            mwk->image_setup_flag = 0;
-        jump:
-            ewk->wu.routine_no[0] = ewk->wu.routine_no[1] = ewk->wu.routine_no[2] = 0;
-            break;
-        }
-
-        switch (ewk->wu.routine_no[1]) {
-        case 0:
-            update_repeating_after_image(ewk, mwk);
-            break;
-
-        case 1:
-            initialize_static_after_images(ewk, mwk);
-            break;
-        }
-
+        update_after_image(ewk, mwk);
         break;
 
     default:
