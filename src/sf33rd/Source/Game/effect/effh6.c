@@ -194,6 +194,14 @@ static void update_h6_delayed_down_cycle(WORK_Other* ewk) {
     }
 }
 
+static void update_h6_wait(WORK_Other* ewk) {
+    ewk->wu.dir_timer = ewk->wu.dir_timer - roll_rate_t;
+
+    if (ewk->wu.dir_timer < 1) {
+        ewk->wu.routine_no[0]++;
+    }
+}
+
 void effect_H6_move(WORK_Other* ewk) {
     switch (ewk->wu.routine_no[0]) {
     case 0:
@@ -232,12 +240,7 @@ void effect_H6_move(WORK_Other* ewk) {
             break;
 
         case 3:
-            ewk->wu.dir_timer = ewk->wu.dir_timer - roll_rate_t;
-
-            if (ewk->wu.dir_timer < 1) {
-                ewk->wu.routine_no[0]++;
-            }
-
+            update_h6_wait(ewk);
             break;
 
         case 4:
