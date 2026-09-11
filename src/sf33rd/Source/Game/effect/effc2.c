@@ -95,6 +95,34 @@ static void update_c2_last_character_fall(WORK_Other* ewk) {
     }
 }
 
+static void update_c2_last_character_movement(WORK_Other* ewk) {
+    char_move(&ewk->wu);
+
+    switch (ewk->wu.cg_type) {
+    case 1:
+        if (ewk->wu.mvxy.a[0].sp > 0) {
+            add_mvxy_speed_direct(&ewk->wu, 128, 0);
+        } else {
+            add_mvxy_speed_direct(&ewk->wu, -128, 0);
+        }
+
+        break;
+
+    case 2:
+        if (ewk->wu.mvxy.a[0].sp > 0) {
+            add_mvxy_speed_direct(&ewk->wu, 256, 0);
+        } else {
+            add_mvxy_speed_direct(&ewk->wu, -256, 0);
+        }
+
+        break;
+
+    case 0xFF:
+        ewk->wu.routine_no[2] = 2;
+        break;
+    }
+}
+
 static void advance_c2_last_character(WORK_Other* ewk) {
     switch (ewk->wu.routine_no[2]) {
     case 0:
@@ -102,32 +130,7 @@ static void advance_c2_last_character(WORK_Other* ewk) {
         break;
 
     case 1:
-        char_move(&ewk->wu);
-
-        switch (ewk->wu.cg_type) {
-        case 1:
-            if (ewk->wu.mvxy.a[0].sp > 0) {
-                add_mvxy_speed_direct(&ewk->wu, 128, 0);
-            } else {
-                add_mvxy_speed_direct(&ewk->wu, -128, 0);
-            }
-
-            break;
-
-        case 2:
-            if (ewk->wu.mvxy.a[0].sp > 0) {
-                add_mvxy_speed_direct(&ewk->wu, 256, 0);
-            } else {
-                add_mvxy_speed_direct(&ewk->wu, -256, 0);
-            }
-
-            break;
-
-        case 0xFF:
-            ewk->wu.routine_no[2] = 2;
-            break;
-        }
-
+        update_c2_last_character_movement(ewk);
         break;
     }
 }
