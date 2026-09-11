@@ -22,8 +22,31 @@ static const s8 code_tab[128] = { -1,  -1, -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1
                                   52,  53, 54,  55,  56,  57,  58,  59,  60,  61,  117, 116, 134, 130, 135, 63,
                                   137, 0,  1,   2,   3,   4,   5,   6,   7,   8,   9,   10,  11,  12,  13,  14,
                                   15,  16, 17,  18,  19,  20,  21,  22,  23,  24,  25,  145, -1,  142, 149, 126,
-                                  118, 26, 27,  28,  29,  30,  31,  32,  33,  34,  35,  36,  37,  38,  39,  40,
-                                  41,  42, 43,  44,  45,  46,  47,  48,  49,  50,  51,  147, 150, 150, 150, -1 };
+                                   118, 26, 27,  28,  29,  30,  31,  32,  33,  34,  35,  36,  37,  38,  39,  40,
+                                   41,  42, 43,  44,  45,  46,  47,  48,  49,  50,  51,  147, 150, 150, 150, -1 };
+
+static void update_h6_scroll(WORK_Other* ewk) {
+    switch (ewk->wu.dir_step) {
+    default:
+        ewk->wu.xyz[1].disp.pos = ewk->wu.xyz[1].disp.pos + roll_rate;
+        ewk->wu.position_y = ewk->wu.xyz[1].disp.pos & 0xFFFF;
+
+        if (256 <= ewk->wu.xyz[1].disp.pos) {
+            ewk->wu.routine_no[0]++;
+        }
+
+        break;
+
+    case 1:
+        break;
+    }
+
+    if (Suicide[4]) {
+        ewk->wu.routine_no[0] = 2;
+    }
+
+    sort_push_request4(&ewk->wu);
+}
 
 void effect_H6_move(WORK_Other* ewk) {
     switch (ewk->wu.routine_no[0]) {
@@ -45,26 +68,7 @@ void effect_H6_move(WORK_Other* ewk) {
 
     case 1:
         if (ewk->wu.dir_step) {
-            switch (ewk->wu.dir_step) {
-            default:
-                ewk->wu.xyz[1].disp.pos = ewk->wu.xyz[1].disp.pos + roll_rate;
-                ewk->wu.position_y = ewk->wu.xyz[1].disp.pos & 0xFFFF;
-
-                if (256 <= ewk->wu.xyz[1].disp.pos) {
-                    ewk->wu.routine_no[0]++;
-                }
-
-                break;
-
-            case 1:
-                break;
-            }
-
-            if (Suicide[4]) {
-                ewk->wu.routine_no[0] = 2;
-            }
-
-            sort_push_request4(&ewk->wu);
+            update_h6_scroll(ewk);
             break;
         }
 
