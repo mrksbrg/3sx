@@ -222,22 +222,26 @@ static void update_h6_up_exit(WORK_Other* ewk) {
     ewk->wu.routine_no[0]++;
 }
 
+static void initialize_h6_move(WORK_Other* ewk) {
+    ewk->wu.routine_no[0]++;
+    ewk->wu.disp_flag = 1;
+    roll_rate = 1;
+    roll_rate_t = 1;
+
+    if (!ewk->wu.dir_step) {
+        ewk->wu.old_cgnum = ewk->wu.cg_number = 0;
+        ewk->wu.cg_number++;
+        ewk->wu.cg_number &= 0x7FFF;
+    }
+
+    ewk->wu.position_x = ewk->wu.xyz[0].disp.pos & 0xFFFF;
+    ewk->wu.position_y = ewk->wu.xyz[1].disp.pos & 0xFFFF;
+}
+
 void effect_H6_move(WORK_Other* ewk) {
     switch (ewk->wu.routine_no[0]) {
     case 0:
-        ewk->wu.routine_no[0]++;
-        ewk->wu.disp_flag = 1;
-        roll_rate = 1;
-        roll_rate_t = 1;
-
-        if (!ewk->wu.dir_step) {
-            ewk->wu.old_cgnum = ewk->wu.cg_number = 0;
-            ewk->wu.cg_number++;
-            ewk->wu.cg_number &= 0x7FFF;
-        }
-
-        ewk->wu.position_x = ewk->wu.xyz[0].disp.pos & 0xFFFF;
-        ewk->wu.position_y = ewk->wu.xyz[1].disp.pos & 0xFFFF;
+        initialize_h6_move(ewk);
         break;
 
     case 1:
