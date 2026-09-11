@@ -305,6 +305,49 @@ void effect_H6_move(WORK_Other* ewk) {
     }
 }
 
+static void configure_h6_heading(WORK_Other_CONN* ewk, s16 X, s16 Y, s16 Original_Color) {
+    switch (Original_Color) {
+    case 0:
+        ewk->wu.dir_step = 1;
+        ewk->wu.routine_no[1] = 0;
+        ewk->wu.xyz[0].disp.pos = X;
+        ewk->wu.xyz[1].disp.pos = Y;
+        ewk->wu.my_col_code = 0x202B;
+        ewk->wu.cg_number = 0x794D;
+        break;
+
+    case 1:
+        ewk->wu.dir_step = 2;
+        ewk->wu.routine_no[6] = Y;
+        ewk->wu.routine_no[1] = 0;
+        ewk->wu.xyz[0].disp.pos = X;
+        ewk->wu.xyz[1].disp.pos = -32;
+        ewk->wu.my_col_code = 0x202B;
+        ewk->wu.cg_number = 0x794A;
+        break;
+
+    case 2:
+        ewk->wu.dir_step = 2;
+        ewk->wu.routine_no[6] = Y;
+        ewk->wu.routine_no[1] = 0;
+        ewk->wu.xyz[0].disp.pos = X;
+        ewk->wu.xyz[1].disp.pos = -32;
+        ewk->wu.my_col_code = 0x202B;
+        ewk->wu.cg_number = 0x794B;
+        break;
+
+    default:
+        ewk->wu.dir_step = 2;
+        ewk->wu.routine_no[6] = Y;
+        ewk->wu.routine_no[1] = 0;
+        ewk->wu.xyz[0].disp.pos = X;
+        ewk->wu.xyz[1].disp.pos = -176;
+        ewk->wu.my_col_code = 0x202B;
+        ewk->wu.cg_number = 0x7949;
+        break;
+    }
+}
+
 s32 effect_H6_init(s16 timer, s8* str, s16 X, s16 Y, s16 Original_Color, s32 /* unused */) {
     WORK_Other_CONN* ewk;
     s16 i;
@@ -337,46 +380,7 @@ s32 effect_H6_init(s16 timer, s8* str, s16 X, s16 Y, s16 Original_Color, s32 /* 
     ewk->wu.dir_timer = timer;
 
     if (*su == '#') {
-        switch (Original_Color) {
-        case 0:
-            ewk->wu.dir_step = 1;
-            ewk->wu.routine_no[1] = 0;
-            ewk->wu.xyz[0].disp.pos = X;
-            ewk->wu.xyz[1].disp.pos = Y;
-            ewk->wu.my_col_code = 0x202B;
-            ewk->wu.cg_number = 0x794D;
-            break;
-
-        case 1:
-            ewk->wu.dir_step = 2;
-            ewk->wu.routine_no[6] = Y;
-            ewk->wu.routine_no[1] = 0;
-            ewk->wu.xyz[0].disp.pos = X;
-            ewk->wu.xyz[1].disp.pos = -32;
-            ewk->wu.my_col_code = 0x202B;
-            ewk->wu.cg_number = 0x794A;
-            break;
-
-        case 2:
-            ewk->wu.dir_step = 2;
-            ewk->wu.routine_no[6] = Y;
-            ewk->wu.routine_no[1] = 0;
-            ewk->wu.xyz[0].disp.pos = X;
-            ewk->wu.xyz[1].disp.pos = -32;
-            ewk->wu.my_col_code = 0x202B;
-            ewk->wu.cg_number = 0x794B;
-            break;
-
-        default:
-            ewk->wu.dir_step = 2;
-            ewk->wu.routine_no[6] = Y;
-            ewk->wu.routine_no[1] = 0;
-            ewk->wu.xyz[0].disp.pos = X;
-            ewk->wu.xyz[1].disp.pos = -176;
-            ewk->wu.my_col_code = 0x202B;
-            ewk->wu.cg_number = 0x7949;
-            break;
-        }
+        configure_h6_heading(ewk, X, Y, Original_Color);
     } else {
         ewk->wu.dir_step = 0;
 
