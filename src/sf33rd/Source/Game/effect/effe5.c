@@ -115,10 +115,39 @@ static void update_repeating_after_image(WORK_Other* ewk, PLW* mwk) {
     }
 }
 
+static void initialize_static_after_images(WORK_Other* ewk, PLW* mwk) {
+    s16 i;
+
+    if (mwk->image_setup_flag == 0) {
+        ewk->wu.routine_no[0] = 0;
+        ewk->wu.routine_no[1] = 0;
+        return;
+    }
+
+    switch (ewk->wu.routine_no[2]) {
+    case 0:
+        ewk->wu.routine_no[2]++;
+        ewk->wu.dir_step = 0;
+
+        if (ewk->wu.old_rno[5]) {
+            for (i = 0; i < ewk->wu.dmcal_d; i++) {
+                effect_E8_init(ewk, mwk, ewk->wu.dir_step);
+                ewk->wu.dir_step += ewk->wu.dmcal_m;
+            }
+        } else {
+            for (i = 0; i < ewk->wu.dmcal_d; i++) {
+                ewk->wu.dir_step += ewk->wu.dmcal_m;
+                effect_E8_init(ewk, mwk, ewk->wu.dir_step);
+            }
+        }
+
+        break;
+    }
+}
+
 
 void effect_E5_move(WORK_Other* ewk) {
     PLW* mwk = (PLW*)ewk->my_master;
-    s16 i;
 
     switch (ewk->wu.routine_no[0]) {
     case 0:
@@ -172,32 +201,7 @@ void effect_E5_move(WORK_Other* ewk) {
             break;
 
         case 1:
-            if (mwk->image_setup_flag == 0) {
-                ewk->wu.routine_no[0] = 0;
-                ewk->wu.routine_no[1] = 0;
-                break;
-            }
-
-            switch (ewk->wu.routine_no[2]) {
-            case 0:
-                ewk->wu.routine_no[2]++;
-                ewk->wu.dir_step = 0;
-
-                if (ewk->wu.old_rno[5]) {
-                    for (i = 0; i < ewk->wu.dmcal_d; i++) {
-                        effect_E8_init(ewk, mwk, ewk->wu.dir_step);
-                        ewk->wu.dir_step += ewk->wu.dmcal_m;
-                    }
-                } else {
-                    for (i = 0; i < ewk->wu.dmcal_d; i++) {
-                        ewk->wu.dir_step += ewk->wu.dmcal_m;
-                        effect_E8_init(ewk, mwk, ewk->wu.dir_step);
-                    }
-                }
-
-                break;
-            }
-
+            initialize_static_after_images(ewk, mwk);
             break;
         }
 
