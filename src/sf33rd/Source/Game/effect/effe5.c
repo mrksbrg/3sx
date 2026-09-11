@@ -155,36 +155,43 @@ static void initialize_static_after_images(WORK_Other* ewk, PLW* mwk) {
     }
 }
 
+static bool initialize_after_image(WORK_Other* ewk, PLW* mwk) {
+    if (ewk->wu.dead_f == 1) {
+        ewk->wu.routine_no[0] = 2;
+        mwk->image_setup_flag = 0;
+        return false;
+    }
+
+    if (mwk->image_setup_flag == 0) {
+        return false;
+    }
+
+    if (uses_alternate_block_image(mwk)) {
+        mwk->image_data_index = 33;
+    }
+
+    setup_illusion_data(ewk, mwk);
+
+    if (ewk->wu.old_rno[2]) {
+        ewk->wu.routine_no[1] = 1;
+    } else {
+        ewk->wu.routine_no[1] = 0;
+    }
+
+    ewk->wu.routine_no[0] = 1;
+    ewk->wu.routine_no[2] = 0;
+    return true;
+}
+
 
 void effect_E5_move(WORK_Other* ewk) {
     PLW* mwk = (PLW*)ewk->my_master;
 
     switch (ewk->wu.routine_no[0]) {
     case 0:
-        if (ewk->wu.dead_f == 1) {
-            ewk->wu.routine_no[0] = 2;
-            mwk->image_setup_flag = 0;
+        if (!initialize_after_image(ewk, mwk)) {
             break;
         }
-
-        if (mwk->image_setup_flag == 0) {
-            break;
-        }
-
-        if (uses_alternate_block_image(mwk)) {
-            mwk->image_data_index = 33;
-        }
-
-        setup_illusion_data(ewk, mwk);
-
-        if (ewk->wu.old_rno[2]) {
-            ewk->wu.routine_no[1] = 1;
-        } else {
-            ewk->wu.routine_no[1] = 0;
-        }
-
-        ewk->wu.routine_no[0] = 1;
-        ewk->wu.routine_no[2] = 0;
         /* fallthrough */
 
     case 1:
