@@ -53,9 +53,12 @@ static s32 uses_alternate_block_image(const PLW* mwk) {
     return mwk->image_data_index == 11 && mwk->kind_of_blocking == 2;
 }
 
+static s32 after_image_can_advance(const PLW* mwk) {
+    return EXE_flag == 0 && Game_pause == 0 && mwk->wu.hit_stop <= 0;
+}
+
 static s32 after_image_direction_elapsed(WORK_Other* ewk, const PLW* mwk) {
-    return (ewk->wu.dir_old & 1 && EXE_flag == 0 && Game_pause == 0 && mwk->wu.hit_stop <= 0 &&
-            --ewk->wu.direction == 0);
+    return ewk->wu.dir_old & 1 && after_image_can_advance(mwk) && --ewk->wu.direction == 0;
 }
 
 static s32 after_image_animation_changed(WORK_Other* ewk, const PLW* mwk) {
