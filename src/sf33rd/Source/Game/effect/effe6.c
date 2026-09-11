@@ -1402,6 +1402,16 @@ void effe6_0030(WORK_Other* ewk) {
 
 const s32 gill_range[7] = { 0x900000, 0x900000, 0x100000, 0x900000, 0x900000, 0x200000, 0x50000 };
 
+static void update_effe6_0031_rise(WORK_Other* ewk) {
+    ewk->wu.xyz[1].cal += gill_range[0] / gill_time[0];
+
+    if (!(--ewk->wu.old_rno[5])) {
+        ewk->wu.routine_no[1]++;
+    }
+
+    disp_pos_trans_entry(ewk);
+}
+
 void effe6_0031(WORK_Other* ewk) {
     switch (ewk->wu.routine_no[1]) {
     case 0:
@@ -1411,13 +1421,7 @@ void effe6_0031(WORK_Other* ewk) {
         break;
 
     case 1:
-        ewk->wu.xyz[1].cal += gill_range[0] / gill_time[0];
-
-        if (!(--ewk->wu.old_rno[5])) {
-            ewk->wu.routine_no[1]++;
-        }
-
-        disp_pos_trans_entry(ewk);
+        update_effe6_0031_rise(ewk);
         break;
 
     case 2:
