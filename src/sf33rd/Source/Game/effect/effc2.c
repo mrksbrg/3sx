@@ -691,9 +691,19 @@ static void setup_demojump_from_car(PLW* twk) {
     }
 }
 
-void setup_demojump(PLW* twk, s16 ix) {
+static void setup_demojump_from_defeat(PLW* twk) {
     s32 should_reset_demo_jump;
 
+    should_reset_demo_jump = (twk->wu.pat_status >= 14 && twk->wu.pat_status <= 30) || twk->bs2_on_car;
+
+    if (should_reset_demo_jump) {
+        twk->wu.routine_no[1] = 0;
+        twk->wu.routine_no[2] = 56;
+        twk->wu.routine_no[3] = 0;
+    }
+}
+
+void setup_demojump(PLW* twk, s16 ix) {
     switch (ix) {
     case 0:
         setup_demojump_from_launch(twk);
@@ -704,15 +714,7 @@ void setup_demojump(PLW* twk, s16 ix) {
         break;
 
     case 2:
-        should_reset_demo_jump =
-            (twk->wu.pat_status >= 14 && twk->wu.pat_status <= 30) || twk->bs2_on_car;
-
-        if (should_reset_demo_jump) {
-            twk->wu.routine_no[1] = 0;
-            twk->wu.routine_no[2] = 56;
-            twk->wu.routine_no[3] = 0;
-        }
-
+        setup_demojump_from_defeat(twk);
         break;
     }
 
