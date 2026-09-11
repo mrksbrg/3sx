@@ -328,6 +328,50 @@ static void update_c2_second_animation(WORK_Other* ewk) {
     }
 }
 
+static void update_c2_first_damage(WORK_Other* ewk, PLW* twk) {
+    switch (ewk->wu.routine_no[2]) {
+    case 0:
+        ewk->wu.shell_ix[0] -= ewk->wu.dm_vital;
+        ewk->wu.dm_vital = 0;
+
+        if (twk->bs2_on_car) {
+            ewk->wu.hit_stop = 0;
+        } else {
+            ewk->wu.hit_stop = ewk->wu.dm_stop / 2;
+        }
+
+        ewk->wu.routine_no[2] = 1;
+        set_char_move_init(&ewk->wu,
+                           0,
+                           (twk->bs2_on_car * 6) +
+                               ((ewk->wu.dm_rl == 0) + sel_dm_quake[ewk->wu.dm_attlv][ewk->wu.rl_waza]));
+
+        if (ewk->wu.shell_ix[0] < 0) {
+            ewk->wu.dir_old = 1;
+            ewk->wu.dir_timer = 1;
+            ewk->wu.routine_no[1] = 0;
+            ewk->wu.routine_no[2] = 9;
+            break;
+        }
+
+        check_parts_break_level(&ewk->wu);
+        /* fallthrough */
+
+    case 1:
+        if (--ewk->wu.hit_stop <= 0) {
+            char_move(&ewk->wu);
+
+            if (ewk->wu.cg_type == 0xFF) {
+                ewk->wu.routine_no[1] = 0;
+                ewk->wu.routine_no[2] = 0;
+                ewk->wu.cg_type = 0;
+            }
+        }
+
+        break;
+    }
+}
+
 void effC2_main_process_first(WORK_Other* ewk, PLW* twk) {
     if (EXE_flag == 0 && Game_pause == 0) {
         select_c2_first_process_state(ewk, twk);
@@ -350,48 +394,7 @@ void effC2_main_process_first(WORK_Other* ewk, PLW* twk) {
             break;
 
         case 1:
-            switch (ewk->wu.routine_no[2]) {
-            case 0:
-                ewk->wu.shell_ix[0] -= ewk->wu.dm_vital;
-                ewk->wu.dm_vital = 0;
-
-                if (twk->bs2_on_car) {
-                    ewk->wu.hit_stop = 0;
-                } else {
-                    ewk->wu.hit_stop = ewk->wu.dm_stop / 2;
-                }
-
-                ewk->wu.routine_no[2] = 1;
-                set_char_move_init(&ewk->wu,
-                                   0,
-                                   (twk->bs2_on_car * 6) +
-                                       ((ewk->wu.dm_rl == 0) + sel_dm_quake[ewk->wu.dm_attlv][ewk->wu.rl_waza]));
-
-                if (ewk->wu.shell_ix[0] < 0) {
-                    ewk->wu.dir_old = 1;
-                    ewk->wu.dir_timer = 1;
-                    ewk->wu.routine_no[1] = 0;
-                    ewk->wu.routine_no[2] = 9;
-                    break;
-                }
-
-                check_parts_break_level(&ewk->wu);
-                /* fallthrough */
-
-            case 1:
-                if (--ewk->wu.hit_stop <= 0) {
-                    char_move(&ewk->wu);
-
-                    if (ewk->wu.cg_type == 0xFF) {
-                        ewk->wu.routine_no[1] = 0;
-                        ewk->wu.routine_no[2] = 0;
-                        ewk->wu.cg_type = 0;
-                    }
-                }
-
-                break;
-            }
-
+            update_c2_first_damage(ewk, twk);
             ewk->wu.old_pos[1] = ewk->wu.cg_type;
             ewk->wu.cg_type = 0;
             break;
