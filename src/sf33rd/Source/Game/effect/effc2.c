@@ -83,19 +83,22 @@ static s32 game_is_active(void) {
     return EXE_flag == 0 && Game_pause == 0;
 }
 
+static void update_c2_last_character_fall(WORK_Other* ewk) {
+    char_move(&ewk->wu);
+    add_mvxy_speed(&ewk->wu);
+    cal_mvxy_speed(&ewk->wu);
+
+    if (ewk->wu.mvxy.a[1].sp <= 0 && (ewk->wu.xyz[1].disp.pos <= ewk->wu.next_y)) {
+        ewk->wu.xyz[1].disp.pos = ewk->wu.next_y;
+        ewk->wu.routine_no[2] = 1;
+        char_move_cmja(&ewk->wu);
+    }
+}
+
 static void advance_c2_last_character(WORK_Other* ewk) {
     switch (ewk->wu.routine_no[2]) {
     case 0:
-        char_move(&ewk->wu);
-        add_mvxy_speed(&ewk->wu);
-        cal_mvxy_speed(&ewk->wu);
-
-        if (ewk->wu.mvxy.a[1].sp <= 0 && (ewk->wu.xyz[1].disp.pos <= ewk->wu.next_y)) {
-            ewk->wu.xyz[1].disp.pos = ewk->wu.next_y;
-            ewk->wu.routine_no[2] = 1;
-            char_move_cmja(&ewk->wu);
-        }
-
+        update_c2_last_character_fall(ewk);
         break;
 
     case 1:
