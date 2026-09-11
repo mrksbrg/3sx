@@ -391,17 +391,8 @@ static s16 configure_h6_early_text_path(WORK_Other_CONN* ewk, s16 X, s16 Y, s16 
     return Original_Color;
 }
 
-static s16 configure_h6_text_path(WORK_Other_CONN* ewk, s16 X, s16 Y, s16 Original_Color) {
-    ewk->wu.dir_step = 0;
-
+static s16 configure_h6_late_text_path(WORK_Other_CONN* ewk, s16 X, s16 Y, s16 Original_Color) {
     switch (Original_Color) {
-    case 0:
-    case 1:
-    case 2:
-    case 3:
-    case 4:
-        return configure_h6_early_text_path(ewk, X, Y, Original_Color);
-
     case 5:
         Original_Color = 1;
         ewk->wu.routine_no[1] = 5;
@@ -438,6 +429,28 @@ static s16 configure_h6_text_path(WORK_Other_CONN* ewk, s16 X, s16 Y, s16 Origin
         ewk->wu.xyz[1].disp.pos = 0;
         ewk->wu.my_col_code = 0x202B;
         break;
+    }
+
+    return Original_Color;
+}
+
+static s16 configure_h6_text_path(WORK_Other_CONN* ewk, s16 X, s16 Y, s16 Original_Color) {
+    ewk->wu.dir_step = 0;
+
+    switch (Original_Color) {
+    case 0:
+    case 1:
+    case 2:
+    case 3:
+    case 4:
+        return configure_h6_early_text_path(ewk, X, Y, Original_Color);
+
+    case 5:
+    case 6:
+    case 7:
+    case 8:
+    case 9:
+        return configure_h6_late_text_path(ewk, X, Y, Original_Color);
     }
 
     return Original_Color;
