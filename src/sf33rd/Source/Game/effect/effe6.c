@@ -214,6 +214,18 @@ void effe6_0001(WORK_Other* ewk) {
     }
 }
 
+static void update_effe6_0002_animation(WORK_Other* ewk) {
+    if (ewk->wu.old_rno[6] < end_w.r_no_2) {
+        ewk->wu.routine_no[2] = 99;
+    } else {
+        char_move(&ewk->wu);
+
+        if (ewk->wu.cg_type) {
+            end_etc_flag = 1;
+        }
+    }
+}
+
 void effe6_0002(WORK_Other* ewk) {
     switch (ewk->wu.routine_no[1]) {
     case 0:
@@ -221,16 +233,7 @@ void effe6_0002(WORK_Other* ewk) {
         break;
 
     case 1:
-        if (ewk->wu.old_rno[6] < end_w.r_no_2) {
-            ewk->wu.routine_no[2] = 99;
-        } else {
-            char_move(&ewk->wu);
-
-            if (ewk->wu.cg_type) {
-                end_etc_flag = 1;
-            }
-        }
-
+        update_effe6_0002_animation(ewk);
         disp_pos_trans_entry(ewk);
         break;
     }
