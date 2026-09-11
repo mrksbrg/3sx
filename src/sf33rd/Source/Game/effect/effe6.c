@@ -1105,6 +1105,24 @@ static void set_effe6_0025_position(WORK_Other* ewk) {
     }
 }
 
+static void update_effe6_0025_player_one(WORK_Other* ewk) {
+    if (p1sw_0 & 8) {
+        ewk->wu.xyz[0].disp.pos++;
+    }
+
+    if (p1sw_0 & 4) {
+        ewk->wu.xyz[0].disp.pos--;
+    }
+
+    if (p1sw_0 & 1) {
+        ewk->wu.xyz[1].disp.pos++;
+    }
+
+    if (p1sw_0 & 2) {
+        ewk->wu.xyz[1].disp.pos--;
+    }
+}
+
 static void update_effe6_0025_player_two(WORK_Other* ewk) {
     u16 work;
 
@@ -1149,21 +1167,7 @@ void effe6_0025(WORK_Other* ewk) {
 
     case 1:
         if (ewk->wu.type == 150) {
-            if (p1sw_0 & 8) {
-                ewk->wu.xyz[0].disp.pos++;
-            }
-
-            if (p1sw_0 & 4) {
-                ewk->wu.xyz[0].disp.pos--;
-            }
-
-            if (p1sw_0 & 1) {
-                ewk->wu.xyz[1].disp.pos++;
-            }
-
-            if (p1sw_0 & 2) {
-                ewk->wu.xyz[1].disp.pos--;
-            }
+            update_effe6_0025_player_one(ewk);
         } else {
             update_effe6_0025_player_two(ewk);
         }
