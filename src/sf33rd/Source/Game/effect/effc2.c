@@ -249,6 +249,13 @@ static void select_c2_off_car_first_state(WORK_Other* ewk) {
     }
 }
 
+static void select_c2_on_car_second_state(WORK_Other* ewk) {
+    if (ewk->wu.routine_no[1] != 1 && ewk->wu.routine_no[2] != 1) {
+        ewk->wu.routine_no[2] = 1;
+        ewk->wu.routine_no[3] = 2;
+    }
+}
+
 static void select_c2_first_process_state(WORK_Other* ewk, PLW* twk) {
     switch (ewk->wu.direction + (twk->bs2_on_car * 2)) {
     case 0:
@@ -256,11 +263,7 @@ static void select_c2_first_process_state(WORK_Other* ewk, PLW* twk) {
         break;
 
     case 3:
-        if (ewk->wu.routine_no[1] != 1 && ewk->wu.routine_no[2] != 1) {
-            ewk->wu.routine_no[2] = 1;
-            ewk->wu.routine_no[3] = 2;
-        }
-
+        select_c2_on_car_second_state(ewk);
         break;
 
     case 1:
