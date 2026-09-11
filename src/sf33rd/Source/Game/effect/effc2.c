@@ -135,37 +135,41 @@ static void advance_c2_last_character(WORK_Other* ewk) {
     }
 }
 
+static void initialize_c2_effect(WORK_Other* ewk) {
+    ewk->wu.routine_no[0]++;
+    ewk->wu.routine_no[2] = 0;
+    ewk->wu.routine_no[3] = 2;
+    Bonus_Game_result = 0;
+    ewk->wu.charset_id = 17;
+    set_char_base_data(&ewk->wu);
+    ewk->wu.vital_new = ewk->master_id == 0;
+    setup_prio_ix(ewk);
+    get_bs2_parts_data(&ewk->wu);
+    setup_vital_bonus2(&ewk->wu);
+    ewk->wu.position_x = ewk->wu.xyz[0].disp.pos;
+    ewk->wu.position_y = ewk->wu.xyz[1].disp.pos;
+    ewk->wu.cg_number = 9;
+    effect_C3_init(ewk, 3);
+    effect_C3_init(ewk, 4);
+    effect_C3_init(ewk, 5);
+    effect_C3_init(ewk, 6);
+    effect_C3_init(ewk, 7);
+    effect_C3_init(ewk, 1);
+    effect_C3_init(ewk, 2);
+    effect_00_init(&ewk->wu);
+    clear_attack_num(&ewk->wu);
+    ewk->wu.dir_old = 0;
+    ewk->wu.direction = 0;
+    ewk->wu.dir_timer = 0;
+    ewk->wu.routine_no[1] = 0;
+    ewk->wu.routine_no[2] = 0;
+    effect_J9_init(ewk, 8);
+}
+
 void effect_C2_move(WORK_Other* ewk) {
     switch (ewk->wu.routine_no[0]) {
     case 0:
-        ewk->wu.routine_no[0]++;
-        ewk->wu.routine_no[2] = 0;
-        ewk->wu.routine_no[3] = 2;
-        Bonus_Game_result = 0;
-        ewk->wu.charset_id = 17;
-        set_char_base_data(&ewk->wu);
-        ewk->wu.vital_new = ewk->master_id == 0;
-        setup_prio_ix(ewk);
-        get_bs2_parts_data(&ewk->wu);
-        setup_vital_bonus2(&ewk->wu);
-        ewk->wu.position_x = ewk->wu.xyz[0].disp.pos;
-        ewk->wu.position_y = ewk->wu.xyz[1].disp.pos;
-        ewk->wu.cg_number = 9;
-        effect_C3_init(ewk, 3);
-        effect_C3_init(ewk, 4);
-        effect_C3_init(ewk, 5);
-        effect_C3_init(ewk, 6);
-        effect_C3_init(ewk, 7);
-        effect_C3_init(ewk, 1);
-        effect_C3_init(ewk, 2);
-        effect_00_init(&ewk->wu);
-        clear_attack_num(&ewk->wu);
-        ewk->wu.dir_old = 0;
-        ewk->wu.direction = 0;
-        ewk->wu.dir_timer = 0;
-        ewk->wu.routine_no[1] = 0;
-        ewk->wu.routine_no[2] = 0;
-        effect_J9_init(ewk, 8);
+        initialize_c2_effect(ewk);
         break;
 
     case 1:
