@@ -348,6 +348,18 @@ static void set_c2_first_damage_hit_stop(WORK_Other* ewk, PLW* twk) {
     }
 }
 
+static void advance_c2_first_damage_animation(WORK_Other* ewk) {
+    if (--ewk->wu.hit_stop <= 0) {
+        char_move(&ewk->wu);
+
+        if (ewk->wu.cg_type == 0xFF) {
+            ewk->wu.routine_no[1] = 0;
+            ewk->wu.routine_no[2] = 0;
+            ewk->wu.cg_type = 0;
+        }
+    }
+}
+
 static void update_c2_first_damage(WORK_Other* ewk, PLW* twk) {
     switch (ewk->wu.routine_no[2]) {
     case 0:
@@ -373,16 +385,7 @@ static void update_c2_first_damage(WORK_Other* ewk, PLW* twk) {
         /* fallthrough */
 
     case 1:
-        if (--ewk->wu.hit_stop <= 0) {
-            char_move(&ewk->wu);
-
-            if (ewk->wu.cg_type == 0xFF) {
-                ewk->wu.routine_no[1] = 0;
-                ewk->wu.routine_no[2] = 0;
-                ewk->wu.cg_type = 0;
-            }
-        }
-
+        advance_c2_first_damage_animation(ewk);
         break;
     }
 }
