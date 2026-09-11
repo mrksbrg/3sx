@@ -697,6 +697,18 @@ static void update_effe6_0015_approach(WORK_Other* ewk) {
     disp_pos_trans_entry(ewk);
 }
 
+static void update_effe6_0015_animation(WORK_Other* ewk) {
+    if (ewk->wu.old_rno[6] == end_w.r_no_2) {
+        ewk->wu.routine_no[1] = 3;
+    } else {
+        char_move(&ewk->wu);
+
+        if (ewk->wu.cg_type) {
+            ewk->wu.routine_no[1] = 3;
+        }
+    }
+}
+
 void effe6_0015(WORK_Other* ewk) {
     mark_effe6_for_cleanup_if_stale(ewk);
 
@@ -712,15 +724,7 @@ void effe6_0015(WORK_Other* ewk) {
         break;
 
     case 2:
-        if (ewk->wu.old_rno[6] == end_w.r_no_2) {
-            ewk->wu.routine_no[1] = 3;
-        } else {
-            char_move(&ewk->wu);
-
-            if (ewk->wu.cg_type) {
-                ewk->wu.routine_no[1] = 3;
-            }
-        }
+        update_effe6_0015_animation(ewk);
 
         /* fallthrough */
 
