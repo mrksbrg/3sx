@@ -84,7 +84,7 @@ static void update_h6_left_cycle(WORK_Other* ewk) {
     }
 }
 
-static void update_h6_down_cycle(WORK_Other* ewk) {
+static void update_h6_down_cycle(WORK_Other* ewk, s16 delay) {
     switch (ewk->wu.routine_no[2]) {
     case 0:
         ewk->wu.dir_timer = ewk->wu.dir_timer - roll_rate_t;
@@ -95,7 +95,7 @@ static void update_h6_down_cycle(WORK_Other* ewk) {
             ewk->wu.xyz[1].disp.pos = ewk->wu.routine_no[6];
             ewk->wu.position_y = ewk->wu.xyz[1].disp.pos & 0xFFFF;
             ewk->wu.routine_no[2]++;
-            ewk->wu.dir_timer = ewk->wu.dir_timer - 30;
+            ewk->wu.dir_timer = ewk->wu.dir_timer - delay;
         }
 
         break;
@@ -157,43 +157,6 @@ static void update_h6_right_cycle(WORK_Other* ewk) {
     }
 }
 
-static void update_h6_delayed_down_cycle(WORK_Other* ewk) {
-    switch (ewk->wu.routine_no[2]) {
-    case 0:
-        ewk->wu.dir_timer = ewk->wu.dir_timer - roll_rate_t;
-        ewk->wu.xyz[1].disp.pos = ewk->wu.xyz[1].disp.pos + roll_rate;
-        ewk->wu.position_y = ewk->wu.xyz[1].disp.pos & 0xFFFF;
-
-        if (ewk->wu.routine_no[6] <= ewk->wu.xyz[1].disp.pos) {
-            ewk->wu.xyz[1].disp.pos = ewk->wu.routine_no[6];
-            ewk->wu.position_y = ewk->wu.xyz[1].disp.pos & 0xFFFF;
-            ewk->wu.routine_no[2]++;
-            ewk->wu.dir_timer = ewk->wu.dir_timer - 60;
-        }
-
-        break;
-
-    case 1:
-        ewk->wu.dir_timer = ewk->wu.dir_timer - roll_rate_t;
-
-        if (ewk->wu.dir_timer < 1) {
-            ewk->wu.routine_no[2]++;
-        }
-
-        break;
-
-    case 2:
-        ewk->wu.xyz[1].disp.pos = ewk->wu.xyz[1].disp.pos + roll_rate;
-        ewk->wu.position_y = ewk->wu.xyz[1].disp.pos & 0xFFFF;
-
-        if (256 <= ewk->wu.xyz[1].disp.pos) {
-            ewk->wu.routine_no[0]++;
-        }
-
-        break;
-    }
-}
-
 static void update_h6_wait(WORK_Other* ewk) {
     ewk->wu.dir_timer = ewk->wu.dir_timer - roll_rate_t;
 
@@ -245,7 +208,7 @@ static void update_h6_direction(WORK_Other* ewk) {
         break;
 
     case 1:
-        update_h6_down_cycle(ewk);
+        update_h6_down_cycle(ewk, 30);
         break;
 
     case 2:
@@ -257,7 +220,7 @@ static void update_h6_direction(WORK_Other* ewk) {
         break;
 
     case 4:
-        update_h6_delayed_down_cycle(ewk);
+        update_h6_down_cycle(ewk, 60);
         break;
 
     case 6:
