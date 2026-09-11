@@ -53,20 +53,34 @@ static s32 uses_alternate_block_image(const PLW* mwk) {
     return mwk->image_data_index == 11 && mwk->kind_of_blocking == 2;
 }
 
-static s32 after_image_should_reset(WORK_Other* ewk, const PLW* mwk) {
+static s32 after_image_direction_elapsed(WORK_Other* ewk, const PLW* mwk) {
     return (ewk->wu.dir_old & 1 && EXE_flag == 0 && Game_pause == 0 && mwk->wu.hit_stop <= 0 &&
-            --ewk->wu.direction == 0) ||
-           (ewk->wu.dir_old & 2 &&
+            --ewk->wu.direction == 0);
+}
+
+static s32 after_image_animation_changed(WORK_Other* ewk, const PLW* mwk) {
+    return ewk->wu.dir_old & 2 &&
             (ewk->wu.routine_no[5] != mwk->wu.routine_no[1] ||
              ewk->wu.routine_no[6] != mwk->wu.routine_no[2]) &&
-            (mwk->image_data_index != 11 || mwk->wu.routine_no[1] != 4 || mwk->wu.routine_no[3] != 0)) ||
-           (ewk->wu.dir_old & 4 && mwk->sa->ok != -1) ||
+            (mwk->image_data_index != 11 || mwk->wu.routine_no[1] != 4 || mwk->wu.routine_no[3] != 0);
+}
+
+static s32 after_image_action_changed(WORK_Other* ewk, const PLW* mwk) {
+    return (ewk->wu.dir_old & 4 && mwk->sa->ok != -1) ||
            (ewk->wu.dir_old & 8 && ((WORK*)mwk->wu.target_adrs)->routine_no[1] != 4 &&
             ((WORK*)mwk->wu.target_adrs)->routine_no[1] != 2) ||
-           (ewk->wu.dir_old & 0x10 && mwk->wu.routine_no[1] != 4 && mwk->wu.routine_no[1] != 2) ||
-           (ewk->wu.dir_old & 0x20 && ewk->wu.total_att_set != ((WORK*)mwk->wu.target_adrs)->kind_of_waza) ||
+           (ewk->wu.dir_old & 0x10 && mwk->wu.routine_no[1] != 4 && mwk->wu.routine_no[1] != 2);
+}
+
+static s32 after_image_combat_state_changed(WORK_Other* ewk, const PLW* mwk) {
+    return (ewk->wu.dir_old & 0x20 && ewk->wu.total_att_set != ((WORK*)mwk->wu.target_adrs)->kind_of_waza) ||
            (ewk->wu.dir_old & 0x40 && ewk->wu.total_paring != mwk->wu.kind_of_waza) ||
            (ewk->wu.dir_old & 0x80 && pcon_dp_flag) || !mwk->image_setup_flag;
+}
+
+static s32 after_image_should_reset(WORK_Other* ewk, const PLW* mwk) {
+    return after_image_direction_elapsed(ewk, mwk) || after_image_animation_changed(ewk, mwk) ||
+           after_image_action_changed(ewk, mwk) || after_image_combat_state_changed(ewk, mwk);
 }
 
 static s32 after_image_timer_expired(WORK_Other* ewk) {
