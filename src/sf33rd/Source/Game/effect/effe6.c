@@ -4,6 +4,7 @@
  */
 
 #include "sf33rd/Source/Game/effect/effe6.h"
+#include "sf33rd/Source/Game/effect/effe6_arc.h"
 #include "sf33rd/Source/Game/effect/effe6_data.h"
 #include "sf33rd/Source/Game/effect/effe6_delayed.h"
 #include "sf33rd/Source/Game/effect/effe6_early.h"
