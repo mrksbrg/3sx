@@ -108,6 +108,20 @@ static void update_h6_direction(WORK_Other* ewk) {
     }
 }
 
+static void update_h6_active(WORK_Other* ewk) {
+    if (ewk->wu.dir_step) {
+        update_h6_scroll(ewk);
+        return;
+    }
+
+    update_h6_direction(ewk);
+    if (Suicide[4]) {
+        ewk->wu.routine_no[0] = 2;
+    }
+
+    sort_push_request3(&ewk->wu);
+}
+
 void effect_H6_move(WORK_Other* ewk) {
     switch (ewk->wu.routine_no[0]) {
     case 0:
@@ -115,17 +129,7 @@ void effect_H6_move(WORK_Other* ewk) {
         break;
 
     case 1:
-        if (ewk->wu.dir_step) {
-            update_h6_scroll(ewk);
-            break;
-        }
-
-        update_h6_direction(ewk);
-        if (Suicide[4]) {
-            ewk->wu.routine_no[0] = 2;
-        }
-
-        sort_push_request3(&ewk->wu);
+        update_h6_active(ewk);
         break;
 
     case 2:
