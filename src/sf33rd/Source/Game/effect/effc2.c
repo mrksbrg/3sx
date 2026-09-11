@@ -675,17 +675,20 @@ s16 c2_last_dir_select(PLW* wk, WORK* efw) {
     return ix;
 }
 
+static void setup_demojump_from_launch(PLW* twk) {
+    if (twk->wu.xyz[1].disp.pos > 3) {
+        twk->wu.routine_no[1] = 0;
+        twk->wu.routine_no[2] = 56;
+        twk->wu.routine_no[3] = 0;
+    }
+}
+
 void setup_demojump(PLW* twk, s16 ix) {
     s32 should_reset_demo_jump;
 
     switch (ix) {
     case 0:
-        if (twk->wu.xyz[1].disp.pos > 3) {
-            twk->wu.routine_no[1] = 0;
-            twk->wu.routine_no[2] = 56;
-            twk->wu.routine_no[3] = 0;
-        }
-
+        setup_demojump_from_launch(twk);
         break;
 
     case 1:
