@@ -563,6 +563,20 @@ void effe6_0012(WORK_Other* ewk) {
     }
 }
 
+static void update_effe6_0013_motion(WORK_Other* ewk) {
+    add_y_sub(&ewk->wu);
+
+    if (ewk->wu.type == 50) {
+        if (ewk->wu.xyz[1].disp.pos > 272) {
+            ewk->wu.routine_no[2] = 99;
+        }
+    } else if (ewk->wu.xyz[1].disp.pos < 32) {
+        ewk->wu.routine_no[2] = 99;
+    }
+
+    disp_pos_trans_entry(ewk);
+}
+
 void effe6_0013(WORK_Other* ewk) {
     mark_effe6_for_cleanup_if_stale(ewk);
 
@@ -582,17 +596,7 @@ void effe6_0013(WORK_Other* ewk) {
         break;
 
     case 1:
-        add_y_sub(&ewk->wu);
-
-        if (ewk->wu.type == 50) {
-            if (ewk->wu.xyz[1].disp.pos > 272) {
-                ewk->wu.routine_no[2] = 99;
-            }
-        } else if (ewk->wu.xyz[1].disp.pos < 32) {
-            ewk->wu.routine_no[2] = 99;
-        }
-
-        disp_pos_trans_entry(ewk);
+        update_effe6_0013_motion(ewk);
         break;
     }
 }
