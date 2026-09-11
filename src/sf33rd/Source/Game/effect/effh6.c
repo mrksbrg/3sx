@@ -238,6 +238,38 @@ static void initialize_h6_move(WORK_Other* ewk) {
     ewk->wu.position_y = ewk->wu.xyz[1].disp.pos & 0xFFFF;
 }
 
+static void update_h6_direction(WORK_Other* ewk) {
+    switch (ewk->wu.routine_no[1]) {
+    case 0:
+        update_h6_left_cycle(ewk);
+        break;
+
+    case 1:
+        update_h6_down_cycle(ewk);
+        break;
+
+    case 2:
+        update_h6_right_cycle(ewk);
+        break;
+
+    case 3:
+        update_h6_wait(ewk);
+        break;
+
+    case 4:
+        update_h6_delayed_down_cycle(ewk);
+        break;
+
+    case 6:
+        update_h6_down_exit(ewk);
+        break;
+
+    case 7:
+        update_h6_up_exit(ewk);
+        break;
+    }
+}
+
 void effect_H6_move(WORK_Other* ewk) {
     switch (ewk->wu.routine_no[0]) {
     case 0:
@@ -250,36 +282,7 @@ void effect_H6_move(WORK_Other* ewk) {
             break;
         }
 
-        switch (ewk->wu.routine_no[1]) {
-        case 0:
-            update_h6_left_cycle(ewk);
-            break;
-
-        case 1:
-            update_h6_down_cycle(ewk);
-            break;
-
-        case 2:
-            update_h6_right_cycle(ewk);
-            break;
-
-        case 3:
-            update_h6_wait(ewk);
-            break;
-
-        case 4:
-            update_h6_delayed_down_cycle(ewk);
-            break;
-
-        case 6:
-            update_h6_down_exit(ewk);
-            break;
-
-        case 7:
-            update_h6_up_exit(ewk);
-            break;
-        }
-
+        update_h6_direction(ewk);
         if (Suicide[4]) {
             ewk->wu.routine_no[0] = 2;
         }
