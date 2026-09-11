@@ -202,6 +202,15 @@ static void update_h6_wait(WORK_Other* ewk) {
     }
 }
 
+static void update_h6_down_exit(WORK_Other* ewk) {
+    ewk->wu.xyz[1].disp.pos = ewk->wu.xyz[1].disp.pos + roll_rate;
+    ewk->wu.position_y = ewk->wu.xyz[1].disp.pos & 0xFFFF;
+
+    if (256 <= ewk->wu.xyz[1].disp.pos) {
+        ewk->wu.routine_no[0]++;
+    }
+}
+
 void effect_H6_move(WORK_Other* ewk) {
     switch (ewk->wu.routine_no[0]) {
     case 0:
@@ -248,13 +257,7 @@ void effect_H6_move(WORK_Other* ewk) {
             break;
 
         case 6:
-            ewk->wu.xyz[1].disp.pos = ewk->wu.xyz[1].disp.pos + roll_rate;
-            ewk->wu.position_y = ewk->wu.xyz[1].disp.pos & 0xFFFF;
-
-            if (256 <= ewk->wu.xyz[1].disp.pos) {
-                ewk->wu.routine_no[0]++;
-            }
-
+            update_h6_down_exit(ewk);
             break;
 
         case 7:
