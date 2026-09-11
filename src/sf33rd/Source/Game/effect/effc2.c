@@ -683,6 +683,14 @@ static void setup_demojump_from_launch(PLW* twk) {
     }
 }
 
+static void setup_demojump_from_car(PLW* twk) {
+    if (twk->bs2_on_car) {
+        twk->wu.routine_no[1] = 0;
+        twk->wu.routine_no[2] = 58;
+        twk->wu.routine_no[3] = 0;
+    }
+}
+
 void setup_demojump(PLW* twk, s16 ix) {
     s32 should_reset_demo_jump;
 
@@ -692,12 +700,7 @@ void setup_demojump(PLW* twk, s16 ix) {
         break;
 
     case 1:
-        if (twk->bs2_on_car) {
-            twk->wu.routine_no[1] = 0;
-            twk->wu.routine_no[2] = 58;
-            twk->wu.routine_no[3] = 0;
-        }
-
+        setup_demojump_from_car(twk);
         break;
 
     case 2:
