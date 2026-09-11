@@ -20,25 +20,6 @@
 #include "sf33rd/Source/Game/stage/ta_sub.h"
 #include "sf33rd/Source/Game/system/work_sys.h"
 
-const s16 effe6_0010_col_tbl[8] = { 8521, 8524, 8525, 8526, 8527, 8526, 8525, 8524 };
-
-void effe6_0010_sub(WORK_Other* ewk) {
-    ewk->wu.old_rno[5]--;
-
-    if (ewk->wu.old_rno[5] >= 0) {
-        return;
-    }
-
-    ewk->wu.old_rno[5] = 8;
-    ewk->wu.old_rno[2]++;
-
-    if (ewk->wu.old_rno[2] >= 8) {
-        ewk->wu.routine_no[1]++;
-    }
-
-    ewk->wu.old_rno[2] &= 7;
-    ewk->wu.extra_col = effe6_0010_col_tbl[ewk->wu.old_rno[2]];
-}
 
 static void update_effe6_0011_fall(WORK_Other* ewk) {
     if (ewk->wu.old_rno[6] < end_w.r_no_2) {
