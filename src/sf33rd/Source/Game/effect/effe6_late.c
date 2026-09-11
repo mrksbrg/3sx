@@ -239,6 +239,19 @@ void effe6_0031(WORK_Other* ewk) {
 }
 
 
+static void update_effe6_0033_fade(WORK_Other* ewk) {
+    mark_effe6_for_cleanup_if_stale(ewk);
+
+    ewk->wu.my_clear_level -= 256 / gill_time[7];
+
+    if (ewk->wu.my_clear_level <= 0) {
+        ewk->wu.routine_no[1]++;
+        ewk->wu.my_clear_level = 0;
+    }
+
+    disp_pos_trans_entry(ewk);
+}
+
 void effe6_0033(WORK_Other* ewk) {
     switch (ewk->wu.routine_no[1]) {
     case 0:
@@ -259,16 +272,7 @@ void effe6_0033(WORK_Other* ewk) {
         break;
 
     case 2:
-        mark_effe6_for_cleanup_if_stale(ewk);
-
-        ewk->wu.my_clear_level -= 256 / gill_time[7];
-
-        if (ewk->wu.my_clear_level <= 0) {
-            ewk->wu.routine_no[1]++;
-            ewk->wu.my_clear_level = 0;
-        }
-
-        disp_pos_trans_entry(ewk);
+        update_effe6_0033_fade(ewk);
         break;
 
     case 3:
