@@ -21,6 +21,14 @@
 #include "sf33rd/Source/Game/stage/ta_sub.h"
 #include "sf33rd/Source/Game/system/work_sys.h"
 
+static void update_effe6_0026_motion(WORK_Other* ewk) {
+    char_move(&ewk->wu);
+
+    if (ewk->wu.xyz[1].disp.pos < 152) {
+        ewk->wu.routine_no[1]++;
+    }
+}
+
 void effe6_0026(WORK_Other* ewk) {
     mark_effe6_for_cleanup_if_stale(ewk);
 
@@ -31,11 +39,7 @@ void effe6_0026(WORK_Other* ewk) {
         break;
 
     case 1:
-        char_move(&ewk->wu);
-
-        if (ewk->wu.xyz[1].disp.pos < 152) {
-            ewk->wu.routine_no[1]++;
-        }
+        update_effe6_0026_motion(ewk);
 
         /* fallthrough */
 
