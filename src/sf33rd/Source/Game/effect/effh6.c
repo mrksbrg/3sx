@@ -447,6 +447,92 @@ static s16 select_h6_alternate_character(s8 character, s16 c) {
     return chr;
 }
 
+static s16 select_h6_standard_character(s8 character, s16 c) {
+    s16 chr = c + 0x78B0;
+
+    if (character == '{') {
+        chr = 0x7951;
+    }
+
+    if (character == '[') {
+        chr = 0x7941;
+    }
+
+    if (character == ']') {
+        chr = 0x793E;
+    }
+
+    if (character == '^') {
+        chr = 0x7945;
+    }
+
+    if (character == '}') {
+        chr = 0x7946;
+    }
+
+    if (character == '=') {
+        chr = 0x7932;
+    }
+
+    if (character == '&') {
+        chr = 0x7938;
+    }
+
+    if (character == '-') {
+        chr = 0x7931;
+    }
+
+    if (character == '\"') {
+        chr = 0x792B;
+    }
+
+    if (character == '%') {
+        chr = 0x793A;
+    }
+
+    if (character == '|') {
+        chr = 0x7947;
+    }
+
+    if (character == '(') {
+        chr = 0x7934;
+    }
+
+    if (character == ')') {
+        chr = 0x7935;
+    }
+
+    if (character == '*') {
+        chr = 0x7940;
+    }
+
+    if (character == '/') {
+        chr = 0x7933;
+    }
+
+    if (character == '@') {
+        chr = 0x7939;
+    }
+
+    if (character == '<') {
+        chr = 0x7936;
+    }
+
+    if (character == '>') {
+        chr = 0x7937;
+    }
+
+    if (character == '$') {
+        chr = 0x793F;
+    }
+
+    if (character == '+') {
+        chr = 0x7929;
+    }
+
+    return chr;
+}
+
 s32 effect_H6_init(s16 timer, s8* str, s16 X, s16 Y, s16 Original_Color, s32 /* unused */) {
     WORK_Other_CONN* ewk;
     s16 i;
@@ -498,88 +584,7 @@ s32 effect_H6_init(s16 timer, s8* str, s16 X, s16 Y, s16 Original_Color, s32 /* 
                 break;
 
             default:
-                ewk->conn[x].chr = c + 0x78B0;
-
-                if (*su == '{') {
-                    ewk->conn[x].chr = 0x7951;
-                }
-
-                if (*su == '[') {
-                    ewk->conn[x].chr = 0x7941;
-                }
-
-                if (*su == ']') {
-                    ewk->conn[x].chr = 0x793E;
-                }
-
-                if (*su == '^') {
-                    ewk->conn[x].chr = 0x7945;
-                }
-
-                if (*su == '}') {
-                    ewk->conn[x].chr = 0x7946;
-                }
-
-                if (*su == '=') {
-                    ewk->conn[x].chr = 0x7932;
-                }
-
-                if (*su == '&') {
-                    ewk->conn[x].chr = 0x7938;
-                }
-
-                if (*su == '-') {
-                    ewk->conn[x].chr = 0x7931;
-                }
-
-                if (*su == '\"') {
-                    ewk->conn[x].chr = 0x792B;
-                }
-
-                if (*su == '%') {
-                    ewk->conn[x].chr = 0x793A;
-                }
-
-                if (*su == '|') {
-                    ewk->conn[x].chr = 0x7947;
-                }
-
-                if (*su == '(') {
-                    ewk->conn[x].chr = 0x7934;
-                }
-
-                if (*su == ')') {
-                    ewk->conn[x].chr = 0x7935;
-                }
-
-                if (*su == '*') {
-                    ewk->conn[x].chr = 0x7940;
-                }
-
-                if (*su == '/') {
-                    ewk->conn[x].chr = 0x7933;
-                }
-
-                if (*su == '@') {
-                    ewk->conn[x].chr = 0x7939;
-                }
-
-                if (*su == '<') {
-                    ewk->conn[x].chr = 0x7936;
-                }
-
-                if (*su == '>') {
-                    ewk->conn[x].chr = 0x7937;
-                }
-
-                if (*su == '$') {
-                    ewk->conn[x].chr = 0x793F;
-                }
-
-                if (*su == '+') {
-                    ewk->conn[x].chr = 0x7929;
-                }
-
+                ewk->conn[x].chr = select_h6_standard_character(*su, c);
                 break;
             }
 
