@@ -319,9 +319,25 @@ void effe6_0005(WORK_Other* ewk) {
     }
 }
 
-void effe6_0006(WORK_Other* ewk) {
+static void update_effe6_0006_position(WORK_Other* ewk) {
     s16 work;
 
+    if (ewk->wu.old_rno[6] < end_w.r_no_2) {
+        ewk->wu.routine_no[2] = 99;
+    } else {
+        if (ewk->wu.type == 73) {
+            work = ewk->wu.old_rno[2] - 704;
+        } else {
+            work = ewk->wu.old_rno[2] - 384;
+        }
+
+        if (work > bg_w.bgw[ewk->wu.my_family - 1].xy[0].disp.pos) {
+            ewk->wu.routine_no[2] = 99;
+        }
+    }
+}
+
+void effe6_0006(WORK_Other* ewk) {
     switch (ewk->wu.routine_no[1]) {
     case 0:
         effe6_init_common(ewk);
@@ -330,20 +346,7 @@ void effe6_0006(WORK_Other* ewk) {
         break;
 
     case 1:
-        if (ewk->wu.old_rno[6] < end_w.r_no_2) {
-            ewk->wu.routine_no[2] = 99;
-        } else {
-            if (ewk->wu.type == 73) {
-                work = ewk->wu.old_rno[2] - 704;
-            } else {
-                work = ewk->wu.old_rno[2] - 384;
-            }
-
-            if (work > bg_w.bgw[ewk->wu.my_family - 1].xy[0].disp.pos) {
-                ewk->wu.routine_no[2] = 99;
-            }
-        }
-
+        update_effe6_0006_position(ewk);
         disp_pos_trans_entry(ewk);
         break;
     }
