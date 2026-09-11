@@ -166,6 +166,24 @@ static void initialize_c2_effect(WORK_Other* ewk) {
     effect_J9_init(ewk, 8);
 }
 
+static void update_c2_active_effect(WORK_Other* ewk) {
+    if (ewk->wu.dead_f == 1) {
+        ewk->wu.disp_flag = 0;
+        ewk->wu.routine_no[0] = 2;
+        ewk->wu.routine_no[1] = 10;
+        ewk->wu.hit_stop = 0;
+        return;
+    }
+
+    if (ewk->wu.dir_timer) {
+        effC2_main_process_second(ewk, (PLW*)ewk->wu.target_adrs);
+    } else {
+        effC2_main_process_first(ewk, (PLW*)ewk->wu.target_adrs);
+    }
+
+    set_bs2_floor(ewk);
+}
+
 void effect_C2_move(WORK_Other* ewk) {
     switch (ewk->wu.routine_no[0]) {
     case 0:
@@ -173,21 +191,7 @@ void effect_C2_move(WORK_Other* ewk) {
         break;
 
     case 1:
-        if (ewk->wu.dead_f == 1) {
-            ewk->wu.disp_flag = 0;
-            ewk->wu.routine_no[0] = 2;
-            ewk->wu.routine_no[1] = 10;
-            ewk->wu.hit_stop = 0;
-            break;
-        }
-
-        if (ewk->wu.dir_timer) {
-            effC2_main_process_second(ewk, (PLW*)ewk->wu.target_adrs);
-        } else {
-            effC2_main_process_first(ewk, (PLW*)ewk->wu.target_adrs);
-        }
-
-        set_bs2_floor(ewk);
+        update_c2_active_effect(ewk);
         break;
 
     case 2:
