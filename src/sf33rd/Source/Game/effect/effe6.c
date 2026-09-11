@@ -6,6 +6,7 @@
 #include "sf33rd/Source/Game/effect/effe6.h"
 #include "sf33rd/Source/Game/effect/effe6_data.h"
 #include "sf33rd/Source/Game/effect/effe6_early.h"
+#include "sf33rd/Source/Game/effect/effe6_endgame.h"
 #include "sf33rd/Source/Game/effect/effe6_internal.h"
 #include "sf33rd/Source/Game/effect/effe6_late.h"
 #include "sf33rd/Source/Game/effect/effe6_late_alternate.h"
