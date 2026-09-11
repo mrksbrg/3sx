@@ -13,6 +13,5 @@ void effe6_0006(WORK_Other* ewk);
 void effe6_0007(WORK_Other* ewk);
 void effe6_0009(WORK_Other* ewk);
 void effe6_0010(WORK_Other* ewk);
-void effe6_0010_sub(WORK_Other* ewk);
 
 #endif

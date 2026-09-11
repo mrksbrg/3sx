@@ -5,6 +5,7 @@
 
 #include "sf33rd/Source/Game/effect/effe6_early.h"
 #include "sf33rd/Source/Game/effect/effe6_internal.h"
+#include "sf33rd/Source/Game/effect/effe6_middle.h"
 #include "bin2obj/char_table.h"
 #include "common.h"
 #include "sf33rd/Source/Game/effect/effect.h"
