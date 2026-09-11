@@ -751,6 +751,14 @@ static void update_effe6_0016_animation(WORK_Other* ewk) {
     }
 }
 
+static void update_effe6_0016_delay(WORK_Other* ewk) {
+    ewk->wu.old_rno[2]--;
+
+    if (ewk->wu.old_rno[2] < 1) {
+        ewk->wu.routine_no[1]++;
+    }
+}
+
 void effe6_0016(WORK_Other* ewk) {
     mark_effe6_for_cleanup_if_stale(ewk);
 
@@ -766,12 +774,7 @@ void effe6_0016(WORK_Other* ewk) {
 
     case 2:
     case 4:
-        ewk->wu.old_rno[2]--;
-
-        if (ewk->wu.old_rno[2] < 1) {
-            ewk->wu.routine_no[1]++;
-        }
-
+        update_effe6_0016_delay(ewk);
         break;
 
     case 5:
