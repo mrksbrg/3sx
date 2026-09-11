@@ -492,6 +492,19 @@ void effe6_0010_sub(WORK_Other* ewk) {
     ewk->wu.extra_col = effe6_0010_col_tbl[ewk->wu.old_rno[2]];
 }
 
+static void update_effe6_0011_fall(WORK_Other* ewk) {
+    if (ewk->wu.old_rno[6] < end_w.r_no_2) {
+        ewk->wu.routine_no[2] = 99;
+    } else if (ewk->wu.type == 30) {
+        ewk->wu.xyz[1].cal -= 0x8000;
+
+        if (ewk->wu.xyz[1].disp.pos < 65) {
+            ewk->wu.routine_no[2] = 99;
+            ewk->wu.xyz[1].cal = 0x400000;
+        }
+    }
+}
+
 void effe6_0011(WORK_Other* ewk) {
     switch (ewk->wu.routine_no[1]) {
     case 0:
@@ -511,17 +524,7 @@ void effe6_0011(WORK_Other* ewk) {
         break;
 
     case 2:
-        if (ewk->wu.old_rno[6] < end_w.r_no_2) {
-            ewk->wu.routine_no[2] = 99;
-        } else if (ewk->wu.type == 30) {
-            ewk->wu.xyz[1].cal -= 0x8000;
-
-            if (ewk->wu.xyz[1].disp.pos < 65) {
-                ewk->wu.routine_no[2] = 99;
-                ewk->wu.xyz[1].cal = 0x400000;
-            }
-        }
-
+        update_effe6_0011_fall(ewk);
         disp_pos_trans_entry(ewk);
         break;
     }
