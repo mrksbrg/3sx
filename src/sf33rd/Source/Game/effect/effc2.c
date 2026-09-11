@@ -280,6 +280,30 @@ static void select_c2_first_process_state(WORK_Other* ewk, PLW* twk) {
     }
 }
 
+static void update_c2_first_animation(WORK_Other* ewk) {
+    switch (ewk->wu.routine_no[3]) {
+    case 0:
+        ewk->wu.routine_no[3]++;
+        set_char_move_init(&ewk->wu, 0, 76);
+        break;
+
+    case 1:
+        char_move(&ewk->wu);
+
+        if (ewk->wu.cg_type != 0xFF) {
+            break;
+        }
+
+        ewk->wu.routine_no[3]++;
+        /* fallthrough */
+
+    default:
+        ewk->wu.cg_type = 0;
+        ewk->wu.cg_number = 9;
+        break;
+    }
+}
+
 void effC2_main_process_first(WORK_Other* ewk, PLW* twk) {
     if (EXE_flag == 0 && Game_pause == 0) {
         select_c2_first_process_state(ewk, twk);
@@ -290,28 +314,7 @@ void effC2_main_process_first(WORK_Other* ewk, PLW* twk) {
         case 0:
             switch (ewk->wu.routine_no[2]) {
             case 0:
-                switch (ewk->wu.routine_no[3]) {
-                case 0:
-                    ewk->wu.routine_no[3]++;
-                    set_char_move_init(&ewk->wu, 0, 76);
-                    break;
-
-                case 1:
-                    char_move(&ewk->wu);
-
-                    if (ewk->wu.cg_type != 0xFF) {
-                        break;
-                    }
-
-                    ewk->wu.routine_no[3]++;
-                    /* fallthrough */
-
-                default:
-                    ewk->wu.cg_type = 0;
-                    ewk->wu.cg_number = 9;
-                    break;
-                }
-
+                update_c2_first_animation(ewk);
                 break;
 
             default:
