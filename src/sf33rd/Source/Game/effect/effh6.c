@@ -204,49 +204,6 @@ static void configure_h6_heading(WORK_Other_CONN* ewk, s16 X, s16 Y, s16 Origina
     }
 }
 
-static s16 configure_h6_late_text_path(WORK_Other_CONN* ewk, s16 X, s16 Y, s16 Original_Color) {
-    switch (Original_Color) {
-    case 5:
-        Original_Color = 1;
-        ewk->wu.routine_no[1] = 5;
-        ewk->wu.xyz[0].disp.pos = X;
-        ewk->wu.xyz[1].disp.pos = Y;
-        break;
-
-    case 6:
-        ewk->wu.routine_no[1] = 6;
-        ewk->wu.routine_no[6] = Y;
-        ewk->wu.xyz[0].disp.pos = X;
-        ewk->wu.xyz[1].disp.pos = -32;
-        break;
-
-    case 7:
-        ewk->wu.routine_no[1] = 7;
-        ewk->wu.routine_no[6] = Y;
-        ewk->wu.xyz[0].disp.pos = X;
-        ewk->wu.xyz[1].disp.pos = 256;
-        break;
-
-    case 8:
-        ewk->wu.routine_no[1] = 6;
-        ewk->wu.routine_no[6] = Y;
-        ewk->wu.xyz[0].disp.pos = X;
-        ewk->wu.xyz[1].disp.pos = -32;
-        break;
-
-    case 9:
-        ewk->wu.dir_step = 2;
-        ewk->wu.routine_no[1] = 0;
-        ewk->wu.routine_no[6] = Y;
-        ewk->wu.xyz[0].disp.pos = X;
-        ewk->wu.xyz[1].disp.pos = 0;
-        ewk->wu.my_col_code = 0x202B;
-        break;
-    }
-
-    return Original_Color;
-}
-
 static s16 configure_h6_text_path(WORK_Other_CONN* ewk, s16 X, s16 Y, s16 Original_Color) {
     ewk->wu.dir_step = 0;
 
@@ -254,7 +211,7 @@ static s16 configure_h6_text_path(WORK_Other_CONN* ewk, s16 X, s16 Y, s16 Origin
         return effh6_configure_early_text_path(ewk, X, Y, Original_Color);
     }
 
-    return configure_h6_late_text_path(ewk, X, Y, Original_Color);
+    return effh6_configure_late_text_path(ewk, X, Y, Original_Color);
 }
 
 static s16 select_h6_alternate_character(s8 character, s16 c) {
