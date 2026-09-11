@@ -115,9 +115,25 @@ static void update_repeating_after_image(WORK_Other* ewk, PLW* mwk) {
     }
 }
 
-static void initialize_static_after_images(WORK_Other* ewk, PLW* mwk) {
+static void initialize_static_after_images_before_step(WORK_Other* ewk, PLW* mwk) {
     s16 i;
 
+    for (i = 0; i < ewk->wu.dmcal_d; i++) {
+        effect_E8_init(ewk, mwk, ewk->wu.dir_step);
+        ewk->wu.dir_step += ewk->wu.dmcal_m;
+    }
+}
+
+static void initialize_static_after_images_after_step(WORK_Other* ewk, PLW* mwk) {
+    s16 i;
+
+    for (i = 0; i < ewk->wu.dmcal_d; i++) {
+        ewk->wu.dir_step += ewk->wu.dmcal_m;
+        effect_E8_init(ewk, mwk, ewk->wu.dir_step);
+    }
+}
+
+static void initialize_static_after_images(WORK_Other* ewk, PLW* mwk) {
     if (mwk->image_setup_flag == 0) {
         ewk->wu.routine_no[0] = 0;
         ewk->wu.routine_no[1] = 0;
@@ -130,15 +146,9 @@ static void initialize_static_after_images(WORK_Other* ewk, PLW* mwk) {
         ewk->wu.dir_step = 0;
 
         if (ewk->wu.old_rno[5]) {
-            for (i = 0; i < ewk->wu.dmcal_d; i++) {
-                effect_E8_init(ewk, mwk, ewk->wu.dir_step);
-                ewk->wu.dir_step += ewk->wu.dmcal_m;
-            }
+            initialize_static_after_images_before_step(ewk, mwk);
         } else {
-            for (i = 0; i < ewk->wu.dmcal_d; i++) {
-                ewk->wu.dir_step += ewk->wu.dmcal_m;
-                effect_E8_init(ewk, mwk, ewk->wu.dir_step);
-            }
+            initialize_static_after_images_after_step(ewk, mwk);
         }
 
         break;
