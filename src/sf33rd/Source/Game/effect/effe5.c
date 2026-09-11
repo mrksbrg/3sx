@@ -87,6 +87,34 @@ static s32 after_image_timer_expired(WORK_Other* ewk) {
     return EXE_flag == 0 && Game_pause == 0 && --ewk->wu.dir_step <= 0;
 }
 
+static void update_repeating_after_image(WORK_Other* ewk, PLW* mwk) {
+    if (mwk->image_setup_flag == 0) {
+        ewk->wu.routine_no[0] = 0;
+        ewk->wu.routine_no[1] = 0;
+        return;
+    }
+
+    switch (ewk->wu.routine_no[2]) {
+    case 0:
+        ewk->wu.routine_no[2]++;
+        effect_E7_init(ewk, mwk);
+        /* fallthrough */
+
+    case 1:
+        ewk->wu.routine_no[2]++;
+        ewk->wu.dir_step = ewk->wu.dmcal_m;
+        /* fallthrough */
+
+    case 2:
+        if (after_image_timer_expired(ewk)) {
+            effect_E7_init(ewk, mwk);
+            ewk->wu.routine_no[2] = 1;
+        }
+
+        break;
+    }
+}
+
 
 void effect_E5_move(WORK_Other* ewk) {
     PLW* mwk = (PLW*)ewk->my_master;
@@ -140,32 +168,7 @@ void effect_E5_move(WORK_Other* ewk) {
 
         switch (ewk->wu.routine_no[1]) {
         case 0:
-            if (mwk->image_setup_flag == 0) {
-                ewk->wu.routine_no[0] = 0;
-                ewk->wu.routine_no[1] = 0;
-                break;
-            }
-
-            switch (ewk->wu.routine_no[2]) {
-            case 0:
-                ewk->wu.routine_no[2]++;
-                effect_E7_init(ewk, mwk);
-                /* fallthrough */
-
-            case 1:
-                ewk->wu.routine_no[2]++;
-                ewk->wu.dir_step = ewk->wu.dmcal_m;
-                /* fallthrough */
-
-            case 2:
-                if (after_image_timer_expired(ewk)) {
-                    effect_E7_init(ewk, mwk);
-                    ewk->wu.routine_no[2] = 1;
-                }
-
-                break;
-            }
-
+            update_repeating_after_image(ewk, mwk);
             break;
 
         case 1:
