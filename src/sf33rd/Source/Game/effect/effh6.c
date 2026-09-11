@@ -232,43 +232,11 @@ static s16 select_h6_alternate_character(s8 character, s16 c) {
     return chr;
 }
 
-static s16 select_h6_standard_punctuation_character(s8 character, s16 chr) {
-    if (character == '-') {
-        chr = 0x7931;
-    }
-
-    if (character == '\"') {
-        chr = 0x792B;
-    }
-
-    if (character == '%') {
-        chr = 0x793A;
-    }
-
-    if (character == '|') {
-        chr = 0x7947;
-    }
-
-    if (character == '(') {
-        chr = 0x7934;
-    }
-
-    if (character == ')') {
-        chr = 0x7935;
-    }
-
-    if (character == '*') {
-        chr = 0x7940;
-    }
-
-    return chr;
-}
-
 static s16 select_h6_standard_character(s8 character, s16 c) {
     s16 chr = c + 0x78B0;
 
     chr = effh6_select_bracket_character(character, chr);
-    chr = select_h6_standard_punctuation_character(character, chr);
+    chr = effh6_select_punctuation_character(character, chr);
 
     if (character == '/') {
         chr = 0x7933;
