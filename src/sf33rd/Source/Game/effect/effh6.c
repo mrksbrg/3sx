@@ -348,6 +348,87 @@ static void configure_h6_heading(WORK_Other_CONN* ewk, s16 X, s16 Y, s16 Origina
     }
 }
 
+static s16 configure_h6_text_path(WORK_Other_CONN* ewk, s16 X, s16 Y, s16 Original_Color) {
+    ewk->wu.dir_step = 0;
+
+    switch (Original_Color) {
+    case 0:
+        ewk->wu.routine_no[1] = 0;
+        ewk->wu.routine_no[5] = X;
+        ewk->wu.xyz[0].disp.pos = 384;
+        ewk->wu.xyz[1].disp.pos = Y;
+        break;
+
+    case 1:
+        ewk->wu.routine_no[1] = 1;
+        ewk->wu.routine_no[6] = Y;
+        ewk->wu.xyz[0].disp.pos = X;
+        ewk->wu.xyz[1].disp.pos = 0;
+        break;
+
+    case 2:
+        Original_Color = 0;
+        ewk->wu.routine_no[1] = 2;
+        ewk->wu.routine_no[5] = X;
+        ewk->wu.xyz[0].disp.pos = -64;
+        ewk->wu.xyz[1].disp.pos = Y;
+        break;
+
+    case 3:
+        ewk->wu.routine_no[1] = 3;
+        ewk->wu.xyz[0].disp.pos = X;
+        ewk->wu.xyz[1].disp.pos = Y;
+        break;
+
+    case 4:
+        Original_Color = 1;
+        ewk->wu.routine_no[1] = 4;
+        ewk->wu.routine_no[6] = Y;
+        ewk->wu.xyz[0].disp.pos = X;
+        ewk->wu.xyz[1].disp.pos = 0;
+        break;
+
+    case 5:
+        Original_Color = 1;
+        ewk->wu.routine_no[1] = 5;
+        ewk->wu.xyz[0].disp.pos = X;
+        ewk->wu.xyz[1].disp.pos = Y;
+        break;
+
+    case 6:
+        ewk->wu.routine_no[1] = 6;
+        ewk->wu.routine_no[6] = Y;
+        ewk->wu.xyz[0].disp.pos = X;
+        ewk->wu.xyz[1].disp.pos = -32;
+        break;
+
+    case 7:
+        ewk->wu.routine_no[1] = 7;
+        ewk->wu.routine_no[6] = Y;
+        ewk->wu.xyz[0].disp.pos = X;
+        ewk->wu.xyz[1].disp.pos = 256;
+        break;
+
+    case 8:
+        ewk->wu.routine_no[1] = 6;
+        ewk->wu.routine_no[6] = Y;
+        ewk->wu.xyz[0].disp.pos = X;
+        ewk->wu.xyz[1].disp.pos = -32;
+        break;
+
+    case 9:
+        ewk->wu.dir_step = 2;
+        ewk->wu.routine_no[1] = 0;
+        ewk->wu.routine_no[6] = Y;
+        ewk->wu.xyz[0].disp.pos = X;
+        ewk->wu.xyz[1].disp.pos = 0;
+        ewk->wu.my_col_code = 0x202B;
+        break;
+    }
+
+    return Original_Color;
+}
+
 s32 effect_H6_init(s16 timer, s8* str, s16 X, s16 Y, s16 Original_Color, s32 /* unused */) {
     WORK_Other_CONN* ewk;
     s16 i;
@@ -382,83 +463,7 @@ s32 effect_H6_init(s16 timer, s8* str, s16 X, s16 Y, s16 Original_Color, s32 /* 
     if (*su == '#') {
         configure_h6_heading(ewk, X, Y, Original_Color);
     } else {
-        ewk->wu.dir_step = 0;
-
-        switch (Original_Color) {
-        case 0:
-            ewk->wu.routine_no[1] = 0;
-            ewk->wu.routine_no[5] = X;
-            ewk->wu.xyz[0].disp.pos = 384;
-            ewk->wu.xyz[1].disp.pos = Y;
-            break;
-
-        case 1:
-            ewk->wu.routine_no[1] = 1;
-            ewk->wu.routine_no[6] = Y;
-            ewk->wu.xyz[0].disp.pos = X;
-            ewk->wu.xyz[1].disp.pos = 0;
-            break;
-
-        case 2:
-            Original_Color = 0;
-            ewk->wu.routine_no[1] = 2;
-            ewk->wu.routine_no[5] = X;
-            ewk->wu.xyz[0].disp.pos = -64;
-            ewk->wu.xyz[1].disp.pos = Y;
-            break;
-
-        case 3:
-            ewk->wu.routine_no[1] = 3;
-            ewk->wu.xyz[0].disp.pos = X;
-            ewk->wu.xyz[1].disp.pos = Y;
-            break;
-
-        case 4:
-            Original_Color = 1;
-            ewk->wu.routine_no[1] = 4;
-            ewk->wu.routine_no[6] = Y;
-            ewk->wu.xyz[0].disp.pos = X;
-            ewk->wu.xyz[1].disp.pos = 0;
-            break;
-
-        case 5:
-            Original_Color = 1;
-            ewk->wu.routine_no[1] = 5;
-            ewk->wu.xyz[0].disp.pos = X;
-            ewk->wu.xyz[1].disp.pos = Y;
-            break;
-
-        case 6:
-            ewk->wu.routine_no[1] = 6;
-            ewk->wu.routine_no[6] = Y;
-            ewk->wu.xyz[0].disp.pos = X;
-            ewk->wu.xyz[1].disp.pos = -32;
-            break;
-
-        case 7:
-            ewk->wu.routine_no[1] = 7;
-            ewk->wu.routine_no[6] = Y;
-            ewk->wu.xyz[0].disp.pos = X;
-            ewk->wu.xyz[1].disp.pos = 256;
-            break;
-
-        case 8:
-            ewk->wu.routine_no[1] = 6;
-            ewk->wu.routine_no[6] = Y;
-            ewk->wu.xyz[0].disp.pos = X;
-            ewk->wu.xyz[1].disp.pos = -32;
-            break;
-
-        case 9:
-            ewk->wu.dir_step = 2;
-            ewk->wu.routine_no[1] = 0;
-            ewk->wu.routine_no[6] = Y;
-            ewk->wu.xyz[0].disp.pos = X;
-            ewk->wu.xyz[1].disp.pos = 0;
-            ewk->wu.my_col_code = 0x202B;
-            break;
-        }
-
+        Original_Color = configure_h6_text_path(ewk, X, Y, Original_Color);
         ewk->wu.my_col_code = 0;
 
         for (x = 0, i = 0; *su != '\0'; i += 9, su++) {
