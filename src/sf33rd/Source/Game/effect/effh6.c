@@ -4,7 +4,6 @@
  */
 
 #include "sf33rd/Source/Game/effect/effh6.h"
-#include "sf33rd/Source/Game/effect/effh6_cycles.h"
 #include "sf33rd/Source/Game/effect/effh6_text.h"
 #include "common.h"
 #include "sf33rd/Source/Game/effect/effect.h"
@@ -15,9 +14,6 @@
 #include "sf33rd/Source/Game/screen/staff.h"
 #include "sf33rd/Source/Game/system/work_sys.h"
 
-s16 roll_rate_t;
-s16 roll_rate;
-
 static const s8 code_tab[128] = { -1,  -1, -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,
                                   -1,  -1, -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,
                                   -1,  62, 124, 140, 139, 138, 136, 118, 132, 133, 144, 128, 119, 129, 120, 131,
@@ -26,140 +22,6 @@ static const s8 code_tab[128] = { -1,  -1, -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1
                                   15,  16, 17,  18,  19,  20,  21,  22,  23,  24,  25,  145, -1,  142, 149, 126,
                                    118, 26, 27,  28,  29,  30,  31,  32,  33,  34,  35,  36,  37,  38,  39,  40,
                                    41,  42, 43,  44,  45,  46,  47,  48,  49,  50,  51,  147, 150, 150, 150, -1 };
-
-static void update_h6_scroll(WORK_Other* ewk) {
-    switch (ewk->wu.dir_step) {
-    default:
-        ewk->wu.xyz[1].disp.pos = ewk->wu.xyz[1].disp.pos + roll_rate;
-        ewk->wu.position_y = ewk->wu.xyz[1].disp.pos & 0xFFFF;
-
-        if (256 <= ewk->wu.xyz[1].disp.pos) {
-            ewk->wu.routine_no[0]++;
-        }
-
-        break;
-
-    case 1:
-        break;
-    }
-
-    if (Suicide[4]) {
-        ewk->wu.routine_no[0] = 2;
-    }
-
-    sort_push_request4(&ewk->wu);
-}
-
-static void update_h6_wait(WORK_Other* ewk) {
-    ewk->wu.dir_timer = ewk->wu.dir_timer - roll_rate_t;
-
-    if (ewk->wu.dir_timer < 1) {
-        ewk->wu.routine_no[0]++;
-    }
-}
-
-static void update_h6_down_exit(WORK_Other* ewk) {
-    ewk->wu.xyz[1].disp.pos = ewk->wu.xyz[1].disp.pos + roll_rate;
-    ewk->wu.position_y = ewk->wu.xyz[1].disp.pos & 0xFFFF;
-
-    if (256 <= ewk->wu.xyz[1].disp.pos) {
-        ewk->wu.routine_no[0]++;
-    }
-}
-
-static void update_h6_up_exit(WORK_Other* ewk) {
-    ewk->wu.xyz[1].disp.pos = ewk->wu.xyz[1].disp.pos - roll_rate;
-    ewk->wu.position_y = ewk->wu.xyz[1].disp.pos & 0xFFFF;
-
-    if (0 < ewk->wu.xyz[1].disp.pos) {
-        return;
-    }
-
-    ewk->wu.routine_no[0]++;
-}
-
-static void initialize_h6_move(WORK_Other* ewk) {
-    ewk->wu.routine_no[0]++;
-    ewk->wu.disp_flag = 1;
-    roll_rate = 1;
-    roll_rate_t = 1;
-
-    if (!ewk->wu.dir_step) {
-        ewk->wu.old_cgnum = ewk->wu.cg_number = 0;
-        ewk->wu.cg_number++;
-        ewk->wu.cg_number &= 0x7FFF;
-    }
-
-    ewk->wu.position_x = ewk->wu.xyz[0].disp.pos & 0xFFFF;
-    ewk->wu.position_y = ewk->wu.xyz[1].disp.pos & 0xFFFF;
-}
-
-static void update_h6_direction(WORK_Other* ewk) {
-    switch (ewk->wu.routine_no[1]) {
-    case 0:
-        effh6_update_left_cycle(ewk);
-        break;
-
-    case 1:
-        effh6_update_down_cycle(ewk, 30);
-        break;
-
-    case 2:
-        effh6_update_right_cycle(ewk);
-        break;
-
-    case 3:
-        update_h6_wait(ewk);
-        break;
-
-    case 4:
-        effh6_update_down_cycle(ewk, 60);
-        break;
-
-    case 6:
-        update_h6_down_exit(ewk);
-        break;
-
-    case 7:
-        update_h6_up_exit(ewk);
-        break;
-    }
-}
-
-void effect_H6_move(WORK_Other* ewk) {
-    switch (ewk->wu.routine_no[0]) {
-    case 0:
-        initialize_h6_move(ewk);
-        break;
-
-    case 1:
-        if (ewk->wu.dir_step) {
-            update_h6_scroll(ewk);
-            break;
-        }
-
-        update_h6_direction(ewk);
-        if (Suicide[4]) {
-            ewk->wu.routine_no[0] = 2;
-        }
-
-        sort_push_request3(&ewk->wu);
-        break;
-
-    case 2:
-        ewk->wu.disp_flag = 0;
-        ewk->wu.routine_no[0]++;
-        break;
-
-    case 3:
-        ewk->wu.routine_no[0]++;
-        break;
-
-    default:
-        push_effect_work(&ewk->wu);
-        break;
-    }
-}
 
 static void configure_h6_heading(WORK_Other_CONN* ewk, s16 X, s16 Y, s16 Original_Color) {
     switch (Original_Color) {
