@@ -7,6 +7,7 @@
 #include "sf33rd/Source/Game/effect/effe6_arc.h"
 #include "sf33rd/Source/Game/effect/effe6_ascent.h"
 #include "sf33rd/Source/Game/effect/effe6_animation_cycle.h"
+#include "sf33rd/Source/Game/effect/effe6_controls.h"
 #include "sf33rd/Source/Game/effect/effe6_data.h"
 #include "sf33rd/Source/Game/effect/effe6_delayed.h"
 #include "sf33rd/Source/Game/effect/effe6_descent.h"
