@@ -184,6 +184,44 @@ static void update_c2_active_effect(WORK_Other* ewk) {
     set_bs2_floor(ewk);
 }
 
+static void update_c2_defeated_effect(WORK_Other* ewk) {
+    if (game_is_active()) {
+        switch (ewk->wu.routine_no[1]) {
+        case 0:
+            if (--ewk->wu.hit_stop > 0) {
+                break;
+            }
+
+            ewk->wu.routine_no[1] = 9;
+            ewk->wu.routine_no[2] = 0;
+            Bonus_Game_result |= 2;
+            ewk->wu.xyz[1].disp.pos = 80;
+            ewk->wu.next_y = 64;
+            ewk->wu.position_z = 25;
+            illegal_setup_effK2(&ewk->wu, 4);
+            c2_last_char_and_mvxy(ewk);
+            setup_demojump((PLW*)ewk->wu.target_adrs, 2);
+            break;
+
+        case 9:
+            advance_c2_last_character(ewk);
+            break;
+
+        default:
+            ewk->wu.routine_no[0] = 3;
+            ewk->wu.routine_no[1] = 0;
+            break;
+        }
+
+        ewk->wu.next_x = 0;
+        set_c2_quake(&ewk->wu);
+    }
+
+    ewk->wu.position_x = ewk->wu.xyz[0].disp.pos + ewk->wu.next_x;
+    ewk->wu.position_y = ewk->wu.xyz[1].disp.pos;
+    sort_push_request(&ewk->wu);
+}
+
 void effect_C2_move(WORK_Other* ewk) {
     switch (ewk->wu.routine_no[0]) {
     case 0:
@@ -195,41 +233,7 @@ void effect_C2_move(WORK_Other* ewk) {
         break;
 
     case 2:
-        if (game_is_active()) {
-            switch (ewk->wu.routine_no[1]) {
-            case 0:
-                if (--ewk->wu.hit_stop > 0) {
-                    break;
-                }
-
-                ewk->wu.routine_no[1] = 9;
-                ewk->wu.routine_no[2] = 0;
-                Bonus_Game_result |= 2;
-                ewk->wu.xyz[1].disp.pos = 80;
-                ewk->wu.next_y = 64;
-                ewk->wu.position_z = 25;
-                illegal_setup_effK2(&ewk->wu, 4);
-                c2_last_char_and_mvxy(ewk);
-                setup_demojump((PLW*)ewk->wu.target_adrs, 2);
-                break;
-
-            case 9:
-                advance_c2_last_character(ewk);
-                break;
-
-            default:
-                ewk->wu.routine_no[0] = 3;
-                ewk->wu.routine_no[1] = 0;
-                break;
-            }
-
-            ewk->wu.next_x = 0;
-            set_c2_quake(&ewk->wu);
-        }
-
-        ewk->wu.position_x = ewk->wu.xyz[0].disp.pos + ewk->wu.next_x;
-        ewk->wu.position_y = ewk->wu.xyz[1].disp.pos;
-        sort_push_request(&ewk->wu);
+        update_c2_defeated_effect(ewk);
         break;
 
     default:
