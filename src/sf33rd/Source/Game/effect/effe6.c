@@ -8,6 +8,7 @@
 #include "sf33rd/Source/Game/effect/effe6_animation_cycle.h"
 #include "sf33rd/Source/Game/effect/effe6_data.h"
 #include "sf33rd/Source/Game/effect/effe6_delayed.h"
+#include "sf33rd/Source/Game/effect/effe6_descent.h"
 #include "sf33rd/Source/Game/effect/effe6_early.h"
 #include "sf33rd/Source/Game/effect/effe6_early_variant.h"
 #include "sf33rd/Source/Game/effect/effe6_endgame.h"
