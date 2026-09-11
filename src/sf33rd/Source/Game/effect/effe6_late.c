@@ -71,6 +71,18 @@ static void grow_effe6_0029_marker(WORK_Other* ewk) {
     }
 }
 
+static void update_effe6_0029_motion(WORK_Other* ewk) {
+    char_move(&ewk->wu);
+
+    if (ewk->wu.xyz[0].disp.pos < 224) {
+        ewk->wu.routine_no[2] = 99;
+    } else {
+        grow_effe6_0029_marker(ewk);
+    }
+
+    disp_pos_trans_entry5(ewk);
+}
+
 void effe6_0029(WORK_Other* ewk) {
     mark_effe6_for_cleanup_if_stale(ewk);
 
@@ -85,15 +97,7 @@ void effe6_0029(WORK_Other* ewk) {
         break;
 
     case 1:
-        char_move(&ewk->wu);
-
-        if (ewk->wu.xyz[0].disp.pos < 224) {
-            ewk->wu.routine_no[2] = 99;
-        } else {
-            grow_effe6_0029_marker(ewk);
-        }
-
-        disp_pos_trans_entry5(ewk);
+        update_effe6_0029_motion(ewk);
         break;
 
     case 2:
