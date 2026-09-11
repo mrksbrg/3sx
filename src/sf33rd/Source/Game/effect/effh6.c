@@ -429,6 +429,24 @@ static s16 configure_h6_text_path(WORK_Other_CONN* ewk, s16 X, s16 Y, s16 Origin
     return Original_Color;
 }
 
+static s16 select_h6_alternate_character(s8 character, s16 c) {
+    s16 chr = c + 0x78F0;
+
+    if (character == '(') {
+        chr = 0x794E;
+    }
+
+    if (character == ')') {
+        chr = 0x794F;
+    }
+
+    if (character == '\'') {
+        chr = 0x7950;
+    }
+
+    return chr;
+}
+
 s32 effect_H6_init(s16 timer, s8* str, s16 X, s16 Y, s16 Original_Color, s32 /* unused */) {
     WORK_Other_CONN* ewk;
     s16 i;
@@ -476,20 +494,7 @@ s32 effect_H6_init(s16 timer, s8* str, s16 X, s16 Y, s16 Original_Color, s32 /* 
 
             switch (Original_Color) {
             case 8:
-                ewk->conn[x].chr = c + 0x78F0;
-
-                if (*su == '(') {
-                    ewk->conn[x].chr = 0x794E;
-                }
-
-                if (*su == ')') {
-                    ewk->conn[x].chr = 0x794F;
-                }
-
-                if (*su == '\'') {
-                    ewk->conn[x].chr = 0x7950;
-                }
-
+                ewk->conn[x].chr = select_h6_alternate_character(*su, c);
                 break;
 
             default:
