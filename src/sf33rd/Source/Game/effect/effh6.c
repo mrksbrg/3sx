@@ -447,9 +447,7 @@ static s16 select_h6_alternate_character(s8 character, s16 c) {
     return chr;
 }
 
-static s16 select_h6_standard_character(s8 character, s16 c) {
-    s16 chr = c + 0x78B0;
-
+static s16 select_h6_standard_bracket_character(s8 character, s16 chr) {
     if (character == '{') {
         chr = 0x7951;
     }
@@ -477,6 +475,14 @@ static s16 select_h6_standard_character(s8 character, s16 c) {
     if (character == '&') {
         chr = 0x7938;
     }
+
+    return chr;
+}
+
+static s16 select_h6_standard_character(s8 character, s16 c) {
+    s16 chr = c + 0x78B0;
+
+    chr = select_h6_standard_bracket_character(character, chr);
 
     if (character == '-') {
         chr = 0x7931;
