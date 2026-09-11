@@ -437,23 +437,11 @@ static s16 configure_h6_late_text_path(WORK_Other_CONN* ewk, s16 X, s16 Y, s16 O
 static s16 configure_h6_text_path(WORK_Other_CONN* ewk, s16 X, s16 Y, s16 Original_Color) {
     ewk->wu.dir_step = 0;
 
-    switch (Original_Color) {
-    case 0:
-    case 1:
-    case 2:
-    case 3:
-    case 4:
+    if (Original_Color <= 4) {
         return configure_h6_early_text_path(ewk, X, Y, Original_Color);
-
-    case 5:
-    case 6:
-    case 7:
-    case 8:
-    case 9:
-        return configure_h6_late_text_path(ewk, X, Y, Original_Color);
     }
 
-    return Original_Color;
+    return configure_h6_late_text_path(ewk, X, Y, Original_Color);
 }
 
 static s16 select_h6_alternate_character(s8 character, s16 c) {
