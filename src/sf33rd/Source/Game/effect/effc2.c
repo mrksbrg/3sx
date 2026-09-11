@@ -445,6 +445,10 @@ static WORK* find_c2_parts_chain_node(void) {
     return NULL;
 }
 
+static s32 c2_parts_chain_head_blocks_reorder(s16 flag, WORK* adr1) {
+    return (flag && adr1->type == 4) || (!flag && adr1->type == 5);
+}
+
 void effc2_parts_work_chain_check(s16 flag) {
     WORK* adr0;
     WORK* adr1 = find_c2_parts_chain_node();
@@ -457,11 +461,7 @@ void effc2_parts_work_chain_check(s16 flag) {
         return;
     }
 
-    if (flag) {
-        if (adr1->type == 4) {
-            return;
-        }
-    } else if (adr1->type == 5) {
+    if (c2_parts_chain_head_blocks_reorder(flag, adr1)) {
         return;
     }
 
