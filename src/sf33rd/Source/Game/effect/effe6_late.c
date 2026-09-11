@@ -252,6 +252,16 @@ static void update_effe6_0033_fade(WORK_Other* ewk) {
     disp_pos_trans_entry(ewk);
 }
 
+static void update_effe6_0033_wait(WORK_Other* ewk) {
+    mark_effe6_for_cleanup_if_stale(ewk);
+
+    if (!ewk->wu.old_rno[5]--) {
+        ewk->wu.routine_no[1]++;
+    }
+
+    disp_pos_trans_entry(ewk);
+}
+
 void effe6_0033(WORK_Other* ewk) {
     switch (ewk->wu.routine_no[1]) {
     case 0:
@@ -262,13 +272,7 @@ void effe6_0033(WORK_Other* ewk) {
         break;
 
     case 1:
-        mark_effe6_for_cleanup_if_stale(ewk);
-
-        if (!ewk->wu.old_rno[5]--) {
-            ewk->wu.routine_no[1]++;
-        }
-
-        disp_pos_trans_entry(ewk);
+        update_effe6_0033_wait(ewk);
         break;
 
     case 2:
