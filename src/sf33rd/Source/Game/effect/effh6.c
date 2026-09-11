@@ -479,11 +479,7 @@ static s16 select_h6_standard_bracket_character(s8 character, s16 chr) {
     return chr;
 }
 
-static s16 select_h6_standard_character(s8 character, s16 c) {
-    s16 chr = c + 0x78B0;
-
-    chr = select_h6_standard_bracket_character(character, chr);
-
+static s16 select_h6_standard_punctuation_character(s8 character, s16 chr) {
     if (character == '-') {
         chr = 0x7931;
     }
@@ -511,6 +507,15 @@ static s16 select_h6_standard_character(s8 character, s16 c) {
     if (character == '*') {
         chr = 0x7940;
     }
+
+    return chr;
+}
+
+static s16 select_h6_standard_character(s8 character, s16 c) {
+    s16 chr = c + 0x78B0;
+
+    chr = select_h6_standard_bracket_character(character, chr);
+    chr = select_h6_standard_punctuation_character(character, chr);
 
     if (character == '/') {
         chr = 0x7933;
