@@ -340,18 +340,21 @@ static void update_c2_second_animation(WORK_Other* ewk) {
     }
 }
 
+static void set_c2_first_damage_hit_stop(WORK_Other* ewk, PLW* twk) {
+    if (twk->bs2_on_car) {
+        ewk->wu.hit_stop = 0;
+    } else {
+        ewk->wu.hit_stop = ewk->wu.dm_stop / 2;
+    }
+}
+
 static void update_c2_first_damage(WORK_Other* ewk, PLW* twk) {
     switch (ewk->wu.routine_no[2]) {
     case 0:
         ewk->wu.shell_ix[0] -= ewk->wu.dm_vital;
         ewk->wu.dm_vital = 0;
 
-        if (twk->bs2_on_car) {
-            ewk->wu.hit_stop = 0;
-        } else {
-            ewk->wu.hit_stop = ewk->wu.dm_stop / 2;
-        }
-
+        set_c2_first_damage_hit_stop(ewk, twk);
         ewk->wu.routine_no[2] = 1;
         set_char_move_init(&ewk->wu,
                            0,
