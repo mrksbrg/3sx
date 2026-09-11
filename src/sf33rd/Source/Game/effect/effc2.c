@@ -256,6 +256,14 @@ static void select_c2_on_car_second_state(WORK_Other* ewk) {
     }
 }
 
+static void select_c2_off_car_damage_state(WORK_Other* ewk) {
+    if (ewk->wu.routine_no[1] != 1 || ewk->wu.routine_no[2] != 0) {
+        ewk->wu.routine_no[1] = 0;
+        ewk->wu.routine_no[2] = 0;
+        ewk->wu.routine_no[3] = 0;
+    }
+}
+
 static void select_c2_first_process_state(WORK_Other* ewk, PLW* twk) {
     switch (ewk->wu.direction + (twk->bs2_on_car * 2)) {
     case 0:
@@ -267,12 +275,7 @@ static void select_c2_first_process_state(WORK_Other* ewk, PLW* twk) {
         break;
 
     case 1:
-        if (ewk->wu.routine_no[1] != 1 || ewk->wu.routine_no[2] != 0) {
-            ewk->wu.routine_no[1] = 0;
-            ewk->wu.routine_no[2] = 0;
-            ewk->wu.routine_no[3] = 0;
-        }
-
+        select_c2_off_car_damage_state(ewk);
         break;
 
     case 2:
