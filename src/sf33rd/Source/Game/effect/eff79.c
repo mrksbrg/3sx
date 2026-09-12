@@ -456,30 +456,15 @@ static void advance_79_group_movement(WORK_Other* ewk) {
     OK_Moving_SA_Plate[ewk->master_id]--;
 }
 
+typedef enum {
+    GROUP_MOVEMENT_79,
+    PLATE_MOVEMENT_79,
+} MovementSequence79;
+
+static void update_79_movement_state(WORK_Other* ewk, MovementSequence79 sequence);
+
 void Move_Move_79(WORK_Other* ewk) {
-    switch (ewk->wu.routine_no[2]) {
-    case 0:
-        update_79_movement_delay(ewk);
-        break;
-
-    case 1:
-        advance_79_group_movement(ewk);
-        break;
-
-    case 2:
-        if (OK_Moving_SA_Plate[ewk->master_id] == 0) {
-            ewk->wu.routine_no[2]++;
-        }
-
-        break;
-
-    case 3:
-        ewk->wu.routine_no[1] = 0;
-        ewk->wu.routine_no[2] = 0;
-        Moving_Plate[ewk->master_id] = 0;
-        break;
-    }
-
+    update_79_movement_state(ewk, GROUP_MOVEMENT_79);
     remember_79_plate_position(ewk);
 }
 
@@ -515,10 +500,24 @@ void Setup_Move_79(WORK_Other* ewk, s32 /* unused */, s32 X_Value, s32 Y_Value, 
     }
 }
 
-void Move_79(WORK_Other* ewk) {
+static void advance_79_plate_movement(WORK_Other* ewk) {
     s16 arrived[2];
 
-    Check_Priority(ewk);
+    arrived[0] = EFF79_Move_X(ewk);
+    arrived[1] = EFF79_Move_Y(ewk);
+
+    if (movement_is_incomplete(arrived)) {
+        return;
+    }
+
+    ewk->wu.routine_no[2]++;
+    ewk->wu.hit_quake = ewk->wu.dmcal_m;
+    Moving_Plate_Counter[ewk->master_id]--;
+    ewk->wu.xyz[2].disp.pos = Pos_Z_Data_79[ewk->wu.hit_quake] + 35;
+}
+
+static void update_79_movement_state(WORK_Other* ewk, MovementSequence79 sequence) {
+    s32 counter_is_clear;
 
     switch (ewk->wu.routine_no[2]) {
     case 0:
@@ -526,20 +525,19 @@ void Move_79(WORK_Other* ewk) {
         break;
 
     case 1:
-        arrived[0] = EFF79_Move_X(ewk);
-        arrived[1] = EFF79_Move_Y(ewk);
-
-        if (!movement_is_incomplete(arrived)) {
-            ewk->wu.routine_no[2]++;
-            ewk->wu.hit_quake = ewk->wu.dmcal_m;
-            Moving_Plate_Counter[ewk->master_id]--;
-            ewk->wu.xyz[2].disp.pos = Pos_Z_Data_79[ewk->wu.hit_quake] + 35;
+        if (sequence == GROUP_MOVEMENT_79) {
+            advance_79_group_movement(ewk);
+        } else {
+            advance_79_plate_movement(ewk);
         }
 
         break;
 
     case 2:
-        if (Moving_Plate_Counter[ewk->master_id] == 0) {
+        counter_is_clear = sequence == GROUP_MOVEMENT_79 ? OK_Moving_SA_Plate[ewk->master_id] == 0
+                                                         : Moving_Plate_Counter[ewk->master_id] == 0;
+
+        if (counter_is_clear) {
             ewk->wu.routine_no[2]++;
         }
 
@@ -551,6 +549,11 @@ void Move_79(WORK_Other* ewk) {
         Moving_Plate[ewk->master_id] = 0;
         break;
     }
+}
+
+void Move_79(WORK_Other* ewk) {
+    Check_Priority(ewk);
+    update_79_movement_state(ewk, PLATE_MOVEMENT_79);
 }
 
 void Check_Priority(WORK_Other* ewk) {
