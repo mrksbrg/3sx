@@ -71,6 +71,79 @@ static void update_79_appearance(WORK_Other* ewk) {
     }
 }
 
+static void update_79_plate_movement(WORK_Other* ewk) {
+    switch (ewk->wu.routine_no[1]) {
+    case 0:
+        Plate_Disposal_No[ewk->master_id][ewk->master_player] = 0;
+
+        if (Check_Play_Status_79(ewk)) {
+            break;
+        }
+
+        switch (Moving_Plate[ewk->master_id]) {
+        case 1:
+            switch (ewk->wu.hit_quake) {
+            case 0:
+                ewk->wu.dmcal_m = 1;
+                ewk->wu.dm_vital = 3;
+                Setup_Move_79(ewk, 2, 0x60000, -0x20000, 0);
+                break;
+
+            case 1:
+                ewk->wu.dmcal_m = 2;
+                ewk->wu.dm_vital = 1;
+                Setup_Move_79(ewk, 2, 0x60000, -0x20000, 0);
+                break;
+
+            default:
+                ewk->wu.dmcal_m = 0;
+                ewk->wu.dm_vital = 2;
+                Setup_Move_79(ewk, 2, 0x20000, -0x80000, 2);
+                break;
+            }
+
+            break;
+
+        case 2:
+            switch (ewk->wu.hit_quake) {
+            case 0:
+                ewk->wu.dmcal_m = 2;
+                ewk->wu.dm_vital = 3;
+                Setup_Move_79(ewk, 2, 0x60000, -0x80000, 1);
+                break;
+
+            case 1:
+                ewk->wu.dmcal_m = 0;
+                ewk->wu.dm_vital = 1;
+                Setup_Move_79(ewk, 1, -0x60000, 0x20000, 0);
+                break;
+
+            default:
+                ewk->wu.dmcal_m = 1;
+                ewk->wu.dm_vital = 2;
+                Setup_Move_79(ewk, 1, -0x60000, 0x20000, 0);
+                break;
+            }
+
+            break;
+
+        default:
+            Select_End_Sub_79(ewk);
+            break;
+        }
+
+        break;
+
+    case 1:
+        Move_79(ewk);
+        break;
+
+    case 2:
+        Move_Move_79(ewk);
+        break;
+    }
+}
+
 void effect_79_move(WORK_Other* ewk) {
     s16 xx;
     s16 arrived[2];
@@ -122,77 +195,7 @@ void effect_79_move(WORK_Other* ewk) {
         break;
 
     case 5:
-        switch (ewk->wu.routine_no[1]) {
-        case 0:
-            Plate_Disposal_No[ewk->master_id][ewk->master_player] = 0;
-
-            if (Check_Play_Status_79(ewk)) {
-                break;
-            }
-
-            switch (Moving_Plate[ewk->master_id]) {
-            case 1:
-                switch (ewk->wu.hit_quake) {
-                case 0:
-                    ewk->wu.dmcal_m = 1;
-                    ewk->wu.dm_vital = 3;
-                    Setup_Move_79(ewk, 2, 0x60000, -0x20000, 0);
-                    break;
-
-                case 1:
-                    ewk->wu.dmcal_m = 2;
-                    ewk->wu.dm_vital = 1;
-                    Setup_Move_79(ewk, 2, 0x60000, -0x20000, 0);
-                    break;
-
-                default:
-                    ewk->wu.dmcal_m = 0;
-                    ewk->wu.dm_vital = 2;
-                    Setup_Move_79(ewk, 2, 0x20000, -0x80000, 2);
-                    break;
-                }
-
-                break;
-
-            case 2:
-                switch (ewk->wu.hit_quake) {
-                case 0:
-                    ewk->wu.dmcal_m = 2;
-                    ewk->wu.dm_vital = 3;
-                    Setup_Move_79(ewk, 2, 0x60000, -0x80000, 1);
-                    break;
-
-                case 1:
-                    ewk->wu.dmcal_m = 0;
-                    ewk->wu.dm_vital = 1;
-                    Setup_Move_79(ewk, 1, -0x60000, 0x20000, 0);
-                    break;
-
-                default:
-                    ewk->wu.dmcal_m = 1;
-                    ewk->wu.dm_vital = 2;
-                    Setup_Move_79(ewk, 1, -0x60000, 0x20000, 0);
-                    break;
-                }
-
-                break;
-
-            default:
-                Select_End_Sub_79(ewk);
-                break;
-            }
-
-            break;
-
-        case 1:
-            Move_79(ewk);
-            break;
-
-        case 2:
-            Move_Move_79(ewk);
-            break;
-        }
-
+        update_79_plate_movement(ewk);
         break;
 
     case 6:
