@@ -697,24 +697,28 @@ void setup_effK2(WORK* wk) {
     }
 }
 
-void setup_effK2_sync_bomb(WORK* wk) {
-    const DADD* dhead;
+static void spawn_unsynchronized_fragments_K2(WORK* wk, const HAHEN* fragment_group) {
+    const DADD* fragments = fragment_group->dadd;
     s16 i;
+
+    for (i = 0; i < fragment_group->kosuu; i++) {
+        if (fragments[i].bomb == 0) {
+            effect_K2_init((WORK_Other*)wk, (u32*)&fragments[i]);
+        }
+    }
+}
+
+void setup_effK2_sync_bomb(WORK* wk) {
     s16 j;
-    s16 num;
 
     for (j = wk->vital_old + 1; j < 8; j++) {
-        if (!(num = hahen_data[j][wk->type].kosuu) || hahen_data[j][wk->type].bomb != 0) {
+        const HAHEN* fragment_group = &hahen_data[j][wk->type];
+
+        if (!fragment_group->kosuu || fragment_group->bomb != 0) {
             continue;
         }
 
-        dhead = hahen_data[j][wk->type].dadd;
-
-        for (i = 0; i < num; i++) {
-            if (dhead[i].bomb == 0) {
-                effect_K2_init((WORK_Other*)wk, (u32*)&dhead[i]);
-            }
-        }
+        spawn_unsynchronized_fragments_K2(wk, fragment_group);
     }
 }
 
