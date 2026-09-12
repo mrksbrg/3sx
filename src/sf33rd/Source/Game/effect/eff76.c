@@ -471,7 +471,7 @@ void Setup_Pos_76(WORK_Other* ewk) {
     setup_high_position_76(ewk);
 }
 
-static void setup_low_character_76(WORK_Other* ewk) {
+static void setup_early_character_76(WORK_Other* ewk) {
     switch (ewk->wu.dir_old) {
     case 0x2B:
     case 0x2C:
@@ -506,6 +506,17 @@ static void setup_low_character_76(WORK_Other* ewk) {
         ewk->wu.char_index = 4;
         ewk->wu.dir_step = ewk->wu.dir_old - 0x2B;
         break;
+
+    }
+}
+
+static void setup_low_character_76(WORK_Other* ewk) {
+    if (ewk->wu.dir_old <= 0x31) {
+        setup_early_character_76(ewk);
+        return;
+    }
+
+    switch (ewk->wu.dir_old) {
 
     case 0x32:
     case 0x33:
