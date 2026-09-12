@@ -342,21 +342,35 @@ static void setup_result_position_76(WORK_Other* ewk, s32 ranked_result) {
     ewk->wu.mvxy.d[0].sp = 0;
 }
 
+typedef enum {
+    FIRST_CONTINUE_CHARACTER_76 = 0x3B,
+    SECOND_CONTINUE_CHARACTER_76 = 0x3C,
+    MASKED_CHARACTER_ID_76 = 0x3D,
+    FOURTH_CONTINUE_CHARACTER_76 = 0x3E,
+    LAST_CONTINUE_CHARACTER_76 = 0x3F,
+    LOW_CHARACTER_ID_76 = 0x40,
+    FINAL_CHARACTER_ID_76 = 0x41,
+    SHELL_CHARACTER_ID_76 = 0x42,
+    FIRST_A6_CHARACTER_76 = 0x43,
+    LAST_A6_CHARACTER_76 = 0x44,
+} MiddleCharacterId76;
+
 static void setup_middle_position_76(WORK_Other* ewk) {
-    if (ewk->wu.dir_old <= 0x3F) {
+    if (ewk->wu.dir_old <= LAST_CONTINUE_CHARACTER_76) {
         ewk->wu.xyz[0].disp.pos =
-            bg_w.bgw[1].wxy[0].disp.pos + 458 + Pos_Cont_Data_76[ewk->wu.dir_old - 0x3B][0];
-        ewk->wu.xyz[1].disp.pos = bg_w.bgw[1].wxy[1].disp.pos + Pos_Cont_Data_76[ewk->wu.dir_old - 0x3B][1];
-        ewk->wu.position_z = Pos_Cont_Data_76[ewk->wu.dir_old - 0x3B][2];
+            bg_w.bgw[1].wxy[0].disp.pos + 458 + Pos_Cont_Data_76[ewk->wu.dir_old - FIRST_CONTINUE_CHARACTER_76][0];
+        ewk->wu.xyz[1].disp.pos =
+            bg_w.bgw[1].wxy[1].disp.pos + Pos_Cont_Data_76[ewk->wu.dir_old - FIRST_CONTINUE_CHARACTER_76][1];
+        ewk->wu.position_z = Pos_Cont_Data_76[ewk->wu.dir_old - FIRST_CONTINUE_CHARACTER_76][2];
         return;
     }
 
-    if (ewk->wu.dir_old == 0x40 || ewk->wu.dir_old == 0x42) {
+    if (ewk->wu.dir_old == LOW_CHARACTER_ID_76 || ewk->wu.dir_old == SHELL_CHARACTER_ID_76) {
         setup_standard_position_76(ewk);
         return;
     }
 
-    if (ewk->wu.dir_old == 0x41) {
+    if (ewk->wu.dir_old == FINAL_CHARACTER_ID_76) {
         ewk->wu.xyz[0].disp.pos = bg_w.bgw[0].wxy[0].disp.pos + Bust_Pos_Data_76[My_char[Final_Result_id]][0];
         ewk->wu.xyz[1].disp.pos = bg_w.bgw[0].wxy[1].disp.pos + Bust_Pos_Data_76[My_char[Final_Result_id]][1];
         ewk->wu.position_z = 72;
@@ -458,7 +472,7 @@ void Setup_Pos_76(WORK_Other* ewk) {
         return;
     }
 
-    if (ewk->wu.dir_old >= 0x3B && ewk->wu.dir_old <= 0x44) {
+    if (ewk->wu.dir_old >= FIRST_CONTINUE_CHARACTER_76 && ewk->wu.dir_old <= LAST_A6_CHARACTER_76) {
         setup_middle_position_76(ewk);
         return;
     }
@@ -629,7 +643,7 @@ static void setup_continue_character_76(WORK_Other* ewk, ContinueCharacterType76
     ewk->wu.direction = 3;
     ewk->wu.my_family = 2;
     ewk->wu.char_index = 0x53;
-    ewk->wu.dir_step = ewk->wu.dir_old - 0x3B;
+    ewk->wu.dir_step = ewk->wu.dir_old - FIRST_CONTINUE_CHARACTER_76;
 }
 
 static void setup_shell_character_76(WORK_Other* ewk) {
@@ -668,6 +682,47 @@ static void setup_result_range_character_76(WORK_Other* ewk) {
     }
 }
 
+static void setup_middle_character_76(WORK_Other* ewk) {
+    if (ewk->wu.dir_old <= LAST_CONTINUE_CHARACTER_76) {
+        if (ewk->wu.dir_old == MASKED_CHARACTER_ID_76) {
+            setup_continue_character_76(ewk, MASKED_CONTINUE_CHARACTER_76);
+        } else {
+            setup_continue_character_76(ewk, REGULAR_CONTINUE_CHARACTER_76);
+        }
+
+        return;
+    }
+
+    switch (ewk->wu.dir_old) {
+    case LOW_CHARACTER_ID_76:
+        setup_low_character_76(ewk);
+        break;
+
+    case FINAL_CHARACTER_ID_76:
+        ewk->wu.my_family = 1;
+        ewk->wu.my_col_code = 0x90;
+        ewk->wu.char_index = 2;
+        ewk->wu.dir_step = My_char[Final_Result_id];
+        ewk->wu.direction = 0;
+        break;
+
+    case SHELL_CHARACTER_ID_76:
+        setup_shell_character_76(ewk);
+        break;
+
+    case FIRST_A6_CHARACTER_76:
+    case LAST_A6_CHARACTER_76:
+        ewk->wu.my_family = 1;
+        ewk->wu.my_col_code = 0x1FF;
+        ewk->wu.my_clear_level = 0x80;
+        ewk->wu.char_index = 4;
+        ewk->wu.dir_step = 2;
+        ewk->wu.direction = 3;
+        effect_A6_init(ewk);
+        break;
+    }
+}
+
 void Setup_Char_76(WORK_Other* ewk) {
     if (ewk->wu.dir_old <= 0x36) {
         setup_low_character_76(ewk);
@@ -684,49 +739,16 @@ void Setup_Char_76(WORK_Other* ewk) {
         return;
     }
 
+    if (ewk->wu.dir_old >= FIRST_CONTINUE_CHARACTER_76 && ewk->wu.dir_old <= LAST_A6_CHARACTER_76) {
+        setup_middle_character_76(ewk);
+        return;
+    }
+
     switch (ewk->wu.dir_old) {
-    case 0x42:
-        setup_shell_character_76(ewk);
-        break;
-
-    case 0x43:
-    case 0x44:
-        ewk->wu.my_family = 1;
-        ewk->wu.my_col_code = 0x1FF;
-        ewk->wu.my_clear_level = 0x80;
-        ewk->wu.char_index = 4;
-        ewk->wu.dir_step = 2;
-        ewk->wu.direction = 3;
-        effect_A6_init(ewk);
-        break;
-
     case FIRST_NAME_CHARACTER_76:
     case SECOND_NAME_CHARACTER_76:
     case RANKED_CHARACTER_76:
         setup_high_character_76(ewk);
-        break;
-
-    case 0x41:
-        ewk->wu.my_family = 1;
-        ewk->wu.my_col_code = 0x90;
-        ewk->wu.char_index = 2;
-        ewk->wu.dir_step = My_char[Final_Result_id];
-        ewk->wu.direction = 0;
-        break;
-
-    case 0x40:
-        setup_low_character_76(ewk);
-        break;
-
-    case 0x3D:
-        setup_continue_character_76(ewk, MASKED_CONTINUE_CHARACTER_76);
-        break;
-
-    case 0x3B:
-    case 0x3C:
-    case 0x3E:
-    case 0x3F:
-        setup_continue_character_76(ewk, REGULAR_CONTINUE_CHARACTER_76);
         break;
 
     }
