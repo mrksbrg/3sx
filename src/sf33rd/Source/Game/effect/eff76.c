@@ -280,12 +280,16 @@ s32 effect_76_init(s16 dir_old) {
     return 0;
 }
 
-static void setup_low_position_76(WORK_Other* ewk) {
+static void setup_standard_position_76(WORK_Other* ewk) {
     ewk->wu.xyz[0].disp.pos =
         bg_w.bgw[ewk->wu.my_family - 1].wxy[0].disp.pos + Pos_Data_76[ewk->wu.dir_old - 0x2B][0];
     ewk->wu.xyz[1].disp.pos =
         bg_w.bgw[ewk->wu.my_family - 1].wxy[1].disp.pos + Pos_Data_76[ewk->wu.dir_old - 0x2B][1];
     ewk->wu.position_z = Pos_Data_76[ewk->wu.dir_old - 0x2B][2];
+}
+
+static void setup_low_position_76(WORK_Other* ewk) {
+    setup_standard_position_76(ewk);
 
     if (ewk->wu.dir_old != 0x2D) {
         return;
@@ -302,26 +306,59 @@ static void setup_low_position_76(WORK_Other* ewk) {
     }
 }
 
+static void setup_result_position_76(WORK_Other* ewk, s32 ranked_result) {
+    u8 my_char;
+
+    if (!ranked_result && ewk->wu.dir_old != 0x37) {
+        setup_standard_position_76(ewk);
+        return;
+    }
+
+    if (ranked_result) {
+        my_char = Ranking_Data[Order_Dir[ewk->wu.dir_old]].player;
+    } else {
+        my_char = My_char[Winner_id];
+    }
+
+    ewk->wu.xyz[0].disp.pos = bg_w.bgw[0].wxy[0].disp.pos + Bust_Pos_Data_76[my_char][0] - 48;
+    ewk->wu.hit_quake = bg_w.bgw[0].wxy[0].disp.pos + Bust_Pos_Data_76[my_char][0];
+    ewk->wu.xyz[1].disp.pos = bg_w.bgw[0].wxy[1].disp.pos + Bust_Pos_Data_76[my_char][1];
+
+    if (!ranked_result) {
+        ewk->wu.position_z = 72;
+        ewk->wu.mvxy.a[0].sp = 0x10000;
+        ewk->wu.mvxy.d[0].sp = 0;
+        return;
+    }
+
+    ewk->wu.xyz[1].disp.pos = bg_w.bgw[0].wxy[1].disp.pos + Bust_Pos_Data_76[my_char][1] - 32;
+
+    if (Order[ewk->wu.dir_old] == 1) {
+        ewk->wu.xyz[0].disp.pos = bg_w.bgw[0].wxy[0].disp.pos + Bust_Pos_Data_76[my_char][0] + 384;
+    }
+
+    ewk->wu.position_z = 79;
+    ewk->wu.mvxy.a[0].sp = -0xA0000;
+    ewk->wu.mvxy.d[0].sp = 0;
+}
+
 void Setup_Pos_76(WORK_Other* ewk) {
     s16 ix;
-    u8 my_char;
 
     if (ewk->wu.dir_old >= 0x2B && ewk->wu.dir_old <= 0x36) {
         setup_low_position_76(ewk);
         return;
     }
 
+    if (ewk->wu.dir_old >= 0x37 && ewk->wu.dir_old <= 0x3A) {
+        setup_result_position_76(ewk, 0);
+        return;
+    }
+
     switch (ewk->wu.dir_old) {
-    case 0x38:
-    case 0x39:
-    case 0x3A:
     case 0x40:
     case 0x42:
-        ewk->wu.xyz[0].disp.pos =
-            bg_w.bgw[ewk->wu.my_family - 1].wxy[0].disp.pos + Pos_Data_76[ewk->wu.dir_old - 0x2B][0];
-        ewk->wu.xyz[1].disp.pos =
-            bg_w.bgw[ewk->wu.my_family - 1].wxy[1].disp.pos + Pos_Data_76[ewk->wu.dir_old - 0x2B][1];
-        ewk->wu.position_z = Pos_Data_76[ewk->wu.dir_old - 0x2B][2];
+        setup_standard_position_76(ewk);
         break;
 
     case 0x41:
@@ -342,11 +379,7 @@ void Setup_Pos_76(WORK_Other* ewk) {
 
     case 0x43:
     case 0x44:
-        ewk->wu.xyz[0].disp.pos =
-            bg_w.bgw[ewk->wu.my_family - 1].wxy[0].disp.pos + Pos_Data_76[ewk->wu.dir_old - 0x2B][0];
-        ewk->wu.xyz[1].disp.pos =
-            bg_w.bgw[ewk->wu.my_family - 1].wxy[1].disp.pos + Pos_Data_76[ewk->wu.dir_old - 0x2B][1];
-        ewk->wu.position_z = Pos_Data_76[ewk->wu.dir_old - 0x2B][2];
+        setup_standard_position_76(ewk);
 
         if (Order_Dir[ewk->wu.dir_old] == 4) {
             ewk->wu.hit_quake = bg_w.bgw[ewk->wu.my_family - 1].wxy[0].disp.pos + 64;
@@ -358,6 +391,10 @@ void Setup_Pos_76(WORK_Other* ewk) {
             ewk->wu.mvxy.d[0].sp = 0;
         }
 
+        break;
+
+    case 0x55:
+        setup_result_position_76(ewk, 1);
         break;
 
     case 0x48:
@@ -390,35 +427,6 @@ void Setup_Pos_76(WORK_Other* ewk) {
             ewk->wu.xyz[0].disp.pos -= 25;
         }
 
-        break;
-
-    case 0x37:
-    case 0x55:
-        if (ewk->wu.dir_old == 0x37) {
-            my_char = My_char[Winner_id];
-        } else {
-            my_char = Ranking_Data[Order_Dir[ewk->wu.dir_old]].player;
-        }
-
-        ewk->wu.xyz[0].disp.pos = bg_w.bgw[0].wxy[0].disp.pos + Bust_Pos_Data_76[my_char][0] - 48;
-        ewk->wu.hit_quake = bg_w.bgw[0].wxy[0].disp.pos + Bust_Pos_Data_76[my_char][0];
-        ewk->wu.xyz[1].disp.pos = bg_w.bgw[0].wxy[1].disp.pos + Bust_Pos_Data_76[my_char][1];
-
-        if (ewk->wu.dir_old == 0x37) {
-            ewk->wu.position_z = 72;
-            ewk->wu.mvxy.a[0].sp = 0x10000;
-            ewk->wu.mvxy.d[0].sp = 0;
-            break;
-        }
-        ewk->wu.xyz[1].disp.pos = bg_w.bgw[0].wxy[1].disp.pos + Bust_Pos_Data_76[my_char][1] - 32;
-
-        if (Order[ewk->wu.dir_old] == 1) {
-            ewk->wu.xyz[0].disp.pos = bg_w.bgw[0].wxy[0].disp.pos + Bust_Pos_Data_76[my_char][0] + 384;
-        }
-
-        ewk->wu.position_z = 79;
-        ewk->wu.mvxy.a[0].sp = -0xA0000;
-        ewk->wu.mvxy.d[0].sp = 0;
         break;
 
     case 0x4A:
