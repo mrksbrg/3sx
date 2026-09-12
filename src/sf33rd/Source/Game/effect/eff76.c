@@ -614,6 +614,24 @@ static void setup_high_character_76(WORK_Other* ewk) {
     ewk->wu.dir_step = ewk->wu.dir_old - FIRST_COMPUTE_CHARACTER_76;
 }
 
+typedef enum {
+    REGULAR_CONTINUE_CHARACTER_76,
+    MASKED_CONTINUE_CHARACTER_76,
+} ContinueCharacterType76;
+
+static void setup_continue_character_76(WORK_Other* ewk, ContinueCharacterType76 character_type) {
+    if (character_type == MASKED_CONTINUE_CHARACTER_76) {
+        ewk->wu.my_mr_flag = 1;
+        ewk->wu.my_mr.size.x = 0x5F;
+        ewk->wu.my_mr.size.y = 0x3F;
+    }
+
+    ewk->wu.direction = 3;
+    ewk->wu.my_family = 2;
+    ewk->wu.char_index = 0x53;
+    ewk->wu.dir_step = ewk->wu.dir_old - 0x3B;
+}
+
 void Setup_Char_76(WORK_Other* ewk) {
     if (ewk->wu.dir_old <= 0x36) {
         setup_low_character_76(ewk);
@@ -685,22 +703,14 @@ void Setup_Char_76(WORK_Other* ewk) {
         break;
 
     case 0x3D:
-        ewk->wu.my_mr_flag = 1;
-        ewk->wu.my_mr.size.x = 0x5F;
-        ewk->wu.my_mr.size.y = 0x3F;
-        ewk->wu.my_family = 2;
-        ewk->wu.char_index = 0x53;
-        ewk->wu.dir_step = ewk->wu.dir_old - 0x3B;
-        /* fallthrough */
+        setup_continue_character_76(ewk, MASKED_CONTINUE_CHARACTER_76);
+        break;
 
     case 0x3B:
     case 0x3C:
     case 0x3E:
     case 0x3F:
-        ewk->wu.direction = 3;
-        ewk->wu.my_family = 2;
-        ewk->wu.char_index = 0x53;
-        ewk->wu.dir_step = ewk->wu.dir_old - 0x3B;
+        setup_continue_character_76(ewk, REGULAR_CONTINUE_CHARACTER_76);
         break;
 
     }
