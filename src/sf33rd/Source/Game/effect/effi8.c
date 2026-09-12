@@ -363,6 +363,23 @@ void cal_speeds_to_em_effI8(WORK_Other* ewk, PLW* twk) {
     cal_speeds_effD7(ewk, ewk->wu.dir_step, tx, ty, ewk->wu.dir_old);
 }
 
+typedef enum {
+    OUTSIDE_MIZUSHIBUKI_AREA_I8,
+    INSIDE_MIZUSHIBUKI_AREA_I8,
+} MizushibukiAreaResultI8;
+
+static MizushibukiAreaResultI8 check_mizushibuki_area_effI8(s16 xx, s16 yy) {
+    if (xx >= 689 || xx <= 399) {
+        return OUTSIDE_MIZUSHIBUKI_AREA_I8;
+    }
+
+    if (yy >= -7 || yy < -24) {
+        return OUTSIDE_MIZUSHIBUKI_AREA_I8;
+    }
+
+    return INSIDE_MIZUSHIBUKI_AREA_I8;
+}
+
 s32 check_ball_mizushibuki(s16 xx, s16 yy) {
     s16 ix;
     s16 iy;
@@ -378,11 +395,7 @@ s32 check_ball_mizushibuki(s16 xx, s16 yy) {
 
     yy -= 6;
 
-    if (xx >= 689 || xx <= 399) {
-        return 0;
-    }
-
-    if ((yy >= -7) || (yy < -24)) {
+    if (check_mizushibuki_area_effI8(xx, yy) == OUTSIDE_MIZUSHIBUKI_AREA_I8) {
         return 0;
     }
 
