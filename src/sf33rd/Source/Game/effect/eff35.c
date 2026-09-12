@@ -151,33 +151,40 @@ void eff35_0000(WORK_Other* ewk) {
     }
 }
 
-void eff35_0001(WORK_Other* ewk) {
-    switch (ewk->wu.routine_no[1]) {
-    case 0:
-        if (Break_Into) {
-            ewk->wu.routine_no[1] = 4;
-            break;
-        }
+static void begin_screen_wipe_35(WORK_Other* ewk) {
+    if (Break_Into) {
+        ewk->wu.routine_no[1] = 4;
+        return;
+    }
 
-        ewk->wu.old_rno[1]--;
+    ewk->wu.old_rno[1]--;
 
-        if (ewk->wu.old_rno[1] <= 0) {
-            ewk->wu.routine_no[1]++;
-            ewk->wu.disp_flag = 1;
-            ewk->wu.my_mr_flag = 1;
-            ewk->wu.my_mr.size.x = 127;
-            ewk->wu.my_mr.size.y = 63;
-            set_char_move_init2(&ewk->wu, 0, ewk->wu.char_index, ewk->wu.old_rno[3], 0);
-        }
+    if (ewk->wu.old_rno[1] > 0) {
+        return;
+    }
 
-        break;
+    ewk->wu.routine_no[1]++;
+    ewk->wu.disp_flag = 1;
+    ewk->wu.my_mr_flag = 1;
+    ewk->wu.my_mr.size.x = 127;
+    ewk->wu.my_mr.size.y = 63;
+    set_char_move_init2(&ewk->wu, 0, ewk->wu.char_index, ewk->wu.old_rno[3], 0);
+}
 
-    case 1:
-        if (Break_Into) {
-            ewk->wu.routine_no[1] = 4;
-            break;
-        }
+typedef enum {
+    CONTRACT_SCREEN_WIPE_35,
+    EXPAND_SCREEN_WIPE_35,
+    FINISH_SCREEN_WIPE_35,
+} ScreenWipePhase35;
 
+static void update_screen_wipe_35(WORK_Other* ewk, ScreenWipePhase35 phase) {
+    if (Break_Into) {
+        ewk->wu.routine_no[1] = 4;
+        return;
+    }
+
+    switch (phase) {
+    case CONTRACT_SCREEN_WIPE_35:
         ewk->wu.my_mr.size.x -= 12;
 
         if (ewk->wu.my_mr.size.x <= 0) {
@@ -185,15 +192,9 @@ void eff35_0001(WORK_Other* ewk) {
             ewk->wu.my_mr.size.x = 0;
         }
 
-        disp_pos_trans_entry5(ewk);
         break;
 
-    case 2:
-        if (Break_Into) {
-            ewk->wu.routine_no[1] = 4;
-            break;
-        }
-
+    case EXPAND_SCREEN_WIPE_35:
         ewk->wu.my_mr.size.x += 12;
 
         if (ewk->wu.my_mr.size.x >= 63) {
@@ -201,15 +202,9 @@ void eff35_0001(WORK_Other* ewk) {
             ewk->wu.my_mr.size.x = 63;
         }
 
-        disp_pos_trans_entry5(ewk);
         break;
 
-    case 3:
-        if (Break_Into) {
-            ewk->wu.routine_no[1] = 4;
-            break;
-        }
-
+    case FINISH_SCREEN_WIPE_35:
         ewk->wu.old_rno[4]--;
 
         if (ewk->wu.old_rno[4] <= 0) {
@@ -218,7 +213,28 @@ void eff35_0001(WORK_Other* ewk) {
             Next_Step = 1;
         }
 
-        disp_pos_trans_entry5(ewk);
+        break;
+    }
+
+    disp_pos_trans_entry5(ewk);
+}
+
+void eff35_0001(WORK_Other* ewk) {
+    switch (ewk->wu.routine_no[1]) {
+    case 0:
+        begin_screen_wipe_35(ewk);
+        break;
+
+    case 1:
+        update_screen_wipe_35(ewk, CONTRACT_SCREEN_WIPE_35);
+        break;
+
+    case 2:
+        update_screen_wipe_35(ewk, EXPAND_SCREEN_WIPE_35);
+        break;
+
+    case 3:
+        update_screen_wipe_35(ewk, FINISH_SCREEN_WIPE_35);
         break;
 
     case 4:
