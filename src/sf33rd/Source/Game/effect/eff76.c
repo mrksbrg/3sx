@@ -42,6 +42,14 @@ static s32 uses_english_elena_name(s16 player_number) {
     return player_number == 14 && mpp_w.language == LANG_ENGLISH;
 }
 
+static void finish_slide_in(WORK_Other* ewk) {
+    if (Order[ewk->wu.dir_old] == ewk->wu.routine_no[0]) {
+        Order[ewk->wu.dir_old] = 0;
+    }
+
+    ewk->wu.routine_no[0] = 0;
+    ewk->wu.xyz[0].disp.pos = ewk->wu.hit_quake;
+}
 
 void effect_76_move(WORK_Other* ewk) {
     EFF76_Jmp_Tbl[ewk->wu.routine_no[0]](ewk);
@@ -99,22 +107,19 @@ static void update_slide_in_position(WORK_Other* ewk) {
     ewk->wu.mvxy.a[0].sp += ewk->wu.mvxy.d[0].sp;
 
     if (0 < ewk->wu.mvxy.a[0].sp) {
-        if (ewk->wu.hit_quake <= ewk->wu.xyz[0].disp.pos) {
-            if (Order[ewk->wu.dir_old] == ewk->wu.routine_no[0]) {
-                Order[ewk->wu.dir_old] = 0;
-            }
-
-            ewk->wu.routine_no[0] = 0;
-            ewk->wu.xyz[0].disp.pos = ewk->wu.hit_quake;
-        }
-    } else if (ewk->wu.hit_quake >= ewk->wu.xyz[0].disp.pos) {
-        if (Order[ewk->wu.dir_old] == ewk->wu.routine_no[0]) {
-            Order[ewk->wu.dir_old] = 0;
+        if (ewk->wu.hit_quake > ewk->wu.xyz[0].disp.pos) {
+            return;
         }
 
-        ewk->wu.routine_no[0] = 0;
-        ewk->wu.xyz[0].disp.pos = ewk->wu.hit_quake;
+        finish_slide_in(ewk);
+        return;
     }
+
+    if (ewk->wu.hit_quake < ewk->wu.xyz[0].disp.pos) {
+        return;
+    }
+
+    finish_slide_in(ewk);
 }
 
 void EFF76_SLIDE_IN(WORK_Other* ewk) {
