@@ -145,6 +145,19 @@ static void enter_effect05_hit_response_26(WORK_Other* ewk) {
     start_followup_animation_when_hit_resolves_26(ewk);
 }
 
+static void initialize_effect05_26(WORK_Other* ewk, WORK_Other* parent) {
+    ewk->wu.routine_no[1]++;
+
+    if (eff_hit_flag[parent->wu.type]) {
+        ewk->wu.routine_no[2] = 3;
+        set_char_move_init(&ewk->wu, 0, ewk->wu.old_rno[1]);
+        enter_effect05_hit_response_26(ewk);
+        return;
+    }
+
+    update_waiting_piece_26(ewk, parent);
+}
+
 void effect_26_move(WORK_Other* ewk) {
     if (obr_no_disp_check()) {
         return;
@@ -325,15 +338,8 @@ void eff26_05(WORK_Other* ewk) {
 
     switch (ewk->wu.routine_no[1]) {
     case 0:
-        ewk->wu.routine_no[1]++;
-
-        if (eff_hit_flag[oya->wu.type]) {
-            ewk->wu.routine_no[2] = 3;
-            set_char_move_init(&ewk->wu, 0, ewk->wu.old_rno[1]);
-            goto case_3;
-        }
-
-        /* fallthrough */
+        initialize_effect05_26(ewk, oya);
+        break;
 
     case 1:
         update_waiting_piece_26(ewk, oya);
@@ -345,7 +351,6 @@ void eff26_05(WORK_Other* ewk) {
         break;
 
     case 3:
-    case_3:
         enter_effect05_hit_response_26(ewk);
         break;
 
