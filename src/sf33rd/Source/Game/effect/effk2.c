@@ -232,58 +232,77 @@ static s32 game_is_active(void) {
     return EXE_flag == 0 && Game_pause == 0;
 }
 
+static void detach_from_master_if_needed_K2(WORK_Other* ewk, const WORK* master) {
+    if (ewk->wu.dir_old != 0) {
+        return;
+    }
+
+    if (master->id == ewk->master_work_id && master->dir_old == 0) {
+        return;
+    }
+
+    ewk->wu.dir_old = 1;
+}
+
+static void initialize_effect_K2(WORK_Other* ewk, WORK* master, DADD* fragment) {
+    ewk->wu.routine_no[0]++;
+    ewk->wu.routine_no[1] = fragment->rno;
+    ewk->wu.disp_flag = fragment->init_dsp;
+    ewk->wu.blink_timing = ewk->master_id;
+    ewk->wu.xyz[0].disp.pos += fragment->hx;
+    ewk->wu.xyz[1].disp.pos += fragment->hy;
+    ewk->wu.position_z = 24;
+    ewk->wu.kage_hy = 0;
+
+    if ((ewk->wu.next_y = fragment->gr1st) == 0) {
+        ewk->wu.next_y = (random_16() & 7) + 4;
+
+        if (fragment->kage_char) {
+            ewk->wu.next_y = -ewk->wu.next_y;
+        }
+
+        if (ewk->wu.xyz[1].disp.pos < 0) {
+            ewk->wu.next_y += ewk->wu.xyz[1].disp.pos;
+        }
+    }
+
+    setup_move_data_easy(&ewk->wu, k2_kidou[fragment->ispix], 1, 0);
+    set_char_move_init(&ewk->wu, 0, fragment->cix);
+
+    if (fragment->cix == 0x78) {
+        setup_demojump((PLW*)ewk->wu.hit_adrs, 1);
+    }
+
+    disp_effK2(&ewk->wu, master, fragment);
+}
+
+static void update_active_effect_K2(WORK_Other* ewk, WORK* master, DADD* fragment) {
+    if (ewk->wu.dead_f == 1 || Suicide[0] != 0) {
+        ewk->wu.disp_flag = 0;
+        ewk->wu.routine_no[0]++;
+        return;
+    }
+
+    if (game_is_active()) {
+        effK2_main_process[ewk->wu.routine_no[1]](ewk, fragment);
+    }
+
+    disp_effK2(&ewk->wu, master, fragment);
+}
+
 void effect_K2_move(WORK_Other* ewk) {
     DADD* hahen = (DADD*)ewk->wu.target_adrs;
     WORK* mwk = (WORK*)ewk->my_master;
 
-    if (ewk->wu.dir_old == 0 && (mwk->id != ewk->master_work_id || mwk->dir_old != 0)) {
-        ewk->wu.dir_old = 1;
-    }
+    detach_from_master_if_needed_K2(ewk, mwk);
 
     switch (ewk->wu.routine_no[0]) {
     case 0:
-        ewk->wu.routine_no[0]++;
-        ewk->wu.routine_no[1] = hahen->rno;
-        ewk->wu.disp_flag = hahen->init_dsp;
-        ewk->wu.blink_timing = ewk->master_id;
-        ewk->wu.xyz[0].disp.pos += hahen->hx;
-        ewk->wu.xyz[1].disp.pos += hahen->hy;
-        ewk->wu.position_z = 24;
-        ewk->wu.kage_hy = 0;
-
-        if ((ewk->wu.next_y = hahen->gr1st) == 0) {
-            ewk->wu.next_y = (random_16() & 7) + 4;
-
-            if (hahen->kage_char) {
-                ewk->wu.next_y = -ewk->wu.next_y;
-            }
-            if ((ewk->wu.xyz[1].disp.pos) < 0) {
-                ewk->wu.next_y += ewk->wu.xyz[1].disp.pos;
-            }
-        }
-
-        setup_move_data_easy(&ewk->wu, k2_kidou[hahen->ispix], 1, 0);
-        set_char_move_init(&ewk->wu, 0, (hahen->cix));
-
-        if (hahen->cix == 0x78) {
-            setup_demojump((PLW*)ewk->wu.hit_adrs, 1);
-        }
-
-        disp_effK2(&ewk->wu, mwk, hahen);
+        initialize_effect_K2(ewk, mwk, hahen);
         break;
 
     case 1:
-        if (ewk->wu.dead_f == 1 || Suicide[0] != 0) {
-            ewk->wu.disp_flag = 0;
-            ewk->wu.routine_no[0]++;
-            break;
-        }
-
-        if (game_is_active()) {
-            effK2_main_process[ewk->wu.routine_no[1]](ewk, hahen);
-        }
-
-        disp_effK2(&ewk->wu, mwk, hahen);
+        update_active_effect_K2(ewk, mwk, hahen);
         break;
 
     case 2:
