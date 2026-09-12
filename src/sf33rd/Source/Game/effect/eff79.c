@@ -274,6 +274,16 @@ typedef enum {
 
 enum { EARLY_STATE_LIMIT_79 = 4 };
 
+static void update_79_intro_animation(WORK_Other* ewk) {
+    char_move(&ewk->wu);
+
+    if (ewk->wu.cg_type == 1) {
+        OK_Appear79[ewk->master_id] = 1;
+        ewk->wu.routine_no[0]++;
+        ewk->wu.dir_timer = 1;
+    }
+}
+
 static Effect79UpdateResult update_79_early_state(WORK_Other* ewk) {
     switch (ewk->wu.routine_no[0]) {
     case 0:
@@ -287,14 +297,7 @@ static Effect79UpdateResult update_79_early_state(WORK_Other* ewk) {
         break;
 
     case 1:
-        char_move(&ewk->wu);
-
-        if (ewk->wu.cg_type == 1) {
-            OK_Appear79[ewk->master_id] = 1;
-            ewk->wu.routine_no[0]++;
-            ewk->wu.dir_timer = 1;
-        }
-
+        update_79_intro_animation(ewk);
         break;
 
     case 2:
