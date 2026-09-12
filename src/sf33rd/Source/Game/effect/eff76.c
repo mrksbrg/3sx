@@ -570,9 +570,58 @@ static void setup_result_character_76(WORK_Other* ewk, ResultCharacterType76 res
     }
 }
 
+typedef enum {
+    FIRST_NAME_CHARACTER_76 = 0x48,
+    SECOND_NAME_CHARACTER_76 = 0x49,
+    FIRST_COMPUTE_CHARACTER_76 = 0x4A,
+    SECOND_COMPUTE_CHARACTER_76 = 0x4B,
+    THIRD_COMPUTE_CHARACTER_76 = 0x4C,
+    FOURTH_COMPUTE_CHARACTER_76 = 0x4D,
+    FIFTH_COMPUTE_CHARACTER_76 = 0x4E,
+    LAST_COMPUTE_CHARACTER_76 = 0x4F,
+    RANKED_CHARACTER_76 = 0x55,
+} HighCharacterId76;
+
+static void setup_high_character_76(WORK_Other* ewk) {
+    switch (ewk->wu.dir_old) {
+    case FIRST_NAME_CHARACTER_76:
+        ewk->wu.my_family = 3;
+        ewk->wu.char_index = 0x50;
+        ewk->wu.dir_step = grade_get_my_grade(Champion);
+        return;
+
+    case SECOND_NAME_CHARACTER_76:
+        ewk->wu.my_family = 3;
+        ewk->wu.char_index = 0x10;
+        ewk->wu.dir_step = 8;
+        return;
+
+    case RANKED_CHARACTER_76:
+        setup_result_character_76(ewk, RANKED_RESULT_76);
+        return;
+
+    default:
+        break;
+    }
+
+    if (ewk->wu.dir_old < FIRST_COMPUTE_CHARACTER_76 || ewk->wu.dir_old > LAST_COMPUTE_CHARACTER_76) {
+        return;
+    }
+
+    ewk->wu.my_family = 2;
+    ewk->wu.my_col_code = 0x2052;
+    ewk->wu.char_index = 0x3D;
+    ewk->wu.dir_step = ewk->wu.dir_old - FIRST_COMPUTE_CHARACTER_76;
+}
+
 void Setup_Char_76(WORK_Other* ewk) {
     if (ewk->wu.dir_old <= 0x36) {
         setup_low_character_76(ewk);
+        return;
+    }
+
+    if (ewk->wu.dir_old >= FIRST_COMPUTE_CHARACTER_76 && ewk->wu.dir_old <= LAST_COMPUTE_CHARACTER_76) {
+        setup_high_character_76(ewk);
         return;
     }
 
@@ -617,8 +666,10 @@ void Setup_Char_76(WORK_Other* ewk) {
         setup_result_character_76(ewk, WINNER_RESULT_76);
         break;
 
-    case 0x55:
-        setup_result_character_76(ewk, RANKED_RESULT_76);
+    case FIRST_NAME_CHARACTER_76:
+    case SECOND_NAME_CHARACTER_76:
+    case RANKED_CHARACTER_76:
+        setup_high_character_76(ewk);
         break;
 
     case 0x41:
@@ -652,29 +703,6 @@ void Setup_Char_76(WORK_Other* ewk) {
         ewk->wu.dir_step = ewk->wu.dir_old - 0x3B;
         break;
 
-    case 0x48:
-        ewk->wu.my_family = 3;
-        ewk->wu.char_index = 0x50;
-        ewk->wu.dir_step = grade_get_my_grade(Champion);
-        break;
-
-    case 0x49:
-        ewk->wu.my_family = 3;
-        ewk->wu.char_index = 0x10;
-        ewk->wu.dir_step = 8;
-        break;
-
-    case 0x4A:
-    case 0x4B:
-    case 0x4C:
-    case 0x4D:
-    case 0x4E:
-    case 0x4F:
-        ewk->wu.my_family = 2;
-        ewk->wu.my_col_code = 0x2052;
-        ewk->wu.char_index = 0x3D;
-        ewk->wu.dir_step = ewk->wu.dir_old - 0x4A;
-        break;
     }
 }
 
