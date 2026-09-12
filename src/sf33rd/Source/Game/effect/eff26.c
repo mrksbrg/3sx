@@ -39,6 +39,16 @@ static void move_unless_obroll_26(WORK_Other* ewk) {
     }
 }
 
+static void advance_piece_when_parent_ready_26(WORK_Other* ewk, WORK_Other* parent) {
+    if (parent->wu.routine_no[1] <= 1) {
+        return;
+    }
+
+    ewk->wu.routine_no[1]++;
+    piece_set(ewk);
+    set_char_move_init(&ewk->wu, 0, ewk->wu.old_rno[1]);
+}
+
 void effect_26_move(WORK_Other* ewk) {
     if (obr_no_disp_check()) {
         return;
@@ -111,11 +121,7 @@ void eff26_01(WORK_Other* ewk) {
     case 1:
         move_during_hit_stop_26(ewk);
 
-        if (oya->wu.routine_no[1] > 1) {
-            ewk->wu.routine_no[1]++;
-            piece_set(ewk);
-            set_char_move_init(&ewk->wu, 0, ewk->wu.old_rno[1]);
-        }
+        advance_piece_when_parent_ready_26(ewk, oya);
 
         break;
 
@@ -149,11 +155,7 @@ void eff26_02(WORK_Other* ewk) {
     case 1:
         move_during_hit_stop_26(ewk);
 
-        if (oya->wu.routine_no[1] > 1) {
-            ewk->wu.routine_no[1]++;
-            piece_set(ewk);
-            set_char_move_init(&ewk->wu, 0, ewk->wu.old_rno[1]);
-        }
+        advance_piece_when_parent_ready_26(ewk, oya);
 
         break;
 
@@ -189,11 +191,7 @@ void eff26_03(WORK_Other* ewk) {
     case 1:
         move_during_hit_stop_26(ewk);
 
-        if (oya->wu.routine_no[1] > 1) {
-            ewk->wu.routine_no[1]++;
-            piece_set(ewk);
-            set_char_move_init(&ewk->wu, 0, ewk->wu.old_rno[1]);
-        }
+        advance_piece_when_parent_ready_26(ewk, oya);
 
         break;
 
@@ -242,11 +240,7 @@ void eff26_04(WORK_Other* ewk) {
 
         move_during_hit_stop_26(ewk);
 
-        if (oya->wu.routine_no[1] > 1) {
-            ewk->wu.routine_no[1]++;
-            piece_set(ewk);
-            set_char_move_init(&ewk->wu, 0, ewk->wu.old_rno[1]);
-        }
+        advance_piece_when_parent_ready_26(ewk, oya);
 
         break;
 
@@ -312,11 +306,7 @@ void eff26_05(WORK_Other* ewk) {
     case 1:
         move_during_hit_stop_26(ewk);
 
-        if (oya->wu.routine_no[1] > 1) {
-            ewk->wu.routine_no[1]++;
-            piece_set(ewk);
-            set_char_move_init(&ewk->wu, 0, ewk->wu.old_rno[1]);
-        }
+        advance_piece_when_parent_ready_26(ewk, oya);
 
         break;
 
