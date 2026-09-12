@@ -280,22 +280,38 @@ s32 effect_76_init(s16 dir_old) {
     return 0;
 }
 
+static void setup_low_position_76(WORK_Other* ewk) {
+    ewk->wu.xyz[0].disp.pos =
+        bg_w.bgw[ewk->wu.my_family - 1].wxy[0].disp.pos + Pos_Data_76[ewk->wu.dir_old - 0x2B][0];
+    ewk->wu.xyz[1].disp.pos =
+        bg_w.bgw[ewk->wu.my_family - 1].wxy[1].disp.pos + Pos_Data_76[ewk->wu.dir_old - 0x2B][1];
+    ewk->wu.position_z = Pos_Data_76[ewk->wu.dir_old - 0x2B][2];
+
+    if (ewk->wu.dir_old != 0x2D) {
+        return;
+    }
+
+    if (Order_Dir[ewk->wu.dir_old] == 4) {
+        ewk->wu.hit_quake = bg_w.bgw[ewk->wu.my_family - 1].wxy[0].disp.pos + 32;
+        ewk->wu.mvxy.a[0].sp = -0x100000;
+        ewk->wu.mvxy.d[0].sp = 0;
+    } else {
+        ewk->wu.hit_quake = bg_w.bgw[ewk->wu.my_family - 1].wxy[0].disp.pos - 32;
+        ewk->wu.mvxy.a[0].sp = 0x100000;
+        ewk->wu.mvxy.d[0].sp = 0;
+    }
+}
+
 void Setup_Pos_76(WORK_Other* ewk) {
     s16 ix;
     u8 my_char;
 
+    if (ewk->wu.dir_old >= 0x2B && ewk->wu.dir_old <= 0x36) {
+        setup_low_position_76(ewk);
+        return;
+    }
+
     switch (ewk->wu.dir_old) {
-    case 0x2B:
-    case 0x2C:
-    case 0x2E:
-    case 0x2F:
-    case 0x30:
-    case 0x31:
-    case 0x32:
-    case 0x33:
-    case 0x34:
-    case 0x35:
-    case 0x36:
     case 0x38:
     case 0x39:
     case 0x3A:
@@ -338,25 +354,6 @@ void Setup_Pos_76(WORK_Other* ewk) {
             ewk->wu.mvxy.d[0].sp = 0;
         } else {
             ewk->wu.hit_quake = bg_w.bgw[ewk->wu.my_family - 1].wxy[0].disp.pos - 64;
-            ewk->wu.mvxy.a[0].sp = 0x100000;
-            ewk->wu.mvxy.d[0].sp = 0;
-        }
-
-        break;
-
-    case 0x2D:
-        ewk->wu.xyz[0].disp.pos =
-            bg_w.bgw[ewk->wu.my_family - 1].wxy[0].disp.pos + Pos_Data_76[ewk->wu.dir_old - 0x2B][0];
-        ewk->wu.xyz[1].disp.pos =
-            bg_w.bgw[ewk->wu.my_family - 1].wxy[1].disp.pos + Pos_Data_76[ewk->wu.dir_old - 0x2B][1];
-        ewk->wu.position_z = Pos_Data_76[ewk->wu.dir_old - 0x2B][2];
-
-        if (Order_Dir[ewk->wu.dir_old] == 4) {
-            ewk->wu.hit_quake = bg_w.bgw[ewk->wu.my_family - 1].wxy[0].disp.pos + 32;
-            ewk->wu.mvxy.a[0].sp = -0x100000;
-            ewk->wu.mvxy.d[0].sp = 0;
-        } else {
-            ewk->wu.hit_quake = bg_w.bgw[ewk->wu.my_family - 1].wxy[0].disp.pos - 32;
             ewk->wu.mvxy.a[0].sp = 0x100000;
             ewk->wu.mvxy.d[0].sp = 0;
         }
