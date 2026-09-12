@@ -27,6 +27,11 @@ static s32 game_is_active(void) {
     return !EXE_flag && !Game_pause;
 }
 
+static void move_during_hit_stop_26(WORK_Other* ewk) {
+    if (ewk->wu.hit_stop && !EXE_obroll) {
+        char_move(&ewk->wu);
+    }
+}
 
 void effect_26_move(WORK_Other* ewk) {
     if (obr_no_disp_check()) {
@@ -80,9 +85,7 @@ void eff26_00(WORK_Other* ewk) {
         return;
     }
 
-    if (ewk->wu.hit_stop && !EXE_obroll) {
-        char_move(&ewk->wu);
-    }
+    move_during_hit_stop_26(ewk);
 }
 
 void eff26_01(WORK_Other* ewk) {
@@ -100,9 +103,7 @@ void eff26_01(WORK_Other* ewk) {
         /* fallthrough */
 
     case 1:
-        if (ewk->wu.hit_stop && !EXE_obroll) {
-            char_move(&ewk->wu);
-        }
+        move_during_hit_stop_26(ewk);
 
         if (oya->wu.routine_no[1] > 1) {
             ewk->wu.routine_no[1]++;
@@ -142,9 +143,7 @@ void eff26_02(WORK_Other* ewk) {
         /* fallthrough */
 
     case 1:
-        if (ewk->wu.hit_stop && !EXE_obroll) {
-            char_move(&ewk->wu);
-        }
+        move_during_hit_stop_26(ewk);
 
         if (oya->wu.routine_no[1] > 1) {
             ewk->wu.routine_no[1]++;
@@ -188,9 +187,7 @@ void eff26_03(WORK_Other* ewk) {
         }
 
     case 1:
-        if (ewk->wu.hit_stop && !EXE_obroll) {
-            char_move(&ewk->wu);
-        }
+        move_during_hit_stop_26(ewk);
 
         if (oya->wu.routine_no[1] > 1) {
             ewk->wu.routine_no[1]++;
@@ -245,9 +242,7 @@ void eff26_04(WORK_Other* ewk) {
             goto case_2;
         }
 
-        if (ewk->wu.hit_stop && !EXE_obroll) {
-            char_move(&ewk->wu);
-        }
+        move_during_hit_stop_26(ewk);
 
         if (oya->wu.routine_no[1] > 1) {
             ewk->wu.routine_no[1]++;
@@ -321,9 +316,7 @@ void eff26_05(WORK_Other* ewk) {
         /* fallthrough */
 
     case 1:
-        if (ewk->wu.hit_stop && !EXE_obroll) {
-            char_move(&ewk->wu);
-        }
+        move_during_hit_stop_26(ewk);
 
         if (oya->wu.routine_no[1] > 1) {
             ewk->wu.routine_no[1]++;
