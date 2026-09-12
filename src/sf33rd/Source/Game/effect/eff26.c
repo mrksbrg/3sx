@@ -49,6 +49,11 @@ static void advance_piece_when_parent_ready_26(WORK_Other* ewk, WORK_Other* pare
     set_char_move_init(&ewk->wu, 0, ewk->wu.old_rno[1]);
 }
 
+static void update_waiting_piece_26(WORK_Other* ewk, WORK_Other* parent) {
+    move_during_hit_stop_26(ewk);
+    advance_piece_when_parent_ready_26(ewk, parent);
+}
+
 void effect_26_move(WORK_Other* ewk) {
     if (obr_no_disp_check()) {
         return;
@@ -119,9 +124,7 @@ void eff26_01(WORK_Other* ewk) {
         /* fallthrough */
 
     case 1:
-        move_during_hit_stop_26(ewk);
-
-        advance_piece_when_parent_ready_26(ewk, oya);
+        update_waiting_piece_26(ewk, oya);
 
         break;
 
@@ -153,9 +156,7 @@ void eff26_02(WORK_Other* ewk) {
         /* fallthrough */
 
     case 1:
-        move_during_hit_stop_26(ewk);
-
-        advance_piece_when_parent_ready_26(ewk, oya);
+        update_waiting_piece_26(ewk, oya);
 
         break;
 
@@ -189,9 +190,7 @@ void eff26_03(WORK_Other* ewk) {
         }
 
     case 1:
-        move_during_hit_stop_26(ewk);
-
-        advance_piece_when_parent_ready_26(ewk, oya);
+        update_waiting_piece_26(ewk, oya);
 
         break;
 
@@ -238,9 +237,7 @@ void eff26_04(WORK_Other* ewk) {
             goto case_2;
         }
 
-        move_during_hit_stop_26(ewk);
-
-        advance_piece_when_parent_ready_26(ewk, oya);
+        update_waiting_piece_26(ewk, oya);
 
         break;
 
@@ -304,9 +301,7 @@ void eff26_05(WORK_Other* ewk) {
         /* fallthrough */
 
     case 1:
-        move_during_hit_stop_26(ewk);
-
-        advance_piece_when_parent_ready_26(ewk, oya);
+        update_waiting_piece_26(ewk, oya);
 
         break;
 
