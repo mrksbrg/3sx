@@ -434,6 +434,45 @@ void eff35_0006(WORK_Other* ewk) {
     run_timed_effect_35(ewk, TRACK_BACKGROUND_AND_SIGNAL_35);
 }
 
+static u8 select_localized_char_35(u8 english_char, u8 localized_char) {
+    if (mpp_w.language == LANG_ENGLISH) {
+        return english_char;
+    }
+
+    return localized_char;
+}
+
+static u8 select_bonus_result_char_35(WORK_Other* ewk) {
+    switch (Bonus_Game_result) {
+    case 2:
+        return 11;
+
+    case 3:
+        return 10;
+
+    default:
+        ewk->wu.routine_no[1] = 99;
+        Next_Step = 1;
+        return 10;
+    }
+}
+
+static u8 select_char_num_35(WORK_Other* ewk, s16 char_type) {
+    switch (char_type) {
+    case 5:
+        return select_localized_char_35(9, 5);
+
+    case 7:
+        return select_localized_char_35(8, 7);
+
+    case 10:
+        return select_bonus_result_char_35(ewk);
+
+    default:
+        return char_type;
+    }
+}
+
 s32 effect_35_init(s16 wait_timer, s16 c_type) {
     WORK_Other* ewk;
     s16 ix;
@@ -446,49 +485,7 @@ s32 effect_35_init(s16 wait_timer, s16 c_type) {
 
     ewk = (WORK_Other*)frw[ix];
     ewk->wu.id = 35;
-
-    switch (c_type) {
-    case 5:
-        if (mpp_w.language == LANG_ENGLISH) {
-            char_num = 9;
-        } else {
-            char_num = 5;
-        }
-
-        break;
-
-    case 7:
-        if (mpp_w.language == LANG_ENGLISH) {
-            char_num = 8;
-        } else {
-            char_num = 7;
-        }
-
-        break;
-
-    case 10:
-        switch (Bonus_Game_result) {
-        case 2:
-            char_num = 11;
-            break;
-
-        case 3:
-            char_num = 10;
-            break;
-
-        default:
-            char_num = 10;
-            ewk->wu.routine_no[1] = 99;
-            Next_Step = 1;
-            break;
-        }
-
-        break;
-
-    default:
-        char_num = c_type;
-        break;
-    }
+    char_num = select_char_num_35(ewk, c_type);
 
     data_ptr = eff35_data_tbl[char_num];
     ewk->wu.be_flag = 1;
