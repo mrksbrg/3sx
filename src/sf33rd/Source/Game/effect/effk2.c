@@ -515,34 +515,44 @@ void effK2_parts_move_type_2(WORK_Other* ewk, DADD* /* unused */) {
     }
 }
 
+static void land_type_3_fragment_K2(WORK_Other* ewk, const DADD* fragment) {
+    ewk->wu.xyz[1].disp.pos = ewk->wu.next_y;
+
+    if (++ewk->wu.kage_hy > fragment->bau) {
+        ewk->wu.routine_no[2] = 10;
+    } else {
+        ewk->wu.routine_no[2] = 1;
+    }
+
+    ewk->wu.routine_no[1] = 1;
+    char_move_cmja(&ewk->wu);
+    reset_mvxy_data(&ewk->wu);
+}
+
+static void update_type_3_fragment_K2(WORK_Other* ewk, const DADD* fragment) {
+    char_move(&ewk->wu);
+    add_mvxy_speed(&ewk->wu);
+    cal_mvxy_speed(&ewk->wu);
+
+    if (ewk->wu.mvxy.a[1].sp > 0) {
+        return;
+    }
+
+    if (ewk->wu.xyz[1].disp.pos <= ewk->wu.next_y) {
+        land_type_3_fragment_K2(ewk, fragment);
+        return;
+    }
+
+    if (screen_x_range_check(&ewk->wu)) {
+        ewk->wu.routine_no[1] = 1;
+        ewk->wu.routine_no[2] = 20;
+    }
+}
+
 void effK2_parts_move_type_3(WORK_Other* ewk, DADD* hahen) {
     switch (ewk->wu.routine_no[2]) {
     case 0:
-        char_move(&ewk->wu);
-        add_mvxy_speed(&ewk->wu);
-        cal_mvxy_speed(&ewk->wu);
-
-        if (ewk->wu.mvxy.a[1].sp > 0) {
-            break;
-        }
-
-        if (ewk->wu.xyz[1].disp.pos <= ewk->wu.next_y) {
-            ewk->wu.xyz[1].disp.pos = ewk->wu.next_y;
-
-            if (++ewk->wu.kage_hy > hahen->bau) {
-                ewk->wu.routine_no[2] = 10;
-            } else {
-                ewk->wu.routine_no[2] = 1;
-            }
-
-            ewk->wu.routine_no[1] = 1;
-            char_move_cmja(&ewk->wu);
-            reset_mvxy_data(&ewk->wu);
-        } else if (screen_x_range_check(&ewk->wu)) {
-            ewk->wu.routine_no[1] = 1;
-            ewk->wu.routine_no[2] = 20;
-        }
-
+        update_type_3_fragment_K2(ewk, hahen);
         break;
     }
 }
