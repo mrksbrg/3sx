@@ -220,6 +220,22 @@ static void start_79_final_movement(WORK_Other* ewk) {
     }
 }
 
+static void advance_79_final_animation(WORK_Other* ewk) {
+    char_move(&ewk->wu);
+
+    if (ewk->wu.cg_type != 2) {
+        return;
+    }
+
+    ewk->wu.routine_no[1]++;
+    Sel_Arts_Complete[ewk->master_id] |= 0x8000;
+
+    if (ewk->wu.xyz[0].disp.pos ==
+        bg_w.bgw[ewk->wu.my_family - 1].wxy[0].disp.pos + Plate_Pos_Data_79[1][ewk->master_id][0][0]) {
+        ewk->wu.routine_no[0] = 8;
+    }
+}
+
 static void update_79_final_movement(WORK_Other* ewk) {
     s16 arrived[2];
 
@@ -232,18 +248,7 @@ static void update_79_final_movement(WORK_Other* ewk) {
         break;
 
     case 1:
-        char_move(&ewk->wu);
-
-        if (ewk->wu.cg_type == 2) {
-            ewk->wu.routine_no[1]++;
-            Sel_Arts_Complete[ewk->master_id] |= 0x8000;
-
-            if (ewk->wu.xyz[0].disp.pos ==
-                bg_w.bgw[ewk->wu.my_family - 1].wxy[0].disp.pos + Plate_Pos_Data_79[1][ewk->master_id][0][0]) {
-                ewk->wu.routine_no[0] = 8;
-            }
-        }
-
+        advance_79_final_animation(ewk);
         break;
 
     case 2:
