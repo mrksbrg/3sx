@@ -744,14 +744,7 @@ void Setup_Char_76(WORK_Other* ewk) {
         return;
     }
 
-    switch (ewk->wu.dir_old) {
-    case FIRST_NAME_CHARACTER_76:
-    case SECOND_NAME_CHARACTER_76:
-    case RANKED_CHARACTER_76:
-        setup_high_character_76(ewk);
-        break;
-
-    }
+    setup_high_character_76(ewk);
 }
 
 s16 Check_Range_Out(WORK_Other* ewk) {
