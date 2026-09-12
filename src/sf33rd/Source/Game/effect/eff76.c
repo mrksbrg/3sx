@@ -551,6 +551,25 @@ static void setup_low_character_76(WORK_Other* ewk) {
     }
 }
 
+typedef enum {
+    WINNER_RESULT_76,
+    RANKED_RESULT_76,
+} ResultCharacterType76;
+
+static void setup_result_character_76(WORK_Other* ewk, ResultCharacterType76 result_type) {
+    ewk->wu.my_family = 1;
+    ewk->wu.my_col_code = 0x90;
+    ewk->wu.char_index = 2;
+    ewk->wu.direction = 3;
+
+    if (result_type == RANKED_RESULT_76) {
+        ewk->wu.dir_step = Ranking_Data[Order_Dir[ewk->wu.dir_old]].player;
+        ewk->wu.direction = 7;
+    } else {
+        ewk->wu.dir_step = My_char[Winner_id];
+    }
+}
+
 void Setup_Char_76(WORK_Other* ewk) {
     if (ewk->wu.dir_old <= 0x36) {
         setup_low_character_76(ewk);
@@ -595,19 +614,11 @@ void Setup_Char_76(WORK_Other* ewk) {
         break;
 
     case 0x37:
+        setup_result_character_76(ewk, WINNER_RESULT_76);
+        break;
+
     case 0x55:
-        ewk->wu.my_family = 1;
-        ewk->wu.my_col_code = 0x90;
-        ewk->wu.char_index = 2;
-        ewk->wu.direction = 3;
-
-        if (ewk->wu.dir_old == 0x37) {
-            ewk->wu.dir_step = My_char[Winner_id];
-        } else {
-            ewk->wu.dir_step = Ranking_Data[Order_Dir[ewk->wu.dir_old]].player;
-            ewk->wu.direction = 7;
-        }
-
+        setup_result_character_76(ewk, RANKED_RESULT_76);
         break;
 
     case 0x41:
