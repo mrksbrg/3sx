@@ -71,26 +71,39 @@ static void update_79_appearance(WORK_Other* ewk) {
     }
 }
 
-static void setup_79_moving_plate_one(WORK_Other* ewk) {
-    switch (ewk->wu.hit_quake) {
-    case 0:
-        ewk->wu.dmcal_m = 1;
-        ewk->wu.dm_vital = 3;
-        Setup_Move_79(ewk, 2, 0x60000, -0x20000, 0);
-        break;
+typedef struct {
+    s16 display_slot;
+    s16 vitality_slot;
+    s32 movement_kind;
+    s32 x_speed;
+    s32 y_speed;
+    s32 option;
+} PlateMovementSetup79;
 
-    case 1:
-        ewk->wu.dmcal_m = 2;
-        ewk->wu.dm_vital = 1;
-        Setup_Move_79(ewk, 2, 0x60000, -0x20000, 0);
-        break;
+enum {
+    FIRST_PLATE_INDEX_79 = 0,
+    SECOND_PLATE_INDEX_79 = 1,
+    PLATE_SETUP_VARIANT_COUNT_79 = sizeof(Pos_Z_Data_79) / sizeof(*Pos_Z_Data_79),
+    DEFAULT_QUAKE_INDEX_79 = PLATE_SETUP_VARIANT_COUNT_79 - sizeof(char),
+};
 
-    default:
-        ewk->wu.dmcal_m = 0;
-        ewk->wu.dm_vital = 2;
-        Setup_Move_79(ewk, 2, 0x20000, -0x80000, 2);
-        break;
-    }
+static const PlateMovementSetup79 plate_movement_setups_79[][PLATE_SETUP_VARIANT_COUNT_79] = {
+    [FIRST_PLATE_INDEX_79] = { { 1, 3, 2, 0x60000, -0x20000, 0 },
+                               { 2, 1, 2, 0x60000, -0x20000, 0 },
+                               { 0, 2, 2, 0x20000, -0x80000, 2 } },
+    [SECOND_PLATE_INDEX_79] = { { 2, 3, 2, 0x60000, -0x80000, 1 },
+                                { 0, 1, 1, -0x60000, 0x20000, 0 },
+                                { 1, 2, 1, -0x60000, 0x20000, 0 } },
+};
+
+static void setup_79_moving_plate(WORK_Other* ewk, s32 plate_index) {
+    s32 quake_index =
+        ewk->wu.hit_quake < DEFAULT_QUAKE_INDEX_79 ? ewk->wu.hit_quake : DEFAULT_QUAKE_INDEX_79;
+    const PlateMovementSetup79* setup = &plate_movement_setups_79[plate_index][quake_index];
+
+    ewk->wu.dmcal_m = setup->display_slot;
+    ewk->wu.dm_vital = setup->vitality_slot;
+    Setup_Move_79(ewk, setup->movement_kind, setup->x_speed, setup->y_speed, setup->option);
 }
 
 static void update_79_plate_movement(WORK_Other* ewk) {
@@ -104,30 +117,11 @@ static void update_79_plate_movement(WORK_Other* ewk) {
 
         switch (Moving_Plate[ewk->master_id]) {
         case 1:
-            setup_79_moving_plate_one(ewk);
+            setup_79_moving_plate(ewk, 0);
             break;
 
         case 2:
-            switch (ewk->wu.hit_quake) {
-            case 0:
-                ewk->wu.dmcal_m = 2;
-                ewk->wu.dm_vital = 3;
-                Setup_Move_79(ewk, 2, 0x60000, -0x80000, 1);
-                break;
-
-            case 1:
-                ewk->wu.dmcal_m = 0;
-                ewk->wu.dm_vital = 1;
-                Setup_Move_79(ewk, 1, -0x60000, 0x20000, 0);
-                break;
-
-            default:
-                ewk->wu.dmcal_m = 1;
-                ewk->wu.dm_vital = 2;
-                Setup_Move_79(ewk, 1, -0x60000, 0x20000, 0);
-                break;
-            }
-
+            setup_79_moving_plate(ewk, 1);
             break;
 
         default:
