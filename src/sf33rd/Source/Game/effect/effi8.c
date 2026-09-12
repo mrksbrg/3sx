@@ -229,6 +229,86 @@ static void update_unhit_ball_effI8(WORK_Other* ewk, PLW* master) {
     }
 }
 
+static void reflect_player_hit_effI8(WORK_Other* ewk) {
+    ewk->wu.routine_no[1] = 0;
+
+    if (ewk->wu.hf.hit.player & 0x30) {
+        ewk->wu.mvxy.a[0].sp = -ewk->wu.mvxy.a[0].sp;
+        ewk->wu.mvxy.a[0].sp /= 3;
+        ewk->wu.mvxy.a[1].sp = 0x10000;
+        ewk->wu.mvxy.d[1].sp = -0x6000;
+    } else {
+        ewk->wu.rl_flag = (ewk->wu.rl_flag + 1) & 1;
+        ewk->wu.mvxy.a[0].sp /= 2;
+        ewk->wu.mvxy.a[1].sp = 0;
+        ewk->wu.mvxy.d[1].sp = -0x6000;
+    }
+}
+
+static void score_player_hit_effI8(WORK_Other* ewk) {
+    ewk->wu.routine_no[1] = 0;
+    ewk->wu.rl_flag = (ewk->wu.rl_flag + 1) & 1;
+    ewk->wu.mvxy.a[0].sp = 0x30000;
+    ewk->wu.mvxy.a[1].sp = 0x44000;
+    ewk->wu.mvxy.d[1].sp = -0x5000;
+    ewk->wu.hit_stop = 4;
+    Bonus_Game_result++;
+
+    if (ewk->wu.hf.hit.player & 0x80) {
+        Additinal_Score_DM((WORK_Other*)ewk->wu.target_adrs, 8);
+    } else {
+        Additinal_Score_DM((WORK_Other*)ewk->wu.target_adrs, 6);
+    }
+
+    set_char_move_init(&ewk->wu, 0, 0x8B);
+}
+
+static void handle_player_hit_effI8(WORK_Other* ewk) {
+    if (ewk->wu.hf.hit.player & 0x33) {
+        reflect_player_hit_effI8(ewk);
+    } else if (ewk->wu.hf.hit.player & 0xC0) {
+        score_player_hit_effI8(ewk);
+    }
+}
+
+static void handle_effect_hit_effI8(WORK_Other* ewk) {
+    sound_effect_request[0x157](ewk, 0x157);
+    ewk->wu.routine_no[1] = 0;
+    ewk->wu.rl_flag = (ewk->wu.rl_flag + 1) & 1;
+    ewk->wu.mvxy.a[0].sp = (ewk->wu.mvxy.a[0].sp * 3) / 4;
+    ewk->wu.hit_stop = 2;
+}
+
+static void break_ball_effI8(WORK_Other* ewk) {
+    if (ewk->wu.dmg_work_id != 1) {
+        sound_effect_request[0x10B](ewk, 0x10B);
+    }
+
+    ewk->wu.routine_no[1] = 2;
+    ewk->wu.rl_flag = (ewk->wu.rl_flag + 1) & 1;
+    ewk->wu.disp_flag = 2;
+    ewk->wu.type = 0;
+    ewk->wu.kage_flag = 0;
+    ewk->wu.dir_timer = 8;
+    ewk->wu.hit_stop = 2;
+    Additinal_Score_DM((WORK_Other*)ewk->wu.target_adrs, 6);
+    Bonus_Game_ex_result++;
+}
+
+static void handle_ball_hit_effI8(WORK_Other* ewk) {
+    if (ewk->wu.hf.hit.player) {
+        handle_player_hit_effI8(ewk);
+    } else if (ewk->wu.hf.hit.effect && ((WORK*)ewk->wu.hit_adrs)->id == 0x89) {
+        handle_effect_hit_effI8(ewk);
+    } else {
+        break_ball_effI8(ewk);
+    }
+
+    ewk->wu.hit_work_id = ewk->wu.dmg_work_id = 0;
+    ewk->wu.hf.hit_flag = 0;
+    ewk->refrected = 1;
+}
+
 void effI8_main_process(WORK_Other* ewk) {
     PLW* mwk = (PLW*)ewk->my_master;
 
@@ -246,63 +326,7 @@ void effI8_main_process(WORK_Other* ewk) {
         break;
 
     case 1:
-        if (ewk->wu.hf.hit.player) {
-            if (ewk->wu.hf.hit.player & 0x33) {
-                ewk->wu.routine_no[1] = 0;
-
-                if (ewk->wu.hf.hit.player & 0x30) {
-                    ewk->wu.mvxy.a[0].sp = -ewk->wu.mvxy.a[0].sp;
-                    ewk->wu.mvxy.a[0].sp /= 3;
-                    ewk->wu.mvxy.a[1].sp = 0x10000;
-                    ewk->wu.mvxy.d[1].sp = -0x6000;
-                } else {
-                    ewk->wu.rl_flag = (ewk->wu.rl_flag + 1) & 1;
-                    ewk->wu.mvxy.a[0].sp /= 2;
-                    ewk->wu.mvxy.a[1].sp = 0;
-                    ewk->wu.mvxy.d[1].sp = -0x6000;
-                }
-            } else if (ewk->wu.hf.hit.player & 0xC0) {
-                ewk->wu.routine_no[1] = 0;
-                ewk->wu.rl_flag = (ewk->wu.rl_flag + 1) & 1;
-                ewk->wu.mvxy.a[0].sp = 0x30000;
-                ewk->wu.mvxy.a[1].sp = 0x44000;
-                ewk->wu.mvxy.d[1].sp = -0x5000;
-                ewk->wu.hit_stop = 4;
-                Bonus_Game_result++;
-
-                if (ewk->wu.hf.hit.player & 0x80) {
-                    Additinal_Score_DM((WORK_Other*)ewk->wu.target_adrs, 8);
-                } else {
-                    Additinal_Score_DM((WORK_Other*)ewk->wu.target_adrs, 6);
-                }
-
-                set_char_move_init(&ewk->wu, 0, 0x8B);
-            }
-        } else if (ewk->wu.hf.hit.effect && ((WORK*)ewk->wu.hit_adrs)->id == 0x89) {
-            sound_effect_request[0x157](ewk, 0x157);
-            ewk->wu.routine_no[1] = 0;
-            ewk->wu.rl_flag = (ewk->wu.rl_flag + 1) & 1;
-            ewk->wu.mvxy.a[0].sp = (ewk->wu.mvxy.a[0].sp * 3) / 4;
-            ewk->wu.hit_stop = 2;
-        } else {
-            if (ewk->wu.dmg_work_id != 1) {
-                sound_effect_request[0x10B](ewk, 0x10B);
-            }
-
-            ewk->wu.routine_no[1] = 2;
-            ewk->wu.rl_flag = (ewk->wu.rl_flag + 1) & 1;
-            ewk->wu.disp_flag = 2;
-            ewk->wu.type = 0;
-            ewk->wu.kage_flag = 0;
-            ewk->wu.dir_timer = 8;
-            ewk->wu.hit_stop = 2;
-            Additinal_Score_DM((WORK_Other*)ewk->wu.target_adrs, 6);
-            Bonus_Game_ex_result++;
-        }
-
-        ewk->wu.hit_work_id = ewk->wu.dmg_work_id = 0;
-        ewk->wu.hf.hit_flag = 0;
-        ewk->refrected = 1;
+        handle_ball_hit_effI8(ewk);
         break;
 
     case 2:
