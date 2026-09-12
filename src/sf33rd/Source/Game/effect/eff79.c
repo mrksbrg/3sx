@@ -429,6 +429,13 @@ s32 Check_Play_Status_79(WORK_Other* ewk) {
     return 0;
 }
 
+static void remember_79_plate_position(WORK_Other* ewk) {
+    if (ewk->wu.hit_quake == 0) {
+        Plate_X[ewk->master_id][0] = ewk->wu.xyz[0].disp.pos;
+        Plate_Y[ewk->master_id][0] = ewk->wu.xyz[1].disp.pos;
+    }
+}
+
 void Move_Move_79(WORK_Other* ewk) {
     s16 arrived[2];
 
@@ -465,10 +472,7 @@ void Move_Move_79(WORK_Other* ewk) {
         break;
     }
 
-    if (ewk->wu.hit_quake == 0) {
-        Plate_X[ewk->master_id][0] = ewk->wu.xyz[0].disp.pos;
-        Plate_Y[ewk->master_id][0] = ewk->wu.xyz[1].disp.pos;
-    }
+    remember_79_plate_position(ewk);
 }
 
 void Setup_Move_79(WORK_Other* ewk, s32 /* unused */, s32 X_Value, s32 Y_Value, s32 Option) {
