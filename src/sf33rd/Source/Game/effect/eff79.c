@@ -284,6 +284,17 @@ static void update_79_intro_animation(WORK_Other* ewk) {
     }
 }
 
+static void update_79_intro_wait(WORK_Other* ewk) {
+    if (--ewk->wu.dir_timer != 0) {
+        return;
+    }
+
+    ewk->wu.routine_no[0] = 5;
+    Move_Super_Arts[ewk->master_id]--;
+    Select_Arts[ewk->master_id]--;
+    effect_80_init(ewk, ewk->master_id, ewk->master_player, ewk->wu.my_family - 1);
+}
+
 static Effect79UpdateResult update_79_early_state(WORK_Other* ewk) {
     switch (ewk->wu.routine_no[0]) {
     case 0:
@@ -301,13 +312,7 @@ static Effect79UpdateResult update_79_early_state(WORK_Other* ewk) {
         break;
 
     case 2:
-        if (--ewk->wu.dir_timer == 0) {
-            ewk->wu.routine_no[0] = 5;
-            Move_Super_Arts[ewk->master_id]--;
-            Select_Arts[ewk->master_id]--;
-            effect_80_init(ewk, ewk->master_id, ewk->master_player, ewk->wu.my_family - 1);
-        }
-
+        update_79_intro_wait(ewk);
         break;
 
     case 3:
