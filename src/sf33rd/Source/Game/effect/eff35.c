@@ -343,52 +343,80 @@ void eff35_0003(WORK_Other* ewk) {
     }
 }
 
+static void begin_bonus_message_35(WORK_Other* ewk) {
+    ewk->wu.old_rno[1]--;
+
+    if (ewk->wu.old_rno[1] > 0) {
+        return;
+    }
+
+    ewk->wu.routine_no[1]++;
+    ewk->wu.disp_flag = 1;
+    set_char_move_init2(&ewk->wu, 0, ewk->wu.char_index, ewk->wu.old_rno[3], 0);
+}
+
+static void move_bonus_message_if_active_35(WORK_Other* ewk) {
+    if (game_is_active()) {
+        char_move(&ewk->wu);
+    }
+}
+
+static s32 bonus_result_is_ready_35(void) {
+    return pcon_rno[0] == 2 && pcon_rno[2] >= 3;
+}
+
+static s32 bonus_was_won_35(void) {
+    return Bonus_Game_result >= 10 || Bonus_Game_ex_result >= 10;
+}
+
+static void select_bonus_message_35(WORK_Other* ewk) {
+    if (!bonus_result_is_ready_35()) {
+        move_bonus_message_if_active_35(ewk);
+        disp_pos_trans_entry(ewk);
+        return;
+    }
+
+    if (bonus_was_won_35()) {
+        ewk->wu.routine_no[1]++;
+    } else {
+        ewk->wu.routine_no[1] = 3;
+    }
+
+    disp_pos_trans_entry(ewk);
+}
+
+static void update_winning_bonus_message_35(WORK_Other* ewk) {
+    move_bonus_message_if_active_35(ewk);
+
+    if (ewk->wu.cg_type == 9) {
+        ewk->wu.routine_no[1]++;
+        set_char_move_init(&ewk->wu, 0, 8);
+    }
+
+    disp_pos_trans_entry(ewk);
+}
+
+static void update_losing_bonus_message_35(WORK_Other* ewk) {
+    move_bonus_message_if_active_35(ewk);
+    disp_pos_trans_entry(ewk);
+}
+
 void eff35_0004(WORK_Other* ewk) {
     switch (ewk->wu.routine_no[1]) {
     case 0:
-        ewk->wu.old_rno[1]--;
-
-        if (ewk->wu.old_rno[1] <= 0) {
-            ewk->wu.routine_no[1]++;
-            ewk->wu.disp_flag = 1;
-            set_char_move_init2(&ewk->wu, 0, ewk->wu.char_index, ewk->wu.old_rno[3], 0);
-        }
-
+        begin_bonus_message_35(ewk);
         break;
 
     case 1:
-        if (pcon_rno[0] == 2 && pcon_rno[2] >= 3) {
-            if (Bonus_Game_result >= 10 || Bonus_Game_ex_result >= 10) {
-                ewk->wu.routine_no[1]++;
-            } else {
-                ewk->wu.routine_no[1] = 3;
-            }
-        } else if (!EXE_flag && !Game_pause) {
-            char_move(&ewk->wu);
-        }
-
-        disp_pos_trans_entry(ewk);
+        select_bonus_message_35(ewk);
         break;
 
     case 2:
-        if (!EXE_flag && !Game_pause) {
-            char_move(&ewk->wu);
-        }
-
-        if (ewk->wu.cg_type == 9) {
-            ewk->wu.routine_no[1]++;
-            set_char_move_init(&ewk->wu, 0, 8);
-        }
-
-        disp_pos_trans_entry(ewk);
+        update_winning_bonus_message_35(ewk);
         break;
 
     case 3:
-        if (!EXE_flag && !Game_pause) {
-            char_move(&ewk->wu);
-        }
-
-        disp_pos_trans_entry(ewk);
+        update_losing_bonus_message_35(ewk);
         break;
 
     default:
