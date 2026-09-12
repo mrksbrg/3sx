@@ -192,10 +192,76 @@ static s32 update_79_return_movement(WORK_Other* ewk) {
     return 0;
 }
 
-void effect_79_move(WORK_Other* ewk) {
+static void update_79_final_movement(WORK_Other* ewk) {
     s16 xx;
     s16 arrived[2];
 
+    switch (ewk->wu.routine_no[1]) {
+    case 0:
+        if (--ewk->wu.dir_timer == 0) {
+            ewk->wu.routine_no[1]++;
+        }
+
+        break;
+
+    case 1:
+        char_move(&ewk->wu);
+
+        if (ewk->wu.cg_type == 2) {
+            ewk->wu.routine_no[1]++;
+            Sel_Arts_Complete[ewk->master_id] |= 0x8000;
+
+            if (ewk->wu.xyz[0].disp.pos ==
+                bg_w.bgw[ewk->wu.my_family - 1].wxy[0].disp.pos + Plate_Pos_Data_79[1][ewk->master_id][0][0]) {
+                ewk->wu.routine_no[0] = 8;
+            }
+        }
+
+        break;
+
+    case 2:
+        if (Extra_Counter[ewk->master_id] != 0) {
+            break;
+        }
+
+        ewk->wu.routine_no[1]++;
+        ewk->wu.routine_no[5] = 0;
+        ewk->wu.routine_no[6] = 1;
+
+        if (VS_Index[ewk->master_id] < 9) {
+            xx = 0;
+        } else {
+            xx = 2;
+        }
+
+        ewk->wu.vital_new = Plate_Finish_Data_79[ewk->master_id + xx][0];
+        ewk->wu.direction = Plate_Finish_Data_79[ewk->master_id + xx][1];
+        ewk->wu.mvxy.a[1].sp = -0x8000;
+        ewk->wu.mvxy.d[1].sp = -0xE000;
+
+        if (ewk->wu.xyz[0].disp.pos < ewk->wu.vital_new) {
+            ewk->wu.mvxy.a[0].sp = 0x10000;
+            ewk->wu.mvxy.d[0].sp = 0x30000;
+        } else {
+            ewk->wu.mvxy.a[0].sp = -0x10000;
+            ewk->wu.mvxy.d[0].sp = -0x30000;
+        }
+
+        break;
+
+    case 3:
+        arrived[0] = EFF79_Move_X(ewk);
+        arrived[1] = EFF79_Move_Y(ewk);
+
+        if (!movement_is_incomplete(arrived)) {
+            ewk->wu.routine_no[0]++;
+        }
+
+        break;
+    }
+}
+
+void effect_79_move(WORK_Other* ewk) {
     switch (ewk->wu.routine_no[0]) {
     case 0:
         if (--ewk->wu.dir_timer) {
@@ -254,70 +320,7 @@ void effect_79_move(WORK_Other* ewk) {
         break;
 
     case 7:
-        switch (ewk->wu.routine_no[1]) {
-        case 0:
-            if (--ewk->wu.dir_timer == 0) {
-                ewk->wu.routine_no[1]++;
-            }
-
-            break;
-
-        case 1:
-            char_move(&ewk->wu);
-
-            if (ewk->wu.cg_type == 2) {
-                ewk->wu.routine_no[1]++;
-                Sel_Arts_Complete[ewk->master_id] |= 0x8000;
-
-                if (ewk->wu.xyz[0].disp.pos ==
-                    bg_w.bgw[ewk->wu.my_family - 1].wxy[0].disp.pos + Plate_Pos_Data_79[1][ewk->master_id][0][0]) {
-                    ewk->wu.routine_no[0] = 8;
-                }
-            }
-
-            break;
-
-        case 2:
-            if (Extra_Counter[ewk->master_id] != 0) {
-                break;
-            }
-
-            ewk->wu.routine_no[1]++;
-            ewk->wu.routine_no[5] = 0;
-            ewk->wu.routine_no[6] = 1;
-
-            if (VS_Index[ewk->master_id] < 9) {
-                xx = 0;
-            } else {
-                xx = 2;
-            }
-
-            ewk->wu.vital_new = Plate_Finish_Data_79[ewk->master_id + xx][0];
-            ewk->wu.direction = Plate_Finish_Data_79[ewk->master_id + xx][1];
-            ewk->wu.mvxy.a[1].sp = -0x8000;
-            ewk->wu.mvxy.d[1].sp = -0xE000;
-
-            if (ewk->wu.xyz[0].disp.pos < ewk->wu.vital_new) {
-                ewk->wu.mvxy.a[0].sp = 0x10000;
-                ewk->wu.mvxy.d[0].sp = 0x30000;
-            } else {
-                ewk->wu.mvxy.a[0].sp = -0x10000;
-                ewk->wu.mvxy.d[0].sp = -0x30000;
-            }
-
-            break;
-
-        case 3:
-            arrived[0] = EFF79_Move_X(ewk);
-            arrived[1] = EFF79_Move_Y(ewk);
-
-            if (!movement_is_incomplete(arrived)) {
-                ewk->wu.routine_no[0]++;
-            }
-
-            break;
-        }
-
+        update_79_final_movement(ewk);
         break;
 
     case 8:
