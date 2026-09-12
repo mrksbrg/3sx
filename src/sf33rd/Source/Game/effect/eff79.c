@@ -333,6 +333,16 @@ static Effect79UpdateResult update_79_early_state(WORK_Other* ewk) {
     return EFFECT_79_CONTINUES;
 }
 
+static Effect79UpdateResult update_79_suicide_state(WORK_Other* ewk) {
+    if (!Suicide[0]) {
+        return EFFECT_79_CONTINUES;
+    }
+
+    ewk->wu.disp_flag = 0;
+    ewk->wu.routine_no[0] = 10;
+    return EFFECT_79_STOPS;
+}
+
 static Effect79UpdateResult update_79_late_state(WORK_Other* ewk) {
     switch (ewk->wu.routine_no[0]) {
     case 5:
@@ -354,13 +364,7 @@ static Effect79UpdateResult update_79_late_state(WORK_Other* ewk) {
         break;
 
     case 9:
-        if (!Suicide[0]) {
-            break;
-        }
-
-        ewk->wu.disp_flag = 0;
-        ewk->wu.routine_no[0] = 10;
-        return EFFECT_79_STOPS;
+        return update_79_suicide_state(ewk);
 
     case 10:
         ewk->wu.disp_flag = 0;
