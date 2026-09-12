@@ -333,50 +333,60 @@ static Effect79UpdateResult update_79_early_state(WORK_Other* ewk) {
     return EFFECT_79_CONTINUES;
 }
 
+static Effect79UpdateResult update_79_late_state(WORK_Other* ewk) {
+    switch (ewk->wu.routine_no[0]) {
+    case 5:
+        update_79_plate_movement(ewk);
+        break;
+
+    case 6:
+        if (update_79_return_movement(ewk)) {
+            return EFFECT_79_STOPS;
+        }
+
+        break;
+
+    case 7:
+        update_79_final_movement(ewk);
+        break;
+
+    case 8:
+        break;
+
+    case 9:
+        if (!Suicide[0]) {
+            break;
+        }
+
+        ewk->wu.disp_flag = 0;
+        ewk->wu.routine_no[0] = 10;
+        return EFFECT_79_STOPS;
+
+    case 10:
+        ewk->wu.disp_flag = 0;
+        ewk->wu.routine_no[0]++;
+        return EFFECT_79_STOPS;
+
+    default:
+        ewk->wu.disp_flag = 0;
+        push_effect_work(&ewk->wu);
+        return EFFECT_79_STOPS;
+    }
+
+    return EFFECT_79_CONTINUES;
+}
+
 void effect_79_move(WORK_Other* ewk) {
+    Effect79UpdateResult update_result;
+
     if (ewk->wu.routine_no[0] <= EARLY_STATE_LIMIT_79) {
-        if (update_79_early_state(ewk)) {
-            return;
-        }
+        update_result = update_79_early_state(ewk);
     } else {
-        switch (ewk->wu.routine_no[0]) {
-        case 5:
-            update_79_plate_movement(ewk);
-            break;
+        update_result = update_79_late_state(ewk);
+    }
 
-        case 6:
-            if (update_79_return_movement(ewk)) {
-                return;
-            }
-
-            break;
-
-        case 7:
-            update_79_final_movement(ewk);
-            break;
-
-        case 8:
-            break;
-
-        case 9:
-            if (!Suicide[0]) {
-                break;
-            }
-
-            ewk->wu.disp_flag = 0;
-            ewk->wu.routine_no[0] = 10;
-            return;
-
-        case 10:
-            ewk->wu.disp_flag = 0;
-            ewk->wu.routine_no[0]++;
-            return;
-
-        default:
-            ewk->wu.disp_flag = 0;
-            push_effect_work(&ewk->wu);
-            return;
-        }
+    if (update_result == EFFECT_79_STOPS) {
+        return;
     }
 
     ewk->wu.position_x = ewk->wu.xyz[0].disp.pos & 0xFFFF;
