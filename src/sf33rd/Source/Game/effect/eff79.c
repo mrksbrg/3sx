@@ -35,6 +35,11 @@ u8 Extra_Counter[2];
 
 const s32 Pos_Z_Data_79[3] = { 0, 5, 10 };
 
+typedef enum {
+    EFFECT_79_CONTINUES = 0,
+    EFFECT_79_STOPS = 1,
+} Effect79UpdateResult;
+
 static s32 movement_is_incomplete(const s16* arrived) {
     return arrived[0] == 0 || arrived[1] == 0;
 }
@@ -141,7 +146,7 @@ static void update_79_plate_movement(WORK_Other* ewk) {
     }
 }
 
-static s32 update_79_return_movement(WORK_Other* ewk) {
+static Effect79UpdateResult update_79_return_movement(WORK_Other* ewk) {
     s16 arrived[2];
 
     switch (ewk->wu.routine_no[1]) {
@@ -180,13 +185,13 @@ static s32 update_79_return_movement(WORK_Other* ewk) {
         ewk->wu.routine_no[0] = 10;
         ewk->wu.disp_flag = 0;
         Extra_Counter[ewk->master_id]--;
-        return 1;
+        return EFFECT_79_STOPS;
 
     default:
         break;
     }
 
-    return 0;
+    return EFFECT_79_CONTINUES;
 }
 
 static void start_79_final_movement(WORK_Other* ewk) {
@@ -267,11 +272,6 @@ static void update_79_final_movement(WORK_Other* ewk) {
     }
 }
 
-typedef enum {
-    EFFECT_79_CONTINUES,
-    EFFECT_79_STOPS,
-} Effect79UpdateResult;
-
 enum { EARLY_STATE_LIMIT_79 = 4 };
 
 static void update_79_intro_animation(WORK_Other* ewk) {
@@ -350,11 +350,7 @@ static Effect79UpdateResult update_79_late_state(WORK_Other* ewk) {
         break;
 
     case 6:
-        if (update_79_return_movement(ewk)) {
-            return EFFECT_79_STOPS;
-        }
-
-        break;
+        return update_79_return_movement(ewk);
 
     case 7:
         update_79_final_movement(ewk);
