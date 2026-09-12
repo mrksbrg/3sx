@@ -144,6 +144,54 @@ static void update_79_plate_movement(WORK_Other* ewk) {
     }
 }
 
+static s32 update_79_return_movement(WORK_Other* ewk) {
+    s16 arrived[2];
+
+    switch (ewk->wu.routine_no[1]) {
+    case 0:
+        if (--ewk->wu.dir_timer != 0) {
+            break;
+        }
+
+        ewk->wu.routine_no[1]++;
+        ewk->wu.routine_no[5] = 0;
+        ewk->wu.routine_no[6] = 1;
+        ewk->wu.vital_new = Plate_X[ewk->master_id][0];
+        ewk->wu.direction = Plate_Y[ewk->master_id][0];
+        ewk->wu.mvxy.a[1].sp = 0x20000;
+        ewk->wu.mvxy.d[1].sp = 0x2000;
+
+        if (ewk->wu.xyz[0].disp.pos < ewk->wu.vital_new) {
+            ewk->wu.mvxy.a[0].sp = 0x18000;
+            ewk->wu.mvxy.d[0].sp = 0x6000;
+        } else {
+            ewk->wu.mvxy.a[0].sp = -0x18000;
+            ewk->wu.mvxy.d[0].sp = -0x6000;
+        }
+
+        Check_Speed_79(ewk);
+        break;
+
+    case 1:
+        arrived[0] = EFF79_Move_X(ewk);
+        arrived[1] = EFF79_Move_Y(ewk);
+
+        if (movement_is_incomplete(arrived)) {
+            break;
+        }
+
+        ewk->wu.routine_no[0] = 10;
+        ewk->wu.disp_flag = 0;
+        Extra_Counter[ewk->master_id]--;
+        return 1;
+
+    default:
+        break;
+    }
+
+    return 0;
+}
+
 void effect_79_move(WORK_Other* ewk) {
     s16 xx;
     s16 arrived[2];
@@ -199,46 +247,8 @@ void effect_79_move(WORK_Other* ewk) {
         break;
 
     case 6:
-        switch (ewk->wu.routine_no[1]) {
-        case 0:
-            if (--ewk->wu.dir_timer != 0) {
-                break;
-            }
-
-            ewk->wu.routine_no[1]++;
-            ewk->wu.routine_no[5] = 0;
-            ewk->wu.routine_no[6] = 1;
-            ewk->wu.vital_new = Plate_X[ewk->master_id][0];
-            ewk->wu.direction = Plate_Y[ewk->master_id][0];
-            ewk->wu.mvxy.a[1].sp = 0x20000;
-            ewk->wu.mvxy.d[1].sp = 0x2000;
-
-            if (ewk->wu.xyz[0].disp.pos < ewk->wu.vital_new) {
-                ewk->wu.mvxy.a[0].sp = 0x18000;
-                ewk->wu.mvxy.d[0].sp = 0x6000;
-            } else {
-                ewk->wu.mvxy.a[0].sp = -0x18000;
-                ewk->wu.mvxy.d[0].sp = -0x6000;
-            }
-
-            Check_Speed_79(ewk);
-            break;
-
-        case 1:
-            arrived[0] = EFF79_Move_X(ewk);
-            arrived[1] = EFF79_Move_Y(ewk);
-
-            if (movement_is_incomplete(arrived)) {
-                break;
-            }
-
-            ewk->wu.routine_no[0] = 10;
-            ewk->wu.disp_flag = 0;
-            Extra_Counter[ewk->master_id]--;
+        if (update_79_return_movement(ewk)) {
             return;
-
-        default:
-            break;
         }
 
         break;
