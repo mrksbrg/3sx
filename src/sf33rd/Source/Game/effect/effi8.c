@@ -344,8 +344,9 @@ void effI8_main_process(WORK_Other* ewk) {
 void cal_speeds_to_me_effI8(WORK_Other* ewk, PLW* mwk) {
     s16 tx = mwk->wu.xyz[0].disp.pos;
     s16 ty = cal_move_quantity3(&mwk->wu, ewk->wu.dir_timer) + 128;
+    const BallTrajectoryD7 trajectory = { ewk->wu.dir_timer, tx, ty, 5 };
 
-    cal_speeds_effD7(ewk, ewk->wu.dir_timer, tx, ty, 5);
+    cal_speeds_effD7(ewk, &trajectory);
 }
 
 void cal_speeds_to_em_effI8(WORK_Other* ewk, PLW* twk) {
@@ -359,8 +360,9 @@ void cal_speeds_to_em_effI8(WORK_Other* ewk, PLW* twk) {
     }
 
     ty = bbbs_emtall[twk->player_number];
+    const BallTrajectoryD7 trajectory = { ewk->wu.dir_step, tx, ty, ewk->wu.dir_old };
 
-    cal_speeds_effD7(ewk, ewk->wu.dir_step, tx, ty, ewk->wu.dir_old);
+    cal_speeds_effD7(ewk, &trajectory);
 }
 
 typedef enum {

@@ -327,8 +327,9 @@ void effD7_main_process(WORK_Other* ewk) {
 void cal_speeds_to_me(WORK_Other* ewk, PLW* mwk) {
     s16 tx = mwk->wu.xyz[0].disp.pos;
     s16 ty = mwk->wu.xyz[1].disp.pos + 157;
+    const BallTrajectoryD7 trajectory = { 20, tx, ty, 6 };
 
-    cal_speeds_effD7(ewk, 20, tx, ty, 6);
+    cal_speeds_effD7(ewk, &trajectory);
 }
 
 void cal_speeds_to_em(WORK_Other* ewk, PLW* twk) {
@@ -344,16 +345,17 @@ void cal_speeds_to_em(WORK_Other* ewk, PLW* twk) {
     }
 
     ty = 48;
-    cal_speeds_effD7(ewk, 40, tx, ty, 4);
+    const BallTrajectoryD7 trajectory = { 40, tx, ty, 4 };
+    cal_speeds_effD7(ewk, &trajectory);
 }
 
-void cal_speeds_effD7(WORK_Other* ewk, s16 tm, s16 tx, s16 ty, s16 ysp) {
+void cal_speeds_effD7(WORK_Other* ewk, const BallTrajectoryD7* trajectory) {
     ewk->wu.mvxy.d[0].sp = 0;
     ewk->wu.mvxy.a[0].sp = 0;
     ewk->wu.mvxy.d[1].sp = 0;
     ewk->wu.mvxy.a[1].sp = 0;
-    ewk->wu.mvxy.a[1].real.h = ysp;
-    cal_delta_speed(&ewk->wu, tm, tx, ty, 0, 1);
+    ewk->wu.mvxy.a[1].real.h = trajectory->vertical_speed;
+    cal_delta_speed(&ewk->wu, trajectory->duration, trajectory->target_x, trajectory->target_y, 0, 1);
 
     if (ewk->wu.rl_flag == 0) {
         ewk->wu.mvxy.a[0].sp = -ewk->wu.mvxy.a[0].sp;
