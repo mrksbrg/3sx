@@ -189,8 +189,38 @@ static s32 update_79_return_movement(WORK_Other* ewk) {
     return 0;
 }
 
-static void update_79_final_movement(WORK_Other* ewk) {
+static void start_79_final_movement(WORK_Other* ewk) {
     s16 xx;
+
+    if (Extra_Counter[ewk->master_id] != 0) {
+        return;
+    }
+
+    ewk->wu.routine_no[1]++;
+    ewk->wu.routine_no[5] = 0;
+    ewk->wu.routine_no[6] = 1;
+
+    if (VS_Index[ewk->master_id] < 9) {
+        xx = 0;
+    } else {
+        xx = 2;
+    }
+
+    ewk->wu.vital_new = Plate_Finish_Data_79[ewk->master_id + xx][0];
+    ewk->wu.direction = Plate_Finish_Data_79[ewk->master_id + xx][1];
+    ewk->wu.mvxy.a[1].sp = -0x8000;
+    ewk->wu.mvxy.d[1].sp = -0xE000;
+
+    if (ewk->wu.xyz[0].disp.pos < ewk->wu.vital_new) {
+        ewk->wu.mvxy.a[0].sp = 0x10000;
+        ewk->wu.mvxy.d[0].sp = 0x30000;
+    } else {
+        ewk->wu.mvxy.a[0].sp = -0x10000;
+        ewk->wu.mvxy.d[0].sp = -0x30000;
+    }
+}
+
+static void update_79_final_movement(WORK_Other* ewk) {
     s16 arrived[2];
 
     switch (ewk->wu.routine_no[1]) {
@@ -217,33 +247,7 @@ static void update_79_final_movement(WORK_Other* ewk) {
         break;
 
     case 2:
-        if (Extra_Counter[ewk->master_id] != 0) {
-            break;
-        }
-
-        ewk->wu.routine_no[1]++;
-        ewk->wu.routine_no[5] = 0;
-        ewk->wu.routine_no[6] = 1;
-
-        if (VS_Index[ewk->master_id] < 9) {
-            xx = 0;
-        } else {
-            xx = 2;
-        }
-
-        ewk->wu.vital_new = Plate_Finish_Data_79[ewk->master_id + xx][0];
-        ewk->wu.direction = Plate_Finish_Data_79[ewk->master_id + xx][1];
-        ewk->wu.mvxy.a[1].sp = -0x8000;
-        ewk->wu.mvxy.d[1].sp = -0xE000;
-
-        if (ewk->wu.xyz[0].disp.pos < ewk->wu.vital_new) {
-            ewk->wu.mvxy.a[0].sp = 0x10000;
-            ewk->wu.mvxy.d[0].sp = 0x30000;
-        } else {
-            ewk->wu.mvxy.a[0].sp = -0x10000;
-            ewk->wu.mvxy.d[0].sp = -0x30000;
-        }
-
+        start_79_final_movement(ewk);
         break;
 
     case 3:
