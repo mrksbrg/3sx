@@ -407,9 +407,28 @@ static void setup_name_cover_position_76(WORK_Other* ewk, s32 first_cover) {
     }
 }
 
-void Setup_Pos_76(WORK_Other* ewk) {
+static void setup_compute_position_76(WORK_Other* ewk) {
     s16 ix;
 
+    if (Perfect_Flag) {
+        ix = 1;
+    } else {
+        ix = 0;
+    }
+
+    ewk->wu.my_mts = 14;
+    ewk->wu.my_trans_mode = get_my_trans_mode(ewk->wu.my_mts);
+    ewk->wu.hit_quake =
+        bg_w.bgw[ewk->wu.my_family - 1].wxy[0].disp.pos + Compute_Pos_Data_76[ix][Order_Dir[ewk->wu.dir_old]][0];
+    ewk->wu.xyz[0].disp.pos = ewk->wu.hit_quake + 0x1A0;
+    ewk->wu.xyz[1].disp.pos = bg_w.bgw[ewk->wu.my_family - 1].wxy[1].disp.pos +
+                              Compute_Pos_Data_76[ix][Order_Dir[ewk->wu.dir_old]][1] + base_y_pos;
+    ewk->wu.position_z = Compute_Pos_Data_76[ix][ewk->wu.dir_old - 0x4A][2];
+    ewk->wu.mvxy.a[0].sp = -0x18000;
+    ewk->wu.mvxy.d[0].sp = -0x28000;
+}
+
+void Setup_Pos_76(WORK_Other* ewk) {
     if (ewk->wu.dir_old >= 0x2B && ewk->wu.dir_old <= 0x36) {
         setup_low_position_76(ewk);
         return;
@@ -422,6 +441,11 @@ void Setup_Pos_76(WORK_Other* ewk) {
 
     if (ewk->wu.dir_old >= 0x3B && ewk->wu.dir_old <= 0x44) {
         setup_middle_position_76(ewk);
+        return;
+    }
+
+    if (ewk->wu.dir_old >= 0x4A && ewk->wu.dir_old <= 0x4F) {
+        setup_compute_position_76(ewk);
         return;
     }
 
@@ -438,29 +462,6 @@ void Setup_Pos_76(WORK_Other* ewk) {
         setup_name_cover_position_76(ewk, 0);
         break;
 
-    case 0x4A:
-    case 0x4B:
-    case 0x4C:
-    case 0x4D:
-    case 0x4E:
-    case 0x4F:
-        if (Perfect_Flag) {
-            ix = 1;
-        } else {
-            ix = 0;
-        }
-
-        ewk->wu.my_mts = 14;
-        ewk->wu.my_trans_mode = get_my_trans_mode(ewk->wu.my_mts);
-        ewk->wu.hit_quake =
-            bg_w.bgw[ewk->wu.my_family - 1].wxy[0].disp.pos + Compute_Pos_Data_76[ix][Order_Dir[ewk->wu.dir_old]][0];
-        ewk->wu.xyz[0].disp.pos = ewk->wu.hit_quake + 0x1A0;
-        ewk->wu.xyz[1].disp.pos = bg_w.bgw[ewk->wu.my_family - 1].wxy[1].disp.pos +
-                                  Compute_Pos_Data_76[ix][Order_Dir[ewk->wu.dir_old]][1] + base_y_pos;
-        ewk->wu.position_z = Compute_Pos_Data_76[ix][ewk->wu.dir_old - 0x4A][2];
-        ewk->wu.mvxy.a[0].sp = -0x18000;
-        ewk->wu.mvxy.d[0].sp = -0x28000;
-        break;
     }
 }
 
