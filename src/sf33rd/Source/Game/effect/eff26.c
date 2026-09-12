@@ -81,6 +81,14 @@ static void update_active_effect_26(WORK_Other* ewk) {
     disp_pos_trans_entry_rs(ewk);
 }
 
+static void spawn_followup_if_requested_26(WORK_Other* ewk) {
+    if (!(ewk->wu.old_rno[2] & 1) || ewk->wu.old_rno[5] <= 0) {
+        return;
+    }
+
+    effect_27_init(ewk, ewk->wu.old_rno[5]);
+}
+
 void effect_26_move(WORK_Other* ewk) {
     if (obr_no_disp_check()) {
         return;
@@ -224,10 +232,7 @@ void eff26_03(WORK_Other* ewk) {
 
     case 4:
         if (eff_hit_check(ewk, ewk->wu.old_rno[4])) {
-            if (ewk->wu.old_rno[2] & 1 && ewk->wu.old_rno[5] > 0) {
-                effect_27_init(ewk, ewk->wu.old_rno[5]);
-            }
-
+            spawn_followup_if_requested_26(ewk);
             ewk->wu.routine_no[0] = 2;
         }
 
@@ -267,11 +272,7 @@ void eff26_04(WORK_Other* ewk) {
     case 3:
         if (eff_hit_check(ewk, ewk->wu.old_rno[4])) {
             ewk->wu.routine_no[1]++;
-
-            if (ewk->wu.old_rno[2] & 1 && ewk->wu.old_rno[5] > 0) {
-                effect_27_init(ewk, ewk->wu.old_rno[5]);
-            }
-
+            spawn_followup_if_requested_26(ewk);
             set_char_move_init(&ewk->wu, 0, ewk->wu.old_rno[3]);
         }
 
@@ -326,11 +327,7 @@ void eff26_05(WORK_Other* ewk) {
         }
 
         ewk->wu.routine_no[1]++;
-
-        if (ewk->wu.old_rno[2] & 1 && ewk->wu.old_rno[5] > 0) {
-            effect_27_init(ewk, ewk->wu.old_rno[5]);
-        }
-
+        spawn_followup_if_requested_26(ewk);
         set_char_move_init(&ewk->wu, 0, ewk->wu.old_rno[3]);
         break;
 
