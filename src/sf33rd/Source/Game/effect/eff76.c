@@ -471,7 +471,81 @@ void Setup_Pos_76(WORK_Other* ewk) {
     setup_high_position_76(ewk);
 }
 
+static void setup_low_character_76(WORK_Other* ewk) {
+    switch (ewk->wu.dir_old) {
+    case 0x2B:
+    case 0x2C:
+        ewk->wu.char_index = 4;
+        ewk->wu.dir_step = ewk->wu.dir_old - 0x2B;
+        Setup_Color_76(ewk);
+        break;
+
+    case 0x2D:
+        ewk->wu.my_col_mode = 0x4400;
+        ewk->wu.my_family = 1;
+        ewk->wu.my_col_code = 0x1FF;
+        ewk->wu.my_clear_level = 0x80;
+        ewk->wu.char_index = 4;
+        ewk->wu.dir_step = ewk->wu.dir_old - 0x2B;
+        break;
+
+    case 0x2E:
+    case 0x2F:
+        ewk->wu.my_family = 1;
+        ewk->wu.char_index = 4;
+        ewk->wu.dir_step = ewk->wu.dir_old - 0x2B;
+        Setup_Color_76(ewk);
+        break;
+
+    case 0x30:
+    case 0x31:
+        ewk->wu.my_col_mode = 0x4400;
+        ewk->wu.my_family = 1;
+        ewk->wu.my_col_code = 0x1FB;
+        ewk->wu.my_clear_level = 0x80;
+        ewk->wu.char_index = 4;
+        ewk->wu.dir_step = ewk->wu.dir_old - 0x2B;
+        break;
+
+    case 0x32:
+    case 0x33:
+        ewk->wu.my_family = 1;
+        ewk->wu.char_index = 0x56;
+        ewk->wu.dir_step = ewk->wu.dir_old - 0x32;
+        ewk->wu.direction = 7;
+        break;
+
+    case 0x36:
+        ewk->wu.my_family = 1;
+        /* fallthrough */
+
+    case 0x34:
+        ewk->wu.my_col_code = 0x1FF;
+        ewk->wu.my_clear_level = 0x80;
+        ewk->wu.char_index = 9;
+        ewk->wu.dir_step = My_char[Winner_id] + 0x15;
+        ewk->wu.dir_step += chkNameAkuma(My_char[Winner_id], 6);
+        break;
+
+    case 0x40:
+        ewk->wu.my_family = 1;
+        /* fallthrough */
+
+    case 0x35:
+        ewk->wu.char_index = 9;
+        ewk->wu.dir_step = My_char[Winner_id];
+        ewk->wu.dir_step += chkNameAkuma(My_char[Winner_id], 6);
+        Setup_Color_76(ewk);
+        break;
+    }
+}
+
 void Setup_Char_76(WORK_Other* ewk) {
+    if (ewk->wu.dir_old <= 0x36) {
+        setup_low_character_76(ewk);
+        return;
+    }
+
     switch (ewk->wu.dir_old) {
     case 0x38:
     case 0x42:
@@ -498,37 +572,6 @@ void Setup_Char_76(WORK_Other* ewk) {
         ewk->wu.dir_step = 8;
         break;
 
-    case 0x36:
-        ewk->wu.my_family = 1;
-        /* fallthrough */
-
-    case 0x34:
-        ewk->wu.my_col_code = 0x1FF;
-        ewk->wu.my_clear_level = 0x80;
-        ewk->wu.char_index = 9;
-        ewk->wu.dir_step = My_char[Winner_id] + 0x15;
-        ewk->wu.dir_step += chkNameAkuma(My_char[Winner_id], 6);
-        break;
-
-    case 0x2D:
-        ewk->wu.my_col_mode = 0x4400;
-        ewk->wu.my_family = 1;
-        ewk->wu.my_col_code = 0x1FF;
-        ewk->wu.my_clear_level = 0x80;
-        ewk->wu.char_index = 4;
-        ewk->wu.dir_step = ewk->wu.dir_old - 0x2B;
-        break;
-
-    case 0x30:
-    case 0x31:
-        ewk->wu.my_col_mode = 0x4400;
-        ewk->wu.my_family = 1;
-        ewk->wu.my_col_code = 0x1FB;
-        ewk->wu.my_clear_level = 0x80;
-        ewk->wu.char_index = 4;
-        ewk->wu.dir_step = ewk->wu.dir_old - 0x2B;
-        break;
-
     case 0x43:
     case 0x44:
         ewk->wu.my_family = 1;
@@ -538,21 +581,6 @@ void Setup_Char_76(WORK_Other* ewk) {
         ewk->wu.dir_step = 2;
         ewk->wu.direction = 3;
         effect_A6_init(ewk);
-        break;
-
-    case 0x2E:
-    case 0x2F:
-        ewk->wu.my_family = 1;
-        ewk->wu.char_index = 4;
-        ewk->wu.dir_step = ewk->wu.dir_old - 0x2B;
-        Setup_Color_76(ewk);
-        break;
-
-    case 0x2B:
-    case 0x2C:
-        ewk->wu.char_index = 4;
-        ewk->wu.dir_step = ewk->wu.dir_old - 0x2B;
-        Setup_Color_76(ewk);
         break;
 
     case 0x37:
@@ -580,14 +608,7 @@ void Setup_Char_76(WORK_Other* ewk) {
         break;
 
     case 0x40:
-        ewk->wu.my_family = 1;
-        /* fallthrough */
-
-    case 0x35:
-        ewk->wu.char_index = 9;
-        ewk->wu.dir_step = My_char[Winner_id];
-        ewk->wu.dir_step += chkNameAkuma(My_char[Winner_id], 6);
-        Setup_Color_76(ewk);
+        setup_low_character_76(ewk);
         break;
 
     case 0x3D:
@@ -607,14 +628,6 @@ void Setup_Char_76(WORK_Other* ewk) {
         ewk->wu.my_family = 2;
         ewk->wu.char_index = 0x53;
         ewk->wu.dir_step = ewk->wu.dir_old - 0x3B;
-        break;
-
-    case 0x32:
-    case 0x33:
-        ewk->wu.my_family = 1;
-        ewk->wu.char_index = 0x56;
-        ewk->wu.dir_step = ewk->wu.dir_old - 0x32;
-        ewk->wu.direction = 7;
         break;
 
     case 0x48:
