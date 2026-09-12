@@ -342,6 +342,40 @@ static void setup_result_position_76(WORK_Other* ewk, s32 ranked_result) {
     ewk->wu.mvxy.d[0].sp = 0;
 }
 
+static void setup_middle_position_76(WORK_Other* ewk) {
+    if (ewk->wu.dir_old <= 0x3F) {
+        ewk->wu.xyz[0].disp.pos =
+            bg_w.bgw[1].wxy[0].disp.pos + 458 + Pos_Cont_Data_76[ewk->wu.dir_old - 0x3B][0];
+        ewk->wu.xyz[1].disp.pos = bg_w.bgw[1].wxy[1].disp.pos + Pos_Cont_Data_76[ewk->wu.dir_old - 0x3B][1];
+        ewk->wu.position_z = Pos_Cont_Data_76[ewk->wu.dir_old - 0x3B][2];
+        return;
+    }
+
+    if (ewk->wu.dir_old == 0x40 || ewk->wu.dir_old == 0x42) {
+        setup_standard_position_76(ewk);
+        return;
+    }
+
+    if (ewk->wu.dir_old == 0x41) {
+        ewk->wu.xyz[0].disp.pos = bg_w.bgw[0].wxy[0].disp.pos + Bust_Pos_Data_76[My_char[Final_Result_id]][0];
+        ewk->wu.xyz[1].disp.pos = bg_w.bgw[0].wxy[1].disp.pos + Bust_Pos_Data_76[My_char[Final_Result_id]][1];
+        ewk->wu.position_z = 72;
+        return;
+    }
+
+    setup_standard_position_76(ewk);
+
+    if (Order_Dir[ewk->wu.dir_old] == 4) {
+        ewk->wu.hit_quake = bg_w.bgw[ewk->wu.my_family - 1].wxy[0].disp.pos + 64;
+        ewk->wu.mvxy.a[0].sp = -0x100000;
+        ewk->wu.mvxy.d[0].sp = 0;
+    } else {
+        ewk->wu.hit_quake = bg_w.bgw[ewk->wu.my_family - 1].wxy[0].disp.pos - 64;
+        ewk->wu.mvxy.a[0].sp = 0x100000;
+        ewk->wu.mvxy.d[0].sp = 0;
+    }
+}
+
 void Setup_Pos_76(WORK_Other* ewk) {
     s16 ix;
 
@@ -355,44 +389,12 @@ void Setup_Pos_76(WORK_Other* ewk) {
         return;
     }
 
+    if (ewk->wu.dir_old >= 0x3B && ewk->wu.dir_old <= 0x44) {
+        setup_middle_position_76(ewk);
+        return;
+    }
+
     switch (ewk->wu.dir_old) {
-    case 0x40:
-    case 0x42:
-        setup_standard_position_76(ewk);
-        break;
-
-    case 0x41:
-        ewk->wu.xyz[0].disp.pos = bg_w.bgw[0].wxy[0].disp.pos + Bust_Pos_Data_76[My_char[Final_Result_id]][0];
-        ewk->wu.xyz[1].disp.pos = bg_w.bgw[0].wxy[1].disp.pos + Bust_Pos_Data_76[My_char[Final_Result_id]][1];
-        ewk->wu.position_z = 72;
-        break;
-
-    case 0x3B:
-    case 0x3C:
-    case 0x3D:
-    case 0x3E:
-    case 0x3F:
-        ewk->wu.xyz[0].disp.pos = bg_w.bgw[1].wxy[0].disp.pos + 458 + Pos_Cont_Data_76[ewk->wu.dir_old - 0x3B][0];
-        ewk->wu.xyz[1].disp.pos = bg_w.bgw[1].wxy[1].disp.pos + Pos_Cont_Data_76[ewk->wu.dir_old - 0x3B][1];
-        ewk->wu.position_z = Pos_Cont_Data_76[ewk->wu.dir_old - 0x3B][2];
-        break;
-
-    case 0x43:
-    case 0x44:
-        setup_standard_position_76(ewk);
-
-        if (Order_Dir[ewk->wu.dir_old] == 4) {
-            ewk->wu.hit_quake = bg_w.bgw[ewk->wu.my_family - 1].wxy[0].disp.pos + 64;
-            ewk->wu.mvxy.a[0].sp = -0x100000;
-            ewk->wu.mvxy.d[0].sp = 0;
-        } else {
-            ewk->wu.hit_quake = bg_w.bgw[ewk->wu.my_family - 1].wxy[0].disp.pos - 64;
-            ewk->wu.mvxy.a[0].sp = 0x100000;
-            ewk->wu.mvxy.d[0].sp = 0;
-        }
-
-        break;
-
     case 0x55:
         setup_result_position_76(ewk, 1);
         break;
