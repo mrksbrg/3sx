@@ -41,6 +41,34 @@ static s32 effI8_can_hit_master(WORK_Other* ewk, PLW* mwk) {
            hit_check_subroutine(&ewk->wu, (WORK*)ewk->my_master, effI8_hit_box[0], effI8_hit_box[1]);
 }
 
+static void update_active_effI8(WORK_Other* ewk) {
+    if (ewk->wu.dead_f == 1 || Suicide[0] != 0) {
+        ewk->wu.disp_flag = 0;
+        ewk->wu.type = 0;
+        ewk->wu.routine_no[0] = 2;
+        return;
+    }
+
+    if (sa_stop_check() == 0) {
+        if (ewk->wu.hit_stop < 0) {
+            ewk->wu.hit_stop = -ewk->wu.hit_stop;
+        }
+
+        if (EXE_flag == 0 && Game_pause == 0) {
+            effI8_main_process(ewk);
+        }
+
+        ewk->wu.position_x = ewk->wu.xyz[0].disp.pos;
+        ewk->wu.position_y = ewk->wu.xyz[1].disp.pos;
+
+        if (ewk->wu.type) {
+            hit_push_request(&ewk->wu);
+        }
+    }
+
+    sort_push_request(&ewk->wu);
+}
+
 void effect_I8_move(WORK_Other* ewk) {
     switch (ewk->wu.routine_no[0]) {
     case 0:
@@ -64,31 +92,7 @@ void effect_I8_move(WORK_Other* ewk) {
         break;
 
     case 1:
-        if (ewk->wu.dead_f == 1 || Suicide[0] != 0) {
-            ewk->wu.disp_flag = 0;
-            ewk->wu.type = 0;
-            ewk->wu.routine_no[0] = 2;
-            break;
-        }
-
-        if (sa_stop_check() == 0) {
-            if (ewk->wu.hit_stop < 0) {
-                ewk->wu.hit_stop = -ewk->wu.hit_stop;
-            }
-
-            if (EXE_flag == 0 && Game_pause == 0) {
-                effI8_main_process(ewk);
-            }
-
-            ewk->wu.position_x = ewk->wu.xyz[0].disp.pos;
-            ewk->wu.position_y = ewk->wu.xyz[1].disp.pos;
-
-            if (ewk->wu.type) {
-                hit_push_request(&ewk->wu);
-            }
-        }
-
-        sort_push_request(&ewk->wu);
+        update_active_effI8(ewk);
         break;
 
     case 2:
@@ -99,6 +103,210 @@ void effect_I8_move(WORK_Other* ewk) {
         push_effect_work(&ewk->wu);
         break;
     }
+}
+
+typedef enum {
+    BALL_REMAINS_ACTIVE_I8,
+    BALL_LEFT_SCREEN_I8,
+} BallBounceResultI8;
+
+static BallBounceResultI8 bounce_ball_effI8(WORK_Other* ewk) {
+    ewk->wu.xyz[1].disp.pos = ewk->wu.shell_ix[2];
+    ewk->wu.shell_ix[2] -= ewk->wu.shell_ix[3];
+    ewk->wu.shell_ix[2] += (random_16() & 7) - 3;
+
+    if (ewk->wu.char_index != 0x8A) {
+        set_char_move_init(&ewk->wu, 0, 0x8A);
+    }
+
+    ewk->wu.position_x = ewk->wu.xyz[0].disp.pos;
+    ewk->wu.position_y = ewk->wu.xyz[1].disp.pos;
+
+    switch (check_ball_mizushibuki(ewk->wu.xyz[0].disp.pos, ewk->wu.xyz[1].disp.pos)) {
+    case 1:
+        effect_03_init(&ewk->wu, 0x84);
+        break;
+
+    case 2:
+        effect_03_init(&ewk->wu, 0x85);
+        break;
+
+    default:
+        sound_effect_request[0x157](ewk, 0x157);
+        break;
+    }
+
+    ewk->wu.mvxy.a[0].sp = (ewk->wu.mvxy.a[0].sp * 80) / 100;
+    ewk->wu.mvxy.a[1].sp = -ewk->wu.mvxy.a[1].sp;
+    ewk->wu.mvxy.a[1].sp = (ewk->wu.mvxy.a[1].sp * 3) / 5;
+    ewk->wu.shell_ix[1] = 1;
+    ewk->wu.hit_stop = 1;
+
+    if (!screen_range_check_effD7(&ewk->wu)) {
+        return BALL_REMAINS_ACTIVE_I8;
+    }
+
+    ewk->wu.disp_flag = 0;
+    ewk->wu.type = 0;
+    ewk->wu.routine_no[0] = 2;
+    return BALL_LEFT_SCREEN_I8;
+}
+
+static void update_flying_ball_effI8(WORK_Other* ewk, PLW* master) {
+    char_move(&ewk->wu);
+    add_mvxy_speed(&ewk->wu);
+    cal_mvxy_speed(&ewk->wu);
+
+    if (ewk->wu.xyz[1].disp.pos < ewk->wu.shell_ix[2] && bounce_ball_effI8(ewk) == BALL_LEFT_SCREEN_I8) {
+        return;
+    }
+
+    if (effI8_can_hit_master(ewk, master)) {
+        master->wu.cmwk[7] = 1;
+        ewk->wu.type = 0;
+        ewk->wu.routine_no[2] = 1;
+    }
+}
+
+static void reset_ball_from_master_effI8(WORK_Other* ewk, PLW* master) {
+    ewk->wu.routine_no[2] = 0;
+    ewk->wu.xyz[0].disp.pos = master->wu.xyz[0].disp.pos;
+    ewk->wu.xyz[1].disp.pos = master->wu.xyz[1].disp.pos + 136;
+    ewk->wu.disp_flag = 1;
+    ewk->wu.type = 1;
+    ewk->wu.mvxy.a[0].sp = 0x18000;
+    ewk->wu.mvxy.d[0].sp = 0;
+    ewk->wu.mvxy.a[1].sp = 0x20000;
+    ewk->wu.mvxy.d[1].sp = -0x6800;
+}
+
+static void launch_ball_from_master_effI8(WORK_Other* ewk, PLW* master) {
+    ewk->wu.routine_no[2] = 0;
+    master->wu.cmwk[6] = 0;
+
+    if (master->wu.rl_flag) {
+        ewk->wu.xyz[0].disp.pos = master->wu.xyz[0].disp.pos + 10;
+    } else {
+        ewk->wu.xyz[0].disp.pos = master->wu.xyz[0].disp.pos - 10;
+    }
+
+    ewk->wu.xyz[1].disp.pos = master->wu.xyz[1].disp.pos + 136;
+    Bonus_Game_Work--;
+    ewk->wu.disp_flag = 1;
+    ewk->wu.type = 1;
+    set_char_move_init(&ewk->wu, 0, 0x89);
+    cal_speeds_to_em_effI8(ewk, (PLW*)ewk->wu.target_adrs);
+    add_mvxy_speed(&ewk->wu);
+    cal_mvxy_speed(&ewk->wu);
+}
+
+static void update_ball_with_master_effI8(WORK_Other* ewk, PLW* master) {
+    if (master->wu.routine_no[1] != 4) {
+        reset_ball_from_master_effI8(ewk, master);
+        return;
+    }
+
+    if (master->wu.cmwk[6]) {
+        launch_ball_from_master_effI8(ewk, master);
+    }
+}
+
+static void update_unhit_ball_effI8(WORK_Other* ewk, PLW* master) {
+    if (ewk->wu.hit_stop) {
+        ewk->wu.hit_stop--;
+        return;
+    }
+
+    switch (ewk->wu.routine_no[2]) {
+    case 0:
+        update_flying_ball_effI8(ewk, master);
+        break;
+
+    case 1:
+        ewk->wu.disp_flag = 0;
+        update_ball_with_master_effI8(ewk, master);
+        break;
+    }
+}
+
+static void reflect_player_hit_effI8(WORK_Other* ewk) {
+    ewk->wu.routine_no[1] = 0;
+
+    if (ewk->wu.hf.hit.player & 0x30) {
+        ewk->wu.mvxy.a[0].sp = -ewk->wu.mvxy.a[0].sp;
+        ewk->wu.mvxy.a[0].sp /= 3;
+        ewk->wu.mvxy.a[1].sp = 0x10000;
+        ewk->wu.mvxy.d[1].sp = -0x6000;
+    } else {
+        ewk->wu.rl_flag = (ewk->wu.rl_flag + 1) & 1;
+        ewk->wu.mvxy.a[0].sp /= 2;
+        ewk->wu.mvxy.a[1].sp = 0;
+        ewk->wu.mvxy.d[1].sp = -0x6000;
+    }
+}
+
+static void score_player_hit_effI8(WORK_Other* ewk) {
+    ewk->wu.routine_no[1] = 0;
+    ewk->wu.rl_flag = (ewk->wu.rl_flag + 1) & 1;
+    ewk->wu.mvxy.a[0].sp = 0x30000;
+    ewk->wu.mvxy.a[1].sp = 0x44000;
+    ewk->wu.mvxy.d[1].sp = -0x5000;
+    ewk->wu.hit_stop = 4;
+    Bonus_Game_result++;
+
+    if (ewk->wu.hf.hit.player & 0x80) {
+        Additinal_Score_DM((WORK_Other*)ewk->wu.target_adrs, 8);
+    } else {
+        Additinal_Score_DM((WORK_Other*)ewk->wu.target_adrs, 6);
+    }
+
+    set_char_move_init(&ewk->wu, 0, 0x8B);
+}
+
+static void handle_player_hit_effI8(WORK_Other* ewk) {
+    if (ewk->wu.hf.hit.player & 0x33) {
+        reflect_player_hit_effI8(ewk);
+    } else if (ewk->wu.hf.hit.player & 0xC0) {
+        score_player_hit_effI8(ewk);
+    }
+}
+
+static void handle_effect_hit_effI8(WORK_Other* ewk) {
+    sound_effect_request[0x157](ewk, 0x157);
+    ewk->wu.routine_no[1] = 0;
+    ewk->wu.rl_flag = (ewk->wu.rl_flag + 1) & 1;
+    ewk->wu.mvxy.a[0].sp = (ewk->wu.mvxy.a[0].sp * 3) / 4;
+    ewk->wu.hit_stop = 2;
+}
+
+static void break_ball_effI8(WORK_Other* ewk) {
+    if (ewk->wu.dmg_work_id != 1) {
+        sound_effect_request[0x10B](ewk, 0x10B);
+    }
+
+    ewk->wu.routine_no[1] = 2;
+    ewk->wu.rl_flag = (ewk->wu.rl_flag + 1) & 1;
+    ewk->wu.disp_flag = 2;
+    ewk->wu.type = 0;
+    ewk->wu.kage_flag = 0;
+    ewk->wu.dir_timer = 8;
+    ewk->wu.hit_stop = 2;
+    Additinal_Score_DM((WORK_Other*)ewk->wu.target_adrs, 6);
+    Bonus_Game_ex_result++;
+}
+
+static void handle_ball_hit_effI8(WORK_Other* ewk) {
+    if (ewk->wu.hf.hit.player) {
+        handle_player_hit_effI8(ewk);
+    } else if (ewk->wu.hf.hit.effect && ((WORK*)ewk->wu.hit_adrs)->id == 0x89) {
+        handle_effect_hit_effI8(ewk);
+    } else {
+        break_ball_effI8(ewk);
+    }
+
+    ewk->wu.hit_work_id = ewk->wu.dmg_work_id = 0;
+    ewk->wu.hf.hit_flag = 0;
+    ewk->refrected = 1;
 }
 
 void effI8_main_process(WORK_Other* ewk) {
@@ -114,161 +322,11 @@ void effI8_main_process(WORK_Other* ewk) {
 
     switch (ewk->wu.routine_no[1]) {
     case 0:
-        if (ewk->wu.hit_stop) {
-            ewk->wu.hit_stop--;
-            break;
-        }
-
-        switch (ewk->wu.routine_no[2]) {
-        case 0:
-            char_move(&ewk->wu);
-            add_mvxy_speed(&ewk->wu);
-            cal_mvxy_speed(&ewk->wu);
-
-            if (ewk->wu.xyz[1].disp.pos < ewk->wu.shell_ix[2]) {
-                ewk->wu.xyz[1].disp.pos = ewk->wu.shell_ix[2];
-                ewk->wu.shell_ix[2] -= ewk->wu.shell_ix[3];
-                ewk->wu.shell_ix[2] += (random_16() & 7) - 3;
-
-                if (ewk->wu.char_index != 0x8A) {
-                    set_char_move_init(&ewk->wu, 0, 0x8A);
-                }
-
-                ewk->wu.position_x = ewk->wu.xyz[0].disp.pos;
-                ewk->wu.position_y = ewk->wu.xyz[1].disp.pos;
-
-                switch (check_ball_mizushibuki(ewk->wu.xyz[0].disp.pos, ewk->wu.xyz[1].disp.pos)) {
-                case 1:
-                    effect_03_init(&ewk->wu, 0x84);
-                    break;
-
-                case 2:
-                    effect_03_init(&ewk->wu, 0x85);
-                    break;
-
-                default:
-                    sound_effect_request[0x157](ewk, 0x157);
-                    break;
-                }
-
-                ewk->wu.mvxy.a[0].sp = (ewk->wu.mvxy.a[0].sp * 80) / 100;
-                ewk->wu.mvxy.a[1].sp = -ewk->wu.mvxy.a[1].sp;
-                ewk->wu.mvxy.a[1].sp = (ewk->wu.mvxy.a[1].sp * 3) / 5;
-                ewk->wu.shell_ix[1] = 1;
-                ewk->wu.hit_stop = 1;
-
-                if (screen_range_check_effD7(&ewk->wu)) {
-                    ewk->wu.disp_flag = 0;
-                    ewk->wu.type = 0;
-                    ewk->wu.routine_no[0] = 2;
-                    break;
-                }
-            }
-
-            if (effI8_can_hit_master(ewk, mwk)) {
-                mwk->wu.cmwk[7] = 1;
-                ewk->wu.type = 0;
-                ewk->wu.routine_no[2] = 1;
-            }
-
-            break;
-
-        case 1:
-            ewk->wu.disp_flag = 0;
-
-            if (mwk->wu.routine_no[1] != 4) {
-                ewk->wu.routine_no[2] = 0;
-                ewk->wu.xyz[0].disp.pos = mwk->wu.xyz[0].disp.pos;
-                ewk->wu.xyz[1].disp.pos = mwk->wu.xyz[1].disp.pos + 136;
-                ewk->wu.disp_flag = 1;
-                ewk->wu.type = 1;
-                ewk->wu.mvxy.a[0].sp = 0x18000;
-                ewk->wu.mvxy.d[0].sp = 0;
-                ewk->wu.mvxy.a[1].sp = 0x20000;
-                ewk->wu.mvxy.d[1].sp = -0x6800;
-            } else if (mwk->wu.cmwk[6]) {
-                ewk->wu.routine_no[2] = 0;
-                mwk->wu.cmwk[6] = 0;
-
-                if (mwk->wu.rl_flag) {
-                    ewk->wu.xyz[0].disp.pos = mwk->wu.xyz[0].disp.pos + 10;
-                } else {
-                    ewk->wu.xyz[0].disp.pos = mwk->wu.xyz[0].disp.pos - 10;
-                }
-
-                ewk->wu.xyz[1].disp.pos = mwk->wu.xyz[1].disp.pos + 136;
-                Bonus_Game_Work--;
-                ewk->wu.disp_flag = 1;
-                ewk->wu.type = 1;
-                set_char_move_init(&ewk->wu, 0, 0x89);
-                cal_speeds_to_em_effI8(ewk, (PLW*)ewk->wu.target_adrs);
-                add_mvxy_speed(&ewk->wu);
-                cal_mvxy_speed(&ewk->wu);
-            }
-
-            break;
-        }
-
+        update_unhit_ball_effI8(ewk, mwk);
         break;
 
     case 1:
-        if (ewk->wu.hf.hit.player) {
-            if (ewk->wu.hf.hit.player & 0x33) {
-                ewk->wu.routine_no[1] = 0;
-
-                if (ewk->wu.hf.hit.player & 0x30) {
-                    ewk->wu.mvxy.a[0].sp = -ewk->wu.mvxy.a[0].sp;
-                    ewk->wu.mvxy.a[0].sp /= 3;
-                    ewk->wu.mvxy.a[1].sp = 0x10000;
-                    ewk->wu.mvxy.d[1].sp = -0x6000;
-                } else {
-                    ewk->wu.rl_flag = (ewk->wu.rl_flag + 1) & 1;
-                    ewk->wu.mvxy.a[0].sp /= 2;
-                    ewk->wu.mvxy.a[1].sp = 0;
-                    ewk->wu.mvxy.d[1].sp = -0x6000;
-                }
-            } else if (ewk->wu.hf.hit.player & 0xC0) {
-                ewk->wu.routine_no[1] = 0;
-                ewk->wu.rl_flag = (ewk->wu.rl_flag + 1) & 1;
-                ewk->wu.mvxy.a[0].sp = 0x30000;
-                ewk->wu.mvxy.a[1].sp = 0x44000;
-                ewk->wu.mvxy.d[1].sp = -0x5000;
-                ewk->wu.hit_stop = 4;
-                Bonus_Game_result++;
-
-                if (ewk->wu.hf.hit.player & 0x80) {
-                    Additinal_Score_DM((WORK_Other*)ewk->wu.target_adrs, 8);
-                } else {
-                    Additinal_Score_DM((WORK_Other*)ewk->wu.target_adrs, 6);
-                }
-
-                set_char_move_init(&ewk->wu, 0, 0x8B);
-            }
-        } else if (ewk->wu.hf.hit.effect && ((WORK*)ewk->wu.hit_adrs)->id == 0x89) {
-            sound_effect_request[0x157](ewk, 0x157);
-            ewk->wu.routine_no[1] = 0;
-            ewk->wu.rl_flag = (ewk->wu.rl_flag + 1) & 1;
-            ewk->wu.mvxy.a[0].sp = (ewk->wu.mvxy.a[0].sp * 3) / 4;
-            ewk->wu.hit_stop = 2;
-        } else {
-            if (ewk->wu.dmg_work_id != 1) {
-                sound_effect_request[0x10B](ewk, 0x10B);
-            }
-
-            ewk->wu.routine_no[1] = 2;
-            ewk->wu.rl_flag = (ewk->wu.rl_flag + 1) & 1;
-            ewk->wu.disp_flag = 2;
-            ewk->wu.type = 0;
-            ewk->wu.kage_flag = 0;
-            ewk->wu.dir_timer = 8;
-            ewk->wu.hit_stop = 2;
-            Additinal_Score_DM((WORK_Other*)ewk->wu.target_adrs, 6);
-            Bonus_Game_ex_result++;
-        }
-
-        ewk->wu.hit_work_id = ewk->wu.dmg_work_id = 0;
-        ewk->wu.hf.hit_flag = 0;
-        ewk->refrected = 1;
+        handle_ball_hit_effI8(ewk);
         break;
 
     case 2:
@@ -286,8 +344,9 @@ void effI8_main_process(WORK_Other* ewk) {
 void cal_speeds_to_me_effI8(WORK_Other* ewk, PLW* mwk) {
     s16 tx = mwk->wu.xyz[0].disp.pos;
     s16 ty = cal_move_quantity3(&mwk->wu, ewk->wu.dir_timer) + 128;
+    const BallTrajectoryD7 trajectory = { ewk->wu.dir_timer, tx, ty, 5 };
 
-    cal_speeds_effD7(ewk, ewk->wu.dir_timer, tx, ty, 5);
+    cal_speeds_effD7(ewk, &trajectory);
 }
 
 void cal_speeds_to_em_effI8(WORK_Other* ewk, PLW* twk) {
@@ -301,8 +360,26 @@ void cal_speeds_to_em_effI8(WORK_Other* ewk, PLW* twk) {
     }
 
     ty = bbbs_emtall[twk->player_number];
+    const BallTrajectoryD7 trajectory = { ewk->wu.dir_step, tx, ty, ewk->wu.dir_old };
 
-    cal_speeds_effD7(ewk, ewk->wu.dir_step, tx, ty, ewk->wu.dir_old);
+    cal_speeds_effD7(ewk, &trajectory);
+}
+
+typedef enum {
+    OUTSIDE_MIZUSHIBUKI_AREA_I8,
+    INSIDE_MIZUSHIBUKI_AREA_I8,
+} MizushibukiAreaResultI8;
+
+static MizushibukiAreaResultI8 check_mizushibuki_area_effI8(s16 xx, s16 yy) {
+    if (xx >= 689 || xx <= 399) {
+        return OUTSIDE_MIZUSHIBUKI_AREA_I8;
+    }
+
+    if (yy >= -7 || yy < -24) {
+        return OUTSIDE_MIZUSHIBUKI_AREA_I8;
+    }
+
+    return INSIDE_MIZUSHIBUKI_AREA_I8;
 }
 
 s32 check_ball_mizushibuki(s16 xx, s16 yy) {
@@ -320,11 +397,7 @@ s32 check_ball_mizushibuki(s16 xx, s16 yy) {
 
     yy -= 6;
 
-    if (xx >= 689 || xx <= 399) {
-        return 0;
-    }
-
-    if ((yy >= -7) || (yy < -24)) {
+    if (check_mizushibuki_area_effI8(xx, yy) == OUTSIDE_MIZUSHIBUKI_AREA_I8) {
         return 0;
     }
 

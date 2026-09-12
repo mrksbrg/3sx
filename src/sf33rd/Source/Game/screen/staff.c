@@ -309,7 +309,8 @@ void set_credit_string(s32 t, s32 x, s32 y, s32 a, s8* s) {
     xu += (bg_w.bgw[5].xy[0].disp.pos) - 192;
     yu += bg_w.bgw[5].position_y;
 
-    effect_H6_init(t, su, xu, yu, a, -1);
+    H6InitArgs init_args = { .timer = t, .str = su, .x = xu, .y = yu, .original_color = a };
+    effect_H6_init(&init_args);
 }
 
 s32 staff_credits(u32 /* unused */) {

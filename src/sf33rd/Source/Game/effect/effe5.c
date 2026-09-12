@@ -53,137 +53,181 @@ static s32 uses_alternate_block_image(const PLW* mwk) {
     return mwk->image_data_index == 11 && mwk->kind_of_blocking == 2;
 }
 
-static s32 after_image_should_reset(WORK_Other* ewk, const PLW* mwk) {
-    return (ewk->wu.dir_old & 1 && EXE_flag == 0 && Game_pause == 0 && mwk->wu.hit_stop <= 0 &&
-            --ewk->wu.direction == 0) ||
-           (ewk->wu.dir_old & 2 &&
+static s32 after_image_can_advance(const PLW* mwk) {
+    return EXE_flag == 0 && Game_pause == 0 && mwk->wu.hit_stop <= 0;
+}
+
+static s32 after_image_direction_elapsed(WORK_Other* ewk, const PLW* mwk) {
+    return ewk->wu.dir_old & 1 && after_image_can_advance(mwk) && --ewk->wu.direction == 0;
+}
+
+static s32 after_image_animation_changed(WORK_Other* ewk, const PLW* mwk) {
+    return ewk->wu.dir_old & 2 &&
             (ewk->wu.routine_no[5] != mwk->wu.routine_no[1] ||
              ewk->wu.routine_no[6] != mwk->wu.routine_no[2]) &&
-            (mwk->image_data_index != 11 || mwk->wu.routine_no[1] != 4 || mwk->wu.routine_no[3] != 0)) ||
-           (ewk->wu.dir_old & 4 && mwk->sa->ok != -1) ||
+            (mwk->image_data_index != 11 || mwk->wu.routine_no[1] != 4 || mwk->wu.routine_no[3] != 0);
+}
+
+static s32 after_image_action_changed(WORK_Other* ewk, const PLW* mwk) {
+    return (ewk->wu.dir_old & 4 && mwk->sa->ok != -1) ||
            (ewk->wu.dir_old & 8 && ((WORK*)mwk->wu.target_adrs)->routine_no[1] != 4 &&
             ((WORK*)mwk->wu.target_adrs)->routine_no[1] != 2) ||
-           (ewk->wu.dir_old & 0x10 && mwk->wu.routine_no[1] != 4 && mwk->wu.routine_no[1] != 2) ||
-           (ewk->wu.dir_old & 0x20 && ewk->wu.total_att_set != ((WORK*)mwk->wu.target_adrs)->kind_of_waza) ||
+           (ewk->wu.dir_old & 0x10 && mwk->wu.routine_no[1] != 4 && mwk->wu.routine_no[1] != 2);
+}
+
+static s32 after_image_combat_state_changed(WORK_Other* ewk, const PLW* mwk) {
+    return (ewk->wu.dir_old & 0x20 && ewk->wu.total_att_set != ((WORK*)mwk->wu.target_adrs)->kind_of_waza) ||
            (ewk->wu.dir_old & 0x40 && ewk->wu.total_paring != mwk->wu.kind_of_waza) ||
            (ewk->wu.dir_old & 0x80 && pcon_dp_flag) || !mwk->image_setup_flag;
+}
+
+static s32 after_image_should_reset(WORK_Other* ewk, const PLW* mwk) {
+    return after_image_direction_elapsed(ewk, mwk) || after_image_animation_changed(ewk, mwk) ||
+           after_image_action_changed(ewk, mwk) || after_image_combat_state_changed(ewk, mwk);
 }
 
 static s32 after_image_timer_expired(WORK_Other* ewk) {
     return EXE_flag == 0 && Game_pause == 0 && --ewk->wu.dir_step <= 0;
 }
 
+static void update_repeating_after_image(WORK_Other* ewk, PLW* mwk) {
+    if (mwk->image_setup_flag == 0) {
+        ewk->wu.routine_no[0] = 0;
+        ewk->wu.routine_no[1] = 0;
+        return;
+    }
 
-void effect_E5_move(WORK_Other* ewk) {
-    PLW* mwk = (PLW*)ewk->my_master;
-    s16 i;
-
-    switch (ewk->wu.routine_no[0]) {
+    switch (ewk->wu.routine_no[2]) {
     case 0:
-        if (ewk->wu.dead_f == 1) {
-            ewk->wu.routine_no[0] = 2;
-            mwk->image_setup_flag = 0;
-            break;
-        }
-
-        if (mwk->image_setup_flag == 0) {
-            break;
-        }
-
-        if (uses_alternate_block_image(mwk)) {
-            mwk->image_data_index = 33;
-        }
-
-        setup_illusion_data(ewk, mwk);
-
-        if (ewk->wu.old_rno[2]) {
-            ewk->wu.routine_no[1] = 1;
-        } else {
-            ewk->wu.routine_no[1] = 0;
-        }
-
-        ewk->wu.routine_no[0] = 1;
-        ewk->wu.routine_no[2] = 0;
+        ewk->wu.routine_no[2]++;
+        effect_E7_init(ewk, mwk);
         /* fallthrough */
 
     case 1:
-        if (ewk->wu.dead_f == 1) {
-            ewk->wu.routine_no[0] = 2;
-            mwk->image_setup_flag = 0;
-            break;
+        ewk->wu.routine_no[2]++;
+        ewk->wu.dir_step = ewk->wu.dmcal_m;
+        /* fallthrough */
+
+    case 2:
+        if (after_image_timer_expired(ewk)) {
+            effect_E7_init(ewk, mwk);
+            ewk->wu.routine_no[2] = 1;
         }
 
-        if (check_new_after_image(ewk, mwk) != 0) {
-            goto jump;
+        break;
+    }
+}
+
+static void initialize_static_after_images_before_step(WORK_Other* ewk, PLW* mwk) {
+    s16 i;
+
+    for (i = 0; i < ewk->wu.dmcal_d; i++) {
+        effect_E8_init(ewk, mwk, ewk->wu.dir_step);
+        ewk->wu.dir_step += ewk->wu.dmcal_m;
+    }
+}
+
+static void initialize_static_after_images_after_step(WORK_Other* ewk, PLW* mwk) {
+    s16 i;
+
+    for (i = 0; i < ewk->wu.dmcal_d; i++) {
+        ewk->wu.dir_step += ewk->wu.dmcal_m;
+        effect_E8_init(ewk, mwk, ewk->wu.dir_step);
+    }
+}
+
+static void initialize_static_after_images(WORK_Other* ewk, PLW* mwk) {
+    if (mwk->image_setup_flag == 0) {
+        ewk->wu.routine_no[0] = 0;
+        ewk->wu.routine_no[1] = 0;
+        return;
+    }
+
+    switch (ewk->wu.routine_no[2]) {
+    case 0:
+        ewk->wu.routine_no[2]++;
+        ewk->wu.dir_step = 0;
+
+        if (ewk->wu.old_rno[5]) {
+            initialize_static_after_images_before_step(ewk, mwk);
+        } else {
+            initialize_static_after_images_after_step(ewk, mwk);
         }
 
-        if (after_image_should_reset(ewk, mwk)) {
-            mwk->image_setup_flag = 0;
-        jump:
-            ewk->wu.routine_no[0] = ewk->wu.routine_no[1] = ewk->wu.routine_no[2] = 0;
+        break;
+    }
+}
+
+static bool initialize_after_image(WORK_Other* ewk, PLW* mwk) {
+    if (ewk->wu.dead_f == 1) {
+        ewk->wu.routine_no[0] = 2;
+        mwk->image_setup_flag = 0;
+        return false;
+    }
+
+    if (mwk->image_setup_flag == 0) {
+        return false;
+    }
+
+    if (uses_alternate_block_image(mwk)) {
+        mwk->image_data_index = 33;
+    }
+
+    setup_illusion_data(ewk, mwk);
+
+    if (ewk->wu.old_rno[2]) {
+        ewk->wu.routine_no[1] = 1;
+    } else {
+        ewk->wu.routine_no[1] = 0;
+    }
+
+    ewk->wu.routine_no[0] = 1;
+    ewk->wu.routine_no[2] = 0;
+    return true;
+}
+
+static void update_after_image(WORK_Other* ewk, PLW* mwk) {
+    if (ewk->wu.dead_f == 1) {
+        ewk->wu.routine_no[0] = 2;
+        mwk->image_setup_flag = 0;
+        return;
+    }
+
+    if (check_new_after_image(ewk, mwk) != 0) {
+        goto jump;
+    }
+
+    if (after_image_should_reset(ewk, mwk)) {
+        mwk->image_setup_flag = 0;
+    jump:
+        ewk->wu.routine_no[0] = ewk->wu.routine_no[1] = ewk->wu.routine_no[2] = 0;
+        return;
+    }
+
+    switch (ewk->wu.routine_no[1]) {
+    case 0:
+        update_repeating_after_image(ewk, mwk);
+        break;
+
+    case 1:
+        initialize_static_after_images(ewk, mwk);
+        break;
+    }
+}
+
+
+void effect_E5_move(WORK_Other* ewk) {
+    PLW* mwk = (PLW*)ewk->my_master;
+
+    switch (ewk->wu.routine_no[0]) {
+    case 0:
+        if (!initialize_after_image(ewk, mwk)) {
             break;
         }
+        /* fallthrough */
 
-        switch (ewk->wu.routine_no[1]) {
-        case 0:
-            if (mwk->image_setup_flag == 0) {
-                ewk->wu.routine_no[0] = 0;
-                ewk->wu.routine_no[1] = 0;
-                break;
-            }
-
-            switch (ewk->wu.routine_no[2]) {
-            case 0:
-                ewk->wu.routine_no[2]++;
-                effect_E7_init(ewk, mwk);
-                /* fallthrough */
-
-            case 1:
-                ewk->wu.routine_no[2]++;
-                ewk->wu.dir_step = ewk->wu.dmcal_m;
-                /* fallthrough */
-
-            case 2:
-                if (after_image_timer_expired(ewk)) {
-                    effect_E7_init(ewk, mwk);
-                    ewk->wu.routine_no[2] = 1;
-                }
-
-                break;
-            }
-
-            break;
-
-        case 1:
-            if (mwk->image_setup_flag == 0) {
-                ewk->wu.routine_no[0] = 0;
-                ewk->wu.routine_no[1] = 0;
-                break;
-            }
-
-            switch (ewk->wu.routine_no[2]) {
-            case 0:
-                ewk->wu.routine_no[2]++;
-                ewk->wu.dir_step = 0;
-
-                if (ewk->wu.old_rno[5]) {
-                    for (i = 0; i < ewk->wu.dmcal_d; i++) {
-                        effect_E8_init(ewk, mwk, ewk->wu.dir_step);
-                        ewk->wu.dir_step += ewk->wu.dmcal_m;
-                    }
-                } else {
-                    for (i = 0; i < ewk->wu.dmcal_d; i++) {
-                        ewk->wu.dir_step += ewk->wu.dmcal_m;
-                        effect_E8_init(ewk, mwk, ewk->wu.dir_step);
-                    }
-                }
-
-                break;
-            }
-
-            break;
-        }
-
+    case 1:
+        update_after_image(ewk, mwk);
         break;
 
     default:

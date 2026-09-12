@@ -232,58 +232,77 @@ static s32 game_is_active(void) {
     return EXE_flag == 0 && Game_pause == 0;
 }
 
+static void detach_from_master_if_needed_K2(WORK_Other* ewk, const WORK* master) {
+    if (ewk->wu.dir_old != 0) {
+        return;
+    }
+
+    if (master->id == ewk->master_work_id && master->dir_old == 0) {
+        return;
+    }
+
+    ewk->wu.dir_old = 1;
+}
+
+static void initialize_effect_K2(WORK_Other* ewk, WORK* master, DADD* fragment) {
+    ewk->wu.routine_no[0]++;
+    ewk->wu.routine_no[1] = fragment->rno;
+    ewk->wu.disp_flag = fragment->init_dsp;
+    ewk->wu.blink_timing = ewk->master_id;
+    ewk->wu.xyz[0].disp.pos += fragment->hx;
+    ewk->wu.xyz[1].disp.pos += fragment->hy;
+    ewk->wu.position_z = 24;
+    ewk->wu.kage_hy = 0;
+
+    if ((ewk->wu.next_y = fragment->gr1st) == 0) {
+        ewk->wu.next_y = (random_16() & 7) + 4;
+
+        if (fragment->kage_char) {
+            ewk->wu.next_y = -ewk->wu.next_y;
+        }
+
+        if (ewk->wu.xyz[1].disp.pos < 0) {
+            ewk->wu.next_y += ewk->wu.xyz[1].disp.pos;
+        }
+    }
+
+    setup_move_data_easy(&ewk->wu, k2_kidou[fragment->ispix], 1, 0);
+    set_char_move_init(&ewk->wu, 0, fragment->cix);
+
+    if (fragment->cix == 0x78) {
+        setup_demojump((PLW*)ewk->wu.hit_adrs, 1);
+    }
+
+    disp_effK2(&ewk->wu, master, fragment);
+}
+
+static void update_active_effect_K2(WORK_Other* ewk, WORK* master, DADD* fragment) {
+    if (ewk->wu.dead_f == 1 || Suicide[0] != 0) {
+        ewk->wu.disp_flag = 0;
+        ewk->wu.routine_no[0]++;
+        return;
+    }
+
+    if (game_is_active()) {
+        effK2_main_process[ewk->wu.routine_no[1]](ewk, fragment);
+    }
+
+    disp_effK2(&ewk->wu, master, fragment);
+}
+
 void effect_K2_move(WORK_Other* ewk) {
     DADD* hahen = (DADD*)ewk->wu.target_adrs;
     WORK* mwk = (WORK*)ewk->my_master;
 
-    if (ewk->wu.dir_old == 0 && (mwk->id != ewk->master_work_id || mwk->dir_old != 0)) {
-        ewk->wu.dir_old = 1;
-    }
+    detach_from_master_if_needed_K2(ewk, mwk);
 
     switch (ewk->wu.routine_no[0]) {
     case 0:
-        ewk->wu.routine_no[0]++;
-        ewk->wu.routine_no[1] = hahen->rno;
-        ewk->wu.disp_flag = hahen->init_dsp;
-        ewk->wu.blink_timing = ewk->master_id;
-        ewk->wu.xyz[0].disp.pos += hahen->hx;
-        ewk->wu.xyz[1].disp.pos += hahen->hy;
-        ewk->wu.position_z = 24;
-        ewk->wu.kage_hy = 0;
-
-        if ((ewk->wu.next_y = hahen->gr1st) == 0) {
-            ewk->wu.next_y = (random_16() & 7) + 4;
-
-            if (hahen->kage_char) {
-                ewk->wu.next_y = -ewk->wu.next_y;
-            }
-            if ((ewk->wu.xyz[1].disp.pos) < 0) {
-                ewk->wu.next_y += ewk->wu.xyz[1].disp.pos;
-            }
-        }
-
-        setup_move_data_easy(&ewk->wu, k2_kidou[hahen->ispix], 1, 0);
-        set_char_move_init(&ewk->wu, 0, (hahen->cix));
-
-        if (hahen->cix == 0x78) {
-            setup_demojump((PLW*)ewk->wu.hit_adrs, 1);
-        }
-
-        disp_effK2(&ewk->wu, mwk, hahen);
+        initialize_effect_K2(ewk, mwk, hahen);
         break;
 
     case 1:
-        if (ewk->wu.dead_f == 1 || Suicide[0] != 0) {
-            ewk->wu.disp_flag = 0;
-            ewk->wu.routine_no[0]++;
-            break;
-        }
-
-        if (game_is_active()) {
-            effK2_main_process[ewk->wu.routine_no[1]](ewk, hahen);
-        }
-
-        disp_effK2(&ewk->wu, mwk, hahen);
+        update_active_effect_K2(ewk, mwk, hahen);
         break;
 
     case 2:
@@ -352,89 +371,127 @@ void effK2_parts_move_type_0(WORK_Other* ewk, DADD*) {
     }
 }
 
-void effK2_parts_move_type_1(WORK_Other* ewk, DADD* hahen) {
-    switch (ewk->wu.routine_no[2]) {
-    case 0:
-        switch (ewk->wu.dm_attlv) {
-        case 2:
-        case 3:
-            char_move(&ewk->wu);
-            /* fallthrough */
+typedef enum {
+    QUIET_BOUNCE_K2,
+    SOUND_BOUNCE_K2,
+} FragmentBounceModeK2;
 
-        case 1:
-            char_move(&ewk->wu);
-            break;
-        }
-
+static void advance_fragment_animation_K2(WORK_Other* ewk) {
+    switch (ewk->wu.dm_attlv) {
+    case 2:
+    case 3:
         char_move(&ewk->wu);
-        add_mvxy_speed(&ewk->wu);
-        cal_mvxy_speed(&ewk->wu);
+        /* fallthrough */
 
-        if (ewk->wu.cg_type == 0xFF) {
+    case 1:
+        char_move(&ewk->wu);
+        break;
+    }
+
+    char_move(&ewk->wu);
+}
+
+static void update_bouncing_fragment_flight_K2(WORK_Other* ewk, DADD* fragment, FragmentBounceModeK2 mode) {
+    advance_fragment_animation_K2(ewk);
+    add_mvxy_speed(&ewk->wu);
+    cal_mvxy_speed(&ewk->wu);
+
+    if (ewk->wu.cg_type == 0xFF) {
+        ewk->wu.routine_no[2] = 10;
+        return;
+    }
+
+    if (ewk->wu.mvxy.a[1].sp > 0) {
+        return;
+    }
+
+    if (ewk->wu.xyz[1].disp.pos <= ewk->wu.next_y) {
+        ewk->wu.xyz[1].disp.pos = ewk->wu.next_y;
+
+        if (++ewk->wu.kage_hy > fragment->bau) {
             ewk->wu.routine_no[2] = 10;
-            break;
+        } else {
+            ewk->wu.routine_no[2] = 1;
         }
 
-        if (ewk->wu.mvxy.a[1].sp <= 0) {
-            if (ewk->wu.xyz[1].disp.pos <= ewk->wu.next_y) {
-                ewk->wu.xyz[1].disp.pos = ewk->wu.next_y;
-
-                if (++ewk->wu.kage_hy > hahen->bau) {
-                    ewk->wu.routine_no[2] = 10;
-                } else {
-                    ewk->wu.routine_no[2] = 1;
-                }
-            }
-
-            if (screen_x_range_check(&ewk->wu)) {
-                ewk->wu.routine_no[2] = 20;
-            }
+        if (mode == SOUND_BOUNCE_K2) {
+            sound_effect_request[0x3E4](ewk, 0x3E4);
         }
+    }
 
+    if (screen_x_range_check(&ewk->wu)) {
+        ewk->wu.routine_no[2] = 20;
+    }
+}
+
+static void bounce_fragment_K2(WORK_Other* ewk, DADD* fragment) {
+    ewk->wu.routine_no[2] = 0;
+    ewk->wu.mvxy.a[0].sp /= 2;
+    ewk->wu.mvxy.d[0].sp /= 2;
+    ewk->wu.mvxy.a[1].sp = -ewk->wu.mvxy.a[1].sp;
+    ewk->wu.mvxy.a[1].sp /= 3;
+    set_next_next_y(&ewk->wu, fragment->kage_char);
+}
+
+static void select_fragment_end_state_K2(WORK_Other* ewk, const DADD* fragment) {
+    switch (fragment->doa) {
+    case 0:
+        ewk->wu.disp_flag = 0;
+        ewk->wu.routine_no[2] = 20;
         break;
 
     case 1:
-        ewk->wu.routine_no[2] = 0;
-        ewk->wu.mvxy.a[0].sp /= 2;
-        ewk->wu.mvxy.d[0].sp /= 2;
-        ewk->wu.mvxy.a[1].sp = -ewk->wu.mvxy.a[1].sp;
-        ewk->wu.mvxy.a[1].sp /= 3;
-        set_next_next_y(&ewk->wu, hahen->kage_char);
+        ewk->wu.disp_flag = 1;
+        ewk->wu.routine_no[2] = 15;
+        break;
+
+    default:
+        ewk->wu.disp_flag = 2;
+        ewk->wu.kage_prio = 20;
+        ewk->wu.routine_no[2] = 11;
+        break;
+    }
+}
+
+static void retire_fragment_K2(WORK_Other* ewk) {
+    ewk->wu.disp_flag = 0;
+    ewk->wu.routine_no[0] = 2;
+}
+
+static void update_fragment_fade_K2(WORK_Other* ewk) {
+    if (--ewk->wu.kage_prio > 0) {
+        return;
+    }
+
+    retire_fragment_K2(ewk);
+}
+
+static void move_bouncing_fragment_K2(WORK_Other* ewk, DADD* fragment, FragmentBounceModeK2 mode) {
+    switch (ewk->wu.routine_no[2]) {
+    case 0:
+        update_bouncing_fragment_flight_K2(ewk, fragment, mode);
+        break;
+
+    case 1:
+        bounce_fragment_K2(ewk, fragment);
         break;
 
     case 10:
-        switch (hahen->doa) {
-        case 0:
-            ewk->wu.disp_flag = 0;
-            ewk->wu.routine_no[2] = 20;
-            break;
-
-        case 1:
-            ewk->wu.disp_flag = 1;
-            ewk->wu.routine_no[2] = 15;
-            break;
-
-        default:
-            ewk->wu.disp_flag = 2;
-            ewk->wu.kage_prio = 20;
-            ewk->wu.routine_no[2] = 11;
-            break;
-        }
-
+        select_fragment_end_state_K2(ewk, fragment);
         break;
 
     case 11:
-        if (--ewk->wu.kage_prio > 0) {
-            break;
-        }
-
-        /* fallthrough */
+        update_fragment_fade_K2(ewk);
+        break;
 
     case 20:
-        ewk->wu.disp_flag = 0;
-        ewk->wu.routine_no[0] = 2;
+        retire_fragment_K2(ewk);
         break;
     }
+}
+
+void effK2_parts_move_type_1(WORK_Other* ewk, DADD* hahen) {
+    move_bouncing_fragment_K2(ewk, hahen, QUIET_BOUNCE_K2);
 }
 
 void effK2_parts_move_type_2(WORK_Other* ewk, DADD* /* unused */) {
@@ -458,34 +515,44 @@ void effK2_parts_move_type_2(WORK_Other* ewk, DADD* /* unused */) {
     }
 }
 
+static void land_type_3_fragment_K2(WORK_Other* ewk, const DADD* fragment) {
+    ewk->wu.xyz[1].disp.pos = ewk->wu.next_y;
+
+    if (++ewk->wu.kage_hy > fragment->bau) {
+        ewk->wu.routine_no[2] = 10;
+    } else {
+        ewk->wu.routine_no[2] = 1;
+    }
+
+    ewk->wu.routine_no[1] = 1;
+    char_move_cmja(&ewk->wu);
+    reset_mvxy_data(&ewk->wu);
+}
+
+static void update_type_3_fragment_K2(WORK_Other* ewk, const DADD* fragment) {
+    char_move(&ewk->wu);
+    add_mvxy_speed(&ewk->wu);
+    cal_mvxy_speed(&ewk->wu);
+
+    if (ewk->wu.mvxy.a[1].sp > 0) {
+        return;
+    }
+
+    if (ewk->wu.xyz[1].disp.pos <= ewk->wu.next_y) {
+        land_type_3_fragment_K2(ewk, fragment);
+        return;
+    }
+
+    if (screen_x_range_check(&ewk->wu)) {
+        ewk->wu.routine_no[1] = 1;
+        ewk->wu.routine_no[2] = 20;
+    }
+}
+
 void effK2_parts_move_type_3(WORK_Other* ewk, DADD* hahen) {
     switch (ewk->wu.routine_no[2]) {
     case 0:
-        char_move(&ewk->wu);
-        add_mvxy_speed(&ewk->wu);
-        cal_mvxy_speed(&ewk->wu);
-
-        if (ewk->wu.mvxy.a[1].sp > 0) {
-            break;
-        }
-
-        if (ewk->wu.xyz[1].disp.pos <= ewk->wu.next_y) {
-            ewk->wu.xyz[1].disp.pos = ewk->wu.next_y;
-
-            if (++ewk->wu.kage_hy > hahen->bau) {
-                ewk->wu.routine_no[2] = 10;
-            } else {
-                ewk->wu.routine_no[2] = 1;
-            }
-
-            ewk->wu.routine_no[1] = 1;
-            char_move_cmja(&ewk->wu);
-            reset_mvxy_data(&ewk->wu);
-        } else if (screen_x_range_check(&ewk->wu)) {
-            ewk->wu.routine_no[1] = 1;
-            ewk->wu.routine_no[2] = 20;
-        }
-
+        update_type_3_fragment_K2(ewk, hahen);
         break;
     }
 }
@@ -568,92 +635,7 @@ void effK2_parts_move_type_7(WORK_Other* ewk, DADD* arg1) {
 }
 
 void effK2_parts_move_type_8(WORK_Other* ewk, DADD* hahen) {
-    switch (ewk->wu.routine_no[2]) {
-    case 0:
-        switch (ewk->wu.dm_attlv) {
-        case 2:
-        case 3:
-            char_move(&ewk->wu);
-            /* fallthrough */
-
-        case 1:
-            char_move(&ewk->wu);
-            break;
-        }
-
-        char_move(&ewk->wu);
-        add_mvxy_speed(&ewk->wu);
-        cal_mvxy_speed(&ewk->wu);
-
-        if (ewk->wu.cg_type == 0xFF) {
-            ewk->wu.routine_no[2] = 10;
-            break;
-        }
-
-        if (ewk->wu.mvxy.a[1].sp > 0) {
-            break;
-        }
-
-        if (ewk->wu.xyz[1].disp.pos <= ewk->wu.next_y) {
-            ewk->wu.xyz[1].disp.pos = ewk->wu.next_y;
-
-            if (++ewk->wu.kage_hy > hahen->bau) {
-                ewk->wu.routine_no[2] = 10;
-            } else {
-                ewk->wu.routine_no[2] = 1;
-            }
-
-            sound_effect_request[0x3E4](ewk, 0x3E4);
-        }
-
-        if (screen_x_range_check(&ewk->wu)) {
-            ewk->wu.routine_no[2] = 20;
-        }
-
-        break;
-
-    case 1:
-        ewk->wu.routine_no[2] = 0;
-        ewk->wu.mvxy.a[0].sp /= 2;
-        ewk->wu.mvxy.d[0].sp /= 2;
-        ewk->wu.mvxy.a[1].sp = -ewk->wu.mvxy.a[1].sp;
-        ewk->wu.mvxy.a[1].sp /= 3;
-        set_next_next_y(&ewk->wu, hahen->kage_char);
-        break;
-
-    case 10:
-        switch (hahen->doa) {
-        case 0:
-            ewk->wu.disp_flag = 0;
-            ewk->wu.routine_no[2] = 20;
-            break;
-
-        case 1:
-            ewk->wu.disp_flag = 1;
-            ewk->wu.routine_no[2] = 15;
-            break;
-
-        default:
-            ewk->wu.disp_flag = 2;
-            ewk->wu.kage_prio = 20;
-            ewk->wu.routine_no[2] = 11;
-            break;
-        }
-
-        break;
-
-    case 11:
-        if (--ewk->wu.kage_prio > 0) {
-            break;
-        }
-
-        /* fallthrough */
-
-    case 20:
-        ewk->wu.disp_flag = 0;
-        ewk->wu.routine_no[0] = 2;
-        break;
-    }
+    move_bouncing_fragment_K2(ewk, hahen, SOUND_BOUNCE_K2);
 }
 
 void set_next_next_y(WORK* wk, u8 flag) {
@@ -715,24 +697,28 @@ void setup_effK2(WORK* wk) {
     }
 }
 
-void setup_effK2_sync_bomb(WORK* wk) {
-    const DADD* dhead;
+static void spawn_unsynchronized_fragments_K2(WORK* wk, const HAHEN* fragment_group) {
+    const DADD* fragments = fragment_group->dadd;
     s16 i;
+
+    for (i = 0; i < fragment_group->kosuu; i++) {
+        if (fragments[i].bomb == 0) {
+            effect_K2_init((WORK_Other*)wk, (u32*)&fragments[i]);
+        }
+    }
+}
+
+void setup_effK2_sync_bomb(WORK* wk) {
     s16 j;
-    s16 num;
 
     for (j = wk->vital_old + 1; j < 8; j++) {
-        if (!(num = hahen_data[j][wk->type].kosuu) || hahen_data[j][wk->type].bomb != 0) {
+        const HAHEN* fragment_group = &hahen_data[j][wk->type];
+
+        if (!fragment_group->kosuu || fragment_group->bomb != 0) {
             continue;
         }
 
-        dhead = hahen_data[j][wk->type].dadd;
-
-        for (i = 0; i < num; i++) {
-            if (dhead[i].bomb == 0) {
-                effect_K2_init((WORK_Other*)wk, (u32*)&dhead[i]);
-            }
-        }
+        spawn_unsynchronized_fragments_K2(wk, fragment_group);
     }
 }
 

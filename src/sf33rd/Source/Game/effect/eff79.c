@@ -35,19 +35,271 @@ u8 Extra_Counter[2];
 
 const s32 Pos_Z_Data_79[3] = { 0, 5, 10 };
 
+typedef enum {
+    EFFECT_79_CONTINUES = 0,
+    EFFECT_79_STOPS = 1,
+} Effect79UpdateResult;
+
 static s32 movement_is_incomplete(const s16* arrived) {
     return arrived[0] == 0 || arrived[1] == 0;
 }
 
-
-void effect_79_move(WORK_Other* ewk) {
-    s16 xx;
+static void update_79_appearance(WORK_Other* ewk) {
     s16 arrived[2];
 
+    switch (ewk->wu.routine_no[1]) {
+    case 0:
+        if (OK_Appear79[ewk->master_id]) {
+            ewk->wu.routine_no[1]++;
+            ewk->wu.routine_no[5] = 0;
+            ewk->wu.routine_no[6] = 1;
+            ewk->wu.disp_flag = 1;
+            set_char_move_init2(&ewk->wu, 0, ewk->wu.char_index, ewk->wu.dir_step + 1, 0);
+        }
+
+        break;
+
+    case 1:
+        arrived[0] = EFF79_Move_X(ewk);
+        arrived[1] = EFF79_Move_Y(ewk);
+
+        if (movement_is_incomplete(arrived)) {
+            break;
+        }
+
+        ewk->wu.routine_no[0]++;
+        ewk->wu.routine_no[1] = 0;
+        ewk->wu.routine_no[5] = 0;
+        ewk->wu.routine_no[6] = 0;
+        ewk->wu.dir_timer = 1;
+        break;
+    }
+}
+
+typedef struct {
+    s16 display_slot;
+    s16 vitality_slot;
+    s32 movement_kind;
+    s32 x_speed;
+    s32 y_speed;
+    s32 option;
+} PlateMovementSetup79;
+
+enum {
+    FIRST_PLATE_INDEX_79 = 0,
+    SECOND_PLATE_INDEX_79 = 1,
+    PLATE_SETUP_VARIANT_COUNT_79 = sizeof(Pos_Z_Data_79) / sizeof(*Pos_Z_Data_79),
+    DEFAULT_QUAKE_INDEX_79 = PLATE_SETUP_VARIANT_COUNT_79 - sizeof(char),
+};
+
+static const PlateMovementSetup79 plate_movement_setups_79[][PLATE_SETUP_VARIANT_COUNT_79] = {
+    [FIRST_PLATE_INDEX_79] = { { 1, 3, 2, 0x60000, -0x20000, 0 },
+                               { 2, 1, 2, 0x60000, -0x20000, 0 },
+                               { 0, 2, 2, 0x20000, -0x80000, 2 } },
+    [SECOND_PLATE_INDEX_79] = { { 2, 3, 2, 0x60000, -0x80000, 1 },
+                                { 0, 1, 1, -0x60000, 0x20000, 0 },
+                                { 1, 2, 1, -0x60000, 0x20000, 0 } },
+};
+
+static void setup_79_moving_plate(WORK_Other* ewk, s32 plate_index) {
+    s32 quake_index =
+        ewk->wu.hit_quake < DEFAULT_QUAKE_INDEX_79 ? ewk->wu.hit_quake : DEFAULT_QUAKE_INDEX_79;
+    const PlateMovementSetup79* setup = &plate_movement_setups_79[plate_index][quake_index];
+
+    ewk->wu.dmcal_m = setup->display_slot;
+    ewk->wu.dm_vital = setup->vitality_slot;
+    Setup_Move_79(ewk, setup->movement_kind, setup->x_speed, setup->y_speed, setup->option);
+}
+
+static void update_79_plate_movement(WORK_Other* ewk) {
+    switch (ewk->wu.routine_no[1]) {
+    case 0:
+        Plate_Disposal_No[ewk->master_id][ewk->master_player] = 0;
+
+        if (Check_Play_Status_79(ewk)) {
+            break;
+        }
+
+        switch (Moving_Plate[ewk->master_id]) {
+        case 1:
+            setup_79_moving_plate(ewk, 0);
+            break;
+
+        case 2:
+            setup_79_moving_plate(ewk, 1);
+            break;
+
+        default:
+            Select_End_Sub_79(ewk);
+            break;
+        }
+
+        break;
+
+    case 1:
+        Move_79(ewk);
+        break;
+
+    case 2:
+        Move_Move_79(ewk);
+        break;
+    }
+}
+
+static Effect79UpdateResult update_79_return_movement(WORK_Other* ewk) {
+    s16 arrived[2];
+
+    switch (ewk->wu.routine_no[1]) {
+    case 0:
+        if (--ewk->wu.dir_timer != 0) {
+            break;
+        }
+
+        ewk->wu.routine_no[1]++;
+        ewk->wu.routine_no[5] = 0;
+        ewk->wu.routine_no[6] = 1;
+        ewk->wu.vital_new = Plate_X[ewk->master_id][0];
+        ewk->wu.direction = Plate_Y[ewk->master_id][0];
+        ewk->wu.mvxy.a[1].sp = 0x20000;
+        ewk->wu.mvxy.d[1].sp = 0x2000;
+
+        if (ewk->wu.xyz[0].disp.pos < ewk->wu.vital_new) {
+            ewk->wu.mvxy.a[0].sp = 0x18000;
+            ewk->wu.mvxy.d[0].sp = 0x6000;
+        } else {
+            ewk->wu.mvxy.a[0].sp = -0x18000;
+            ewk->wu.mvxy.d[0].sp = -0x6000;
+        }
+
+        Check_Speed_79(ewk);
+        break;
+
+    case 1:
+        arrived[0] = EFF79_Move_X(ewk);
+        arrived[1] = EFF79_Move_Y(ewk);
+
+        if (movement_is_incomplete(arrived)) {
+            break;
+        }
+
+        ewk->wu.routine_no[0] = 10;
+        ewk->wu.disp_flag = 0;
+        Extra_Counter[ewk->master_id]--;
+        return EFFECT_79_STOPS;
+
+    default:
+        break;
+    }
+
+    return EFFECT_79_CONTINUES;
+}
+
+static void start_79_final_movement(WORK_Other* ewk) {
+    s16 xx;
+
+    if (Extra_Counter[ewk->master_id] != 0) {
+        return;
+    }
+
+    ewk->wu.routine_no[1]++;
+    ewk->wu.routine_no[5] = 0;
+    ewk->wu.routine_no[6] = 1;
+
+    if (VS_Index[ewk->master_id] < 9) {
+        xx = 0;
+    } else {
+        xx = 2;
+    }
+
+    ewk->wu.vital_new = Plate_Finish_Data_79[ewk->master_id + xx][0];
+    ewk->wu.direction = Plate_Finish_Data_79[ewk->master_id + xx][1];
+    ewk->wu.mvxy.a[1].sp = -0x8000;
+    ewk->wu.mvxy.d[1].sp = -0xE000;
+
+    if (ewk->wu.xyz[0].disp.pos < ewk->wu.vital_new) {
+        ewk->wu.mvxy.a[0].sp = 0x10000;
+        ewk->wu.mvxy.d[0].sp = 0x30000;
+    } else {
+        ewk->wu.mvxy.a[0].sp = -0x10000;
+        ewk->wu.mvxy.d[0].sp = -0x30000;
+    }
+}
+
+static void advance_79_final_animation(WORK_Other* ewk) {
+    char_move(&ewk->wu);
+
+    if (ewk->wu.cg_type != 2) {
+        return;
+    }
+
+    ewk->wu.routine_no[1]++;
+    Sel_Arts_Complete[ewk->master_id] |= 0x8000;
+
+    if (ewk->wu.xyz[0].disp.pos ==
+        bg_w.bgw[ewk->wu.my_family - 1].wxy[0].disp.pos + Plate_Pos_Data_79[1][ewk->master_id][0][0]) {
+        ewk->wu.routine_no[0] = 8;
+    }
+}
+
+static void update_79_final_movement(WORK_Other* ewk) {
+    s16 arrived[2];
+
+    switch (ewk->wu.routine_no[1]) {
+    case 0:
+        if (--ewk->wu.dir_timer == 0) {
+            ewk->wu.routine_no[1]++;
+        }
+
+        break;
+
+    case 1:
+        advance_79_final_animation(ewk);
+        break;
+
+    case 2:
+        start_79_final_movement(ewk);
+        break;
+
+    case 3:
+        arrived[0] = EFF79_Move_X(ewk);
+        arrived[1] = EFF79_Move_Y(ewk);
+
+        if (!movement_is_incomplete(arrived)) {
+            ewk->wu.routine_no[0]++;
+        }
+
+        break;
+    }
+}
+
+enum { EARLY_STATE_LIMIT_79 = 4 };
+
+static void update_79_intro_animation(WORK_Other* ewk) {
+    char_move(&ewk->wu);
+
+    if (ewk->wu.cg_type == 1) {
+        OK_Appear79[ewk->master_id] = 1;
+        ewk->wu.routine_no[0]++;
+        ewk->wu.dir_timer = 1;
+    }
+}
+
+static void update_79_intro_wait(WORK_Other* ewk) {
+    if (--ewk->wu.dir_timer != 0) {
+        return;
+    }
+
+    ewk->wu.routine_no[0] = 5;
+    Move_Super_Arts[ewk->master_id]--;
+    Select_Arts[ewk->master_id]--;
+    effect_80_init(ewk, ewk->master_id, ewk->master_player, ewk->wu.my_family - 1);
+}
+
+static Effect79UpdateResult update_79_early_state(WORK_Other* ewk) {
     switch (ewk->wu.routine_no[0]) {
     case 0:
         if (--ewk->wu.dir_timer) {
-            return;
+            return EFFECT_79_STOPS;
         }
 
         ewk->wu.disp_flag = 1;
@@ -56,58 +308,18 @@ void effect_79_move(WORK_Other* ewk) {
         break;
 
     case 1:
-        char_move(&ewk->wu);
-
-        if (ewk->wu.cg_type == 1) {
-            OK_Appear79[ewk->master_id] = 1;
-            ewk->wu.routine_no[0]++;
-            ewk->wu.dir_timer = 1;
-        }
-
+        update_79_intro_animation(ewk);
         break;
 
     case 2:
-        if (--ewk->wu.dir_timer == 0) {
-            ewk->wu.routine_no[0] = 5;
-            Move_Super_Arts[ewk->master_id]--;
-            Select_Arts[ewk->master_id]--;
-            effect_80_init(ewk, ewk->master_id, ewk->master_player, ewk->wu.my_family - 1);
-        }
-
+        update_79_intro_wait(ewk);
         break;
 
     case 3:
-        switch (ewk->wu.routine_no[1]) {
-        case 0:
-            if (OK_Appear79[ewk->master_id]) {
-                ewk->wu.routine_no[1]++;
-                ewk->wu.routine_no[5] = 0;
-                ewk->wu.routine_no[6] = 1;
-                ewk->wu.disp_flag = 1;
-                set_char_move_init2(&ewk->wu, 0, ewk->wu.char_index, ewk->wu.dir_step + 1, 0);
-            }
-
-            break;
-
-        case 1:
-            arrived[0] = EFF79_Move_X(ewk);
-            arrived[1] = EFF79_Move_Y(ewk);
-
-            if (movement_is_incomplete(arrived)) {
-                break;
-            }
-
-            ewk->wu.routine_no[0]++;
-            ewk->wu.routine_no[1] = 0;
-            ewk->wu.routine_no[5] = 0;
-            ewk->wu.routine_no[6] = 0;
-            ewk->wu.dir_timer = 1;
-            break;
-        }
-
+        update_79_appearance(ewk);
         break;
 
-    case 4:
+    case EARLY_STATE_LIMIT_79:
         if (--ewk->wu.dir_timer == 0) {
             ewk->wu.routine_no[0]++;
             Move_Super_Arts[ewk->master_id]--;
@@ -116,213 +328,64 @@ void effect_79_move(WORK_Other* ewk) {
         }
 
         break;
+    }
 
+    return EFFECT_79_CONTINUES;
+}
+
+static Effect79UpdateResult update_79_suicide_state(WORK_Other* ewk) {
+    if (!Suicide[0]) {
+        return EFFECT_79_CONTINUES;
+    }
+
+    ewk->wu.disp_flag = 0;
+    ewk->wu.routine_no[0] = 10;
+    return EFFECT_79_STOPS;
+}
+
+static Effect79UpdateResult update_79_late_state(WORK_Other* ewk) {
+    switch (ewk->wu.routine_no[0]) {
     case 5:
-        switch (ewk->wu.routine_no[1]) {
-        case 0:
-            Plate_Disposal_No[ewk->master_id][ewk->master_player] = 0;
-
-            if (Check_Play_Status_79(ewk)) {
-                break;
-            }
-
-            switch (Moving_Plate[ewk->master_id]) {
-            case 1:
-                switch (ewk->wu.hit_quake) {
-                case 0:
-                    ewk->wu.dmcal_m = 1;
-                    ewk->wu.dm_vital = 3;
-                    Setup_Move_79(ewk, 2, 0x60000, -0x20000, 0);
-                    break;
-
-                case 1:
-                    ewk->wu.dmcal_m = 2;
-                    ewk->wu.dm_vital = 1;
-                    Setup_Move_79(ewk, 2, 0x60000, -0x20000, 0);
-                    break;
-
-                default:
-                    ewk->wu.dmcal_m = 0;
-                    ewk->wu.dm_vital = 2;
-                    Setup_Move_79(ewk, 2, 0x20000, -0x80000, 2);
-                    break;
-                }
-
-                break;
-
-            case 2:
-                switch (ewk->wu.hit_quake) {
-                case 0:
-                    ewk->wu.dmcal_m = 2;
-                    ewk->wu.dm_vital = 3;
-                    Setup_Move_79(ewk, 2, 0x60000, -0x80000, 1);
-                    break;
-
-                case 1:
-                    ewk->wu.dmcal_m = 0;
-                    ewk->wu.dm_vital = 1;
-                    Setup_Move_79(ewk, 1, -0x60000, 0x20000, 0);
-                    break;
-
-                default:
-                    ewk->wu.dmcal_m = 1;
-                    ewk->wu.dm_vital = 2;
-                    Setup_Move_79(ewk, 1, -0x60000, 0x20000, 0);
-                    break;
-                }
-
-                break;
-
-            default:
-                Select_End_Sub_79(ewk);
-                break;
-            }
-
-            break;
-
-        case 1:
-            Move_79(ewk);
-            break;
-
-        case 2:
-            Move_Move_79(ewk);
-            break;
-        }
-
+        update_79_plate_movement(ewk);
         break;
 
     case 6:
-        switch (ewk->wu.routine_no[1]) {
-        case 0:
-            if (--ewk->wu.dir_timer != 0) {
-                break;
-            }
-
-            ewk->wu.routine_no[1]++;
-            ewk->wu.routine_no[5] = 0;
-            ewk->wu.routine_no[6] = 1;
-            ewk->wu.vital_new = Plate_X[ewk->master_id][0];
-            ewk->wu.direction = Plate_Y[ewk->master_id][0];
-            ewk->wu.mvxy.a[1].sp = 0x20000;
-            ewk->wu.mvxy.d[1].sp = 0x2000;
-
-            if (ewk->wu.xyz[0].disp.pos < ewk->wu.vital_new) {
-                ewk->wu.mvxy.a[0].sp = 0x18000;
-                ewk->wu.mvxy.d[0].sp = 0x6000;
-            } else {
-                ewk->wu.mvxy.a[0].sp = -0x18000;
-                ewk->wu.mvxy.d[0].sp = -0x6000;
-            }
-
-            Check_Speed_79(ewk);
-            break;
-
-        case 1:
-            arrived[0] = EFF79_Move_X(ewk);
-            arrived[1] = EFF79_Move_Y(ewk);
-
-            if (movement_is_incomplete(arrived)) {
-                break;
-            }
-
-            ewk->wu.routine_no[0] = 10;
-            ewk->wu.disp_flag = 0;
-            Extra_Counter[ewk->master_id]--;
-            return;
-
-        default:
-            break;
-        }
-
-        break;
+        return update_79_return_movement(ewk);
 
     case 7:
-        switch (ewk->wu.routine_no[1]) {
-        case 0:
-            if (--ewk->wu.dir_timer == 0) {
-                ewk->wu.routine_no[1]++;
-            }
-
-            break;
-
-        case 1:
-            char_move(&ewk->wu);
-
-            if (ewk->wu.cg_type == 2) {
-                ewk->wu.routine_no[1]++;
-                Sel_Arts_Complete[ewk->master_id] |= 0x8000;
-
-                if (ewk->wu.xyz[0].disp.pos ==
-                    bg_w.bgw[ewk->wu.my_family - 1].wxy[0].disp.pos + Plate_Pos_Data_79[1][ewk->master_id][0][0]) {
-                    ewk->wu.routine_no[0] = 8;
-                }
-            }
-
-            break;
-
-        case 2:
-            if (Extra_Counter[ewk->master_id] != 0) {
-                break;
-            }
-
-            ewk->wu.routine_no[1]++;
-            ewk->wu.routine_no[5] = 0;
-            ewk->wu.routine_no[6] = 1;
-
-            if (VS_Index[ewk->master_id] < 9) {
-                xx = 0;
-            } else {
-                xx = 2;
-            }
-
-            ewk->wu.vital_new = Plate_Finish_Data_79[ewk->master_id + xx][0];
-            ewk->wu.direction = Plate_Finish_Data_79[ewk->master_id + xx][1];
-            ewk->wu.mvxy.a[1].sp = -0x8000;
-            ewk->wu.mvxy.d[1].sp = -0xE000;
-
-            if (ewk->wu.xyz[0].disp.pos < ewk->wu.vital_new) {
-                ewk->wu.mvxy.a[0].sp = 0x10000;
-                ewk->wu.mvxy.d[0].sp = 0x30000;
-            } else {
-                ewk->wu.mvxy.a[0].sp = -0x10000;
-                ewk->wu.mvxy.d[0].sp = -0x30000;
-            }
-
-            break;
-
-        case 3:
-            arrived[0] = EFF79_Move_X(ewk);
-            arrived[1] = EFF79_Move_Y(ewk);
-
-            if (!movement_is_incomplete(arrived)) {
-                ewk->wu.routine_no[0]++;
-            }
-
-            break;
-        }
-
+        update_79_final_movement(ewk);
         break;
 
     case 8:
         break;
 
     case 9:
-        if (!Suicide[0]) {
-            break;
-        }
-
-        ewk->wu.disp_flag = 0;
-        ewk->wu.routine_no[0] = 10;
-        return;
+        return update_79_suicide_state(ewk);
 
     case 10:
         ewk->wu.disp_flag = 0;
         ewk->wu.routine_no[0]++;
-        return;
+        return EFFECT_79_STOPS;
 
     default:
         ewk->wu.disp_flag = 0;
         push_effect_work(&ewk->wu);
+        return EFFECT_79_STOPS;
+    }
+
+    return EFFECT_79_CONTINUES;
+}
+
+void effect_79_move(WORK_Other* ewk) {
+    Effect79UpdateResult update_result;
+
+    if (ewk->wu.routine_no[0] <= EARLY_STATE_LIMIT_79) {
+        update_result = update_79_early_state(ewk);
+    } else {
+        update_result = update_79_late_state(ewk);
+    }
+
+    if (update_result == EFFECT_79_STOPS) {
         return;
     }
 
@@ -366,46 +429,43 @@ s32 Check_Play_Status_79(WORK_Other* ewk) {
     return 0;
 }
 
-void Move_Move_79(WORK_Other* ewk) {
-    s16 arrived[2];
-
-    switch (ewk->wu.routine_no[2]) {
-    case 0:
-        if (--ewk->wu.dir_timer == 0) {
-            ewk->wu.routine_no[2]++;
-        }
-
-        break;
-
-    case 1:
-        arrived[0] = EFF79_Move_X(ewk);
-        arrived[1] = EFF79_Move_Y(ewk);
-
-        if (!movement_is_incomplete(arrived)) {
-            ewk->wu.routine_no[2]++;
-            OK_Moving_SA_Plate[ewk->master_id]--;
-        }
-
-        break;
-
-    case 2:
-        if (OK_Moving_SA_Plate[ewk->master_id] == 0) {
-            ewk->wu.routine_no[2]++;
-        }
-
-        break;
-
-    case 3:
-        ewk->wu.routine_no[1] = 0;
-        ewk->wu.routine_no[2] = 0;
-        Moving_Plate[ewk->master_id] = 0;
-        break;
-    }
-
+static void remember_79_plate_position(WORK_Other* ewk) {
     if (ewk->wu.hit_quake == 0) {
         Plate_X[ewk->master_id][0] = ewk->wu.xyz[0].disp.pos;
         Plate_Y[ewk->master_id][0] = ewk->wu.xyz[1].disp.pos;
     }
+}
+
+static void update_79_movement_delay(WORK_Other* ewk) {
+    if (--ewk->wu.dir_timer == 0) {
+        ewk->wu.routine_no[2]++;
+    }
+}
+
+static void advance_79_group_movement(WORK_Other* ewk) {
+    s16 arrived[2];
+
+    arrived[0] = EFF79_Move_X(ewk);
+    arrived[1] = EFF79_Move_Y(ewk);
+
+    if (movement_is_incomplete(arrived)) {
+        return;
+    }
+
+    ewk->wu.routine_no[2]++;
+    OK_Moving_SA_Plate[ewk->master_id]--;
+}
+
+typedef enum {
+    GROUP_MOVEMENT_79,
+    PLATE_MOVEMENT_79,
+} MovementSequence79;
+
+static void update_79_movement_state(WORK_Other* ewk, MovementSequence79 sequence);
+
+void Move_Move_79(WORK_Other* ewk) {
+    update_79_movement_state(ewk, GROUP_MOVEMENT_79);
+    remember_79_plate_position(ewk);
 }
 
 void Setup_Move_79(WORK_Other* ewk, s32 /* unused */, s32 X_Value, s32 Y_Value, s32 Option) {
@@ -440,34 +500,44 @@ void Setup_Move_79(WORK_Other* ewk, s32 /* unused */, s32 X_Value, s32 Y_Value, 
     }
 }
 
-void Move_79(WORK_Other* ewk) {
+static void advance_79_plate_movement(WORK_Other* ewk) {
     s16 arrived[2];
 
-    Check_Priority(ewk);
+    arrived[0] = EFF79_Move_X(ewk);
+    arrived[1] = EFF79_Move_Y(ewk);
+
+    if (movement_is_incomplete(arrived)) {
+        return;
+    }
+
+    ewk->wu.routine_no[2]++;
+    ewk->wu.hit_quake = ewk->wu.dmcal_m;
+    Moving_Plate_Counter[ewk->master_id]--;
+    ewk->wu.xyz[2].disp.pos = Pos_Z_Data_79[ewk->wu.hit_quake] + 35;
+}
+
+static void update_79_movement_state(WORK_Other* ewk, MovementSequence79 sequence) {
+    s32 counter_is_clear;
 
     switch (ewk->wu.routine_no[2]) {
     case 0:
-        if (--ewk->wu.dir_timer == 0) {
-            ewk->wu.routine_no[2]++;
-        }
-
+        update_79_movement_delay(ewk);
         break;
 
     case 1:
-        arrived[0] = EFF79_Move_X(ewk);
-        arrived[1] = EFF79_Move_Y(ewk);
-
-        if (!movement_is_incomplete(arrived)) {
-            ewk->wu.routine_no[2]++;
-            ewk->wu.hit_quake = ewk->wu.dmcal_m;
-            Moving_Plate_Counter[ewk->master_id]--;
-            ewk->wu.xyz[2].disp.pos = Pos_Z_Data_79[ewk->wu.hit_quake] + 35;
+        if (sequence == GROUP_MOVEMENT_79) {
+            advance_79_group_movement(ewk);
+        } else {
+            advance_79_plate_movement(ewk);
         }
 
         break;
 
     case 2:
-        if (Moving_Plate_Counter[ewk->master_id] == 0) {
+        counter_is_clear = sequence == GROUP_MOVEMENT_79 ? OK_Moving_SA_Plate[ewk->master_id] == 0
+                                                         : Moving_Plate_Counter[ewk->master_id] == 0;
+
+        if (counter_is_clear) {
             ewk->wu.routine_no[2]++;
         }
 
@@ -479,6 +549,11 @@ void Move_79(WORK_Other* ewk) {
         Moving_Plate[ewk->master_id] = 0;
         break;
     }
+}
+
+void Move_79(WORK_Other* ewk) {
+    Check_Priority(ewk);
+    update_79_movement_state(ewk, PLATE_MOVEMENT_79);
 }
 
 void Check_Priority(WORK_Other* ewk) {
@@ -529,46 +604,57 @@ s32 EFF79_Move_X(WORK_Other* ewk) {
     return 0;
 }
 
+typedef enum {
+    ASCENDING_ARC_79,
+    DESCENDING_ARC_79,
+} VerticalArcDirection79;
+
+static void complete_79_vertical_arc(WORK_Other* ewk, VerticalArcDirection79 direction) {
+    OK_Priority[ewk->master_id] = 1;
+    ewk->wu.routine_no[5] = 2;
+    ewk->wu.routine_no[6]++;
+    ewk->wu.routine_no[7] = 99;
+    ewk->wu.mvxy.a[1].sp = -ewk->wu.mvxy.a[1].sp;
+    ewk->wu.mvxy.d[1].sp = -ewk->wu.mvxy.d[1].sp;
+
+    if (ewk->wu.dmcal_m == 0) {
+        if (direction == DESCENDING_ARC_79) {
+            ewk->wu.mvxy.a[0].sp = -0x60000;
+        } else {
+            ewk->wu.mvxy.a[0].sp = -ewk->wu.mvxy.a[0].sp;
+        }
+
+        ewk->wu.mvxy.d[0].sp = -ewk->wu.mvxy.d[0].sp;
+    }
+
+    ewk->wu.xyz[2].disp.pos = Pos_Z_Data_79[ewk->wu.dmcal_m] + 35;
+    Setup_Command_Name(ewk);
+}
+
+static void update_79_vertical_arc(WORK_Other* ewk) {
+    ewk->wu.xyz[1].cal += ewk->wu.mvxy.a[1].sp;
+    ewk->wu.mvxy.a[1].sp += ewk->wu.mvxy.d[1].sp;
+
+    if (0 > ewk->wu.mvxy.a[1].sp) {
+        if (ewk->wu.vital_old < ewk->wu.xyz[1].disp.pos) {
+            return;
+        }
+
+        complete_79_vertical_arc(ewk, DESCENDING_ARC_79);
+        return;
+    }
+
+    if (ewk->wu.vital_old > ewk->wu.xyz[1].disp.pos) {
+        return;
+    }
+
+    complete_79_vertical_arc(ewk, ASCENDING_ARC_79);
+}
+
 s32 EFF79_Move_Y(WORK_Other* ewk) {
     switch (ewk->wu.routine_no[6]) {
     case 0:
-        ewk->wu.xyz[1].cal += ewk->wu.mvxy.a[1].sp;
-        ewk->wu.mvxy.a[1].sp += ewk->wu.mvxy.d[1].sp;
-
-        if (0 > ewk->wu.mvxy.a[1].sp) {
-            if (ewk->wu.vital_old >= ewk->wu.xyz[1].disp.pos) {
-                OK_Priority[ewk->master_id] = 1;
-                ewk->wu.routine_no[5] = 2;
-                ewk->wu.routine_no[6]++;
-                ewk->wu.routine_no[7] = 99;
-                ewk->wu.mvxy.a[1].sp = -ewk->wu.mvxy.a[1].sp;
-                ewk->wu.mvxy.d[1].sp = -ewk->wu.mvxy.d[1].sp;
-
-                if (ewk->wu.dmcal_m == 0) {
-                    ewk->wu.mvxy.a[0].sp = -0x60000;
-                    ewk->wu.mvxy.d[0].sp = -ewk->wu.mvxy.d[0].sp;
-                }
-
-                ewk->wu.xyz[2].disp.pos = Pos_Z_Data_79[ewk->wu.dmcal_m] + 35;
-                Setup_Command_Name(ewk);
-            }
-        } else if (ewk->wu.vital_old <= ewk->wu.xyz[1].disp.pos) {
-            OK_Priority[ewk->master_id] = 1;
-            ewk->wu.routine_no[5] = 2;
-            ewk->wu.routine_no[6]++;
-            ewk->wu.routine_no[7] = 99;
-            ewk->wu.mvxy.a[1].sp = -ewk->wu.mvxy.a[1].sp;
-            ewk->wu.mvxy.d[1].sp = -ewk->wu.mvxy.d[1].sp;
-
-            if (ewk->wu.dmcal_m == 0) {
-                ewk->wu.mvxy.a[0].sp = -ewk->wu.mvxy.a[0].sp;
-                ewk->wu.mvxy.d[0].sp = -ewk->wu.mvxy.d[0].sp;
-            }
-
-            ewk->wu.xyz[2].disp.pos = Pos_Z_Data_79[ewk->wu.dmcal_m] + 35;
-            Setup_Command_Name(ewk);
-        }
-
+        update_79_vertical_arc(ewk);
         break;
 
     case 1:
@@ -637,7 +723,7 @@ s32 Select_End_Sub_79(WORK_Other* ewk) {
     return 1;
 }
 
-s32 effect_79_init(s16 pl_id, s16 plate_id, s16 pos_id, s16 time, s16 Target_BG) {
+s32 effect_79_init(const Effect79InitArgs* args) {
     WORK_Other* ewk;
     s16 ix;
 
@@ -646,24 +732,24 @@ s32 effect_79_init(s16 pl_id, s16 plate_id, s16 pos_id, s16 time, s16 Target_BG)
     }
 
     ewk = (WORK_Other*)frw[ix];
-    ewk->master_player = plate_id;
-    ewk->master_priority = pos_id;
-    ewk->wu.hit_quake = pos_id;
-    ewk->wu.dmcal_m = pos_id;
+    ewk->master_player = args->plate_id;
+    ewk->master_priority = args->position_id;
+    ewk->wu.hit_quake = args->position_id;
+    ewk->wu.dmcal_m = args->position_id;
     ewk->wu.be_flag = 1;
     ewk->wu.id = 79;
     ewk->wu.work_id = 16;
     ewk->wu.my_col_code = 0x2090;
-    ewk->wu.my_family = Target_BG + 1;
-    ewk->wu.dir_timer = time;
+    ewk->wu.my_family = args->target_background + 1;
+    ewk->wu.dir_timer = args->delay;
     *ewk->wu.char_table = _sel_pl_char_table;
-    ewk->master_id = pl_id;
+    ewk->master_id = args->player_id;
     ewk->wu.char_index = 14;
     ewk->wu.dir_old = Play_Type;
     ewk->wu.my_mts = 13;
     ewk->wu.my_trans_mode = get_my_trans_mode(ewk->wu.my_mts);
 
-    if (pos_id == 0) {
+    if (args->position_id == 0) {
         ewk->wu.dir_step = 0;
     } else {
         ewk->wu.dir_step = 30;
@@ -671,10 +757,10 @@ s32 effect_79_init(s16 pl_id, s16 plate_id, s16 pos_id, s16 time, s16 Target_BG)
 
     Setup_Pos_79(ewk);
 
-    if (pos_id == 0) {
-        Disp_Command_Name[ewk->master_id][plate_id] = 1;
+    if (args->position_id == 0) {
+        Disp_Command_Name[ewk->master_id][args->plate_id] = 1;
     } else {
-        Disp_Command_Name[ewk->master_id][plate_id] = 0;
+        Disp_Command_Name[ewk->master_id][args->plate_id] = 0;
     }
 
     Plate_X[ewk->master_id][0] =

@@ -42,6 +42,14 @@ static s32 uses_english_elena_name(s16 player_number) {
     return player_number == 14 && mpp_w.language == LANG_ENGLISH;
 }
 
+static void finish_slide_in(WORK_Other* ewk) {
+    if (Order[ewk->wu.dir_old] == ewk->wu.routine_no[0]) {
+        Order[ewk->wu.dir_old] = 0;
+    }
+
+    ewk->wu.routine_no[0] = 0;
+    ewk->wu.xyz[0].disp.pos = ewk->wu.hit_quake;
+}
 
 void effect_76_move(WORK_Other* ewk) {
     EFF76_Jmp_Tbl[ewk->wu.routine_no[0]](ewk);
@@ -99,22 +107,19 @@ static void update_slide_in_position(WORK_Other* ewk) {
     ewk->wu.mvxy.a[0].sp += ewk->wu.mvxy.d[0].sp;
 
     if (0 < ewk->wu.mvxy.a[0].sp) {
-        if (ewk->wu.hit_quake <= ewk->wu.xyz[0].disp.pos) {
-            if (Order[ewk->wu.dir_old] == ewk->wu.routine_no[0]) {
-                Order[ewk->wu.dir_old] = 0;
-            }
-
-            ewk->wu.routine_no[0] = 0;
-            ewk->wu.xyz[0].disp.pos = ewk->wu.hit_quake;
-        }
-    } else if (ewk->wu.hit_quake >= ewk->wu.xyz[0].disp.pos) {
-        if (Order[ewk->wu.dir_old] == ewk->wu.routine_no[0]) {
-            Order[ewk->wu.dir_old] = 0;
+        if (ewk->wu.hit_quake > ewk->wu.xyz[0].disp.pos) {
+            return;
         }
 
-        ewk->wu.routine_no[0] = 0;
-        ewk->wu.xyz[0].disp.pos = ewk->wu.hit_quake;
+        finish_slide_in(ewk);
+        return;
     }
+
+    if (ewk->wu.hit_quake < ewk->wu.xyz[0].disp.pos) {
+        return;
+    }
+
+    finish_slide_in(ewk);
 }
 
 void EFF76_SLIDE_IN(WORK_Other* ewk) {
@@ -144,6 +149,31 @@ void EFF76_SLIDE_OUT(WORK_Other* /* unused */) {
     // Do nothing
 }
 
+static void show_sudden_effect(WORK_Other* ewk) {
+    if (Ck_Range_Out_S(ewk, ewk->wu.my_family - 1, ewk->wu.dm_vital)) {
+        return;
+    }
+
+    ewk->wu.disp_flag = 1;
+
+    switch (ewk->wu.dir_old) {
+    case 0x3D:
+        ewk->wu.routine_no[1] = 2;
+        break;
+
+    case 0x42:
+        ewk->wu.routine_no[1] = 3;
+        break;
+
+    default:
+        ewk->wu.routine_no[0] = 0;
+        Order[ewk->wu.dir_old] = 0;
+        break;
+    }
+
+    set_char_move_init2(&ewk->wu, 0, ewk->wu.char_index, ewk->wu.dir_step + 1, 0);
+}
+
 void EFF76_SUDDENLY(WORK_Other* ewk) {
     switch (ewk->wu.routine_no[1]) {
     case 0:
@@ -155,28 +185,7 @@ void EFF76_SUDDENLY(WORK_Other* ewk) {
         /* fallthrough */
 
     case 1:
-        if (Ck_Range_Out_S(ewk, ewk->wu.my_family - 1, ewk->wu.dm_vital)) {
-            break;
-        }
-
-        ewk->wu.disp_flag = 1;
-
-        switch (ewk->wu.dir_old) {
-        case 0x3D:
-            ewk->wu.routine_no[1] = 2;
-            break;
-
-        case 0x42:
-            ewk->wu.routine_no[1] = 3;
-            break;
-
-        default:
-            ewk->wu.routine_no[0] = 0;
-            Order[ewk->wu.dir_old] = 0;
-            break;
-        }
-
-        set_char_move_init2(&ewk->wu, 0, ewk->wu.char_index, ewk->wu.dir_step + 1, 0);
+        show_sudden_effect(ewk);
         break;
 
     case 2:
@@ -271,93 +280,123 @@ s32 effect_76_init(s16 dir_old) {
     return 0;
 }
 
-void Setup_Pos_76(WORK_Other* ewk) {
-    s16 ix;
+static void setup_standard_position_76(WORK_Other* ewk) {
+    ewk->wu.xyz[0].disp.pos =
+        bg_w.bgw[ewk->wu.my_family - 1].wxy[0].disp.pos + Pos_Data_76[ewk->wu.dir_old - 0x2B][0];
+    ewk->wu.xyz[1].disp.pos =
+        bg_w.bgw[ewk->wu.my_family - 1].wxy[1].disp.pos + Pos_Data_76[ewk->wu.dir_old - 0x2B][1];
+    ewk->wu.position_z = Pos_Data_76[ewk->wu.dir_old - 0x2B][2];
+}
+
+static void setup_low_position_76(WORK_Other* ewk) {
+    setup_standard_position_76(ewk);
+
+    if (ewk->wu.dir_old != 0x2D) {
+        return;
+    }
+
+    if (Order_Dir[ewk->wu.dir_old] == 4) {
+        ewk->wu.hit_quake = bg_w.bgw[ewk->wu.my_family - 1].wxy[0].disp.pos + 32;
+        ewk->wu.mvxy.a[0].sp = -0x100000;
+        ewk->wu.mvxy.d[0].sp = 0;
+    } else {
+        ewk->wu.hit_quake = bg_w.bgw[ewk->wu.my_family - 1].wxy[0].disp.pos - 32;
+        ewk->wu.mvxy.a[0].sp = 0x100000;
+        ewk->wu.mvxy.d[0].sp = 0;
+    }
+}
+
+static void setup_result_position_76(WORK_Other* ewk, s32 ranked_result) {
     u8 my_char;
 
-    switch (ewk->wu.dir_old) {
-    case 0x2B:
-    case 0x2C:
-    case 0x2E:
-    case 0x2F:
-    case 0x30:
-    case 0x31:
-    case 0x32:
-    case 0x33:
-    case 0x34:
-    case 0x35:
-    case 0x36:
-    case 0x38:
-    case 0x39:
-    case 0x3A:
-    case 0x40:
-    case 0x42:
-        ewk->wu.xyz[0].disp.pos =
-            bg_w.bgw[ewk->wu.my_family - 1].wxy[0].disp.pos + Pos_Data_76[ewk->wu.dir_old - 0x2B][0];
-        ewk->wu.xyz[1].disp.pos =
-            bg_w.bgw[ewk->wu.my_family - 1].wxy[1].disp.pos + Pos_Data_76[ewk->wu.dir_old - 0x2B][1];
-        ewk->wu.position_z = Pos_Data_76[ewk->wu.dir_old - 0x2B][2];
-        break;
+    if (!ranked_result && ewk->wu.dir_old != 0x37) {
+        setup_standard_position_76(ewk);
+        return;
+    }
 
-    case 0x41:
+    if (ranked_result) {
+        my_char = Ranking_Data[Order_Dir[ewk->wu.dir_old]].player;
+    } else {
+        my_char = My_char[Winner_id];
+    }
+
+    ewk->wu.xyz[0].disp.pos = bg_w.bgw[0].wxy[0].disp.pos + Bust_Pos_Data_76[my_char][0] - 48;
+    ewk->wu.hit_quake = bg_w.bgw[0].wxy[0].disp.pos + Bust_Pos_Data_76[my_char][0];
+    ewk->wu.xyz[1].disp.pos = bg_w.bgw[0].wxy[1].disp.pos + Bust_Pos_Data_76[my_char][1];
+
+    if (!ranked_result) {
+        ewk->wu.position_z = 72;
+        ewk->wu.mvxy.a[0].sp = 0x10000;
+        ewk->wu.mvxy.d[0].sp = 0;
+        return;
+    }
+
+    ewk->wu.xyz[1].disp.pos = bg_w.bgw[0].wxy[1].disp.pos + Bust_Pos_Data_76[my_char][1] - 32;
+
+    if (Order[ewk->wu.dir_old] == 1) {
+        ewk->wu.xyz[0].disp.pos = bg_w.bgw[0].wxy[0].disp.pos + Bust_Pos_Data_76[my_char][0] + 384;
+    }
+
+    ewk->wu.position_z = 79;
+    ewk->wu.mvxy.a[0].sp = -0xA0000;
+    ewk->wu.mvxy.d[0].sp = 0;
+}
+
+typedef enum {
+    FIRST_CONTINUE_CHARACTER_76 = 0x3B,
+    SECOND_CONTINUE_CHARACTER_76 = 0x3C,
+    MASKED_CHARACTER_ID_76 = 0x3D,
+    FOURTH_CONTINUE_CHARACTER_76 = 0x3E,
+    LAST_CONTINUE_CHARACTER_76 = 0x3F,
+    LOW_CHARACTER_ID_76 = 0x40,
+    FINAL_CHARACTER_ID_76 = 0x41,
+    SHELL_CHARACTER_ID_76 = 0x42,
+    FIRST_A6_CHARACTER_76 = 0x43,
+    LAST_A6_CHARACTER_76 = 0x44,
+} MiddleCharacterId76;
+
+static void setup_middle_position_76(WORK_Other* ewk) {
+    if (ewk->wu.dir_old <= LAST_CONTINUE_CHARACTER_76) {
+        ewk->wu.xyz[0].disp.pos =
+            bg_w.bgw[1].wxy[0].disp.pos + 458 + Pos_Cont_Data_76[ewk->wu.dir_old - FIRST_CONTINUE_CHARACTER_76][0];
+        ewk->wu.xyz[1].disp.pos =
+            bg_w.bgw[1].wxy[1].disp.pos + Pos_Cont_Data_76[ewk->wu.dir_old - FIRST_CONTINUE_CHARACTER_76][1];
+        ewk->wu.position_z = Pos_Cont_Data_76[ewk->wu.dir_old - FIRST_CONTINUE_CHARACTER_76][2];
+        return;
+    }
+
+    if (ewk->wu.dir_old == LOW_CHARACTER_ID_76 || ewk->wu.dir_old == SHELL_CHARACTER_ID_76) {
+        setup_standard_position_76(ewk);
+        return;
+    }
+
+    if (ewk->wu.dir_old == FINAL_CHARACTER_ID_76) {
         ewk->wu.xyz[0].disp.pos = bg_w.bgw[0].wxy[0].disp.pos + Bust_Pos_Data_76[My_char[Final_Result_id]][0];
         ewk->wu.xyz[1].disp.pos = bg_w.bgw[0].wxy[1].disp.pos + Bust_Pos_Data_76[My_char[Final_Result_id]][1];
         ewk->wu.position_z = 72;
-        break;
+        return;
+    }
 
-    case 0x3B:
-    case 0x3C:
-    case 0x3D:
-    case 0x3E:
-    case 0x3F:
-        ewk->wu.xyz[0].disp.pos = bg_w.bgw[1].wxy[0].disp.pos + 458 + Pos_Cont_Data_76[ewk->wu.dir_old - 0x3B][0];
-        ewk->wu.xyz[1].disp.pos = bg_w.bgw[1].wxy[1].disp.pos + Pos_Cont_Data_76[ewk->wu.dir_old - 0x3B][1];
-        ewk->wu.position_z = Pos_Cont_Data_76[ewk->wu.dir_old - 0x3B][2];
-        break;
+    setup_standard_position_76(ewk);
 
-    case 0x43:
-    case 0x44:
-        ewk->wu.xyz[0].disp.pos =
-            bg_w.bgw[ewk->wu.my_family - 1].wxy[0].disp.pos + Pos_Data_76[ewk->wu.dir_old - 0x2B][0];
-        ewk->wu.xyz[1].disp.pos =
-            bg_w.bgw[ewk->wu.my_family - 1].wxy[1].disp.pos + Pos_Data_76[ewk->wu.dir_old - 0x2B][1];
-        ewk->wu.position_z = Pos_Data_76[ewk->wu.dir_old - 0x2B][2];
+    if (Order_Dir[ewk->wu.dir_old] == 4) {
+        ewk->wu.hit_quake = bg_w.bgw[ewk->wu.my_family - 1].wxy[0].disp.pos + 64;
+        ewk->wu.mvxy.a[0].sp = -0x100000;
+        ewk->wu.mvxy.d[0].sp = 0;
+    } else {
+        ewk->wu.hit_quake = bg_w.bgw[ewk->wu.my_family - 1].wxy[0].disp.pos - 64;
+        ewk->wu.mvxy.a[0].sp = 0x100000;
+        ewk->wu.mvxy.d[0].sp = 0;
+    }
+}
 
-        if (Order_Dir[ewk->wu.dir_old] == 4) {
-            ewk->wu.hit_quake = bg_w.bgw[ewk->wu.my_family - 1].wxy[0].disp.pos + 64;
-            ewk->wu.mvxy.a[0].sp = -0x100000;
-            ewk->wu.mvxy.d[0].sp = 0;
-        } else {
-            ewk->wu.hit_quake = bg_w.bgw[ewk->wu.my_family - 1].wxy[0].disp.pos - 64;
-            ewk->wu.mvxy.a[0].sp = 0x100000;
-            ewk->wu.mvxy.d[0].sp = 0;
-        }
+static void setup_name_cover_position_76(WORK_Other* ewk, s32 first_cover) {
+    s16 ix = chkNameAkuma(My_char[Champion], 9);
 
-        break;
+    ewk->wu.xyz[0].disp.pos = bg_w.bgw[ewk->wu.my_family - 1].wxy[0].disp.pos +
+                              Name_Cover_Pos_Data[Champion][1][My_char[Champion] + ix][0];
 
-    case 0x2D:
-        ewk->wu.xyz[0].disp.pos =
-            bg_w.bgw[ewk->wu.my_family - 1].wxy[0].disp.pos + Pos_Data_76[ewk->wu.dir_old - 0x2B][0];
-        ewk->wu.xyz[1].disp.pos =
-            bg_w.bgw[ewk->wu.my_family - 1].wxy[1].disp.pos + Pos_Data_76[ewk->wu.dir_old - 0x2B][1];
-        ewk->wu.position_z = Pos_Data_76[ewk->wu.dir_old - 0x2B][2];
-
-        if (Order_Dir[ewk->wu.dir_old] == 4) {
-            ewk->wu.hit_quake = bg_w.bgw[ewk->wu.my_family - 1].wxy[0].disp.pos + 32;
-            ewk->wu.mvxy.a[0].sp = -0x100000;
-            ewk->wu.mvxy.d[0].sp = 0;
-        } else {
-            ewk->wu.hit_quake = bg_w.bgw[ewk->wu.my_family - 1].wxy[0].disp.pos - 32;
-            ewk->wu.mvxy.a[0].sp = 0x100000;
-            ewk->wu.mvxy.d[0].sp = 0;
-        }
-
-        break;
-
-    case 0x48:
-        ix = chkNameAkuma(My_char[Champion], 9);
-        ewk->wu.xyz[0].disp.pos = bg_w.bgw[ewk->wu.my_family - 1].wxy[0].disp.pos +
-                                  Name_Cover_Pos_Data[Champion][1][My_char[Champion] + ix][0];
+    if (first_cover) {
         ewk->wu.xyz[1].disp.pos = bg_w.bgw[ewk->wu.my_family - 1].wxy[1].disp.pos +
                                   Name_Cover_Pos_Data[Champion][1][My_char[Champion] + ix][1];
         ewk->wu.position_z = 70;
@@ -368,104 +407,137 @@ void Setup_Pos_76(WORK_Other* ewk) {
             ewk->wu.xyz[0].disp.pos -= 24;
         }
 
+        return;
+    }
+
+    ewk->wu.xyz[1].disp.pos = bg_w.bgw[ewk->wu.my_family - 1].wxy[1].disp.pos +
+                              Name_Cover_Pos_Data[Champion][1][My_char[Champion] + ix][1] - 2;
+    ewk->wu.position_z = 69;
+
+    if (Champion == 0) {
+        ewk->wu.xyz[0].disp.pos += 23;
+    } else {
+        ewk->wu.xyz[0].disp.pos -= 25;
+    }
+}
+
+static void setup_compute_position_76(WORK_Other* ewk) {
+    s16 ix;
+
+    if (Perfect_Flag) {
+        ix = 1;
+    } else {
+        ix = 0;
+    }
+
+    ewk->wu.my_mts = 14;
+    ewk->wu.my_trans_mode = get_my_trans_mode(ewk->wu.my_mts);
+    ewk->wu.hit_quake =
+        bg_w.bgw[ewk->wu.my_family - 1].wxy[0].disp.pos + Compute_Pos_Data_76[ix][Order_Dir[ewk->wu.dir_old]][0];
+    ewk->wu.xyz[0].disp.pos = ewk->wu.hit_quake + 0x1A0;
+    ewk->wu.xyz[1].disp.pos = bg_w.bgw[ewk->wu.my_family - 1].wxy[1].disp.pos +
+                              Compute_Pos_Data_76[ix][Order_Dir[ewk->wu.dir_old]][1] + base_y_pos;
+    ewk->wu.position_z = Compute_Pos_Data_76[ix][ewk->wu.dir_old - 0x4A][2];
+    ewk->wu.mvxy.a[0].sp = -0x18000;
+    ewk->wu.mvxy.d[0].sp = -0x28000;
+}
+
+static void setup_high_position_76(WORK_Other* ewk) {
+    switch (ewk->wu.dir_old) {
+    case 0x55:
+        setup_result_position_76(ewk, 1);
+        break;
+
+    case 0x48:
+        setup_name_cover_position_76(ewk, 1);
         break;
 
     case 0x49:
-        ix = chkNameAkuma(My_char[Champion], 9);
-        ewk->wu.xyz[0].disp.pos = bg_w.bgw[ewk->wu.my_family - 1].wxy[0].disp.pos +
-                                  Name_Cover_Pos_Data[Champion][1][My_char[Champion] + ix][0];
-        ewk->wu.xyz[1].disp.pos = bg_w.bgw[ewk->wu.my_family - 1].wxy[1].disp.pos +
-                                  Name_Cover_Pos_Data[Champion][1][My_char[Champion] + ix][1] - 2;
-        ewk->wu.position_z = 69;
-
-        if (Champion == 0) {
-            ewk->wu.xyz[0].disp.pos += 23;
-        } else {
-            ewk->wu.xyz[0].disp.pos -= 25;
-        }
-
-        break;
-
-    case 0x37:
-    case 0x55:
-        if (ewk->wu.dir_old == 0x37) {
-            my_char = My_char[Winner_id];
-        } else {
-            my_char = Ranking_Data[Order_Dir[ewk->wu.dir_old]].player;
-        }
-
-        ewk->wu.xyz[0].disp.pos = bg_w.bgw[0].wxy[0].disp.pos + Bust_Pos_Data_76[my_char][0] - 48;
-        ewk->wu.hit_quake = bg_w.bgw[0].wxy[0].disp.pos + Bust_Pos_Data_76[my_char][0];
-        ewk->wu.xyz[1].disp.pos = bg_w.bgw[0].wxy[1].disp.pos + Bust_Pos_Data_76[my_char][1];
-
-        if (ewk->wu.dir_old == 0x37) {
-            ewk->wu.position_z = 72;
-            ewk->wu.mvxy.a[0].sp = 0x10000;
-            ewk->wu.mvxy.d[0].sp = 0;
-            break;
-        }
-        ewk->wu.xyz[1].disp.pos = bg_w.bgw[0].wxy[1].disp.pos + Bust_Pos_Data_76[my_char][1] - 32;
-
-        if (Order[ewk->wu.dir_old] == 1) {
-            ewk->wu.xyz[0].disp.pos = bg_w.bgw[0].wxy[0].disp.pos + Bust_Pos_Data_76[my_char][0] + 384;
-        }
-
-        ewk->wu.position_z = 79;
-        ewk->wu.mvxy.a[0].sp = -0xA0000;
-        ewk->wu.mvxy.d[0].sp = 0;
-        break;
-
-    case 0x4A:
-    case 0x4B:
-    case 0x4C:
-    case 0x4D:
-    case 0x4E:
-    case 0x4F:
-        if (Perfect_Flag) {
-            ix = 1;
-        } else {
-            ix = 0;
-        }
-
-        ewk->wu.my_mts = 14;
-        ewk->wu.my_trans_mode = get_my_trans_mode(ewk->wu.my_mts);
-        ewk->wu.hit_quake =
-            bg_w.bgw[ewk->wu.my_family - 1].wxy[0].disp.pos + Compute_Pos_Data_76[ix][Order_Dir[ewk->wu.dir_old]][0];
-        ewk->wu.xyz[0].disp.pos = ewk->wu.hit_quake + 0x1A0;
-        ewk->wu.xyz[1].disp.pos = bg_w.bgw[ewk->wu.my_family - 1].wxy[1].disp.pos +
-                                  Compute_Pos_Data_76[ix][Order_Dir[ewk->wu.dir_old]][1] + base_y_pos;
-        ewk->wu.position_z = Compute_Pos_Data_76[ix][ewk->wu.dir_old - 0x4A][2];
-        ewk->wu.mvxy.a[0].sp = -0x18000;
-        ewk->wu.mvxy.d[0].sp = -0x28000;
+        setup_name_cover_position_76(ewk, 0);
         break;
     }
 }
 
-void Setup_Char_76(WORK_Other* ewk) {
-    switch (ewk->wu.dir_old) {
-    case 0x38:
-    case 0x42:
-        ewk->wu.my_family = 1;
-        ewk->wu.direction = 0;
-        ewk->wu.my_col_code = 1;
-        ewk->wu.my_clear_level = 0x80;
-        ewk->wu.shell_ix[0] = -0xC8;
-        ewk->wu.shell_ix[1] = 0x192;
-        ewk->wu.shell_ix[2] = -0x10;
-        ewk->wu.shell_ix[3] = 0x110;
-        break;
+static void setup_lower_position_76(WORK_Other* ewk) {
+    if (ewk->wu.dir_old <= 0x36) {
+        setup_low_position_76(ewk);
+    } else {
+        setup_result_position_76(ewk, 0);
+    }
+}
 
-    case 0x39:
+void Setup_Pos_76(WORK_Other* ewk) {
+    if (ewk->wu.dir_old >= 0x2B && ewk->wu.dir_old <= 0x3A) {
+        setup_lower_position_76(ewk);
+        return;
+    }
+
+    if (ewk->wu.dir_old >= FIRST_CONTINUE_CHARACTER_76 && ewk->wu.dir_old <= LAST_A6_CHARACTER_76) {
+        setup_middle_position_76(ewk);
+        return;
+    }
+
+    if (ewk->wu.dir_old >= 0x4A && ewk->wu.dir_old <= 0x4F) {
+        setup_compute_position_76(ewk);
+        return;
+    }
+
+    setup_high_position_76(ewk);
+}
+
+static void setup_early_character_76(WORK_Other* ewk) {
+    switch (ewk->wu.dir_old) {
+    case 0x2B:
+    case 0x2C:
         ewk->wu.char_index = 4;
-        ewk->wu.dir_step = 7;
+        ewk->wu.dir_step = ewk->wu.dir_old - 0x2B;
         Setup_Color_76(ewk);
         break;
 
-    case 0x3A:
+    case 0x2D:
+        ewk->wu.my_col_mode = 0x4400;
+        ewk->wu.my_family = 1;
         ewk->wu.my_col_code = 0x1FF;
         ewk->wu.my_clear_level = 0x80;
         ewk->wu.char_index = 4;
-        ewk->wu.dir_step = 8;
+        ewk->wu.dir_step = ewk->wu.dir_old - 0x2B;
+        break;
+
+    case 0x2E:
+    case 0x2F:
+        ewk->wu.my_family = 1;
+        ewk->wu.char_index = 4;
+        ewk->wu.dir_step = ewk->wu.dir_old - 0x2B;
+        Setup_Color_76(ewk);
+        break;
+
+    case 0x30:
+    case 0x31:
+        ewk->wu.my_col_mode = 0x4400;
+        ewk->wu.my_family = 1;
+        ewk->wu.my_col_code = 0x1FB;
+        ewk->wu.my_clear_level = 0x80;
+        ewk->wu.char_index = 4;
+        ewk->wu.dir_step = ewk->wu.dir_old - 0x2B;
+        break;
+
+    }
+}
+
+static void setup_low_character_76(WORK_Other* ewk) {
+    if (ewk->wu.dir_old <= 0x31) {
+        setup_early_character_76(ewk);
+        return;
+    }
+
+    switch (ewk->wu.dir_old) {
+
+    case 0x32:
+    case 0x33:
+        ewk->wu.my_family = 1;
+        ewk->wu.char_index = 0x56;
+        ewk->wu.dir_step = ewk->wu.dir_old - 0x32;
+        ewk->wu.direction = 7;
         break;
 
     case 0x36:
@@ -480,75 +552,6 @@ void Setup_Char_76(WORK_Other* ewk) {
         ewk->wu.dir_step += chkNameAkuma(My_char[Winner_id], 6);
         break;
 
-    case 0x2D:
-        ewk->wu.my_col_mode = 0x4400;
-        ewk->wu.my_family = 1;
-        ewk->wu.my_col_code = 0x1FF;
-        ewk->wu.my_clear_level = 0x80;
-        ewk->wu.char_index = 4;
-        ewk->wu.dir_step = ewk->wu.dir_old - 0x2B;
-        break;
-
-    case 0x30:
-    case 0x31:
-        ewk->wu.my_col_mode = 0x4400;
-        ewk->wu.my_family = 1;
-        ewk->wu.my_col_code = 0x1FB;
-        ewk->wu.my_clear_level = 0x80;
-        ewk->wu.char_index = 4;
-        ewk->wu.dir_step = ewk->wu.dir_old - 0x2B;
-        break;
-
-    case 0x43:
-    case 0x44:
-        ewk->wu.my_family = 1;
-        ewk->wu.my_col_code = 0x1FF;
-        ewk->wu.my_clear_level = 0x80;
-        ewk->wu.char_index = 4;
-        ewk->wu.dir_step = 2;
-        ewk->wu.direction = 3;
-        effect_A6_init(ewk);
-        break;
-
-    case 0x2E:
-    case 0x2F:
-        ewk->wu.my_family = 1;
-        ewk->wu.char_index = 4;
-        ewk->wu.dir_step = ewk->wu.dir_old - 0x2B;
-        Setup_Color_76(ewk);
-        break;
-
-    case 0x2B:
-    case 0x2C:
-        ewk->wu.char_index = 4;
-        ewk->wu.dir_step = ewk->wu.dir_old - 0x2B;
-        Setup_Color_76(ewk);
-        break;
-
-    case 0x37:
-    case 0x55:
-        ewk->wu.my_family = 1;
-        ewk->wu.my_col_code = 0x90;
-        ewk->wu.char_index = 2;
-        ewk->wu.direction = 3;
-
-        if (ewk->wu.dir_old == 0x37) {
-            ewk->wu.dir_step = My_char[Winner_id];
-        } else {
-            ewk->wu.dir_step = Ranking_Data[Order_Dir[ewk->wu.dir_old]].player;
-            ewk->wu.direction = 7;
-        }
-
-        break;
-
-    case 0x41:
-        ewk->wu.my_family = 1;
-        ewk->wu.my_col_code = 0x90;
-        ewk->wu.char_index = 2;
-        ewk->wu.dir_step = My_char[Final_Result_id];
-        ewk->wu.direction = 0;
-        break;
-
     case 0x40:
         ewk->wu.my_family = 1;
         /* fallthrough */
@@ -559,58 +562,189 @@ void Setup_Char_76(WORK_Other* ewk) {
         ewk->wu.dir_step += chkNameAkuma(My_char[Winner_id], 6);
         Setup_Color_76(ewk);
         break;
+    }
+}
 
-    case 0x3D:
-        ewk->wu.my_mr_flag = 1;
-        ewk->wu.my_mr.size.x = 0x5F;
-        ewk->wu.my_mr.size.y = 0x3F;
-        ewk->wu.my_family = 2;
-        ewk->wu.char_index = 0x53;
-        ewk->wu.dir_step = ewk->wu.dir_old - 0x3B;
-        /* fallthrough */
+typedef enum {
+    WINNER_RESULT_76,
+    RANKED_RESULT_76,
+} ResultCharacterType76;
 
-    case 0x3B:
-    case 0x3C:
-    case 0x3E:
-    case 0x3F:
-        ewk->wu.direction = 3;
-        ewk->wu.my_family = 2;
-        ewk->wu.char_index = 0x53;
-        ewk->wu.dir_step = ewk->wu.dir_old - 0x3B;
-        break;
+static void setup_result_character_76(WORK_Other* ewk, ResultCharacterType76 result_type) {
+    ewk->wu.my_family = 1;
+    ewk->wu.my_col_code = 0x90;
+    ewk->wu.char_index = 2;
+    ewk->wu.direction = 3;
 
-    case 0x32:
-    case 0x33:
-        ewk->wu.my_family = 1;
-        ewk->wu.char_index = 0x56;
-        ewk->wu.dir_step = ewk->wu.dir_old - 0x32;
+    if (result_type == RANKED_RESULT_76) {
+        ewk->wu.dir_step = Ranking_Data[Order_Dir[ewk->wu.dir_old]].player;
         ewk->wu.direction = 7;
-        break;
+    } else {
+        ewk->wu.dir_step = My_char[Winner_id];
+    }
+}
 
-    case 0x48:
+typedef enum {
+    FIRST_NAME_CHARACTER_76 = 0x48,
+    SECOND_NAME_CHARACTER_76 = 0x49,
+    FIRST_COMPUTE_CHARACTER_76 = 0x4A,
+    SECOND_COMPUTE_CHARACTER_76 = 0x4B,
+    THIRD_COMPUTE_CHARACTER_76 = 0x4C,
+    FOURTH_COMPUTE_CHARACTER_76 = 0x4D,
+    FIFTH_COMPUTE_CHARACTER_76 = 0x4E,
+    LAST_COMPUTE_CHARACTER_76 = 0x4F,
+    RANKED_CHARACTER_76 = 0x55,
+} HighCharacterId76;
+
+static void setup_high_character_76(WORK_Other* ewk) {
+    switch (ewk->wu.dir_old) {
+    case FIRST_NAME_CHARACTER_76:
         ewk->wu.my_family = 3;
         ewk->wu.char_index = 0x50;
         ewk->wu.dir_step = grade_get_my_grade(Champion);
-        break;
+        return;
 
-    case 0x49:
+    case SECOND_NAME_CHARACTER_76:
         ewk->wu.my_family = 3;
         ewk->wu.char_index = 0x10;
         ewk->wu.dir_step = 8;
-        break;
+        return;
 
-    case 0x4A:
-    case 0x4B:
-    case 0x4C:
-    case 0x4D:
-    case 0x4E:
-    case 0x4F:
-        ewk->wu.my_family = 2;
-        ewk->wu.my_col_code = 0x2052;
-        ewk->wu.char_index = 0x3D;
-        ewk->wu.dir_step = ewk->wu.dir_old - 0x4A;
+    case RANKED_CHARACTER_76:
+        setup_result_character_76(ewk, RANKED_RESULT_76);
+        return;
+
+    default:
         break;
     }
+
+    if (ewk->wu.dir_old < FIRST_COMPUTE_CHARACTER_76 || ewk->wu.dir_old > LAST_COMPUTE_CHARACTER_76) {
+        return;
+    }
+
+    ewk->wu.my_family = 2;
+    ewk->wu.my_col_code = 0x2052;
+    ewk->wu.char_index = 0x3D;
+    ewk->wu.dir_step = ewk->wu.dir_old - FIRST_COMPUTE_CHARACTER_76;
+}
+
+typedef enum {
+    REGULAR_CONTINUE_CHARACTER_76,
+    MASKED_CONTINUE_CHARACTER_76,
+} ContinueCharacterType76;
+
+static void setup_continue_character_76(WORK_Other* ewk, ContinueCharacterType76 character_type) {
+    if (character_type == MASKED_CONTINUE_CHARACTER_76) {
+        ewk->wu.my_mr_flag = 1;
+        ewk->wu.my_mr.size.x = 0x5F;
+        ewk->wu.my_mr.size.y = 0x3F;
+    }
+
+    ewk->wu.direction = 3;
+    ewk->wu.my_family = 2;
+    ewk->wu.char_index = 0x53;
+    ewk->wu.dir_step = ewk->wu.dir_old - FIRST_CONTINUE_CHARACTER_76;
+}
+
+static void setup_shell_character_76(WORK_Other* ewk) {
+    ewk->wu.my_family = 1;
+    ewk->wu.direction = 0;
+    ewk->wu.my_col_code = 1;
+    ewk->wu.my_clear_level = 0x80;
+    ewk->wu.shell_ix[0] = -0xC8;
+    ewk->wu.shell_ix[1] = 0x192;
+    ewk->wu.shell_ix[2] = -0x10;
+    ewk->wu.shell_ix[3] = 0x110;
+}
+
+static void setup_result_range_character_76(WORK_Other* ewk) {
+    switch (ewk->wu.dir_old) {
+    case 0x37:
+        setup_result_character_76(ewk, WINNER_RESULT_76);
+        break;
+
+    case 0x38:
+        setup_shell_character_76(ewk);
+        break;
+
+    case 0x39:
+        ewk->wu.char_index = 4;
+        ewk->wu.dir_step = 7;
+        Setup_Color_76(ewk);
+        break;
+
+    case 0x3A:
+        ewk->wu.my_col_code = 0x1FF;
+        ewk->wu.my_clear_level = 0x80;
+        ewk->wu.char_index = 4;
+        ewk->wu.dir_step = 8;
+        break;
+    }
+}
+
+static void setup_middle_character_76(WORK_Other* ewk) {
+    if (ewk->wu.dir_old <= LAST_CONTINUE_CHARACTER_76) {
+        if (ewk->wu.dir_old == MASKED_CHARACTER_ID_76) {
+            setup_continue_character_76(ewk, MASKED_CONTINUE_CHARACTER_76);
+        } else {
+            setup_continue_character_76(ewk, REGULAR_CONTINUE_CHARACTER_76);
+        }
+
+        return;
+    }
+
+    switch (ewk->wu.dir_old) {
+    case LOW_CHARACTER_ID_76:
+        setup_low_character_76(ewk);
+        break;
+
+    case FINAL_CHARACTER_ID_76:
+        ewk->wu.my_family = 1;
+        ewk->wu.my_col_code = 0x90;
+        ewk->wu.char_index = 2;
+        ewk->wu.dir_step = My_char[Final_Result_id];
+        ewk->wu.direction = 0;
+        break;
+
+    case SHELL_CHARACTER_ID_76:
+        setup_shell_character_76(ewk);
+        break;
+
+    case FIRST_A6_CHARACTER_76:
+    case LAST_A6_CHARACTER_76:
+        ewk->wu.my_family = 1;
+        ewk->wu.my_col_code = 0x1FF;
+        ewk->wu.my_clear_level = 0x80;
+        ewk->wu.char_index = 4;
+        ewk->wu.dir_step = 2;
+        ewk->wu.direction = 3;
+        effect_A6_init(ewk);
+        break;
+    }
+}
+
+void Setup_Char_76(WORK_Other* ewk) {
+    if (ewk->wu.dir_old <= 0x36) {
+        setup_low_character_76(ewk);
+        return;
+    }
+
+    if (ewk->wu.dir_old >= FIRST_COMPUTE_CHARACTER_76 && ewk->wu.dir_old <= LAST_COMPUTE_CHARACTER_76) {
+        setup_high_character_76(ewk);
+        return;
+    }
+
+    if (ewk->wu.dir_old >= 0x37 && ewk->wu.dir_old <= 0x3A) {
+        setup_result_range_character_76(ewk);
+        return;
+    }
+
+    if (ewk->wu.dir_old >= FIRST_CONTINUE_CHARACTER_76 && ewk->wu.dir_old <= LAST_A6_CHARACTER_76) {
+        setup_middle_character_76(ewk);
+        return;
+    }
+
+    setup_high_character_76(ewk);
 }
 
 s16 Check_Range_Out(WORK_Other* ewk) {

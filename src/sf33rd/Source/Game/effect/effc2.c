@@ -83,139 +83,157 @@ static s32 game_is_active(void) {
     return EXE_flag == 0 && Game_pause == 0;
 }
 
+static void update_c2_last_character_fall(WORK_Other* ewk) {
+    char_move(&ewk->wu);
+    add_mvxy_speed(&ewk->wu);
+    cal_mvxy_speed(&ewk->wu);
+
+    if (ewk->wu.mvxy.a[1].sp <= 0 && (ewk->wu.xyz[1].disp.pos <= ewk->wu.next_y)) {
+        ewk->wu.xyz[1].disp.pos = ewk->wu.next_y;
+        ewk->wu.routine_no[2] = 1;
+        char_move_cmja(&ewk->wu);
+    }
+}
+
+static void update_c2_last_character_movement(WORK_Other* ewk) {
+    char_move(&ewk->wu);
+
+    switch (ewk->wu.cg_type) {
+    case 1:
+        if (ewk->wu.mvxy.a[0].sp > 0) {
+            add_mvxy_speed_direct(&ewk->wu, 128, 0);
+        } else {
+            add_mvxy_speed_direct(&ewk->wu, -128, 0);
+        }
+
+        break;
+
+    case 2:
+        if (ewk->wu.mvxy.a[0].sp > 0) {
+            add_mvxy_speed_direct(&ewk->wu, 256, 0);
+        } else {
+            add_mvxy_speed_direct(&ewk->wu, -256, 0);
+        }
+
+        break;
+
+    case 0xFF:
+        ewk->wu.routine_no[2] = 2;
+        break;
+    }
+}
+
 static void advance_c2_last_character(WORK_Other* ewk) {
     switch (ewk->wu.routine_no[2]) {
     case 0:
-        char_move(&ewk->wu);
-        add_mvxy_speed(&ewk->wu);
-        cal_mvxy_speed(&ewk->wu);
-
-        if (ewk->wu.mvxy.a[1].sp <= 0 && (ewk->wu.xyz[1].disp.pos <= ewk->wu.next_y)) {
-            ewk->wu.xyz[1].disp.pos = ewk->wu.next_y;
-            ewk->wu.routine_no[2] = 1;
-            char_move_cmja(&ewk->wu);
-        }
-
+        update_c2_last_character_fall(ewk);
         break;
 
     case 1:
-        char_move(&ewk->wu);
+        update_c2_last_character_movement(ewk);
+        break;
+    }
+}
 
-        switch (ewk->wu.cg_type) {
-        case 1:
-            if (ewk->wu.mvxy.a[0].sp > 0) {
-                add_mvxy_speed_direct(&ewk->wu, 128, 0);
-            } else {
-                add_mvxy_speed_direct(&ewk->wu, -128, 0);
+static void initialize_c2_effect(WORK_Other* ewk) {
+    ewk->wu.routine_no[0]++;
+    ewk->wu.routine_no[2] = 0;
+    ewk->wu.routine_no[3] = 2;
+    Bonus_Game_result = 0;
+    ewk->wu.charset_id = 17;
+    set_char_base_data(&ewk->wu);
+    ewk->wu.vital_new = ewk->master_id == 0;
+    setup_prio_ix(ewk);
+    get_bs2_parts_data(&ewk->wu);
+    setup_vital_bonus2(&ewk->wu);
+    ewk->wu.position_x = ewk->wu.xyz[0].disp.pos;
+    ewk->wu.position_y = ewk->wu.xyz[1].disp.pos;
+    ewk->wu.cg_number = 9;
+    effect_C3_init(ewk, 3);
+    effect_C3_init(ewk, 4);
+    effect_C3_init(ewk, 5);
+    effect_C3_init(ewk, 6);
+    effect_C3_init(ewk, 7);
+    effect_C3_init(ewk, 1);
+    effect_C3_init(ewk, 2);
+    effect_00_init(&ewk->wu);
+    clear_attack_num(&ewk->wu);
+    ewk->wu.dir_old = 0;
+    ewk->wu.direction = 0;
+    ewk->wu.dir_timer = 0;
+    ewk->wu.routine_no[1] = 0;
+    ewk->wu.routine_no[2] = 0;
+    effect_J9_init(ewk, 8);
+}
+
+static void update_c2_active_effect(WORK_Other* ewk) {
+    if (ewk->wu.dead_f == 1) {
+        ewk->wu.disp_flag = 0;
+        ewk->wu.routine_no[0] = 2;
+        ewk->wu.routine_no[1] = 10;
+        ewk->wu.hit_stop = 0;
+        return;
+    }
+
+    if (ewk->wu.dir_timer) {
+        effC2_main_process_second(ewk, (PLW*)ewk->wu.target_adrs);
+    } else {
+        effC2_main_process_first(ewk, (PLW*)ewk->wu.target_adrs);
+    }
+
+    set_bs2_floor(ewk);
+}
+
+static void update_c2_defeated_effect(WORK_Other* ewk) {
+    if (game_is_active()) {
+        switch (ewk->wu.routine_no[1]) {
+        case 0:
+            if (--ewk->wu.hit_stop > 0) {
+                break;
             }
 
+            ewk->wu.routine_no[1] = 9;
+            ewk->wu.routine_no[2] = 0;
+            Bonus_Game_result |= 2;
+            ewk->wu.xyz[1].disp.pos = 80;
+            ewk->wu.next_y = 64;
+            ewk->wu.position_z = 25;
+            illegal_setup_effK2(&ewk->wu, 4);
+            c2_last_char_and_mvxy(ewk);
+            setup_demojump((PLW*)ewk->wu.target_adrs, 2);
             break;
 
-        case 2:
-            if (ewk->wu.mvxy.a[0].sp > 0) {
-                add_mvxy_speed_direct(&ewk->wu, 256, 0);
-            } else {
-                add_mvxy_speed_direct(&ewk->wu, -256, 0);
-            }
-
+        case 9:
+            advance_c2_last_character(ewk);
             break;
 
-        case 0xFF:
-            ewk->wu.routine_no[2] = 2;
+        default:
+            ewk->wu.routine_no[0] = 3;
+            ewk->wu.routine_no[1] = 0;
             break;
         }
 
-        break;
+        ewk->wu.next_x = 0;
+        set_c2_quake(&ewk->wu);
     }
+
+    ewk->wu.position_x = ewk->wu.xyz[0].disp.pos + ewk->wu.next_x;
+    ewk->wu.position_y = ewk->wu.xyz[1].disp.pos;
+    sort_push_request(&ewk->wu);
 }
 
 void effect_C2_move(WORK_Other* ewk) {
     switch (ewk->wu.routine_no[0]) {
     case 0:
-        ewk->wu.routine_no[0]++;
-        ewk->wu.routine_no[2] = 0;
-        ewk->wu.routine_no[3] = 2;
-        Bonus_Game_result = 0;
-        ewk->wu.charset_id = 17;
-        set_char_base_data(&ewk->wu);
-        ewk->wu.vital_new = ewk->master_id == 0;
-        setup_prio_ix(ewk);
-        get_bs2_parts_data(&ewk->wu);
-        setup_vital_bonus2(&ewk->wu);
-        ewk->wu.position_x = ewk->wu.xyz[0].disp.pos;
-        ewk->wu.position_y = ewk->wu.xyz[1].disp.pos;
-        ewk->wu.cg_number = 9;
-        effect_C3_init(ewk, 3);
-        effect_C3_init(ewk, 4);
-        effect_C3_init(ewk, 5);
-        effect_C3_init(ewk, 6);
-        effect_C3_init(ewk, 7);
-        effect_C3_init(ewk, 1);
-        effect_C3_init(ewk, 2);
-        effect_00_init(&ewk->wu);
-        clear_attack_num(&ewk->wu);
-        ewk->wu.dir_old = 0;
-        ewk->wu.direction = 0;
-        ewk->wu.dir_timer = 0;
-        ewk->wu.routine_no[1] = 0;
-        ewk->wu.routine_no[2] = 0;
-        effect_J9_init(ewk, 8);
+        initialize_c2_effect(ewk);
         break;
 
     case 1:
-        if (ewk->wu.dead_f == 1) {
-            ewk->wu.disp_flag = 0;
-            ewk->wu.routine_no[0] = 2;
-            ewk->wu.routine_no[1] = 10;
-            ewk->wu.hit_stop = 0;
-            break;
-        }
-
-        if (ewk->wu.dir_timer) {
-            effC2_main_process_second(ewk, (PLW*)ewk->wu.target_adrs);
-        } else {
-            effC2_main_process_first(ewk, (PLW*)ewk->wu.target_adrs);
-        }
-
-        set_bs2_floor(ewk);
+        update_c2_active_effect(ewk);
         break;
 
     case 2:
-        if (game_is_active()) {
-            switch (ewk->wu.routine_no[1]) {
-            case 0:
-                if (--ewk->wu.hit_stop > 0) {
-                    break;
-                }
-
-                ewk->wu.routine_no[1] = 9;
-                ewk->wu.routine_no[2] = 0;
-                Bonus_Game_result |= 2;
-                ewk->wu.xyz[1].disp.pos = 80;
-                ewk->wu.next_y = 64;
-                ewk->wu.position_z = 25;
-                illegal_setup_effK2(&ewk->wu, 4);
-                c2_last_char_and_mvxy(ewk);
-                setup_demojump((PLW*)ewk->wu.target_adrs, 2);
-                break;
-
-            case 9:
-                advance_c2_last_character(ewk);
-                break;
-
-            default:
-                ewk->wu.routine_no[0] = 3;
-                ewk->wu.routine_no[1] = 0;
-                break;
-            }
-
-            ewk->wu.next_x = 0;
-            set_c2_quake(&ewk->wu);
-        }
-
-        ewk->wu.position_x = ewk->wu.xyz[0].disp.pos + ewk->wu.next_x;
-        ewk->wu.position_y = ewk->wu.xyz[1].disp.pos;
-        sort_push_request(&ewk->wu);
+        update_c2_defeated_effect(ewk);
         break;
 
     default:
@@ -224,40 +242,150 @@ void effect_C2_move(WORK_Other* ewk) {
     }
 }
 
+static void select_c2_off_car_first_state(WORK_Other* ewk) {
+    if (ewk->wu.routine_no[1] != 1 && ewk->wu.routine_no[2] != 0) {
+        ewk->wu.routine_no[2] = 0;
+        ewk->wu.routine_no[3] = 2;
+    }
+}
+
+static void select_c2_on_car_second_state(WORK_Other* ewk) {
+    if (ewk->wu.routine_no[1] != 1 && ewk->wu.routine_no[2] != 1) {
+        ewk->wu.routine_no[2] = 1;
+        ewk->wu.routine_no[3] = 2;
+    }
+}
+
+static void select_c2_off_car_damage_state(WORK_Other* ewk) {
+    if (ewk->wu.routine_no[1] != 1 || ewk->wu.routine_no[2] != 0) {
+        ewk->wu.routine_no[1] = 0;
+        ewk->wu.routine_no[2] = 0;
+        ewk->wu.routine_no[3] = 0;
+    }
+}
+
+static void select_c2_on_car_damage_state(WORK_Other* ewk) {
+    if (ewk->wu.routine_no[1] != 1 || ewk->wu.routine_no[2] != 0) {
+        ewk->wu.routine_no[1] = 0;
+        ewk->wu.routine_no[2] = 1;
+        ewk->wu.routine_no[3] = 0;
+    }
+}
+
 static void select_c2_first_process_state(WORK_Other* ewk, PLW* twk) {
     switch (ewk->wu.direction + (twk->bs2_on_car * 2)) {
     case 0:
-        if (ewk->wu.routine_no[1] != 1 && ewk->wu.routine_no[2] != 0) {
-            ewk->wu.routine_no[2] = 0;
-            ewk->wu.routine_no[3] = 2;
-        }
-
+        select_c2_off_car_first_state(ewk);
         break;
 
     case 3:
-        if (ewk->wu.routine_no[1] != 1 && ewk->wu.routine_no[2] != 1) {
-            ewk->wu.routine_no[2] = 1;
-            ewk->wu.routine_no[3] = 2;
-        }
-
+        select_c2_on_car_second_state(ewk);
         break;
 
     case 1:
-        if (ewk->wu.routine_no[1] != 1 || ewk->wu.routine_no[2] != 0) {
-            ewk->wu.routine_no[1] = 0;
-            ewk->wu.routine_no[2] = 0;
-            ewk->wu.routine_no[3] = 0;
-        }
-
+        select_c2_off_car_damage_state(ewk);
         break;
 
     case 2:
-        if (ewk->wu.routine_no[1] != 1 || ewk->wu.routine_no[2] != 0) {
-            ewk->wu.routine_no[1] = 0;
-            ewk->wu.routine_no[2] = 1;
-            ewk->wu.routine_no[3] = 0;
+        select_c2_on_car_damage_state(ewk);
+        break;
+    }
+}
+
+static void update_c2_first_animation(WORK_Other* ewk) {
+    switch (ewk->wu.routine_no[3]) {
+    case 0:
+        ewk->wu.routine_no[3]++;
+        set_char_move_init(&ewk->wu, 0, 76);
+        break;
+
+    case 1:
+        char_move(&ewk->wu);
+
+        if (ewk->wu.cg_type != 0xFF) {
+            break;
         }
 
+        ewk->wu.routine_no[3]++;
+        /* fallthrough */
+
+    default:
+        ewk->wu.cg_type = 0;
+        ewk->wu.cg_number = 9;
+        break;
+    }
+}
+
+static void update_c2_second_animation(WORK_Other* ewk) {
+    switch (ewk->wu.routine_no[3]) {
+    case 0:
+        ewk->wu.routine_no[3]++;
+        set_char_move_init(&ewk->wu, 0, 77);
+        break;
+
+    case 1:
+        char_move(&ewk->wu);
+
+        if (ewk->wu.cg_type != 0xFF) {
+            break;
+        }
+
+        ewk->wu.routine_no[3]++;
+        /* fallthrough */
+
+    default:
+        ewk->wu.cg_type = 0;
+        ewk->wu.cg_number = 18;
+        break;
+    }
+}
+
+static void set_c2_first_damage_hit_stop(WORK_Other* ewk, PLW* twk) {
+    if (twk->bs2_on_car) {
+        ewk->wu.hit_stop = 0;
+    } else {
+        ewk->wu.hit_stop = ewk->wu.dm_stop / 2;
+    }
+}
+
+static void advance_c2_first_damage_animation(WORK_Other* ewk) {
+    if (--ewk->wu.hit_stop <= 0) {
+        char_move(&ewk->wu);
+
+        if (ewk->wu.cg_type == 0xFF) {
+            ewk->wu.routine_no[1] = 0;
+            ewk->wu.routine_no[2] = 0;
+            ewk->wu.cg_type = 0;
+        }
+    }
+}
+
+static void update_c2_first_damage(WORK_Other* ewk, PLW* twk) {
+    switch (ewk->wu.routine_no[2]) {
+    case 0:
+        ewk->wu.shell_ix[0] -= ewk->wu.dm_vital;
+        ewk->wu.dm_vital = 0;
+
+        set_c2_first_damage_hit_stop(ewk, twk);
+        ewk->wu.routine_no[2] = 1;
+        set_char_move_init(&ewk->wu,
+                           0,
+                           (twk->bs2_on_car * 6) +
+                               ((ewk->wu.dm_rl == 0) + sel_dm_quake[ewk->wu.dm_attlv][ewk->wu.rl_waza]));
+
+        if (ewk->wu.shell_ix[0] < 0) {
+            ewk->wu.dir_old = 1;
+            ewk->wu.dir_timer = 1;
+            ewk->wu.routine_no[1] = 0;
+            ewk->wu.routine_no[2] = 9;
+            break;
+        }
+
+        check_parts_break_level(&ewk->wu);
+        /* fallthrough */
+
+    case 1:
+        advance_c2_first_damage_animation(ewk);
         break;
     }
 }
@@ -272,52 +400,11 @@ void effC2_main_process_first(WORK_Other* ewk, PLW* twk) {
         case 0:
             switch (ewk->wu.routine_no[2]) {
             case 0:
-                switch (ewk->wu.routine_no[3]) {
-                case 0:
-                    ewk->wu.routine_no[3]++;
-                    set_char_move_init(&ewk->wu, 0, 76);
-                    break;
-
-                case 1:
-                    char_move(&ewk->wu);
-
-                    if (ewk->wu.cg_type != 0xFF) {
-                        break;
-                    }
-
-                    ewk->wu.routine_no[3]++;
-                    /* fallthrough */
-
-                default:
-                    ewk->wu.cg_type = 0;
-                    ewk->wu.cg_number = 9;
-                    break;
-                }
-
+                update_c2_first_animation(ewk);
                 break;
 
             default:
-                switch (ewk->wu.routine_no[3]) {
-                case 0:
-                    ewk->wu.routine_no[3]++;
-                    set_char_move_init(&ewk->wu, 0, 77);
-                    break;
-
-                case 1:
-                    char_move(&ewk->wu);
-
-                    if (ewk->wu.cg_type != 0xFF) {
-                        break;
-                    }
-
-                    ewk->wu.routine_no[3]++;
-                    /* fallthrough */
-
-                default:
-                    ewk->wu.cg_type = 0;
-                    ewk->wu.cg_number = 18;
-                    break;
-                }
+                update_c2_second_animation(ewk);
             }
 
             ewk->wu.old_pos[0] = ewk->wu.cg_type;
@@ -325,48 +412,7 @@ void effC2_main_process_first(WORK_Other* ewk, PLW* twk) {
             break;
 
         case 1:
-            switch (ewk->wu.routine_no[2]) {
-            case 0:
-                ewk->wu.shell_ix[0] -= ewk->wu.dm_vital;
-                ewk->wu.dm_vital = 0;
-
-                if (twk->bs2_on_car) {
-                    ewk->wu.hit_stop = 0;
-                } else {
-                    ewk->wu.hit_stop = ewk->wu.dm_stop / 2;
-                }
-
-                ewk->wu.routine_no[2] = 1;
-                set_char_move_init(&ewk->wu,
-                                   0,
-                                   (twk->bs2_on_car * 6) +
-                                       ((ewk->wu.dm_rl == 0) + sel_dm_quake[ewk->wu.dm_attlv][ewk->wu.rl_waza]));
-
-                if (ewk->wu.shell_ix[0] < 0) {
-                    ewk->wu.dir_old = 1;
-                    ewk->wu.dir_timer = 1;
-                    ewk->wu.routine_no[1] = 0;
-                    ewk->wu.routine_no[2] = 9;
-                    break;
-                }
-
-                check_parts_break_level(&ewk->wu);
-                /* fallthrough */
-
-            case 1:
-                if (--ewk->wu.hit_stop <= 0) {
-                    char_move(&ewk->wu);
-
-                    if (ewk->wu.cg_type == 0xFF) {
-                        ewk->wu.routine_no[1] = 0;
-                        ewk->wu.routine_no[2] = 0;
-                        ewk->wu.cg_type = 0;
-                    }
-                }
-
-                break;
-            }
-
+            update_c2_first_damage(ewk, twk);
             ewk->wu.old_pos[1] = ewk->wu.cg_type;
             ewk->wu.cg_type = 0;
             break;
@@ -385,37 +431,43 @@ void effC2_main_process_first(WORK_Other* ewk, PLW* twk) {
     }
 }
 
-void effc2_parts_work_chain_check(s16 flag) {
-    WORK* adr0;
-    WORK* adr1;
-    WORK* adr2;
-    WORK* adr3;
+static WORK* find_c2_parts_chain_node(void) {
     s16 wix = search_effect_index(1, 0, 0x7B);
-    s16 bf[4];
-    s16 bh[4];
 
     if (wix == -1) {
-        return;
+        return NULL;
     }
 
     while (wix != -1) {
-        adr1 = (WORK*)frw[wix];
+        WORK* adr1 = (WORK*)frw[wix];
 
         if (adr1->type == 4 || adr1->type == 5) {
-            goto jump;
+            return adr1;
         }
 
         wix = adr1->behind;
     }
 
-    return;
+    return NULL;
+}
 
-jump:
-    if (flag) {
-        if (adr1->type == 4) {
-            return;
-        }
-    } else if (adr1->type == 5) {
+static s32 c2_parts_chain_head_blocks_reorder(s16 flag, WORK* adr1) {
+    return (flag && adr1->type == 4) || (!flag && adr1->type == 5);
+}
+
+void effc2_parts_work_chain_check(s16 flag) {
+    WORK* adr0;
+    WORK* adr1 = find_c2_parts_chain_node();
+    WORK* adr2;
+    WORK* adr3;
+    s16 bf[4];
+    s16 bh[4];
+
+    if (adr1 == NULL) {
+        return;
+    }
+
+    if (c2_parts_chain_head_blocks_reorder(flag, adr1)) {
         return;
     }
 
@@ -629,38 +681,46 @@ s16 c2_last_dir_select(PLW* wk, WORK* efw) {
     return ix;
 }
 
-void setup_demojump(PLW* twk, s16 ix) {
+static void setup_demojump_from_launch(PLW* twk) {
+    if (twk->wu.xyz[1].disp.pos > 3) {
+        twk->wu.routine_no[1] = 0;
+        twk->wu.routine_no[2] = 56;
+        twk->wu.routine_no[3] = 0;
+    }
+}
+
+static void setup_demojump_from_car(PLW* twk) {
+    if (twk->bs2_on_car) {
+        twk->wu.routine_no[1] = 0;
+        twk->wu.routine_no[2] = 58;
+        twk->wu.routine_no[3] = 0;
+    }
+}
+
+static void setup_demojump_from_defeat(PLW* twk) {
     s32 should_reset_demo_jump;
 
+    should_reset_demo_jump = (twk->wu.pat_status >= 14 && twk->wu.pat_status <= 30) || twk->bs2_on_car;
+
+    if (should_reset_demo_jump) {
+        twk->wu.routine_no[1] = 0;
+        twk->wu.routine_no[2] = 56;
+        twk->wu.routine_no[3] = 0;
+    }
+}
+
+void setup_demojump(PLW* twk, s16 ix) {
     switch (ix) {
     case 0:
-        if (twk->wu.xyz[1].disp.pos > 3) {
-            twk->wu.routine_no[1] = 0;
-            twk->wu.routine_no[2] = 56;
-            twk->wu.routine_no[3] = 0;
-        }
-
+        setup_demojump_from_launch(twk);
         break;
 
     case 1:
-        if (twk->bs2_on_car) {
-            twk->wu.routine_no[1] = 0;
-            twk->wu.routine_no[2] = 58;
-            twk->wu.routine_no[3] = 0;
-        }
-
+        setup_demojump_from_car(twk);
         break;
 
     case 2:
-        should_reset_demo_jump =
-            (twk->wu.pat_status >= 14 && twk->wu.pat_status <= 30) || twk->bs2_on_car;
-
-        if (should_reset_demo_jump) {
-            twk->wu.routine_no[1] = 0;
-            twk->wu.routine_no[2] = 56;
-            twk->wu.routine_no[3] = 0;
-        }
-
+        setup_demojump_from_defeat(twk);
         break;
     }
 

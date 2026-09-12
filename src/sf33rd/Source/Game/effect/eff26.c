@@ -27,6 +27,136 @@ static s32 game_is_active(void) {
     return !EXE_flag && !Game_pause;
 }
 
+static void move_during_hit_stop_26(WORK_Other* ewk) {
+    if (ewk->wu.hit_stop && !EXE_obroll) {
+        char_move(&ewk->wu);
+    }
+}
+
+static void move_unless_obroll_26(WORK_Other* ewk) {
+    if (!EXE_obroll) {
+        char_move(&ewk->wu);
+    }
+}
+
+static void advance_piece_when_parent_ready_26(WORK_Other* ewk, WORK_Other* parent) {
+    if (parent->wu.routine_no[1] <= 1) {
+        return;
+    }
+
+    ewk->wu.routine_no[1]++;
+    piece_set(ewk);
+    set_char_move_init(&ewk->wu, 0, ewk->wu.old_rno[1]);
+}
+
+static void update_waiting_piece_26(WORK_Other* ewk, WORK_Other* parent) {
+    move_during_hit_stop_26(ewk);
+    advance_piece_when_parent_ready_26(ewk, parent);
+}
+
+typedef enum {
+    ADVANCE_SUBSTATE_26,
+    FINISH_EFFECT_26,
+} AnimationEndAction26;
+
+static void update_animation_until_end_26(WORK_Other* ewk, AnimationEndAction26 action) {
+    move_unless_obroll_26(ewk);
+
+    if (ewk->wu.cg_type != 1) {
+        return;
+    }
+
+    if (action == FINISH_EFFECT_26) {
+        ewk->wu.routine_no[0] = 2;
+    } else {
+        ewk->wu.routine_no[1]++;
+    }
+}
+
+static void update_active_effect_26(WORK_Other* ewk) {
+    if (game_is_active()) {
+        eff26_jp_tbl[ewk->wu.old_rno[2] / 2](ewk);
+    }
+
+    disp_pos_trans_entry_rs(ewk);
+}
+
+static void spawn_followup_if_requested_26(WORK_Other* ewk) {
+    if (!(ewk->wu.old_rno[2] & 1) || ewk->wu.old_rno[5] <= 0) {
+        return;
+    }
+
+    effect_27_init(ewk, ewk->wu.old_rno[5]);
+}
+
+static void finish_effect_when_hit_resolves_26(WORK_Other* ewk) {
+    if (!eff_hit_check(ewk, ewk->wu.old_rno[4])) {
+        return;
+    }
+
+    spawn_followup_if_requested_26(ewk);
+    ewk->wu.routine_no[0] = 2;
+}
+
+static void start_followup_animation_when_hit_resolves_26(WORK_Other* ewk) {
+    if (!eff_hit_check(ewk, ewk->wu.old_rno[4])) {
+        return;
+    }
+
+    ewk->wu.routine_no[1]++;
+    spawn_followup_if_requested_26(ewk);
+    set_char_move_init(&ewk->wu, 0, ewk->wu.old_rno[3]);
+}
+
+static void enter_effect03_hit_response_26(WORK_Other* ewk) {
+    ewk->wu.routine_no[1]++;
+
+    if (eff_hit_flag[ewk->wu.type]) {
+        ewk->wu.routine_no[0] = 99;
+        return;
+    }
+
+    ewk->wu.disp_flag = 1;
+    finish_effect_when_hit_resolves_26(ewk);
+}
+
+static void enter_effect04_hit_response_26(WORK_Other* ewk) {
+    ewk->wu.routine_no[1]++;
+
+    if (eff_hit_flag[ewk->wu.type]) {
+        ewk->wu.routine_no[0] = 99;
+        return;
+    }
+
+    start_followup_animation_when_hit_resolves_26(ewk);
+    update_animation_until_end_26(ewk, FINISH_EFFECT_26);
+}
+
+static void enter_effect05_hit_response_26(WORK_Other* ewk) {
+    ewk->wu.routine_no[1]++;
+    ewk->wu.disp_flag = 1;
+
+    if (eff_hit_flag[ewk->wu.type]) {
+        ewk->wu.routine_no[1] = 7;
+        set_char_move_init(&ewk->wu, 0, ewk->wu.old_rno[7]);
+        return;
+    }
+
+    start_followup_animation_when_hit_resolves_26(ewk);
+}
+
+static void initialize_effect05_26(WORK_Other* ewk, WORK_Other* parent) {
+    ewk->wu.routine_no[1]++;
+
+    if (eff_hit_flag[parent->wu.type]) {
+        ewk->wu.routine_no[2] = 3;
+        set_char_move_init(&ewk->wu, 0, ewk->wu.old_rno[1]);
+        enter_effect05_hit_response_26(ewk);
+        return;
+    }
+
+    update_waiting_piece_26(ewk, parent);
+}
 
 void effect_26_move(WORK_Other* ewk) {
     if (obr_no_disp_check()) {
@@ -48,11 +178,7 @@ void effect_26_move(WORK_Other* ewk) {
         break;
 
     case 1:
-if (game_is_active()) {
-            eff26_jp_tbl[ewk->wu.old_rno[2] / 2](ewk);
-        }
-
-        disp_pos_trans_entry_rs(ewk);
+        update_active_effect_26(ewk);
         break;
 
     case 2:
@@ -80,9 +206,7 @@ void eff26_00(WORK_Other* ewk) {
         return;
     }
 
-    if (ewk->wu.hit_stop && !EXE_obroll) {
-        char_move(&ewk->wu);
-    }
+    move_during_hit_stop_26(ewk);
 }
 
 void eff26_01(WORK_Other* ewk) {
@@ -100,27 +224,12 @@ void eff26_01(WORK_Other* ewk) {
         /* fallthrough */
 
     case 1:
-        if (ewk->wu.hit_stop && !EXE_obroll) {
-            char_move(&ewk->wu);
-        }
-
-        if (oya->wu.routine_no[1] > 1) {
-            ewk->wu.routine_no[1]++;
-            piece_set(ewk);
-            set_char_move_init(&ewk->wu, 0, ewk->wu.old_rno[1]);
-        }
+        update_waiting_piece_26(ewk, oya);
 
         break;
 
     case 2:
-        if (!EXE_obroll) {
-            char_move(&ewk->wu);
-        }
-
-        if (ewk->wu.cg_type == 1) {
-            ewk->wu.routine_no[0] = 2;
-        }
-
+        update_animation_until_end_26(ewk, FINISH_EFFECT_26);
         break;
     }
 }
@@ -142,33 +251,16 @@ void eff26_02(WORK_Other* ewk) {
         /* fallthrough */
 
     case 1:
-        if (ewk->wu.hit_stop && !EXE_obroll) {
-            char_move(&ewk->wu);
-        }
-
-        if (oya->wu.routine_no[1] > 1) {
-            ewk->wu.routine_no[1]++;
-            piece_set(ewk);
-            set_char_move_init(&ewk->wu, 0, ewk->wu.old_rno[1]);
-        }
+        update_waiting_piece_26(ewk, oya);
 
         break;
 
     case 2:
-        if (!EXE_obroll) {
-            char_move(&ewk->wu);
-        }
-
-        if (ewk->wu.cg_type == 1) {
-            ewk->wu.routine_no[1]++;
-        }
-
+        update_animation_until_end_26(ewk, ADVANCE_SUBSTATE_26);
         break;
 
     case 3:
-        if (!EXE_obroll) {
-            char_move(&ewk->wu);
-        }
+        move_unless_obroll_26(ewk);
 
         break;
     }
@@ -188,49 +280,21 @@ void eff26_03(WORK_Other* ewk) {
         }
 
     case 1:
-        if (ewk->wu.hit_stop && !EXE_obroll) {
-            char_move(&ewk->wu);
-        }
-
-        if (oya->wu.routine_no[1] > 1) {
-            ewk->wu.routine_no[1]++;
-            piece_set(ewk);
-            set_char_move_init(&ewk->wu, 0, ewk->wu.old_rno[1]);
-        }
+        update_waiting_piece_26(ewk, oya);
 
         break;
 
     case 2:
-        if (!EXE_obroll) {
-            char_move(&ewk->wu);
-        }
-
-        if (ewk->wu.cg_type == 1) {
-            ewk->wu.routine_no[1]++;
-        }
-
+        update_animation_until_end_26(ewk, ADVANCE_SUBSTATE_26);
         break;
 
     case 3:
     case_3:
-        ewk->wu.routine_no[1]++;
-
-        if (eff_hit_flag[ewk->wu.type]) {
-            ewk->wu.routine_no[0] = 99;
-            break;
-        }
-
-        ewk->wu.disp_flag = 1;
+        enter_effect03_hit_response_26(ewk);
+        break;
 
     case 4:
-        if (eff_hit_check(ewk, ewk->wu.old_rno[4])) {
-            if (ewk->wu.old_rno[2] & 1 && ewk->wu.old_rno[5] > 0) {
-                effect_27_init(ewk, ewk->wu.old_rno[5]);
-            }
-
-            ewk->wu.routine_no[0] = 2;
-        }
-
+        finish_effect_when_hit_resolves_26(ewk);
         break;
     }
 }
@@ -245,62 +309,26 @@ void eff26_04(WORK_Other* ewk) {
             goto case_2;
         }
 
-        if (ewk->wu.hit_stop && !EXE_obroll) {
-            char_move(&ewk->wu);
-        }
-
-        if (oya->wu.routine_no[1] > 1) {
-            ewk->wu.routine_no[1]++;
-            piece_set(ewk);
-            set_char_move_init(&ewk->wu, 0, ewk->wu.old_rno[1]);
-        }
+        update_waiting_piece_26(ewk, oya);
 
         break;
 
     case 1:
-        if (!EXE_obroll) {
-            char_move(&ewk->wu);
-        }
-
-        if (ewk->wu.cg_type == 1) {
-            ewk->wu.routine_no[1]++;
-        }
-
+        update_animation_until_end_26(ewk, ADVANCE_SUBSTATE_26);
         break;
 
     case 2:
     case_2:
-        ewk->wu.routine_no[1]++;
-
-        if (eff_hit_flag[ewk->wu.type]) {
-            ewk->wu.routine_no[0] = 99;
-            break;
-        }
-
-        /* fallthrough */
+        enter_effect04_hit_response_26(ewk);
+        break;
 
     case 3:
-        if (eff_hit_check(ewk, ewk->wu.old_rno[4])) {
-            ewk->wu.routine_no[1]++;
-
-            if (ewk->wu.old_rno[2] & 1 && ewk->wu.old_rno[5] > 0) {
-                effect_27_init(ewk, ewk->wu.old_rno[5]);
-            }
-
-            set_char_move_init(&ewk->wu, 0, ewk->wu.old_rno[3]);
-        }
+        start_followup_animation_when_hit_resolves_26(ewk);
 
         /* fallthrough */
 
     case 4:
-        if (!EXE_obroll) {
-            char_move(&ewk->wu);
-        }
-
-        if (ewk->wu.cg_type == 1) {
-            ewk->wu.routine_no[0] = 2;
-        }
-
+        update_animation_until_end_26(ewk, FINISH_EFFECT_26);
         break;
     }
 }
@@ -310,82 +338,32 @@ void eff26_05(WORK_Other* ewk) {
 
     switch (ewk->wu.routine_no[1]) {
     case 0:
-        ewk->wu.routine_no[1]++;
-
-        if (eff_hit_flag[oya->wu.type]) {
-            ewk->wu.routine_no[2] = 3;
-            set_char_move_init(&ewk->wu, 0, ewk->wu.old_rno[1]);
-            goto case_3;
-        }
-
-        /* fallthrough */
+        initialize_effect05_26(ewk, oya);
+        break;
 
     case 1:
-        if (ewk->wu.hit_stop && !EXE_obroll) {
-            char_move(&ewk->wu);
-        }
-
-        if (oya->wu.routine_no[1] > 1) {
-            ewk->wu.routine_no[1]++;
-            piece_set(ewk);
-            set_char_move_init(&ewk->wu, 0, ewk->wu.old_rno[1]);
-        }
+        update_waiting_piece_26(ewk, oya);
 
         break;
 
     case 2:
-        if (!EXE_obroll) {
-            char_move(&ewk->wu);
-        }
-
-        if (ewk->wu.cg_type == 1) {
-            ewk->wu.routine_no[1]++;
-        }
-
+        update_animation_until_end_26(ewk, ADVANCE_SUBSTATE_26);
         break;
 
     case 3:
-    case_3:
-        ewk->wu.routine_no[1]++;
-        ewk->wu.disp_flag = 1;
-
-        if (eff_hit_flag[ewk->wu.type]) {
-            ewk->wu.routine_no[1] = 7;
-            set_char_move_init(&ewk->wu, 0, ewk->wu.old_rno[7]);
-            break;
-        }
-
-        /* fallthrough */
+        enter_effect05_hit_response_26(ewk);
+        break;
 
     case 4:
-        if (!eff_hit_check(ewk, ewk->wu.old_rno[4])) {
-            break;
-        }
-
-        ewk->wu.routine_no[1]++;
-
-        if (ewk->wu.old_rno[2] & 1 && ewk->wu.old_rno[5] > 0) {
-            effect_27_init(ewk, ewk->wu.old_rno[5]);
-        }
-
-        set_char_move_init(&ewk->wu, 0, ewk->wu.old_rno[3]);
+        start_followup_animation_when_hit_resolves_26(ewk);
         break;
 
     case 5:
-        if (!EXE_obroll) {
-            char_move(&ewk->wu);
-        }
-
-        if (ewk->wu.cg_type == 1) {
-            ewk->wu.routine_no[1]++;
-        }
-
+        update_animation_until_end_26(ewk, ADVANCE_SUBSTATE_26);
         break;
 
     case 7:
-        if (!EXE_obroll) {
-            char_move(&ewk->wu);
-        }
+        move_unless_obroll_26(ewk);
 
         break;
     }
