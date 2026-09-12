@@ -596,30 +596,12 @@ s32 EFF79_Move_X(WORK_Other* ewk) {
     return 0;
 }
 
-s32 EFF79_Move_Y(WORK_Other* ewk) {
-    switch (ewk->wu.routine_no[6]) {
-    case 0:
-        ewk->wu.xyz[1].cal += ewk->wu.mvxy.a[1].sp;
-        ewk->wu.mvxy.a[1].sp += ewk->wu.mvxy.d[1].sp;
+static void update_79_vertical_arc(WORK_Other* ewk) {
+    ewk->wu.xyz[1].cal += ewk->wu.mvxy.a[1].sp;
+    ewk->wu.mvxy.a[1].sp += ewk->wu.mvxy.d[1].sp;
 
-        if (0 > ewk->wu.mvxy.a[1].sp) {
-            if (ewk->wu.vital_old >= ewk->wu.xyz[1].disp.pos) {
-                OK_Priority[ewk->master_id] = 1;
-                ewk->wu.routine_no[5] = 2;
-                ewk->wu.routine_no[6]++;
-                ewk->wu.routine_no[7] = 99;
-                ewk->wu.mvxy.a[1].sp = -ewk->wu.mvxy.a[1].sp;
-                ewk->wu.mvxy.d[1].sp = -ewk->wu.mvxy.d[1].sp;
-
-                if (ewk->wu.dmcal_m == 0) {
-                    ewk->wu.mvxy.a[0].sp = -0x60000;
-                    ewk->wu.mvxy.d[0].sp = -ewk->wu.mvxy.d[0].sp;
-                }
-
-                ewk->wu.xyz[2].disp.pos = Pos_Z_Data_79[ewk->wu.dmcal_m] + 35;
-                Setup_Command_Name(ewk);
-            }
-        } else if (ewk->wu.vital_old <= ewk->wu.xyz[1].disp.pos) {
+    if (0 > ewk->wu.mvxy.a[1].sp) {
+        if (ewk->wu.vital_old >= ewk->wu.xyz[1].disp.pos) {
             OK_Priority[ewk->master_id] = 1;
             ewk->wu.routine_no[5] = 2;
             ewk->wu.routine_no[6]++;
@@ -628,14 +610,35 @@ s32 EFF79_Move_Y(WORK_Other* ewk) {
             ewk->wu.mvxy.d[1].sp = -ewk->wu.mvxy.d[1].sp;
 
             if (ewk->wu.dmcal_m == 0) {
-                ewk->wu.mvxy.a[0].sp = -ewk->wu.mvxy.a[0].sp;
+                ewk->wu.mvxy.a[0].sp = -0x60000;
                 ewk->wu.mvxy.d[0].sp = -ewk->wu.mvxy.d[0].sp;
             }
 
             ewk->wu.xyz[2].disp.pos = Pos_Z_Data_79[ewk->wu.dmcal_m] + 35;
             Setup_Command_Name(ewk);
         }
+    } else if (ewk->wu.vital_old <= ewk->wu.xyz[1].disp.pos) {
+        OK_Priority[ewk->master_id] = 1;
+        ewk->wu.routine_no[5] = 2;
+        ewk->wu.routine_no[6]++;
+        ewk->wu.routine_no[7] = 99;
+        ewk->wu.mvxy.a[1].sp = -ewk->wu.mvxy.a[1].sp;
+        ewk->wu.mvxy.d[1].sp = -ewk->wu.mvxy.d[1].sp;
 
+        if (ewk->wu.dmcal_m == 0) {
+            ewk->wu.mvxy.a[0].sp = -ewk->wu.mvxy.a[0].sp;
+            ewk->wu.mvxy.d[0].sp = -ewk->wu.mvxy.d[0].sp;
+        }
+
+        ewk->wu.xyz[2].disp.pos = Pos_Z_Data_79[ewk->wu.dmcal_m] + 35;
+        Setup_Command_Name(ewk);
+    }
+}
+
+s32 EFF79_Move_Y(WORK_Other* ewk) {
+    switch (ewk->wu.routine_no[6]) {
+    case 0:
+        update_79_vertical_arc(ewk);
         break;
 
     case 1:
