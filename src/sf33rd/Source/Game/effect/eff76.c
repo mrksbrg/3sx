@@ -376,6 +376,37 @@ static void setup_middle_position_76(WORK_Other* ewk) {
     }
 }
 
+static void setup_name_cover_position_76(WORK_Other* ewk, s32 first_cover) {
+    s16 ix = chkNameAkuma(My_char[Champion], 9);
+
+    ewk->wu.xyz[0].disp.pos = bg_w.bgw[ewk->wu.my_family - 1].wxy[0].disp.pos +
+                              Name_Cover_Pos_Data[Champion][1][My_char[Champion] + ix][0];
+
+    if (first_cover) {
+        ewk->wu.xyz[1].disp.pos = bg_w.bgw[ewk->wu.my_family - 1].wxy[1].disp.pos +
+                                  Name_Cover_Pos_Data[Champion][1][My_char[Champion] + ix][1];
+        ewk->wu.position_z = 70;
+
+        if (Champion == 0) {
+            ewk->wu.xyz[0].disp.pos += 24;
+        } else {
+            ewk->wu.xyz[0].disp.pos -= 24;
+        }
+
+        return;
+    }
+
+    ewk->wu.xyz[1].disp.pos = bg_w.bgw[ewk->wu.my_family - 1].wxy[1].disp.pos +
+                              Name_Cover_Pos_Data[Champion][1][My_char[Champion] + ix][1] - 2;
+    ewk->wu.position_z = 69;
+
+    if (Champion == 0) {
+        ewk->wu.xyz[0].disp.pos += 23;
+    } else {
+        ewk->wu.xyz[0].disp.pos -= 25;
+    }
+}
+
 void Setup_Pos_76(WORK_Other* ewk) {
     s16 ix;
 
@@ -400,35 +431,11 @@ void Setup_Pos_76(WORK_Other* ewk) {
         break;
 
     case 0x48:
-        ix = chkNameAkuma(My_char[Champion], 9);
-        ewk->wu.xyz[0].disp.pos = bg_w.bgw[ewk->wu.my_family - 1].wxy[0].disp.pos +
-                                  Name_Cover_Pos_Data[Champion][1][My_char[Champion] + ix][0];
-        ewk->wu.xyz[1].disp.pos = bg_w.bgw[ewk->wu.my_family - 1].wxy[1].disp.pos +
-                                  Name_Cover_Pos_Data[Champion][1][My_char[Champion] + ix][1];
-        ewk->wu.position_z = 70;
-
-        if (Champion == 0) {
-            ewk->wu.xyz[0].disp.pos += 24;
-        } else {
-            ewk->wu.xyz[0].disp.pos -= 24;
-        }
-
+        setup_name_cover_position_76(ewk, 1);
         break;
 
     case 0x49:
-        ix = chkNameAkuma(My_char[Champion], 9);
-        ewk->wu.xyz[0].disp.pos = bg_w.bgw[ewk->wu.my_family - 1].wxy[0].disp.pos +
-                                  Name_Cover_Pos_Data[Champion][1][My_char[Champion] + ix][0];
-        ewk->wu.xyz[1].disp.pos = bg_w.bgw[ewk->wu.my_family - 1].wxy[1].disp.pos +
-                                  Name_Cover_Pos_Data[Champion][1][My_char[Champion] + ix][1] - 2;
-        ewk->wu.position_z = 69;
-
-        if (Champion == 0) {
-            ewk->wu.xyz[0].disp.pos += 23;
-        } else {
-            ewk->wu.xyz[0].disp.pos -= 25;
-        }
-
+        setup_name_cover_position_76(ewk, 0);
         break;
 
     case 0x4A:
