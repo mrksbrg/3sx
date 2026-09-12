@@ -71,6 +71,28 @@ static void update_79_appearance(WORK_Other* ewk) {
     }
 }
 
+static void setup_79_moving_plate_one(WORK_Other* ewk) {
+    switch (ewk->wu.hit_quake) {
+    case 0:
+        ewk->wu.dmcal_m = 1;
+        ewk->wu.dm_vital = 3;
+        Setup_Move_79(ewk, 2, 0x60000, -0x20000, 0);
+        break;
+
+    case 1:
+        ewk->wu.dmcal_m = 2;
+        ewk->wu.dm_vital = 1;
+        Setup_Move_79(ewk, 2, 0x60000, -0x20000, 0);
+        break;
+
+    default:
+        ewk->wu.dmcal_m = 0;
+        ewk->wu.dm_vital = 2;
+        Setup_Move_79(ewk, 2, 0x20000, -0x80000, 2);
+        break;
+    }
+}
+
 static void update_79_plate_movement(WORK_Other* ewk) {
     switch (ewk->wu.routine_no[1]) {
     case 0:
@@ -82,26 +104,7 @@ static void update_79_plate_movement(WORK_Other* ewk) {
 
         switch (Moving_Plate[ewk->master_id]) {
         case 1:
-            switch (ewk->wu.hit_quake) {
-            case 0:
-                ewk->wu.dmcal_m = 1;
-                ewk->wu.dm_vital = 3;
-                Setup_Move_79(ewk, 2, 0x60000, -0x20000, 0);
-                break;
-
-            case 1:
-                ewk->wu.dmcal_m = 2;
-                ewk->wu.dm_vital = 1;
-                Setup_Move_79(ewk, 2, 0x60000, -0x20000, 0);
-                break;
-
-            default:
-                ewk->wu.dmcal_m = 0;
-                ewk->wu.dm_vital = 2;
-                Setup_Move_79(ewk, 2, 0x20000, -0x80000, 2);
-                break;
-            }
-
+            setup_79_moving_plate_one(ewk);
             break;
 
         case 2:
