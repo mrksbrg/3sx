@@ -444,14 +444,17 @@ static void setup_high_position_76(WORK_Other* ewk) {
     }
 }
 
-void Setup_Pos_76(WORK_Other* ewk) {
-    if (ewk->wu.dir_old >= 0x2B && ewk->wu.dir_old <= 0x36) {
+static void setup_lower_position_76(WORK_Other* ewk) {
+    if (ewk->wu.dir_old <= 0x36) {
         setup_low_position_76(ewk);
-        return;
-    }
-
-    if (ewk->wu.dir_old >= 0x37 && ewk->wu.dir_old <= 0x3A) {
+    } else {
         setup_result_position_76(ewk, 0);
+    }
+}
+
+void Setup_Pos_76(WORK_Other* ewk) {
+    if (ewk->wu.dir_old >= 0x2B && ewk->wu.dir_old <= 0x3A) {
+        setup_lower_position_76(ewk);
         return;
     }
 
