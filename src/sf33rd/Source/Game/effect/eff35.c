@@ -252,6 +252,71 @@ void eff35_0002(WORK_Other* ewk) {
     run_timed_effect_35(ewk, SPAWN_AUXILIARY_EFFECT_35);
 }
 
+static void set_traveling_banner_start_35(WORK_Other* ewk) {
+    if (ewk->wu.type == 2) {
+        ewk->wu.xyz[0].disp.pos = eff35_data_tbl[2][0];
+        ewk->wu.xyz[0].disp.low = 0;
+        ewk->wu.xyz[1].disp.pos = eff35_data_tbl[2][1];
+        ewk->wu.xyz[1].disp.low = 0;
+        ewk->wu.mvxy.a[0].sp = -0x78000;
+        ewk->wu.mvxy.d[0].sp = 0;
+    } else {
+        ewk->wu.xyz[0].disp.pos = eff35_data_tbl[3][0];
+        ewk->wu.xyz[0].disp.low = 0;
+        ewk->wu.xyz[1].disp.pos = eff35_data_tbl[3][1];
+        ewk->wu.xyz[1].disp.low = 0;
+        ewk->wu.mvxy.a[0].sp = 0x5C000;
+        ewk->wu.mvxy.d[0].sp = 0;
+    }
+}
+
+static void start_traveling_banner_35(WORK_Other* ewk) {
+    if (Break_Into) {
+        ewk->wu.routine_no[1] = 99;
+        return;
+    }
+
+    ewk->wu.old_rno[1]--;
+
+    if (ewk->wu.old_rno[1] > 0) {
+        return;
+    }
+
+    ewk->wu.routine_no[1]++;
+    ewk->wu.disp_flag = 1;
+    set_char_move_init2(&ewk->wu, 0, ewk->wu.char_index, ewk->wu.old_rno[3], 0);
+    set_traveling_banner_start_35(ewk);
+}
+
+static void reset_traveling_banner_35(WORK_Other* ewk, const s16* delays) {
+    ewk->wu.routine_no[1] = 1;
+    ewk->wu.disp_flag = 0;
+    ewk->wu.old_rno[4]++;
+    ewk->wu.old_rno[4] &= 3;
+    ewk->wu.old_rno[1] = delays[ewk->wu.old_rno[4]];
+}
+
+static void update_traveling_banner_35(WORK_Other* ewk) {
+    if (Break_Into) {
+        ewk->wu.routine_no[1] = 99;
+        return;
+    }
+
+    if (game_is_active()) {
+        add_x_sub(&ewk->wu);
+    }
+
+    if (ewk->wu.type == 2) {
+        if (ewk->wu.xyz[0].disp.pos < 416) {
+            reset_traveling_banner_35(ewk, eff35_03_b);
+        }
+    } else if (ewk->wu.xyz[0].disp.pos > 768) {
+        reset_traveling_banner_35(ewk, eff35_03_s);
+    }
+
+    disp_pos_trans_entry(ewk);
+}
+
 void eff35_0003(WORK_Other* ewk) {
     switch (ewk->wu.routine_no[1]) {
     case 0:
@@ -260,66 +325,11 @@ void eff35_0003(WORK_Other* ewk) {
         /* fallthrough */
 
     case 1:
-        if (Break_Into) {
-            ewk->wu.routine_no[1] = 99;
-            break;
-        }
-
-        ewk->wu.old_rno[1]--;
-
-        if (ewk->wu.old_rno[1] > 0) {
-            break;
-        }
-
-        ewk->wu.routine_no[1]++;
-        ewk->wu.disp_flag = 1;
-        set_char_move_init2(&ewk->wu, 0, ewk->wu.char_index, ewk->wu.old_rno[3], 0);
-
-        if (ewk->wu.type == 2) {
-            ewk->wu.xyz[0].disp.pos = eff35_data_tbl[2][0];
-            ewk->wu.xyz[0].disp.low = 0;
-            ewk->wu.xyz[1].disp.pos = eff35_data_tbl[2][1];
-            ewk->wu.xyz[1].disp.low = 0;
-            ewk->wu.mvxy.a[0].sp = -0x78000;
-            ewk->wu.mvxy.d[0].sp = 0;
-        } else {
-            ewk->wu.xyz[0].disp.pos = eff35_data_tbl[3][0];
-            ewk->wu.xyz[0].disp.low = 0;
-            ewk->wu.xyz[1].disp.pos = eff35_data_tbl[3][1];
-            ewk->wu.xyz[1].disp.low = 0;
-            ewk->wu.mvxy.a[0].sp = 0x5C000;
-            ewk->wu.mvxy.d[0].sp = 0;
-        }
-
+        start_traveling_banner_35(ewk);
         break;
 
     case 2:
-        if (Break_Into) {
-            ewk->wu.routine_no[1] = 99;
-            break;
-        }
-
-if (game_is_active()) {
-            add_x_sub(&ewk->wu);
-        }
-
-        if (ewk->wu.type == 2) {
-            if (ewk->wu.xyz[0].disp.pos < 416) {
-                ewk->wu.routine_no[1] = 1;
-                ewk->wu.disp_flag = 0;
-                ewk->wu.old_rno[4]++;
-                ewk->wu.old_rno[4] &= 3;
-                ewk->wu.old_rno[1] = eff35_03_b[ewk->wu.old_rno[4]];
-            }
-        } else if (ewk->wu.xyz[0].disp.pos > 768) {
-            ewk->wu.routine_no[1] = 1;
-            ewk->wu.disp_flag = 0;
-            ewk->wu.old_rno[4]++;
-            ewk->wu.old_rno[4] &= 3;
-            ewk->wu.old_rno[1] = eff35_03_s[ewk->wu.old_rno[4]];
-        }
-
-        disp_pos_trans_entry(ewk);
+        update_traveling_banner_35(ewk);
         break;
 
     case 99:
