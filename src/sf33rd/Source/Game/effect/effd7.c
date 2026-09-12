@@ -32,6 +32,34 @@ static s32 game_is_active(void) {
     return EXE_flag == 0 && Game_pause == 0;
 }
 
+static void update_active_effD7(WORK_Other* ewk) {
+    if (ewk->wu.dead_f == 1 || Suicide[0] != 0) {
+        ewk->wu.disp_flag = 0;
+        ewk->wu.type = 0;
+        ewk->wu.routine_no[0] = 2;
+        return;
+    }
+
+    if (sa_stop_check() == 0) {
+        if (ewk->wu.hit_stop < 0) {
+            ewk->wu.hit_stop = -ewk->wu.hit_stop;
+        }
+
+        if (game_is_active()) {
+            effD7_main_process(ewk);
+        }
+
+        ewk->wu.position_x = ewk->wu.xyz[0].disp.pos;
+        ewk->wu.position_y = ewk->wu.xyz[1].disp.pos;
+
+        if (ewk->wu.type) {
+            hit_push_request(&ewk->wu);
+        }
+    }
+
+    sort_push_request(&ewk->wu);
+}
+
 void effect_D7_move(WORK_Other* ewk) {
     switch (ewk->wu.routine_no[0]) {
     case 0:
@@ -55,31 +83,7 @@ void effect_D7_move(WORK_Other* ewk) {
         break;
 
     case 1:
-        if (ewk->wu.dead_f == 1 || Suicide[0] != 0) {
-            ewk->wu.disp_flag = 0;
-            ewk->wu.type = 0;
-            ewk->wu.routine_no[0] = 2;
-            break;
-        }
-
-        if (sa_stop_check() == 0) {
-            if (ewk->wu.hit_stop < 0) {
-                ewk->wu.hit_stop = -ewk->wu.hit_stop;
-            }
-
-            if (game_is_active()) {
-                effD7_main_process(ewk);
-            }
-
-            ewk->wu.position_x = ewk->wu.xyz[0].disp.pos;
-            ewk->wu.position_y = ewk->wu.xyz[1].disp.pos;
-
-            if (ewk->wu.type) {
-                hit_push_request(&ewk->wu);
-            }
-        }
-
-        sort_push_request(&ewk->wu);
+        update_active_effD7(ewk);
         break;
 
     case 2:
