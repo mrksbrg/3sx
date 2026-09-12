@@ -632,28 +632,25 @@ static void setup_continue_character_76(WORK_Other* ewk, ContinueCharacterType76
     ewk->wu.dir_step = ewk->wu.dir_old - 0x3B;
 }
 
-void Setup_Char_76(WORK_Other* ewk) {
-    if (ewk->wu.dir_old <= 0x36) {
-        setup_low_character_76(ewk);
-        return;
-    }
+static void setup_shell_character_76(WORK_Other* ewk) {
+    ewk->wu.my_family = 1;
+    ewk->wu.direction = 0;
+    ewk->wu.my_col_code = 1;
+    ewk->wu.my_clear_level = 0x80;
+    ewk->wu.shell_ix[0] = -0xC8;
+    ewk->wu.shell_ix[1] = 0x192;
+    ewk->wu.shell_ix[2] = -0x10;
+    ewk->wu.shell_ix[3] = 0x110;
+}
 
-    if (ewk->wu.dir_old >= FIRST_COMPUTE_CHARACTER_76 && ewk->wu.dir_old <= LAST_COMPUTE_CHARACTER_76) {
-        setup_high_character_76(ewk);
-        return;
-    }
-
+static void setup_result_range_character_76(WORK_Other* ewk) {
     switch (ewk->wu.dir_old) {
+    case 0x37:
+        setup_result_character_76(ewk, WINNER_RESULT_76);
+        break;
+
     case 0x38:
-    case 0x42:
-        ewk->wu.my_family = 1;
-        ewk->wu.direction = 0;
-        ewk->wu.my_col_code = 1;
-        ewk->wu.my_clear_level = 0x80;
-        ewk->wu.shell_ix[0] = -0xC8;
-        ewk->wu.shell_ix[1] = 0x192;
-        ewk->wu.shell_ix[2] = -0x10;
-        ewk->wu.shell_ix[3] = 0x110;
+        setup_shell_character_76(ewk);
         break;
 
     case 0x39:
@@ -668,6 +665,29 @@ void Setup_Char_76(WORK_Other* ewk) {
         ewk->wu.char_index = 4;
         ewk->wu.dir_step = 8;
         break;
+    }
+}
+
+void Setup_Char_76(WORK_Other* ewk) {
+    if (ewk->wu.dir_old <= 0x36) {
+        setup_low_character_76(ewk);
+        return;
+    }
+
+    if (ewk->wu.dir_old >= FIRST_COMPUTE_CHARACTER_76 && ewk->wu.dir_old <= LAST_COMPUTE_CHARACTER_76) {
+        setup_high_character_76(ewk);
+        return;
+    }
+
+    if (ewk->wu.dir_old >= 0x37 && ewk->wu.dir_old <= 0x3A) {
+        setup_result_range_character_76(ewk);
+        return;
+    }
+
+    switch (ewk->wu.dir_old) {
+    case 0x42:
+        setup_shell_character_76(ewk);
+        break;
 
     case 0x43:
     case 0x44:
@@ -678,10 +698,6 @@ void Setup_Char_76(WORK_Other* ewk) {
         ewk->wu.dir_step = 2;
         ewk->wu.direction = 3;
         effect_A6_init(ewk);
-        break;
-
-    case 0x37:
-        setup_result_character_76(ewk, WINNER_RESULT_76);
         break;
 
     case FIRST_NAME_CHARACTER_76:
