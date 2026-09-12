@@ -442,23 +442,28 @@ static void update_79_movement_delay(WORK_Other* ewk) {
     }
 }
 
-void Move_Move_79(WORK_Other* ewk) {
+static void advance_79_group_movement(WORK_Other* ewk) {
     s16 arrived[2];
 
+    arrived[0] = EFF79_Move_X(ewk);
+    arrived[1] = EFF79_Move_Y(ewk);
+
+    if (movement_is_incomplete(arrived)) {
+        return;
+    }
+
+    ewk->wu.routine_no[2]++;
+    OK_Moving_SA_Plate[ewk->master_id]--;
+}
+
+void Move_Move_79(WORK_Other* ewk) {
     switch (ewk->wu.routine_no[2]) {
     case 0:
         update_79_movement_delay(ewk);
         break;
 
     case 1:
-        arrived[0] = EFF79_Move_X(ewk);
-        arrived[1] = EFF79_Move_Y(ewk);
-
-        if (!movement_is_incomplete(arrived)) {
-            ewk->wu.routine_no[2]++;
-            OK_Moving_SA_Plate[ewk->master_id]--;
-        }
-
+        advance_79_group_movement(ewk);
         break;
 
     case 2:
