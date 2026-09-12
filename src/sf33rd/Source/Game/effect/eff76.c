@@ -428,6 +428,22 @@ static void setup_compute_position_76(WORK_Other* ewk) {
     ewk->wu.mvxy.d[0].sp = -0x28000;
 }
 
+static void setup_high_position_76(WORK_Other* ewk) {
+    switch (ewk->wu.dir_old) {
+    case 0x55:
+        setup_result_position_76(ewk, 1);
+        break;
+
+    case 0x48:
+        setup_name_cover_position_76(ewk, 1);
+        break;
+
+    case 0x49:
+        setup_name_cover_position_76(ewk, 0);
+        break;
+    }
+}
+
 void Setup_Pos_76(WORK_Other* ewk) {
     if (ewk->wu.dir_old >= 0x2B && ewk->wu.dir_old <= 0x36) {
         setup_low_position_76(ewk);
@@ -449,20 +465,7 @@ void Setup_Pos_76(WORK_Other* ewk) {
         return;
     }
 
-    switch (ewk->wu.dir_old) {
-    case 0x55:
-        setup_result_position_76(ewk, 1);
-        break;
-
-    case 0x48:
-        setup_name_cover_position_76(ewk, 1);
-        break;
-
-    case 0x49:
-        setup_name_cover_position_76(ewk, 0);
-        break;
-
-    }
+    setup_high_position_76(ewk);
 }
 
 void Setup_Char_76(WORK_Other* ewk) {
