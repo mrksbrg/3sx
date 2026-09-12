@@ -19,10 +19,13 @@ control flow are typically arcade-accurate. **Report them, do not fix them.**
 
 ## Build
 
-`cmake` is not on PATH by default on the Windows dev machine. Prepend the toolchain:
+`cmake` is not on PATH by default on the Windows dev machine. Prepend both the
+MinGW toolchain and MSYS2 utilities. The latter provides `cygpath`, which the Windows
+install rules need in order to locate runtime DLLs:
 
 ```bash
-export PATH="/c/msys64/mingw64/bin:$PATH"
+export PATH="/c/msys64/usr/bin:/c/msys64/mingw64/bin:$PATH"
+cmake -S . -B build
 cmake --build build
 ```
 
@@ -41,7 +44,27 @@ with `SDL3.dll`, `libiconv-2.dll`, `zlib1.dll`, and `assets/` alongside the exe 
 exists after the install step:
 
 ```bash
+export PATH="/c/msys64/usr/bin:/c/msys64/mingw64/bin:$PATH"
+cmake -S . -B build
+cmake --build build
 cmake --install build --prefix build/application
+(cd build/application/bin && ./3sx.exe)
+```
+
+Do not omit the configure command. If `build/` was originally configured without
+`/c/msys64/usr/bin` on `PATH`, its generated install script will not know where to find
+`libiconv-2.dll` and `zlib1.dll`; adding the directory to `PATH` only at install time is
+too late. Reconfiguring regenerates the install rule with the correct DLL search path.
+
+For PowerShell, use the equivalent sequence:
+
+```powershell
+$env:Path = "C:\msys64\usr\bin;C:\msys64\mingw64\bin;$env:Path"
+cmake -S . -B build
+cmake --build build
+cmake --install build --prefix build/application
+$bin = (Resolve-Path "build/application/bin").Path
+Start-Process -FilePath (Join-Path $bin "3sx.exe") -WorkingDirectory $bin
 ```
 
 Always launch **`build/application/bin/3sx.exe`**, never `build/3sx.exe` directly.
