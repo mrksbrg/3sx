@@ -33,6 +33,12 @@ static void move_during_hit_stop_26(WORK_Other* ewk) {
     }
 }
 
+static void move_unless_obroll_26(WORK_Other* ewk) {
+    if (!EXE_obroll) {
+        char_move(&ewk->wu);
+    }
+}
+
 void effect_26_move(WORK_Other* ewk) {
     if (obr_no_disp_check()) {
         return;
@@ -114,9 +120,7 @@ void eff26_01(WORK_Other* ewk) {
         break;
 
     case 2:
-        if (!EXE_obroll) {
-            char_move(&ewk->wu);
-        }
+        move_unless_obroll_26(ewk);
 
         if (ewk->wu.cg_type == 1) {
             ewk->wu.routine_no[0] = 2;
@@ -154,9 +158,7 @@ void eff26_02(WORK_Other* ewk) {
         break;
 
     case 2:
-        if (!EXE_obroll) {
-            char_move(&ewk->wu);
-        }
+        move_unless_obroll_26(ewk);
 
         if (ewk->wu.cg_type == 1) {
             ewk->wu.routine_no[1]++;
@@ -165,9 +167,7 @@ void eff26_02(WORK_Other* ewk) {
         break;
 
     case 3:
-        if (!EXE_obroll) {
-            char_move(&ewk->wu);
-        }
+        move_unless_obroll_26(ewk);
 
         break;
     }
@@ -198,9 +198,7 @@ void eff26_03(WORK_Other* ewk) {
         break;
 
     case 2:
-        if (!EXE_obroll) {
-            char_move(&ewk->wu);
-        }
+        move_unless_obroll_26(ewk);
 
         if (ewk->wu.cg_type == 1) {
             ewk->wu.routine_no[1]++;
@@ -253,9 +251,7 @@ void eff26_04(WORK_Other* ewk) {
         break;
 
     case 1:
-        if (!EXE_obroll) {
-            char_move(&ewk->wu);
-        }
+        move_unless_obroll_26(ewk);
 
         if (ewk->wu.cg_type == 1) {
             ewk->wu.routine_no[1]++;
@@ -288,9 +284,7 @@ void eff26_04(WORK_Other* ewk) {
         /* fallthrough */
 
     case 4:
-        if (!EXE_obroll) {
-            char_move(&ewk->wu);
-        }
+        move_unless_obroll_26(ewk);
 
         if (ewk->wu.cg_type == 1) {
             ewk->wu.routine_no[0] = 2;
@@ -327,9 +321,7 @@ void eff26_05(WORK_Other* ewk) {
         break;
 
     case 2:
-        if (!EXE_obroll) {
-            char_move(&ewk->wu);
-        }
+        move_unless_obroll_26(ewk);
 
         if (ewk->wu.cg_type == 1) {
             ewk->wu.routine_no[1]++;
@@ -365,9 +357,7 @@ void eff26_05(WORK_Other* ewk) {
         break;
 
     case 5:
-        if (!EXE_obroll) {
-            char_move(&ewk->wu);
-        }
+        move_unless_obroll_26(ewk);
 
         if (ewk->wu.cg_type == 1) {
             ewk->wu.routine_no[1]++;
@@ -376,9 +366,7 @@ void eff26_05(WORK_Other* ewk) {
         break;
 
     case 7:
-        if (!EXE_obroll) {
-            char_move(&ewk->wu);
-        }
+        move_unless_obroll_26(ewk);
 
         break;
     }
