@@ -96,6 +96,133 @@ void effect_D7_move(WORK_Other* ewk) {
     }
 }
 
+static s32 effD7_can_hit_master(WORK_Other* ewk, PLW* master) {
+    return ewk->wu.kage_flag && master->wu.routine_no[1] == 4 && master->wu.routine_no[2] == 30 &&
+           master->wu.cg_type == 0x28 && master->tk_success == ewk->wu.shell_ix[0] &&
+           hit_check_subroutine(&ewk->wu, (WORK*)ewk->my_master, effD7_hit_box[0], effD7_hit_box[1]);
+}
+
+typedef enum {
+    BALL_REMAINS_ACTIVE_D7,
+    BALL_LEFT_SCREEN_D7,
+} BallBounceResultD7;
+
+static BallBounceResultD7 bounce_ball_effD7(WORK_Other* ewk) {
+    ewk->wu.xyz[1].disp.pos = ewk->wu.shell_ix[2];
+    ewk->wu.shell_ix[2] -= ewk->wu.shell_ix[3];
+    ewk->wu.shell_ix[2] -= random_16() & 3;
+
+    if (ewk->wu.char_index != 0x77) {
+        set_char_move_init(&ewk->wu, 0, 0x77);
+    }
+
+    ewk->wu.position_x = ewk->wu.xyz[0].disp.pos;
+    ewk->wu.position_y = ewk->wu.xyz[1].disp.pos;
+
+    switch (check_ball_mizushibuki(ewk->wu.xyz[0].disp.pos, ewk->wu.xyz[1].disp.pos)) {
+    case 1:
+        effect_03_init(&ewk->wu, 0x84);
+        break;
+
+    case 2:
+        effect_03_init(&ewk->wu, 0x85);
+        break;
+
+    default:
+        sound_effect_request[0x157](ewk, 0x157);
+        break;
+    }
+
+    ewk->wu.mvxy.a[0].sp = (ewk->wu.mvxy.a[0].sp * 80) / 100;
+    ewk->wu.mvxy.a[1].sp = -(ewk->wu.mvxy.a[1].sp / 2);
+    ewk->wu.shell_ix[1] = 1;
+    ewk->wu.hit_stop = 1;
+
+    if (!screen_range_check_effD7(&ewk->wu)) {
+        return BALL_REMAINS_ACTIVE_D7;
+    }
+
+    ewk->wu.disp_flag = 0;
+    ewk->wu.type = 0;
+    ewk->wu.routine_no[0] = 2;
+    return BALL_LEFT_SCREEN_D7;
+}
+
+static void update_flying_ball_effD7(WORK_Other* ewk, PLW* master) {
+    char_move(&ewk->wu);
+    add_mvxy_speed(&ewk->wu);
+    cal_mvxy_speed(&ewk->wu);
+
+    if (ewk->wu.xyz[1].disp.pos < ewk->wu.shell_ix[2] && bounce_ball_effD7(ewk) == BALL_LEFT_SCREEN_D7) {
+        return;
+    }
+
+    if (effD7_can_hit_master(ewk, master)) {
+        master->wu.cmwk[7] = 1;
+        ewk->wu.type = 0;
+        ewk->wu.routine_no[2] = 1;
+    }
+}
+
+static void reset_ball_from_master_effD7(WORK_Other* ewk, PLW* master) {
+    ewk->wu.routine_no[2] = 0;
+    ewk->wu.xyz[0].disp.pos = master->wu.xyz[0].disp.pos;
+    ewk->wu.xyz[1].disp.pos = master->wu.xyz[1].disp.pos + 136;
+    ewk->wu.disp_flag = 1;
+    ewk->wu.type = 1;
+    ewk->wu.mvxy.a[0].sp = 0x18000;
+    ewk->wu.mvxy.d[0].sp = 0;
+    ewk->wu.mvxy.a[1].sp = 0x20000;
+    ewk->wu.mvxy.d[1].sp = -0x6800;
+}
+
+static void launch_ball_from_master_effD7(WORK_Other* ewk, PLW* master) {
+    ewk->wu.routine_no[2] = 0;
+
+    if (master->wu.rl_flag) {
+        ewk->wu.xyz[0].disp.pos = master->wu.xyz[0].disp.pos + 10;
+    } else {
+        ewk->wu.xyz[0].disp.pos = master->wu.xyz[0].disp.pos - 10;
+    }
+
+    ewk->wu.xyz[1].disp.pos = master->wu.xyz[1].disp.pos + 136;
+    ewk->wu.disp_flag = 1;
+    ewk->wu.type = 1;
+    set_char_move_init(&ewk->wu, 0, 0x76);
+    cal_speeds_to_em(ewk, (PLW*)ewk->wu.target_adrs);
+    add_mvxy_speed(&ewk->wu);
+    cal_mvxy_speed(&ewk->wu);
+}
+
+static void update_ball_with_master_effD7(WORK_Other* ewk, PLW* master) {
+    if (master->wu.routine_no[1] != 4) {
+        reset_ball_from_master_effD7(ewk, master);
+        return;
+    }
+
+    if (master->wu.cmwk[6]) {
+        launch_ball_from_master_effD7(ewk, master);
+    }
+}
+
+static void update_unhit_ball_effD7(WORK_Other* ewk, PLW* master) {
+    if (ewk->wu.hit_stop) {
+        ewk->wu.hit_stop--;
+        return;
+    }
+
+    switch (ewk->wu.routine_no[2]) {
+    case 0:
+        update_flying_ball_effD7(ewk, master);
+        break;
+
+    case 1:
+        ewk->wu.disp_flag = 0;
+        update_ball_with_master_effD7(ewk, master);
+        break;
+    }
+}
+
 void effD7_main_process(WORK_Other* ewk) {
     PLW* mwk = (PLW*)ewk->my_master;
 
@@ -109,100 +236,7 @@ void effD7_main_process(WORK_Other* ewk) {
 
     switch (ewk->wu.routine_no[1]) {
     case 0:
-        if (ewk->wu.hit_stop) {
-            ewk->wu.hit_stop--;
-            break;
-        }
-
-        switch (ewk->wu.routine_no[2]) {
-        case 0:
-            char_move(&ewk->wu);
-            add_mvxy_speed(&ewk->wu);
-            cal_mvxy_speed(&ewk->wu);
-
-            if (ewk->wu.xyz[1].disp.pos < ewk->wu.shell_ix[2]) {
-                ewk->wu.xyz[1].disp.pos = ewk->wu.shell_ix[2];
-                ewk->wu.shell_ix[2] -= ewk->wu.shell_ix[3];
-                ewk->wu.shell_ix[2] -= random_16() & 3;
-
-                if (ewk->wu.char_index != 0x77) {
-                    set_char_move_init(&ewk->wu, 0, 0x77);
-                }
-
-                ewk->wu.position_x = ewk->wu.xyz[0].disp.pos;
-                ewk->wu.position_y = ewk->wu.xyz[1].disp.pos;
-
-                switch (check_ball_mizushibuki(ewk->wu.xyz[0].disp.pos, ewk->wu.xyz[1].disp.pos)) {
-                case 1:
-                    effect_03_init(&ewk->wu, 0x84);
-                    break;
-
-                case 2:
-                    effect_03_init(&ewk->wu, 0x85);
-                    break;
-
-                default:
-                    sound_effect_request[0x157](ewk, 0x157);
-                    break;
-                }
-
-                ewk->wu.mvxy.a[0].sp = (ewk->wu.mvxy.a[0].sp * 80) / 100;
-                ewk->wu.mvxy.a[1].sp = -(ewk->wu.mvxy.a[1].sp / 2);
-                ewk->wu.shell_ix[1] = 1;
-                ewk->wu.hit_stop = 1;
-
-                if (screen_range_check_effD7(&ewk->wu)) {
-                    ewk->wu.disp_flag = 0;
-                    ewk->wu.type = 0;
-                    ewk->wu.routine_no[0] = 2;
-                    break;
-                }
-            }
-
-            if (ewk->wu.kage_flag && mwk->wu.routine_no[1] == 4 && mwk->wu.routine_no[2] == 30 &&
-                mwk->wu.cg_type == 0x28 && mwk->tk_success == ewk->wu.shell_ix[0] &&
-                hit_check_subroutine(&ewk->wu, (WORK*)ewk->my_master, effD7_hit_box[0], effD7_hit_box[1])) {
-                mwk->wu.cmwk[7] = 1;
-                ewk->wu.type = 0;
-                ewk->wu.routine_no[2] = 1;
-            }
-
-            break;
-
-        case 1:
-            ewk->wu.disp_flag = 0;
-
-            if (mwk->wu.routine_no[1] != 4) {
-                ewk->wu.routine_no[2] = 0;
-                ewk->wu.xyz[0].disp.pos = mwk->wu.xyz[0].disp.pos;
-                ewk->wu.xyz[1].disp.pos = mwk->wu.xyz[1].disp.pos + 136;
-                ewk->wu.disp_flag = 1;
-                ewk->wu.type = 1;
-                ewk->wu.mvxy.a[0].sp = 0x18000;
-                ewk->wu.mvxy.d[0].sp = 0;
-                ewk->wu.mvxy.a[1].sp = 0x20000;
-                ewk->wu.mvxy.d[1].sp = -0x6800;
-            } else if (mwk->wu.cmwk[6]) {
-                ewk->wu.routine_no[2] = 0;
-
-                if (mwk->wu.rl_flag) {
-                    ewk->wu.xyz[0].disp.pos = mwk->wu.xyz[0].disp.pos + 10;
-                } else {
-                    ewk->wu.xyz[0].disp.pos = mwk->wu.xyz[0].disp.pos - 10;
-                }
-
-                ewk->wu.xyz[1].disp.pos = mwk->wu.xyz[1].disp.pos + 136;
-                ewk->wu.disp_flag = 1;
-                ewk->wu.type = 1;
-                set_char_move_init(&ewk->wu, 0, 0x76);
-                cal_speeds_to_em(ewk, (PLW*)ewk->wu.target_adrs);
-                add_mvxy_speed(&ewk->wu);
-                cal_mvxy_speed(&ewk->wu);
-            }
-
-            break;
-        }
-
+        update_unhit_ball_effD7(ewk, mwk);
         break;
 
     case 1:
