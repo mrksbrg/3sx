@@ -27,116 +27,144 @@ static s32 is_airborne_action_window(const PLW* mwk) {
     return (mwk->wu.routine_no[1] == 1 && mwk->wu.routine_no[2] >= 4) && mwk->wu.routine_no[2] < 14;
 }
 
+static void configure_training_feedback_E3(WORK_Other* ewk, PLW* mwk) {
+    if (should_disable_new_challenger_vibration(mwk)) {
+        vib_sel[mwk->wu.id] = 0;
+    }
+
+    if (Training[0].contents[0][1][TRAINING_OPTION_DIFFICULTY] == 2) {
+        vib_sel[mwk->wu.id] = 0;
+    }
+
+    ewk->wu.direction = 0;
+
+    if (Training[0].contents[0][0][0] == 3 || Training[0].contents[0][0][0] == 4) {
+        ewk->wu.direction = 1;
+    }
+
+    omop_vital_ix[mwk->wu.id] = 1;
+
+    if (Training[0].contents[0][1][TRAINING_OPTION_DIFFICULTY] == 0) {
+        omop_vital_ix[mwk->wu.id] = 3;
+    }
+
+    ewk->wu.dm_vital = 0;
+    ewk->wu.vitality = 0;
+    ewk->wu.dir_timer = 0;
+}
+
+static void configure_challenger_restrictions_E3(PLW* mwk) {
+    switch (Training[0].contents[0][0][1]) {
+    case 0:
+    case 1:
+    case 6:
+        mwk->spmv_ng_flag &= 0xFFFFFFEF;
+        mwk->spmv_ng_flag |= 0xC0;
+        break;
+
+    case 2:
+    case 4:
+        mwk->spmv_ng_flag |= 0x80;
+        mwk->spmv_ng_flag &= 0xFFFFFFBF;
+        mwk->spmv_ng_flag &= 0xFFFFFFEF;
+        break;
+
+    case 3:
+    case 5:
+        mwk->spmv_ng_flag |= 0x40;
+        mwk->spmv_ng_flag &= 0xFFFFFF7F;
+        mwk->spmv_ng_flag &= 0xFFFFF0FF;
+        break;
+    }
+}
+
+static void configure_new_challenger_E3(WORK_Other* ewk, PLW* mwk) {
+    if (mwk->wu.id != New_Challenger) {
+        return;
+    }
+
+    mwk->py->now.quantity.h = 0;
+
+    if (ewk->wu.direction == 0) {
+        configure_challenger_restrictions_E3(mwk);
+    } else {
+        mwk->spmv_ng_flag |= 0xC0;
+        mwk->spmv_ng_flag &= 0xFFFFFFEF;
+        mwk->spmv_ng_flag &= 0xFFFFF0FF;
+    }
+}
+
+static void configure_sa_gauge_E3(PLW* mwk) {
+    switch (Training[0].contents[0][1][TRAINING_OPTION_SA_GAUGE]) {
+    case 1:
+        mwk->spmv_ng_flag2 &= 0xFFFBFFFF;
+        mwk->spmv_ng_flag2 |= 0x90000;
+        demo_set_sa_full(mwk->sa);
+        tr_spgauge_cont_init2(mwk->wu.id);
+        break;
+
+    case 3:
+        mwk->spmv_ng_flag2 &= 0xFFF7FFFF;
+        mwk->spmv_ng_flag2 |= 0x50000;
+        demo_set_sa_full(mwk->sa);
+        tr_spgauge_cont_init2(mwk->wu.id);
+        break;
+
+    case 2:
+        mwk->spmv_ng_flag2 &= 0xFFFEFFFF;
+        mwk->spmv_ng_flag2 |= 0xC0000;
+        clear_super_arts_point(mwk);
+        tr_spgauge_cont_init(mwk->wu.id);
+        break;
+
+    case 0:
+        mwk->spmv_ng_flag2 |= 0xD0000;
+        clear_super_arts_point(mwk);
+        tr_spgauge_cont_init(mwk->wu.id);
+        break;
+    }
+}
+
+typedef enum {
+    INITIALIZATION_PAUSED_E3,
+    INITIALIZATION_COMPLETE_E3,
+} InitializationResultE3;
+
+static InitializationResultE3 initialize_training_effect_E3(WORK_Other* ewk, PLW* mwk) {
+    if (effect_should_stop(ewk, mwk)) {
+        ewk->wu.routine_no[0] = 2;
+        return INITIALIZATION_PAUSED_E3;
+    }
+
+    if (mwk->init_E3_flag == 0) {
+        return INITIALIZATION_PAUSED_E3;
+    }
+
+    mwk->init_E3_flag = 0;
+
+    if (Mode_Type != MODE_NORMAL_TRAINING) {
+        return INITIALIZATION_PAUSED_E3;
+    }
+
+    configure_training_feedback_E3(ewk, mwk);
+    configure_new_challenger_E3(ewk, mwk);
+    configure_sa_gauge_E3(mwk);
+    ewk->wu.routine_no[0]++;
+    omop_spmv_ng_table[mwk->wu.id] = mwk->spmv_ng_flag;
+    omop_spmv_ng_table2[mwk->wu.id] = mwk->spmv_ng_flag2;
+    return INITIALIZATION_COMPLETE_E3;
+}
+
 void effect_E3_move(WORK_Other* ewk) {
     PLW* mwk = (PLW*)ewk->my_master;
     s16 num;
 
     switch (ewk->wu.routine_no[0]) {
     case 0:
-        if (effect_should_stop(ewk, mwk)) {
-            ewk->wu.routine_no[0] = 2;
+        if (initialize_training_effect_E3(ewk, mwk) == INITIALIZATION_PAUSED_E3) {
             break;
         }
 
-        if (mwk->init_E3_flag == 0) {
-            break;
-        }
-
-        mwk->init_E3_flag = 0;
-
-        if (Mode_Type != MODE_NORMAL_TRAINING) {
-            break;
-        }
-
-        if (should_disable_new_challenger_vibration(mwk)) {
-            vib_sel[mwk->wu.id] = 0;
-        }
-
-        if (Training[0].contents[0][1][TRAINING_OPTION_DIFFICULTY] == 2) {
-            vib_sel[mwk->wu.id] = 0;
-        }
-
-        ewk->wu.direction = 0;
-
-        if (Training[0].contents[0][0][0] == 3 || Training[0].contents[0][0][0] == 4) {
-            ewk->wu.direction = 1;
-        }
-
-        omop_vital_ix[mwk->wu.id] = 1;
-
-        if (Training[0].contents[0][1][TRAINING_OPTION_DIFFICULTY] == 0) {
-            omop_vital_ix[mwk->wu.id] = 3;
-        }
-
-        ewk->wu.dm_vital = 0;
-        ewk->wu.vitality = 0;
-        ewk->wu.dir_timer = 0;
-
-        if (mwk->wu.id == New_Challenger) {
-            mwk->py->now.quantity.h = 0;
-
-            if (ewk->wu.direction == 0) {
-                switch (Training[0].contents[0][0][1]) {
-                case 0:
-                case 1:
-                case 6:
-                    mwk->spmv_ng_flag &= 0xFFFFFFEF;
-                    mwk->spmv_ng_flag |= 0xC0;
-                    break;
-
-                case 2:
-                case 4:
-                    mwk->spmv_ng_flag |= 0x80;
-                    mwk->spmv_ng_flag &= 0xFFFFFFBF;
-                    mwk->spmv_ng_flag &= 0xFFFFFFEF;
-                    break;
-
-                case 3:
-                case 5:
-                    mwk->spmv_ng_flag |= 0x40;
-                    mwk->spmv_ng_flag &= 0xFFFFFF7F;
-                    mwk->spmv_ng_flag &= 0xFFFFF0FF;
-                    break;
-                }
-            } else {
-                mwk->spmv_ng_flag |= 0xC0;
-                mwk->spmv_ng_flag &= 0xFFFFFFEF;
-                mwk->spmv_ng_flag &= 0xFFFFF0FF;
-            }
-        }
-
-        switch (Training[0].contents[0][1][TRAINING_OPTION_SA_GAUGE]) {
-        case 1:
-            mwk->spmv_ng_flag2 &= 0xFFFBFFFF;
-            mwk->spmv_ng_flag2 |= 0x90000;
-            demo_set_sa_full(mwk->sa);
-            tr_spgauge_cont_init2(mwk->wu.id);
-            break;
-
-        case 3:
-            mwk->spmv_ng_flag2 &= 0xFFF7FFFF;
-            mwk->spmv_ng_flag2 |= 0x50000;
-            demo_set_sa_full(mwk->sa);
-            tr_spgauge_cont_init2(mwk->wu.id);
-            break;
-
-        case 2:
-            mwk->spmv_ng_flag2 &= 0xFFFEFFFF;
-            mwk->spmv_ng_flag2 |= 0xC0000;
-            clear_super_arts_point(mwk);
-            tr_spgauge_cont_init(mwk->wu.id);
-            break;
-
-        case 0:
-            mwk->spmv_ng_flag2 |= 0xD0000;
-            clear_super_arts_point(mwk);
-            tr_spgauge_cont_init(mwk->wu.id);
-            break;
-        }
-
-        ewk->wu.routine_no[0]++;
-        omop_spmv_ng_table[mwk->wu.id] = mwk->spmv_ng_flag;
-        omop_spmv_ng_table2[mwk->wu.id] = mwk->spmv_ng_flag2;
         /* fallthrough */
 
     case 1:
