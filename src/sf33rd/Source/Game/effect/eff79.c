@@ -715,7 +715,7 @@ s32 Select_End_Sub_79(WORK_Other* ewk) {
     return 1;
 }
 
-s32 effect_79_init(s16 pl_id, s16 plate_id, s16 pos_id, s16 time, s16 Target_BG) {
+s32 effect_79_init(const Effect79InitArgs* args) {
     WORK_Other* ewk;
     s16 ix;
 
@@ -724,24 +724,24 @@ s32 effect_79_init(s16 pl_id, s16 plate_id, s16 pos_id, s16 time, s16 Target_BG)
     }
 
     ewk = (WORK_Other*)frw[ix];
-    ewk->master_player = plate_id;
-    ewk->master_priority = pos_id;
-    ewk->wu.hit_quake = pos_id;
-    ewk->wu.dmcal_m = pos_id;
+    ewk->master_player = args->plate_id;
+    ewk->master_priority = args->position_id;
+    ewk->wu.hit_quake = args->position_id;
+    ewk->wu.dmcal_m = args->position_id;
     ewk->wu.be_flag = 1;
     ewk->wu.id = 79;
     ewk->wu.work_id = 16;
     ewk->wu.my_col_code = 0x2090;
-    ewk->wu.my_family = Target_BG + 1;
-    ewk->wu.dir_timer = time;
+    ewk->wu.my_family = args->target_background + 1;
+    ewk->wu.dir_timer = args->delay;
     *ewk->wu.char_table = _sel_pl_char_table;
-    ewk->master_id = pl_id;
+    ewk->master_id = args->player_id;
     ewk->wu.char_index = 14;
     ewk->wu.dir_old = Play_Type;
     ewk->wu.my_mts = 13;
     ewk->wu.my_trans_mode = get_my_trans_mode(ewk->wu.my_mts);
 
-    if (pos_id == 0) {
+    if (args->position_id == 0) {
         ewk->wu.dir_step = 0;
     } else {
         ewk->wu.dir_step = 30;
@@ -749,10 +749,10 @@ s32 effect_79_init(s16 pl_id, s16 plate_id, s16 pos_id, s16 time, s16 Target_BG)
 
     Setup_Pos_79(ewk);
 
-    if (pos_id == 0) {
-        Disp_Command_Name[ewk->master_id][plate_id] = 1;
+    if (args->position_id == 0) {
+        Disp_Command_Name[ewk->master_id][args->plate_id] = 1;
     } else {
-        Disp_Command_Name[ewk->master_id][plate_id] = 0;
+        Disp_Command_Name[ewk->master_id][args->plate_id] = 0;
     }
 
     Plate_X[ewk->master_id][0] =

@@ -861,9 +861,9 @@ void PL_Sel_5th() {
 void Setup_Plates(s8 PL_id, s16 Time) {
     Move_Super_Arts[PL_id] = 3;
     Select_Arts[PL_id] = 3;
-    effect_79_init(PL_id, 0, Arts_Y_Data[Super_Arts[PL_id]][0], Time, 2);
-    effect_79_init(PL_id, 1, Arts_Y_Data[Super_Arts[PL_id]][1], Time, 2);
-    effect_79_init(PL_id, 2, Arts_Y_Data[Super_Arts[PL_id]][2], Time, 2);
+    effect_79_init(&(Effect79InitArgs){ PL_id, 0, Arts_Y_Data[Super_Arts[PL_id]][0], Time, 2 });
+    effect_79_init(&(Effect79InitArgs){ PL_id, 1, Arts_Y_Data[Super_Arts[PL_id]][1], Time, 2 });
+    effect_79_init(&(Effect79InitArgs){ PL_id, 2, Arts_Y_Data[Super_Arts[PL_id]][2], Time, 2 });
 }
 
 void Sel_PL() {
