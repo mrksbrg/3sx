@@ -267,11 +267,18 @@ static void update_79_final_movement(WORK_Other* ewk) {
     }
 }
 
-void effect_79_move(WORK_Other* ewk) {
+typedef enum {
+    EFFECT_79_CONTINUES,
+    EFFECT_79_STOPS,
+} Effect79UpdateResult;
+
+enum { EARLY_STATE_LIMIT_79 = 4 };
+
+static Effect79UpdateResult update_79_early_state(WORK_Other* ewk) {
     switch (ewk->wu.routine_no[0]) {
     case 0:
         if (--ewk->wu.dir_timer) {
-            return;
+            return EFFECT_79_STOPS;
         }
 
         ewk->wu.disp_flag = 1;
@@ -304,7 +311,7 @@ void effect_79_move(WORK_Other* ewk) {
         update_79_appearance(ewk);
         break;
 
-    case 4:
+    case EARLY_STATE_LIMIT_79:
         if (--ewk->wu.dir_timer == 0) {
             ewk->wu.routine_no[0]++;
             Move_Super_Arts[ewk->master_id]--;
@@ -313,43 +320,55 @@ void effect_79_move(WORK_Other* ewk) {
         }
 
         break;
+    }
 
-    case 5:
-        update_79_plate_movement(ewk);
-        break;
+    return EFFECT_79_CONTINUES;
+}
 
-    case 6:
-        if (update_79_return_movement(ewk)) {
+void effect_79_move(WORK_Other* ewk) {
+    if (ewk->wu.routine_no[0] <= EARLY_STATE_LIMIT_79) {
+        if (update_79_early_state(ewk)) {
             return;
         }
-
-        break;
-
-    case 7:
-        update_79_final_movement(ewk);
-        break;
-
-    case 8:
-        break;
-
-    case 9:
-        if (!Suicide[0]) {
+    } else {
+        switch (ewk->wu.routine_no[0]) {
+        case 5:
+            update_79_plate_movement(ewk);
             break;
+
+        case 6:
+            if (update_79_return_movement(ewk)) {
+                return;
+            }
+
+            break;
+
+        case 7:
+            update_79_final_movement(ewk);
+            break;
+
+        case 8:
+            break;
+
+        case 9:
+            if (!Suicide[0]) {
+                break;
+            }
+
+            ewk->wu.disp_flag = 0;
+            ewk->wu.routine_no[0] = 10;
+            return;
+
+        case 10:
+            ewk->wu.disp_flag = 0;
+            ewk->wu.routine_no[0]++;
+            return;
+
+        default:
+            ewk->wu.disp_flag = 0;
+            push_effect_work(&ewk->wu);
+            return;
         }
-
-        ewk->wu.disp_flag = 0;
-        ewk->wu.routine_no[0] = 10;
-        return;
-
-    case 10:
-        ewk->wu.disp_flag = 0;
-        ewk->wu.routine_no[0]++;
-        return;
-
-    default:
-        ewk->wu.disp_flag = 0;
-        push_effect_work(&ewk->wu);
-        return;
     }
 
     ewk->wu.position_x = ewk->wu.xyz[0].disp.pos & 0xFFFF;
