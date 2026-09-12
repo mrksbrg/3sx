@@ -149,6 +149,31 @@ void EFF76_SLIDE_OUT(WORK_Other* /* unused */) {
     // Do nothing
 }
 
+static void show_sudden_effect(WORK_Other* ewk) {
+    if (Ck_Range_Out_S(ewk, ewk->wu.my_family - 1, ewk->wu.dm_vital)) {
+        return;
+    }
+
+    ewk->wu.disp_flag = 1;
+
+    switch (ewk->wu.dir_old) {
+    case 0x3D:
+        ewk->wu.routine_no[1] = 2;
+        break;
+
+    case 0x42:
+        ewk->wu.routine_no[1] = 3;
+        break;
+
+    default:
+        ewk->wu.routine_no[0] = 0;
+        Order[ewk->wu.dir_old] = 0;
+        break;
+    }
+
+    set_char_move_init2(&ewk->wu, 0, ewk->wu.char_index, ewk->wu.dir_step + 1, 0);
+}
+
 void EFF76_SUDDENLY(WORK_Other* ewk) {
     switch (ewk->wu.routine_no[1]) {
     case 0:
@@ -160,28 +185,7 @@ void EFF76_SUDDENLY(WORK_Other* ewk) {
         /* fallthrough */
 
     case 1:
-        if (Ck_Range_Out_S(ewk, ewk->wu.my_family - 1, ewk->wu.dm_vital)) {
-            break;
-        }
-
-        ewk->wu.disp_flag = 1;
-
-        switch (ewk->wu.dir_old) {
-        case 0x3D:
-            ewk->wu.routine_no[1] = 2;
-            break;
-
-        case 0x42:
-            ewk->wu.routine_no[1] = 3;
-            break;
-
-        default:
-            ewk->wu.routine_no[0] = 0;
-            Order[ewk->wu.dir_old] = 0;
-            break;
-        }
-
-        set_char_move_init2(&ewk->wu, 0, ewk->wu.char_index, ewk->wu.dir_step + 1, 0);
+        show_sudden_effect(ewk);
         break;
 
     case 2:
