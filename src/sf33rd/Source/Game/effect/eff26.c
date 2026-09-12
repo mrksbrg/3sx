@@ -89,6 +89,62 @@ static void spawn_followup_if_requested_26(WORK_Other* ewk) {
     effect_27_init(ewk, ewk->wu.old_rno[5]);
 }
 
+static void finish_effect_when_hit_resolves_26(WORK_Other* ewk) {
+    if (!eff_hit_check(ewk, ewk->wu.old_rno[4])) {
+        return;
+    }
+
+    spawn_followup_if_requested_26(ewk);
+    ewk->wu.routine_no[0] = 2;
+}
+
+static void start_followup_animation_when_hit_resolves_26(WORK_Other* ewk) {
+    if (!eff_hit_check(ewk, ewk->wu.old_rno[4])) {
+        return;
+    }
+
+    ewk->wu.routine_no[1]++;
+    spawn_followup_if_requested_26(ewk);
+    set_char_move_init(&ewk->wu, 0, ewk->wu.old_rno[3]);
+}
+
+static void enter_effect03_hit_response_26(WORK_Other* ewk) {
+    ewk->wu.routine_no[1]++;
+
+    if (eff_hit_flag[ewk->wu.type]) {
+        ewk->wu.routine_no[0] = 99;
+        return;
+    }
+
+    ewk->wu.disp_flag = 1;
+    finish_effect_when_hit_resolves_26(ewk);
+}
+
+static void enter_effect04_hit_response_26(WORK_Other* ewk) {
+    ewk->wu.routine_no[1]++;
+
+    if (eff_hit_flag[ewk->wu.type]) {
+        ewk->wu.routine_no[0] = 99;
+        return;
+    }
+
+    start_followup_animation_when_hit_resolves_26(ewk);
+    update_animation_until_end_26(ewk, FINISH_EFFECT_26);
+}
+
+static void enter_effect05_hit_response_26(WORK_Other* ewk) {
+    ewk->wu.routine_no[1]++;
+    ewk->wu.disp_flag = 1;
+
+    if (eff_hit_flag[ewk->wu.type]) {
+        ewk->wu.routine_no[1] = 7;
+        set_char_move_init(&ewk->wu, 0, ewk->wu.old_rno[7]);
+        return;
+    }
+
+    start_followup_animation_when_hit_resolves_26(ewk);
+}
+
 void effect_26_move(WORK_Other* ewk) {
     if (obr_no_disp_check()) {
         return;
@@ -221,21 +277,11 @@ void eff26_03(WORK_Other* ewk) {
 
     case 3:
     case_3:
-        ewk->wu.routine_no[1]++;
-
-        if (eff_hit_flag[ewk->wu.type]) {
-            ewk->wu.routine_no[0] = 99;
-            break;
-        }
-
-        ewk->wu.disp_flag = 1;
+        enter_effect03_hit_response_26(ewk);
+        break;
 
     case 4:
-        if (eff_hit_check(ewk, ewk->wu.old_rno[4])) {
-            spawn_followup_if_requested_26(ewk);
-            ewk->wu.routine_no[0] = 2;
-        }
-
+        finish_effect_when_hit_resolves_26(ewk);
         break;
     }
 }
@@ -260,21 +306,11 @@ void eff26_04(WORK_Other* ewk) {
 
     case 2:
     case_2:
-        ewk->wu.routine_no[1]++;
-
-        if (eff_hit_flag[ewk->wu.type]) {
-            ewk->wu.routine_no[0] = 99;
-            break;
-        }
-
-        /* fallthrough */
+        enter_effect04_hit_response_26(ewk);
+        break;
 
     case 3:
-        if (eff_hit_check(ewk, ewk->wu.old_rno[4])) {
-            ewk->wu.routine_no[1]++;
-            spawn_followup_if_requested_26(ewk);
-            set_char_move_init(&ewk->wu, 0, ewk->wu.old_rno[3]);
-        }
+        start_followup_animation_when_hit_resolves_26(ewk);
 
         /* fallthrough */
 
@@ -310,25 +346,11 @@ void eff26_05(WORK_Other* ewk) {
 
     case 3:
     case_3:
-        ewk->wu.routine_no[1]++;
-        ewk->wu.disp_flag = 1;
-
-        if (eff_hit_flag[ewk->wu.type]) {
-            ewk->wu.routine_no[1] = 7;
-            set_char_move_init(&ewk->wu, 0, ewk->wu.old_rno[7]);
-            break;
-        }
-
-        /* fallthrough */
+        enter_effect05_hit_response_26(ewk);
+        break;
 
     case 4:
-        if (!eff_hit_check(ewk, ewk->wu.old_rno[4])) {
-            break;
-        }
-
-        ewk->wu.routine_no[1]++;
-        spawn_followup_if_requested_26(ewk);
-        set_char_move_init(&ewk->wu, 0, ewk->wu.old_rno[3]);
+        start_followup_animation_when_hit_resolves_26(ewk);
         break;
 
     case 5:
