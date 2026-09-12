@@ -54,6 +54,25 @@ static void update_waiting_piece_26(WORK_Other* ewk, WORK_Other* parent) {
     advance_piece_when_parent_ready_26(ewk, parent);
 }
 
+typedef enum {
+    ADVANCE_SUBSTATE_26,
+    FINISH_EFFECT_26,
+} AnimationEndAction26;
+
+static void update_animation_until_end_26(WORK_Other* ewk, AnimationEndAction26 action) {
+    move_unless_obroll_26(ewk);
+
+    if (ewk->wu.cg_type != 1) {
+        return;
+    }
+
+    if (action == FINISH_EFFECT_26) {
+        ewk->wu.routine_no[0] = 2;
+    } else {
+        ewk->wu.routine_no[1]++;
+    }
+}
+
 void effect_26_move(WORK_Other* ewk) {
     if (obr_no_disp_check()) {
         return;
@@ -129,12 +148,7 @@ void eff26_01(WORK_Other* ewk) {
         break;
 
     case 2:
-        move_unless_obroll_26(ewk);
-
-        if (ewk->wu.cg_type == 1) {
-            ewk->wu.routine_no[0] = 2;
-        }
-
+        update_animation_until_end_26(ewk, FINISH_EFFECT_26);
         break;
     }
 }
@@ -161,12 +175,7 @@ void eff26_02(WORK_Other* ewk) {
         break;
 
     case 2:
-        move_unless_obroll_26(ewk);
-
-        if (ewk->wu.cg_type == 1) {
-            ewk->wu.routine_no[1]++;
-        }
-
+        update_animation_until_end_26(ewk, ADVANCE_SUBSTATE_26);
         break;
 
     case 3:
@@ -195,12 +204,7 @@ void eff26_03(WORK_Other* ewk) {
         break;
 
     case 2:
-        move_unless_obroll_26(ewk);
-
-        if (ewk->wu.cg_type == 1) {
-            ewk->wu.routine_no[1]++;
-        }
-
+        update_animation_until_end_26(ewk, ADVANCE_SUBSTATE_26);
         break;
 
     case 3:
@@ -242,12 +246,7 @@ void eff26_04(WORK_Other* ewk) {
         break;
 
     case 1:
-        move_unless_obroll_26(ewk);
-
-        if (ewk->wu.cg_type == 1) {
-            ewk->wu.routine_no[1]++;
-        }
-
+        update_animation_until_end_26(ewk, ADVANCE_SUBSTATE_26);
         break;
 
     case 2:
@@ -275,12 +274,7 @@ void eff26_04(WORK_Other* ewk) {
         /* fallthrough */
 
     case 4:
-        move_unless_obroll_26(ewk);
-
-        if (ewk->wu.cg_type == 1) {
-            ewk->wu.routine_no[0] = 2;
-        }
-
+        update_animation_until_end_26(ewk, FINISH_EFFECT_26);
         break;
     }
 }
@@ -306,12 +300,7 @@ void eff26_05(WORK_Other* ewk) {
         break;
 
     case 2:
-        move_unless_obroll_26(ewk);
-
-        if (ewk->wu.cg_type == 1) {
-            ewk->wu.routine_no[1]++;
-        }
-
+        update_animation_until_end_26(ewk, ADVANCE_SUBSTATE_26);
         break;
 
     case 3:
@@ -342,12 +331,7 @@ void eff26_05(WORK_Other* ewk) {
         break;
 
     case 5:
-        move_unless_obroll_26(ewk);
-
-        if (ewk->wu.cg_type == 1) {
-            ewk->wu.routine_no[1]++;
-        }
-
+        update_animation_until_end_26(ewk, ADVANCE_SUBSTATE_26);
         break;
 
     case 7:
