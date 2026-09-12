@@ -39,6 +39,37 @@ static s32 movement_is_incomplete(const s16* arrived) {
     return arrived[0] == 0 || arrived[1] == 0;
 }
 
+static void update_79_appearance(WORK_Other* ewk) {
+    s16 arrived[2];
+
+    switch (ewk->wu.routine_no[1]) {
+    case 0:
+        if (OK_Appear79[ewk->master_id]) {
+            ewk->wu.routine_no[1]++;
+            ewk->wu.routine_no[5] = 0;
+            ewk->wu.routine_no[6] = 1;
+            ewk->wu.disp_flag = 1;
+            set_char_move_init2(&ewk->wu, 0, ewk->wu.char_index, ewk->wu.dir_step + 1, 0);
+        }
+
+        break;
+
+    case 1:
+        arrived[0] = EFF79_Move_X(ewk);
+        arrived[1] = EFF79_Move_Y(ewk);
+
+        if (movement_is_incomplete(arrived)) {
+            break;
+        }
+
+        ewk->wu.routine_no[0]++;
+        ewk->wu.routine_no[1] = 0;
+        ewk->wu.routine_no[5] = 0;
+        ewk->wu.routine_no[6] = 0;
+        ewk->wu.dir_timer = 1;
+        break;
+    }
+}
 
 void effect_79_move(WORK_Other* ewk) {
     s16 xx;
@@ -77,34 +108,7 @@ void effect_79_move(WORK_Other* ewk) {
         break;
 
     case 3:
-        switch (ewk->wu.routine_no[1]) {
-        case 0:
-            if (OK_Appear79[ewk->master_id]) {
-                ewk->wu.routine_no[1]++;
-                ewk->wu.routine_no[5] = 0;
-                ewk->wu.routine_no[6] = 1;
-                ewk->wu.disp_flag = 1;
-                set_char_move_init2(&ewk->wu, 0, ewk->wu.char_index, ewk->wu.dir_step + 1, 0);
-            }
-
-            break;
-
-        case 1:
-            arrived[0] = EFF79_Move_X(ewk);
-            arrived[1] = EFF79_Move_Y(ewk);
-
-            if (movement_is_incomplete(arrived)) {
-                break;
-            }
-
-            ewk->wu.routine_no[0]++;
-            ewk->wu.routine_no[1] = 0;
-            ewk->wu.routine_no[5] = 0;
-            ewk->wu.routine_no[6] = 0;
-            ewk->wu.dir_timer = 1;
-            break;
-        }
-
+        update_79_appearance(ewk);
         break;
 
     case 4:
