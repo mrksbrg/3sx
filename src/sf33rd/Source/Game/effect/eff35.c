@@ -49,6 +49,84 @@ void effect_35_move(WORK_Other* ewk) {
     eff35_jp[ewk->wu.routine_no[0]](ewk);
 }
 
+typedef enum {
+    SPAWN_AUXILIARY_EFFECT_35,
+    TRACK_BACKGROUND_35,
+    TRACK_BACKGROUND_AND_SIGNAL_35,
+} TimedEffectMode35;
+
+static void begin_timed_effect_35(WORK_Other* ewk, TimedEffectMode35 mode) {
+    if (Break_Into) {
+        ewk->wu.routine_no[1] = 4;
+        return;
+    }
+
+    ewk->wu.old_rno[1]--;
+
+    if (ewk->wu.old_rno[1] > 0) {
+        return;
+    }
+
+    ewk->wu.routine_no[1]++;
+    ewk->wu.disp_flag = 1;
+
+    if (mode != SPAWN_AUXILIARY_EFFECT_35) {
+        ewk->wu.my_col_code = 0x49;
+    }
+
+    set_char_move_init2(&ewk->wu, 0, ewk->wu.char_index, ewk->wu.old_rno[3], 0);
+
+    if (mode == SPAWN_AUXILIARY_EFFECT_35) {
+        effect_58_init(6, 4, 0xA8);
+    }
+}
+
+static void update_timed_effect_35(WORK_Other* ewk, TimedEffectMode35 mode) {
+    if (Break_Into) {
+        ewk->wu.routine_no[1] = 4;
+        return;
+    }
+
+    ewk->wu.old_rno[4]--;
+
+    if (ewk->wu.old_rno[4] <= 0) {
+        ewk->wu.routine_no[1]++;
+        ewk->wu.disp_flag = 0;
+
+        if (mode == TRACK_BACKGROUND_AND_SIGNAL_35) {
+            Next_Step = 1;
+        }
+    }
+
+    if (mode != SPAWN_AUXILIARY_EFFECT_35) {
+        ewk->wu.xyz[0].disp.pos = bg_w.bgw[1].wxy[0].disp.pos + eff35_data_tbl[ewk->wu.type][0];
+        ewk->wu.xyz[1].disp.pos = bg_w.bgw[1].xy[1].disp.pos + eff35_data_tbl[ewk->wu.type][1];
+    }
+
+    disp_pos_trans_entry(ewk);
+}
+
+static void run_timed_effect_35(WORK_Other* ewk, TimedEffectMode35 mode) {
+    switch (ewk->wu.routine_no[1]) {
+    case 0:
+        begin_timed_effect_35(ewk, mode);
+        break;
+
+    case 1:
+        update_timed_effect_35(ewk, mode);
+        break;
+
+    case 2:
+        ewk->wu.routine_no[1]++;
+        break;
+
+    default:
+        all_cgps_put_back(&ewk->wu);
+        push_effect_work(&ewk->wu);
+        break;
+    }
+}
+
 void eff35_0000(WORK_Other* ewk) {
     switch (ewk->wu.routine_no[1]) {
     case 0:
@@ -155,49 +233,7 @@ void eff35_0001(WORK_Other* ewk) {
 }
 
 void eff35_0002(WORK_Other* ewk) {
-    switch (ewk->wu.routine_no[1]) {
-    case 0:
-        if (Break_Into) {
-            ewk->wu.routine_no[1] = 4;
-            break;
-        }
-
-        ewk->wu.old_rno[1]--;
-
-        if (ewk->wu.old_rno[1] <= 0) {
-            ewk->wu.routine_no[1]++;
-            ewk->wu.disp_flag = 1;
-            set_char_move_init2(&ewk->wu, 0, ewk->wu.char_index, ewk->wu.old_rno[3], 0);
-            effect_58_init(6, 4, 0xA8);
-        }
-
-        break;
-
-    case 1:
-        if (Break_Into) {
-            ewk->wu.routine_no[1] = 4;
-            break;
-        }
-
-        ewk->wu.old_rno[4]--;
-
-        if (ewk->wu.old_rno[4] <= 0) {
-            ewk->wu.routine_no[1]++;
-            ewk->wu.disp_flag = 0;
-        }
-
-        disp_pos_trans_entry(ewk);
-        break;
-
-    case 2:
-        ewk->wu.routine_no[1]++;
-        break;
-
-    default:
-        all_cgps_put_back(&ewk->wu);
-        push_effect_work(&ewk->wu);
-        break;
-    }
+    run_timed_effect_35(ewk, SPAWN_AUXILIARY_EFFECT_35);
 }
 
 void eff35_0003(WORK_Other* ewk) {
@@ -337,100 +373,11 @@ void eff35_0004(WORK_Other* ewk) {
 }
 
 void eff35_0005(WORK_Other* ewk) {
-    switch (ewk->wu.routine_no[1]) {
-    case 0:
-        if (Break_Into) {
-            ewk->wu.routine_no[1] = 4;
-            break;
-        }
-
-        ewk->wu.old_rno[1]--;
-
-        if (ewk->wu.old_rno[1] <= 0) {
-            ewk->wu.routine_no[1]++;
-            ewk->wu.disp_flag = 1;
-            ewk->wu.my_col_code = 0x49;
-            set_char_move_init2(&ewk->wu, 0, ewk->wu.char_index, ewk->wu.old_rno[3], 0);
-        }
-
-        break;
-
-    case 1:
-        if (Break_Into) {
-            ewk->wu.routine_no[1] = 4;
-            break;
-        }
-
-        ewk->wu.old_rno[4]--;
-
-        if (ewk->wu.old_rno[4] <= 0) {
-            ewk->wu.routine_no[1]++;
-            ewk->wu.disp_flag = 0;
-        }
-
-        ewk->wu.xyz[0].disp.pos = bg_w.bgw[1].wxy[0].disp.pos + eff35_data_tbl[ewk->wu.type][0];
-        ewk->wu.xyz[1].disp.pos = bg_w.bgw[1].xy[1].disp.pos + eff35_data_tbl[ewk->wu.type][1];
-        disp_pos_trans_entry(ewk);
-        break;
-
-    case 2:
-        ewk->wu.routine_no[1]++;
-        break;
-
-    default:
-        all_cgps_put_back(&ewk->wu);
-        push_effect_work(&ewk->wu);
-        break;
-    }
+    run_timed_effect_35(ewk, TRACK_BACKGROUND_35);
 }
 
 void eff35_0006(WORK_Other* ewk) {
-    switch (ewk->wu.routine_no[1]) {
-    case 0:
-        if (Break_Into) {
-            ewk->wu.routine_no[1] = 4;
-            break;
-        }
-
-        ewk->wu.old_rno[1]--;
-
-        if (ewk->wu.old_rno[1] <= 0) {
-            ewk->wu.routine_no[1]++;
-            ewk->wu.disp_flag = 1;
-            ewk->wu.my_col_code = 0x49;
-            set_char_move_init2(&ewk->wu, 0, ewk->wu.char_index, ewk->wu.old_rno[3], 0);
-        }
-
-        break;
-
-    case 1:
-        if (Break_Into) {
-            ewk->wu.routine_no[1] = 4;
-            break;
-        }
-
-        ewk->wu.old_rno[4]--;
-
-        if (ewk->wu.old_rno[4] <= 0) {
-            ewk->wu.routine_no[1]++;
-            ewk->wu.disp_flag = 0;
-            Next_Step = 1;
-        }
-
-        ewk->wu.xyz[0].disp.pos = bg_w.bgw[1].wxy[0].disp.pos + eff35_data_tbl[ewk->wu.type][0];
-        ewk->wu.xyz[1].disp.pos = bg_w.bgw[1].xy[1].disp.pos + eff35_data_tbl[ewk->wu.type][1];
-        disp_pos_trans_entry(ewk);
-        break;
-
-    case 2:
-        ewk->wu.routine_no[1]++;
-        break;
-
-    default:
-        all_cgps_put_back(&ewk->wu);
-        push_effect_work(&ewk->wu);
-        break;
-    }
+    run_timed_effect_35(ewk, TRACK_BACKGROUND_AND_SIGNAL_35);
 }
 
 s32 effect_35_init(s16 wait_timer, s16 c_type) {
