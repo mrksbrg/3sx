@@ -436,15 +436,18 @@ static void remember_79_plate_position(WORK_Other* ewk) {
     }
 }
 
+static void update_79_movement_delay(WORK_Other* ewk) {
+    if (--ewk->wu.dir_timer == 0) {
+        ewk->wu.routine_no[2]++;
+    }
+}
+
 void Move_Move_79(WORK_Other* ewk) {
     s16 arrived[2];
 
     switch (ewk->wu.routine_no[2]) {
     case 0:
-        if (--ewk->wu.dir_timer == 0) {
-            ewk->wu.routine_no[2]++;
-        }
-
+        update_79_movement_delay(ewk);
         break;
 
     case 1:
@@ -514,10 +517,7 @@ void Move_79(WORK_Other* ewk) {
 
     switch (ewk->wu.routine_no[2]) {
     case 0:
-        if (--ewk->wu.dir_timer == 0) {
-            ewk->wu.routine_no[2]++;
-        }
-
+        update_79_movement_delay(ewk);
         break;
 
     case 1:
