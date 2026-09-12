@@ -73,6 +73,14 @@ static void update_animation_until_end_26(WORK_Other* ewk, AnimationEndAction26 
     }
 }
 
+static void update_active_effect_26(WORK_Other* ewk) {
+    if (game_is_active()) {
+        eff26_jp_tbl[ewk->wu.old_rno[2] / 2](ewk);
+    }
+
+    disp_pos_trans_entry_rs(ewk);
+}
+
 void effect_26_move(WORK_Other* ewk) {
     if (obr_no_disp_check()) {
         return;
@@ -93,11 +101,7 @@ void effect_26_move(WORK_Other* ewk) {
         break;
 
     case 1:
-if (game_is_active()) {
-            eff26_jp_tbl[ewk->wu.old_rno[2] / 2](ewk);
-        }
-
-        disp_pos_trans_entry_rs(ewk);
+        update_active_effect_26(ewk);
         break;
 
     case 2:
