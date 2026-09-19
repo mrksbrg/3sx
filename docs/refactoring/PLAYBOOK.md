@@ -2430,19 +2430,23 @@ passing silently:
 
 *Added 2026-09-18.*
 
-Twenty character files, 3488 pattern scripts, **4.90-7.55 before, 76 files at a mean of
-8.79 after**, eighteen of them at 10.00 and the lowest three at 7.55. The sequence was Recipe V per file, Recipe X on
+Twenty character files, 3488 pattern scripts, **4.90-7.55 before, 77 files at a mean of
+9.03 after**, thirty of them at 10.00 and the lowest four at 7.55. (The figure was 8.79
+over 76 files until the identical-body pass below found 130 more.) The sequence was Recipe V per file, Recipe X on
 the dispatches over the complexity threshold, Recipe S to get under the function-count
 threshold, then Recipe V folder-wide, Recipe D on what that exposed, and Recipe S again on
 the shared skeletons.
 
 What is left, and why no recipe in the catalogue reaches it:
 
-- **678 pattern scripts are one of a kind.** A script that is a switch on the step counter
-  with one call per step is more than 75% skeleton, so CodeScene pairs any two of them, and
-  a file's score tracks how many of its functions are in such a pair almost exactly: 0 is
-  10.00, 3-4 is 9.38, 5-6 is 9.09, 10-12 is 8.28, 13 or more is 8.03. Merging two of them
-  would be parameterising two or more differences, which is Recipe D's forbidden near-miss.
+- **548 pattern scripts are left unfolded**, of which 282 are one of a kind and **176 are
+  in families of exactly two** that Recipe V's three-instance rule refuses. A script that is
+  a switch on the step counter with one call per step is more than 75% skeleton, so
+  CodeScene pairs any two of them, and a file's score tracks how many of its functions are
+  in such a pair almost exactly: 0 is 10.00, 3-4 is 9.38, 5-6 is 9.09, 10-12 is 8.28, 13 or
+  more is 8.03. Merging two one-of-a-kind scripts would be parameterising two or more
+  differences, which is Recipe D's forbidden near-miss; merging the pairs is the open
+  question, and here it is worth 176 functions.
 - **A file of three-arm skeletons has a mean of five however it is cut.** A skeleton's
   cyclomatic complexity is its step count plus two, so `pass_patterns_3step.c` and
   `pass_patterns_4step.c` sit at 7.55 on Overall Code Complexity and no legal recipe takes
@@ -2461,7 +2465,7 @@ one thing the equivalence checker cannot tell you.
 Three things were measured and **refused**:
 
 - **Recipe F.** The families whose step sequence matches but whose engine call does not
-  cover 60 of the 678, in 13 skeletons. Measured on one file before the folder-wide work it
+  cover 60 of the residual, in 13 skeletons. Measured on one file before the folder-wide work it
   moved the score not at all - 8.03 to 8.03, duplication 24 to 18. Recipe F is the
   catalogue's one genuinely high-risk recipe, it reroutes a call through a pointer, and
   replay verification cannot reach CPU AI. 60 functions is not worth that. The measurement
@@ -2483,3 +2487,102 @@ Three things were measured and **refused**:
   8.28/8.03/9.09/8.03/10.00 to four files at 8.03, `pass18` from a mean of 9.48 to 8.95.
   The uneven tail is the honest residue of a size-based cut made before the folds, not a
   boundary chosen to flatter the metric, and rule 2 says leave it.
+
+### The family where nothing varies is Recipe D, and a Recipe V fold will skip it
+
+*Added 2026-09-19, measured on `Game/com/active` and then on `Game/com/passive`.*
+
+A fold that looks for families differing only in the arguments of their calls has a blind
+spot exactly where the work is easiest: the families where **nothing** differs. Those are
+not near-misses to be parameterised, they are byte-identical bodies, and Recipe D takes
+them with no parameters at all and no three-instance rule.
+
+Measured: 29 groups and 127 functions in `Game/com/active`, and - after the same check was
+run there - **30 groups and 130 functions in `Game/com/passive`**, which five earlier
+commits had walked straight past. Collapsing them took the passive folder from a mean of
+8.79 to **9.03** and doubled the files at 10.00 from eighteen to thirty.
+
+So when a fold reports the families it found, **have it report the ones it refused and
+why**. The passive folder's residue looked like an honest plateau for a week; a count of
+the refusals would have shown a quarter of it was the easiest merge in the catalogue.
+
+One naming case falls out of it: a script with no steps at all - the switch whose only arm
+is the default that ends the pattern - has no step sequence to be named after. Call it
+what it is (`pattern_end_immediately`) rather than letting the generator produce
+`pattern_` with nothing after the underscore.
+
+### A mutated parameter cannot become a `const` field
+
+*Added 2026-09-19, measured on `PPGFile.c` and `ck_pass.c`.*
+
+Recipe A says to read each parameter as a field of a `const` object. Where the function
+**assigns to the parameter**, that will not compile - and the fix that first suggests
+itself, dropping the `const`, is a behaviour change: the caller's compound literal is a
+temporary, and writing through it writes to something the caller can still read.
+
+The right move is the one the original already made. A by-value parameter's mutations were
+local, so give it a local copy off the field and adjust that:
+
+```c
+s32 ppgSetupPalChunk(Palette* pch, const PPGPalChunkArgs* a) {
+    /* The original took this by value and counted it down; the copy keeps
+     * that local, which is what a by-value parameter was. */
+    s32 num = a->num;
+```
+
+This is not rare. **Six of the ten** conversions in `PPGFile.c` needed it -
+`ppgSetupPalChunk` counts a chunk count down, `ppgSetupPalChunkDir` and
+`ppgSetupTexChunkSeqs` advance a source pointer, and the three quad writers reassign the
+data list when the caller passes NULL - as did `Check_Limited_Attack` in `ck_pass.c`,
+which adjusts its limit per opponent.
+
+**Detect them, do not list them.** Three rounds of reading the code and guessing which
+parameters were mutated got it wrong three times; a scan of the body for `f =`, `f +=`,
+`f++` and their kin gets it right. The compiler catches every miss, but only because the
+struct is `const` - which is the argument for making it `const` even where nothing yet
+assigns to it.
+
+### Anchor a definition rewriter at column zero
+
+*Added 2026-09-19, on `PPGFile.c`.*
+
+A script that rewrites a function's *definition* must match a return type at the start of
+a line. Allowing leading whitespace lets the type pattern match the indentation of a
+**call** site instead, and `name(args)` followed by `{` then matches a call whose last
+argument is a compound literal - so
+
+```c
+    ppgChangeDataEndian(mltAdrs, &(PPGEndianArgs){ mltSize, ... });
+```
+
+is rewritten as though it were a definition, giving `ppgChangeDataEndian(mltAdrs, const
+PPGEndianArgs* a){ mltSize, ... });`. The build catches it, loudly. The same applies to a
+declaration in a header, which is why these scripts should match `^type name(...)` and
+treat everything indented as a call.
+
+### Where `Game/com/active` stopped
+
+*Added 2026-09-19.*
+
+The `passive` folder's twin: twenty files, 1621 scripts, 29,006 lines, spelled
+`Pattern14_0122` behind a `Computer14` dispatcher but otherwise the same switch on
+`CP_Index[wk->wu.id][0]`. **5.04-8.03 before, 27 files at a mean of 8.64 after.**
+
+It was done in the order the passive folder's notes recommend rather than the order the
+passive folder actually took, and that is the whole finding worth recording:
+**folder-wide fold first**, then Recipe X on what is still over the complexity threshold,
+then Recipe S, then the identical-body pass. Going widest-first folded 1233 of 1621
+scripts in one commit and left no per-character skeletons to clean up afterwards - the
+passive folder needed a 229-copy Recipe D pass for exactly that reason.
+
+What stops it is what stops the passive folder. 272 scripts are left unfolded: **173 are
+one of a kind**, 74 are in families of exactly **two** - which Recipe V's three-instance
+rule refuses, and which is the open question this playbook has been carrying since
+2026-09-17 - and 25 are in families of three or more whose surplus varying values will not
+specialise into sub-groups of three. Past that, a file of three-arm skeletons has a mean of
+five however it is cut, and the character files are already under both size thresholds, so
+splitting them further would only separate duplication pairs without removing them.
+
+**That 74 is the number to put to the owner.** It is the first time the two-instance
+question has had a price attached on this scale: answering it would reach a further 27% of
+what is left here, and the equivalent share of the passive folder.

@@ -9,6 +9,17 @@ extern s8 op_scrn_end;
 extern s16 title_tex_flag;
 extern s16 op_timer0;
 extern OP_W op_w;
+extern s16 music_scene;
+extern s16 music_time;
+extern s16 op_plmove_timer;
+extern OPBW* opw_ptr;
+extern s16 op_end_flag;
+extern s16 op_demo_index;
+extern s16 op_sound_status;
+extern MVXY op_bg_mvxy[3];
+extern void (*opening_move_jp[19])();
+extern const s16 optsr_tbl[59];
+extern const s16 op_quake_y_tbl0[16];
 
 void TITLE_Init();
 s16 TITLE_Move(u16 type);
@@ -69,10 +80,19 @@ void op_bg0_0015(s16 /* unused */);
 void op_bg0_0016(s16 /* unused */);
 void op_bg1_0003(s16 r_index);
 void op_scrn_pos_set2(s16 bg_no);
-void oh_bg_blk_w(OPBW* opbw, s32 blk_no, s16 mapx, s16 mapy, s32 trans);
-void oh_bg_blk_wh(OPBW* opbw, s32 blk_no, s16 mapx, s16 mapy, s32 trans);
-void oh_bg_blk_wv(OPBW* opbw, s32 blk_no, s16 mapx, s16 mapy, s32 trans);
-void oh_bg_blk_whv(OPBW* opbw, s32 blk_no, s16 mapx, s16 mapy, s32 trans);
+/* Where an opening background block goes and how it is drawn. The field order
+ * is the parameter order the oh_bg_blk_* family took. */
+typedef struct {
+    s32 blk_no;
+    s16 mapx;
+    s16 mapy;
+    s32 trans;
+} Op_Bg_Blk_Args;
+
+void oh_bg_blk_w(OPBW* opbw, const Op_Bg_Blk_Args* b);
+void oh_bg_blk_wh(OPBW* opbw, const Op_Bg_Blk_Args* b);
+void oh_bg_blk_wv(OPBW* opbw, const Op_Bg_Blk_Args* b);
+void oh_bg_blk_whv(OPBW* opbw, const Op_Bg_Blk_Args* b);
 void op_bg1_0000(s16 /* unused */);
 void op_bg1_0001(s16 r_index);
 void op_bg1_0002(s16 r_index);
