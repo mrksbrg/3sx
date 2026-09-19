@@ -10,7 +10,8 @@ for the allowed transformations.
 > **Scores here are refreshed from a full sweep; the task files are not.**
 > If a task file's stated baseline does not match what you measure, the task file is
 > stale - check this page before stopping and reporting a mismatch. The current numbers
-> below come from `codehealth-current.json`, swept 2026-09-19.
+> below come from `codehealth-current.json`, swept 2026-09-19 (fourth sweep of that day,
+> after the `Game/com/active` second pass).
 > `codehealth-baseline.json` preserves the original 2026-09-01 sweep and is not updated.
 
 ## Where the whole repository stands
@@ -18,13 +19,13 @@ for the allowed transformations.
 | Band | Score | 2026-09-01 | 2026-09-19 |
 | --- | --- | --- | --- |
 | **Red** - severe debt | 1.0 - 3.9 | 19 | **0** |
-| **Yellow** - problematic debt | 4.0 - 8.9 | 207 | 124 |
-| Green | 9.0 - 9.9 | 158 | 84 |
-| Optimal | 10.0 | 98 | **444** |
-| Total scored | | 482 | 652 |
+| **Yellow** - problematic debt | 4.0 - 8.9 | 207 | 97 |
+| Green | 9.0 - 9.9 | 158 | 90 |
+| Optimal | 10.0 | 98 | **470** |
+| Total scored | | 482 | 657 |
 
 The file count rises because the campaign splits files. Mean Code Health across every
-scorable first-party file is **9.51**.
+scorable first-party file is **9.64**.
 
 ## The Red band is empty
 
@@ -99,8 +100,8 @@ At the 2026-09-01 start: **19 files**, 46,865 lines of code, **330** complex met
 (58 commits), which started at 1.97; the worst single function was `scr_trans` in
 `stage/bg.c` (cyclomatic 109, nesting 9).
 
-At 2026-09-19: **two** of the nineteen are still below 4.0, eight are at 10.00, and
-`scr_trans`'s file is at 9.09. Mean Code Health across the repository is 9.51.
+At 2026-09-19: **none** of the nineteen is still below 4.0, eight are at 10.00, and
+`scr_trans`'s file is at 9.09. Mean Code Health across the repository is 9.64.
 
 ## Folder campaigns
 
@@ -109,12 +110,17 @@ Recorded here so a later agent can see what has already been swept.
 
 | Folder | Files | Before | After | Notes |
 | --- | --- | --- | --- | --- |
-| `Game/ui` | 9 | 4.06 - 9.92 | 8.47 - 10.00 | `sc_sub.c` split four ways; *Recipe A clears one finding, not fifteen* |
-| `Game/com/passive` | 20 -> 77 | 4.90 - 7.55 | mean **9.03**, 30 at 10.00 | 3488 CPU pattern scripts folded onto shared skeletons; see *Where `Game/com/passive` stopped* in `PLAYBOOK.md` |
-| `Game/com/active` | 20 -> 27 | 5.04 - 8.03 | mean **8.64**, 4 at 10.00 | 1621 scripts, the same shape under another name; folded folder-wide first, which is the order the passive folder's notes recommend |
+| `Game/ui` | 9 -> 11 | 4.06 - 9.92 | mean **8.58** | `sc_sub.c` split five ways; *Recipe A clears one finding, not fifteen*, and the re-wrap its call sites needed cost two files a band until they were split again |
+| `Game/com/passive` | 20 -> 67 | 4.90 - 7.55 | mean **9.65**, 47 at 10.00 | 3488 CPU pattern scripts folded onto shared skeletons; see *Where `Game/com/passive` stopped* in `PLAYBOOK.md` |
+| `Game/com/active` | 20 -> 22 | 5.04 - 8.03 | mean **9.33**, 11 at 10.00 | 1621 scripts, the same shape under another name; folded folder-wide first, then again across both folders at once |
+| `Game/com/patterns` | 0 -> 14 | - | mean **8.02**, 2 at 10.00 | the shared skeleton module the two script folders used to hold twice |
 
-Both COM script folders are now done. `tools/passive_fold.py --family {passive,active}`
-carries the transformations and the equivalence check for either.
+Both COM script folders are done, and since 2026-09-19 they share one skeleton module in
+`Game/com/patterns`. `tools/passive_fold.py --family {passive,active,com}` carries the
+transformations and the equivalence check; `--family com` works on both folders at once
+against the shared module, which is what took the active folder past 8.64. See *Where
+`Game/com/active` stopped the second time* in `PLAYBOOK.md` for the sequence, the four
+refusals, and where the floor is.
 
 ## Progress
 

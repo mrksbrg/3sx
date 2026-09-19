@@ -4,7 +4,7 @@
  */
 
 #include "sf33rd/Source/Game/com/active/active03.h"
-#include "sf33rd/Source/Game/com/active/active_patterns.h"
+#include "sf33rd/Source/Game/com/patterns/com_patterns.h"
 #include "common.h"
 #include "sf33rd/Source/Game/com/com_sub.h"
 #include "sf33rd/Source/Game/engine/workuser.h"
@@ -136,27 +136,7 @@ void Pattern03_0029(PLW* wk) {
 }
 
 void Pattern03_0030(PLW* wk) {
-    switch (CP_Index[wk->wu.id][0]) {
-    case 0:
-        Adjust_Attack(wk, 9, 0x10);
-        break;
-
-    case 1:
-        Adjust_Attack(wk, 0xC, 0x20);
-        break;
-
-    case 2:
-        Adjust_Attack(wk, 8, 0x40);
-        break;
-
-    case 3:
-        Command_Attack(wk, &(Command_Attack_Args){8, 0x20, 8, -1});
-        break;
-
-    default:
-        End_Pattern(wk);
-        break;
-    }
+    active_pattern_adjust_attack_command_attack_2(wk, &(Command_Attack_Args){8, 0x20, 8, -1});
 }
 
 void Pattern03_0031(PLW* wk) {
@@ -192,19 +172,7 @@ void Pattern03_0038(PLW* wk) {
 }
 
 void Pattern03_0039(PLW* wk) {
-    switch (CP_Index[wk->wu.id][0]) {
-    case 0:
-        Command_Attack(wk, &(Command_Attack_Args){8, 0x1E, 8, -1});
-        break;
-
-    case 1:
-        Branch_Unit_Area(wk, &(Branch_Menu_Args){2, 0x31, 0x32, 0x33, 1});
-        break;
-
-    default:
-        End_Pattern(wk);
-        break;
-    }
+    active_pattern_command_attack_branch_unit_area(wk, &(Command_Attack_Args){8, 0x1E, 8, -1});
 }
 
 void Pattern03_0040(PLW* wk) {
@@ -289,19 +257,11 @@ void Pattern03_0056(PLW* wk) {
 }
 
 void Pattern03_0057(PLW* wk) {
-    switch (CP_Index[wk->wu.id][0]) {
-    case 0:
-        Search_Back_Term(wk, 0x70, 6, 0x12);
-        break;
-
-    case 1:
-        Jump_Attack_Term(wk, &(Jump_Term_Args){-0x7FA0, -0x7FC0, 8, 0x20, 1, -0x7FA0, 8, 0x200});
-        break;
-
-    default:
-        End_Pattern(wk);
-        break;
-    }
+    pattern_search_back_term_jump_attack_term(
+        wk,
+        &(Search_Back_Term_Step){ 0x70, 6, 0x12 },
+        &(Jump_Term_Args){-0x7FA0, -0x7FC0, 8, 0x20, 1, -0x7FA0, 8, 0x200}
+    );
 }
 
 void Pattern03_0058(PLW* wk) {

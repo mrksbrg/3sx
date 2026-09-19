@@ -6,7 +6,7 @@
 
 #include "sf33rd/Source/Game/com/passive/pass08.h"
 #include "sf33rd/Source/Game/com/passive/pass08_internal.h"
-#include "sf33rd/Source/Game/com/passive/pass_patterns.h"
+#include "sf33rd/Source/Game/com/patterns/com_patterns.h"
 #include "common.h"
 #include "sf33rd/Source/Game/com/com_sub.h"
 #include "sf33rd/Source/Game/engine/workuser.h"
@@ -16,7 +16,7 @@ void Passive08_0120(PLW* wk) {
 }
 
 void Passive08_0121(PLW* wk) {
-    pattern_normal_attack(wk, 9, 0x102);
+    active_pattern_normal_attack(wk, 9, 0x102);
 }
 
 void Passive08_0122(PLW* wk) {
@@ -101,7 +101,7 @@ void Passive08_0131(PLW* wk) {
 }
 
 void Passive08_0132(PLW* wk) {
-    pattern_jump_attack_term_normal_attack_j_command_attack(
+    active_pattern_jump_attack_term_normal_attack_j_command_attack(
         wk,
         &(Jump_Term_Args){-0x7FA8, -0x7FC0, 0xB, 0x200, 0, -0x7FB0, -1, 0x40},
         0x400,
@@ -142,7 +142,7 @@ void Passive08_0134(PLW* wk) {
 }
 
 void Passive08_0135(PLW* wk) {
-    pattern_em_term_j_command_attack(
+    active_pattern_em_term_j_command_attack(
         wk,
         &(EM_Term_Params){-1, -0x7FB0, 6, 1, -1},
         &(Command_Attack_Args){8, 0x1E, 9, -1}
@@ -285,31 +285,7 @@ void Passive08_0144(PLW* wk) {
 }
 
 void Passive08_0145(PLW* wk) {
-    switch (CP_Index[wk->wu.id][0]) {
-    case 0:
-        Approach_Walk(wk, 0x3F, 2);
-        break;
-
-    case 1:
-        EM_Term(wk, &(EM_Term_Params){-1, -0x7FD0, 6, 1, -1});
-        break;
-
-    case 2:
-        Search_Back_Term(wk, 0x60, 1, -1);
-        break;
-
-    case 3:
-        Command_Attack(wk, &(Command_Attack_Args){8, 1, -1, -1});
-        break;
-
-    case 4:
-        J_Command_Attack(wk, &(Command_Attack_Args){8, 0x1D, 0xA, -1});
-        break;
-
-    default:
-        End_Pattern(wk);
-        break;
-    }
+    pattern_approach_walk_em_term_search_back_term(wk, 0x3F, &(Command_Attack_Args){8, 0x1D, 0xA, -1});
 }
 
 void Passive08_0146(PLW* wk) {
@@ -321,27 +297,15 @@ void Passive08_0146(PLW* wk) {
 }
 
 void Passive08_0147(PLW* wk) {
-    switch (CP_Index[wk->wu.id][0]) {
-    case 0:
-        Pierce_On(wk);
-        break;
-
-    case 1:
-        Command_Attack(wk, &(Command_Attack_Args){8, 0x20, 9, -1});
-        break;
-
-    default:
-        End_Pattern(wk);
-        break;
-    }
+    pattern_pierce_on_command_attack(wk, &(Command_Attack_Args){8, 0x20, 9, -1});
 }
 
 void Passive08_0148(PLW* wk) {
-    pattern_command_attack(wk, &(Command_Attack_Args){0xE, 0x20, 0xA, -1}, &(Command_Attack_Args){0xE, 0x20, 0xA, -1});
+    active_pattern_command_attack_2(wk, &(Command_Attack_Args){0xE, 0x20, 0xA, -1}, &(Command_Attack_Args){0xE, 0x20, 0xA, -1});
 }
 
 void Passive08_0149(PLW* wk) {
-    pattern_command_attack(wk, &(Command_Attack_Args){0xE, 0x20, 9, -1}, &(Command_Attack_Args){0xE, 0x20, 0xA, -1});
+    active_pattern_command_attack_2(wk, &(Command_Attack_Args){0xE, 0x20, 9, -1}, &(Command_Attack_Args){0xE, 0x20, 0xA, -1});
 }
 
 void Passive08_0150(PLW* wk) {

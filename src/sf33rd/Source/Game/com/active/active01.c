@@ -4,7 +4,7 @@
  */
 
 #include "sf33rd/Source/Game/com/active/active01.h"
-#include "sf33rd/Source/Game/com/active/active_patterns.h"
+#include "sf33rd/Source/Game/com/patterns/com_patterns.h"
 #include "common.h"
 #include "sf33rd/Source/Game/com/com_sub.h"
 #include "sf33rd/Source/Game/engine/workuser.h"
@@ -106,19 +106,11 @@ void Pattern01_0019(PLW* wk) {
 }
 
 void Pattern01_0020(PLW* wk) {
-    switch (CP_Index[wk->wu.id][0]) {
-    case 0:
-        Command_Attack(wk, &(Command_Attack_Args){8, 0x1E, 0xA, -1});
-        break;
-
-    case 1:
-        Jump_Attack(wk, &(Jump_Attack_Args){8, 0xA, 0x42, 2});
-        break;
-
-    default:
-        End_Pattern(wk);
-        break;
-    }
+    active_pattern_command_attack_jump_attack(
+        wk,
+        &(Command_Attack_Args){8, 0x1E, 0xA, -1},
+        &(Jump_Attack_Args){8, 0xA, 0x42, 2}
+    );
 }
 
 void Pattern01_0021(PLW* wk) {
@@ -302,23 +294,7 @@ void Pattern01_0053(PLW* wk) {
 }
 
 void Pattern01_0054(PLW* wk) {
-    switch (CP_Index[wk->wu.id][0]) {
-    case 0:
-        SA_Term(wk, &(SA_Term_Args){0xFFFF, 0xFFFF, 0x30, 0});
-        break;
-
-    case 1:
-        Approach_Walk(wk, 0xC3, 2);
-        break;
-
-    case 2:
-        Jump_Attack(wk, &(Jump_Attack_Args){8, 0xC, 0x42, 0});
-        break;
-
-    default:
-        End_Pattern(wk);
-        break;
-    }
+    pattern_sa_term_approach_walk_jump_attack(wk);
 }
 
 void Pattern01_0055(PLW* wk) {

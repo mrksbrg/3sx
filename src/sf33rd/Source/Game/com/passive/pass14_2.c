@@ -6,7 +6,7 @@
 
 #include "sf33rd/Source/Game/com/passive/pass14.h"
 #include "sf33rd/Source/Game/com/passive/pass14_internal.h"
-#include "sf33rd/Source/Game/com/passive/pass_patterns.h"
+#include "sf33rd/Source/Game/com/patterns/com_patterns.h"
 #include "common.h"
 #include "sf33rd/Source/Game/com/com_sub.h"
 #include "sf33rd/Source/Game/engine/workuser.h"
@@ -167,23 +167,11 @@ void Passive14_0075(PLW* wk) {
 }
 
 void Passive14_0076(PLW* wk) {
-    switch (CP_Index[wk->wu.id][0]) {
-    case 0:
-        Wait_Get_Up(wk, 0, 0);
-        break;
-
-    case 1:
-        Branch_Wait_Area(wk, &(Branch_Wait_Args){0xF, 10, 5, 1});
-        break;
-
-    case 2:
-        J_Command_Attack(wk, &(Command_Attack_Args){8, 0x20, 10, -1});
-        break;
-
-    default:
-        End_Pattern(wk);
-        break;
-    }
+    pattern_wait_get_up_branch_wait_area_j_command_attack(
+        wk,
+        &(Branch_Wait_Args){0xF, 10, 5, 1},
+        &(Command_Attack_Args){8, 0x20, 10, -1}
+    );
 }
 
 void Passive14_0077(PLW* wk) {
@@ -200,11 +188,11 @@ void Passive14_0078(PLW* wk) {
 }
 
 void Passive14_0079(PLW* wk) {
-    pattern_command_attack_2(wk, &(Command_Attack_Args){8, 0, -1, -1});
+    active_pattern_command_attack(wk, &(Command_Attack_Args){8, 0, -1, -1});
 }
 
 void Passive14_0080(PLW* wk) {
-    pattern_command_attack(wk, &(Command_Attack_Args){8, 0, -1, -1}, &(Command_Attack_Args){8, 0, -1, -1});
+    active_pattern_command_attack_2(wk, &(Command_Attack_Args){8, 0, -1, -1}, &(Command_Attack_Args){8, 0, -1, -1});
 }
 
 void Passive14_0081(PLW* wk) {

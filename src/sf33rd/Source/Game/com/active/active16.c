@@ -4,7 +4,7 @@
  */
 
 #include "sf33rd/Source/Game/com/active/active16.h"
-#include "sf33rd/Source/Game/com/active/active_patterns.h"
+#include "sf33rd/Source/Game/com/patterns/com_patterns.h"
 #include "common.h"
 #include "sf33rd/Source/Game/com/com_sub.h"
 #include "sf33rd/Source/Game/engine/workuser.h"
@@ -96,23 +96,7 @@ void Pattern16_0019(PLW* wk) {
 }
 
 void Pattern16_0020(PLW* wk) {
-    switch (CP_Index[wk->wu.id][0]) {
-    case 0:
-        Lever_Attack(wk, 0xC, 0, 0x40);
-        break;
-
-    case 1:
-        Lever_Attack(wk, 0xC, 0, 0x40);
-        break;
-
-    case 2:
-        Lever_Attack(wk, 8, 0, 0x40);
-        break;
-
-    default:
-        End_Pattern(wk);
-        break;
-    }
+    pattern_lever_attack_2(wk, &(Lever_Attack_Step){ 0xC, 0, 0x40 }, &(Lever_Attack_Step){ 0xC, 0, 0x40 }, 0x40);
 }
 
 void Pattern16_0021(PLW* wk) {
@@ -148,23 +132,7 @@ void Pattern16_0028(PLW* wk) {
 }
 
 void Pattern16_0029(PLW* wk) {
-    switch (CP_Index[wk->wu.id][0]) {
-    case 0:
-        Adjust_Attack(wk, 0xC, 0x100);
-        break;
-
-    case 1:
-        Adjust_Attack(wk, 8, 0x200);
-        break;
-
-    case 2:
-        Lever_Attack(wk, 8, 0, 0x400);
-        break;
-
-    default:
-        End_Pattern(wk);
-        break;
-    }
+    pattern_adjust_attack_lever_attack(wk, 0xC, &(Adjust_Attack_Step){ 8, 0x200 }, 0x400);
 }
 
 void Pattern16_0030(PLW* wk) {
@@ -312,27 +280,7 @@ void Pattern16_0051(PLW* wk) {
 }
 
 void Pattern16_0052(PLW* wk) {
-    switch (CP_Index[wk->wu.id][0]) {
-    case 0:
-        Approach_Walk(wk, 0x4B, 2);
-        break;
-
-    case 1:
-        SA_Term(wk, &(SA_Term_Args){0x2E, 0x2F, 0xFFFF, 0});
-        break;
-
-    case 2:
-        Command_Attack(wk, &(Command_Attack_Args){8, 0x1F, 0xA, -1});
-        break;
-
-    case 3:
-        Com_Random_Select(wk, &(Branch_Menu_Args){2, 3, 0x38, 0x44, 0x45}, 1);
-        break;
-
-    default:
-        End_Pattern(wk);
-        break;
-    }
+    pattern_approach_walk_sa_term_command_attack(wk, 0x4B, &(Command_Attack_Args){8, 0x1F, 0xA, -1});
 }
 
 void Pattern16_0053(PLW* wk) {

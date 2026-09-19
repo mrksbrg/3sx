@@ -56,13 +56,24 @@ SWITCH_HEAD = 'switch (CP_Index[wk->wu.id][0]) {'
 # spells a script Passive14_0122 and Game/com/active spells it Pattern14_0122,
 # behind dispatchers called Passive14 and Computer14. FAMILY carries which.
 FAMILY = {'script': 'Passive', 'dispatcher': 'Passive', 'shared': 'pass_patterns',
-          'prefix': '', 'what': 'passive', 'folder': 'passive'}
+          'prefix': '', 'what': 'passive', 'folder': 'passive', 'shared_dir': None}
 
 
 def set_family(name):
     if name == 'active':
         FAMILY.update(script='Pattern', dispatcher='Computer', shared='active_patterns',
                       prefix='active_', what='active', folder='active')
+    elif name == 'com':
+        # Both folders at once, against one shared module. The script name
+        # pattern is a group so it matches either spelling; the skeletons it
+        # makes are named without a folder prefix, as the passive ones were.
+        FAMILY.update(script='(?:Passive|Pattern)', dispatcher='(?:Passive|Computer)',
+                      shared='com_patterns', prefix='', what='COM', folder='patterns')
+
+
+def shared_dir(paths):
+    """Where the shared skeleton files live: an override, else beside the scripts."""
+    return FAMILY['shared_dir'] or os.path.dirname(paths[0])
 
 
 # --------------------------------------------------------------------------
@@ -338,6 +349,46 @@ def norm(text):
     return re.sub(r'\s+', ' ', text).strip()
 
 
+_FIELDS = {}
+
+
+def struct_fields():
+    """{type name: [field names, in declaration order]} from every header."""
+    if _FIELDS:
+        return _FIELDS
+    decl = re.compile(r'typedef\s+struct\s*\{(.*?)\}\s*(\w+)\s*;', re.S)
+    for header in glob.glob(os.path.join(ROOT, 'src', '**', '*.h'), recursive=True):
+        text = open(header, errors='ignore').read()
+        text = re.sub(r'/\*.*?\*/', '', text, flags=re.S)
+        for m in decl.finditer(text):
+            names = []
+            for field in m.group(1).split(';'):
+                f = re.search(r'(\w+)\s*(\[[^\]]*\])?\s*$', field.strip())
+                if field.strip() and f:
+                    names.append(f.group(1))
+            _FIELDS[m.group(2)] = names
+    return _FIELDS
+
+
+def field_of(arg, field):
+    """The value a compound literal gives `field`, or None if it is not one.
+
+    A skeleton that takes a call's arguments as one struct reads them back as
+    `p->Reaction`; the call site wrote `&(Normal_Attack_Step){ 8, 0x10 }`. To
+    compare step maps across that fold, the field has to be resolved back to
+    the value the original held.
+    """
+    m = re.match(r'^\s*&?\(\s*(\w+)\s*\)\s*\{(.*)\}\s*$', arg, re.S)
+    if not m:
+        return None
+    fields = struct_fields().get(m.group(1))
+    if not fields or field not in fields:
+        return None
+    values = split_args(m.group(2))
+    i = fields.index(field)
+    return norm(values[i]) if i < len(values) else None
+
+
 def step_map(src, name, bodies, seen=None):
     """{'0': stmt, ..., 'default': stmt} for a pattern function, helpers inlined."""
     seen = seen or set()
@@ -352,9 +403,18 @@ def step_map(src, name, bodies, seen=None):
         inner = step_map(src, target, bodies, seen)
         _, tparams = bodies[target]
         subs = dict(zip(tparams, targs))
-        return {k: re.sub(r'\b(%s)\b' % '|'.join(map(re.escape, subs)),
-                          lambda mm: subs[mm.group(1)], v) if subs else v
-                for k, v in inner.items()}
+
+        def bind(v):
+            if not subs:
+                return v
+            names = '|'.join(map(re.escape, subs))
+            # A struct parameter's field first: p->Reaction is the value the
+            # call site put in that position of the compound literal.
+            v = re.sub(r'\b(%s)->(\w+)\b' % names,
+                       lambda mm: field_of(subs[mm.group(1)], mm.group(2)) or mm.group(0), v)
+            return re.sub(r'\b(%s)\b' % names, lambda mm: subs[mm.group(1)], v)
+
+        return {k: bind(v) for k, v in inner.items()}
     m = re.match(r'\s*\{\s*' + re.escape(SWITCH_HEAD) + r'(.*)\}\s*\}\s*$', full, re.S)
     if not m:
         return {'body': norm(full)}
@@ -459,11 +519,11 @@ def rewrite_shared_header(folder):
 
 SHARED_DOC = """/**
  * @file %(name)s
- * COM Passive: pattern skeletons shared by every character
+ * COM: pattern skeletons shared by every character
  *
  * %(what)s
  *
- * A passive pattern script is a switch on the step counter with one engine call
+ * A COM pattern script is a switch on the step counter with one engine call
  * per step, and the same step sequences recur across characters. Each skeleton
  * here is exactly the body its call sites used to hold, with the arguments of
  * its calls taken as parameters and written out in full at each call site.
@@ -511,7 +571,7 @@ def reshard(folder, max_lines=900):
     return made
 
 
-def dedup_shared(folder):
+def dedup_shared(folder, extra_paths=()):
     """Collapse shared skeletons that are byte-identical to one another."""
     paths = shared_files(folder)
     groups = collections.defaultdict(list)
@@ -539,7 +599,8 @@ def dedup_shared(folder):
                 end += 1
             src = src[:a] + src[end:]
         open(path, 'w').write(src)
-    for path in glob.glob(os.path.join(folder, '*.c')) + glob.glob(os.path.join(folder, '*.h')):
+    for path in (glob.glob(os.path.join(folder, '*.c')) + glob.glob(os.path.join(folder, '*.h'))
+                 + list(extra_paths)):
         src = open(path).read()
         new = src
         for old, keeper in renames.items():
@@ -563,7 +624,7 @@ def gfold(paths, protos, min_members=3, max_params=3, shared=None):
             sk, slots = skeletonize(full[full.index('{'):], protos)
             fams[sk].append((path, name, a, b, slots))
 
-    folder = os.path.dirname(paths[0])
+    folder = shared_dir(paths)
     used = set()
     for path in shared_files(folder):
         used |= {n for n, a, b, st in functions(open(path).read())}
@@ -785,6 +846,336 @@ def dedup(paths, shared_paths, header):
         for old, new in sorted(renames.items()):
             fh.write('%s=%s\n' % (old, new))
     return len(additions), touched
+
+
+# --------------------------------------------------------------------------
+# Recipe V again, between two skeletons: a specialisation calls its general
+# --------------------------------------------------------------------------
+
+def _skel_records(folder, protos):
+    out = []
+    for path in shared_files(folder):
+        src = open(path).read()
+        for name, a, b, is_static in functions(src):
+            full = src[a:b]
+            if SWITCH_HEAD not in full:
+                continue
+            sk, slots = skeletonize(full[full.index('{'):], protos)
+            sig = full[:full.index('{')]
+            params = [(re.search(r'(\w+)\s*$', x) or re.search(r'\(\*(\w+)\)', x)).group(1)
+                      for x in split_args(sig[sig.index('(') + 1:sig.rindex(')')])][1:]
+            out.append({'path': path, 'name': name, 'a': a, 'b': b, 'sk': sk,
+                        'vals': [v for v, _, _ in slots], 'params': params})
+    return out
+
+
+def generalise(folder, protos):
+    """Where one skeleton is another with literals baked in, call the general one.
+
+    gfold splits a family whose varying arguments outnumber max_params into
+    several skeletons, each holding the values it did not parameterise. Those
+    specialisations are the general skeleton with some slots written out, which
+    is Recipe V's own shape one level up: the body moves to one definition and
+    every value it used to hold is written out, in positional order, at the one
+    call that remains.
+    """
+    recs = _skel_records(folder, protos)
+    groups = collections.defaultdict(list)
+    for r in recs:
+        groups[r['sk']].append(r)
+
+    edits = collections.defaultdict(list)
+    for members in groups.values():
+        if len(members) < 2:
+            continue
+        # The general one first: most parameters, then by name for determinism.
+        members.sort(key=lambda r: (-len(r['params']), r['name']))
+        for cand in members:
+            pset = set(cand['params'])
+            slots = [i for i, v in enumerate(cand['vals']) if v in pset]
+            taken = [r for r in members
+                     if r is not cand and not set(r['params']) - pset
+                     and all(cand['vals'][i] in pset or cand['vals'][i] == r['vals'][i]
+                             for i in range(len(cand['vals'])))]
+            if not taken:
+                continue
+            for r in taken:
+                args = ['wk'] + [r['vals'][i] for i in slots]
+                src = open(r['path']).read()
+                head = src[r['a']:r['b']]
+                head = head[:head.index('{')]
+                edits[r['path']].append((r['a'], r['b'],
+                                         head + '{\n' + call('    ', cand['name'], args) + '\n}'))
+                members.remove(r)
+            break
+
+    if not edits:
+        return 0
+    n = 0
+    for path, es in edits.items():
+        src = open(path).read()
+        for a, b, text in sorted(es, key=lambda e: -e[0]):
+            src = src[:a] + text + src[b:]
+        open(path, 'w').write(rewrap(src))
+        n += len(es)
+    return n
+
+
+# --------------------------------------------------------------------------
+# Recipe W - a forwarding skeleton is one call site, not a definition
+# --------------------------------------------------------------------------
+
+def forwarders(folder):
+    """{name: (params, callee, args)} for every skeleton that only calls another."""
+    out = {}
+    for path in shared_files(folder):
+        src = open(path).read()
+        for name, a, b, is_static in functions(src):
+            full = src[a:b]
+            sig = full[:full.index('{')]
+            body = full[full.index('{'):]
+            m = re.match(r'\s*\{\s*(\w+)\((.*?)\);\s*\}\s*$', body, re.S)
+            if not m:
+                continue
+            params = [(re.search(r'(\w+)\s*$', x) or re.search(r'\(\*(\w+)\)', x)).group(1)
+                      for x in split_args(sig[sig.index('(') + 1:sig.rindex(')')])]
+            args = split_args(m.group(2))
+            if not args or args[0] != 'wk' or params[0] != 'wk':
+                continue
+            out[name] = (params, m.group(1), [re.sub(r'\s+', ' ', x) for x in args], path, a, b)
+    return out
+
+
+def inline_forwarders(folder, extra_paths=()):
+    """Replace each call to a forwarding skeleton with the call it forwards to."""
+    fwd = forwarders(folder)
+    # A forwarder that forwards to another forwarder resolves one hop at a time;
+    # take only those whose target is a real definition, and repeat.
+    fwd = {k: v for k, v in fwd.items() if v[1] not in fwd}
+    if not fwd:
+        return 0, 0
+
+    call_re = re.compile(r'\b(%s)\(' % '|'.join(map(re.escape, sorted(fwd))))
+    touched = 0
+    for path in sorted(set(list(extra_paths) + shared_files(folder))):
+        src = open(path).read()
+        out, i, n = [], 0, 0
+        while True:
+            m = call_re.search(src, i)
+            if not m:
+                out.append(src[i:])
+                break
+            depth, j = 1, m.end()
+            while depth:
+                if src[j] in '([{':
+                    depth += 1
+                elif src[j] in ')]}':
+                    depth -= 1
+                j += 1
+            here = split_args(src[m.end():j - 1])
+            params, callee, args, _, _, _ = fwd[m.group(1)]
+            # A definition, not a call: anchored at column zero, the name is
+            # preceded on its line by a return type and nothing else.
+            line = src[:m.start()].rsplit('\n', 1)[-1]
+            if re.match(r'^(static )?[A-Za-z_][\w \*]*$', line):
+                out.append(src[i:j])
+                i = j
+                continue
+            if len(here) != len(params):
+                out.append(src[i:j])
+                i = j
+                continue
+            bind = dict(zip(params, [re.sub(r'\s+', ' ', x) for x in here]))
+            new_args = [bind.get(x, x) for x in args]
+            indent = ' ' * (len(line) - len(line.lstrip()) if not line.strip() else len(line))
+            text = call(indent, callee, new_args)[len(indent):].rstrip(';')
+            out.append(src[i:m.start()])
+            out.append(text)
+            i = j
+            n += 1
+        if n:
+            open(path, 'w').write(''.join(out))
+            touched += n
+
+    # the definitions themselves are now unreferenced
+    gone = 0
+    by_path = collections.defaultdict(list)
+    for name, (_, _, _, path, a, b) in fwd.items():
+        by_path[path].append((a, b))
+    for path, spans in by_path.items():
+        src = open(path).read()
+        for a, b in sorted(spans, reverse=True):
+            end = b
+            while src[end:end + 1] == '\n':
+                end += 1
+            src = src[:a] + src[end:]
+            gone += 1
+        open(path, 'w').write(src)
+    rewrite_shared_header(folder)
+    return gone, touched
+
+
+# --------------------------------------------------------------------------
+# Recipe V + Recipe A - bundle a call's arguments so the skeleton fits four
+# --------------------------------------------------------------------------
+
+STEP_H = """/*
+ * One step's worth of arguments, for the pattern skeletons in this folder.
+ *
+ * A family of pattern scripts whose steps differ in four or more values cannot
+ * be folded onto one skeleton: `wk` plus four parameters is one over the
+ * argument-count threshold. Where the surplus values belong to the *same*
+ * engine call, they travel as one of these instead - the same idiom the engine
+ * itself uses for Command_Attack_Args and its kin, and the same safety
+ * argument as Recipe V, because every value is still written out in full, in
+ * the call's own parameter order, at its own call site.
+ *
+ * Each struct's field order is the parameter order of the call it names.
+ * Generated by tools/passive_fold.py abfold.
+ */
+
+#ifndef COM_PATTERN_ARGS_H
+#define COM_PATTERN_ARGS_H
+
+#include "types.h"
+
+"""
+
+
+def _call_groups(slots, vary):
+    """{(callee, first slot of this call): [slot indices]} for the varying slots."""
+    groups = collections.OrderedDict()
+    for i in vary:
+        _, callee, idx = slots[i]
+        groups.setdefault((callee, i - idx), []).append(i)
+    return groups
+
+
+def abfold(paths, protos, min_members=2, max_params=3):
+    sources = {p: open(p).read() for p in paths}
+    fams = collections.defaultdict(list)
+    for path, src in sources.items():
+        for name, a, b, is_static in functions(src):
+            full = src[a:b]
+            if is_static or not re.match(r'^%s\d+_\d+$' % FAMILY['script'], name) \
+                    or SWITCH_HEAD not in full:
+                continue
+            sk, slots = skeletonize(full[full.index('{'):], protos)
+            fams[sk].append((path, name, a, b, slots))
+
+    folder = shared_dir(paths)
+    used = set()
+    for path in shared_files(folder):
+        used |= {n for n, a, b, st in functions(open(path).read())}
+
+    steps, helpers, edits = {}, [], collections.defaultdict(list)
+    for sk, members in sorted(fams.items(), key=lambda kv: (-len(kv[1]), kv[1][0][1])):
+        if len(members) < min_members:
+            continue
+        slots0 = members[0][4]
+        vary = [i for i in range(len(slots0)) if len({m[4][i][0] for m in members}) > 1]
+        if len(vary) <= max_params:
+            continue                    # plain gfold reaches this one
+        groups = _call_groups(slots0, vary)
+        if len(groups) > max_params:
+            continue                    # the surplus spans too many calls
+
+        params, binders, ok = [], [], True
+        for (callee, first), idx in groups.items():
+            arity = len(protos.get(callee, []))
+            if len(idx) < 2:
+                t = param_type(protos, callee, slots0[idx[0]][2])
+                if t is None:
+                    ok = False
+                    break
+                pname = snake(t[1])
+                while pname in [p[1] for p in params]:
+                    pname += '_b'
+                params.append(('%s %s' % (t[0], pname), pname))
+                binders.append(('scalar', idx[0], pname))
+                continue
+            fields = []
+            for k in range(1, arity):           # every argument of the call
+                t = param_type(protos, callee, k)
+                if t is None:
+                    ok = False
+                    break
+                fields.append(t)
+            if not ok:
+                break
+            ty = '%s_Step' % callee
+            steps.setdefault(ty, fields)
+            pname = snake(callee)
+            while pname in [p[1] for p in params]:
+                pname += '_b'
+            params.append(('const %s* %s' % (ty, pname), pname))
+            binders.append(('bundle', (first, arity, ty), pname))
+        if not ok or len(params) > max_params:
+            continue
+
+        callees = []
+        for _, callee, _ in slots0:
+            if not callees or callees[-1] != callee:
+                callees.append(callee)
+        base = FAMILY['prefix'] + 'pattern_' + '_'.join(
+            snake(c) for c in callees if c != 'End_Pattern')[:80]
+        name, n = base, 2
+        while name in used:
+            name, n = '%s_%d' % (base, n), n + 1
+        used.add(name)
+
+        # the skeleton body: a bundled slot reads its field, a scalar its param
+        fill = {}
+        for kind, what, pname in binders:
+            if kind == 'scalar':
+                fill[what] = pname
+            else:
+                first, arity, ty = what
+                for k in range(1, arity):
+                    fill[first + k] = '%s->%s' % (pname, steps[ty][k - 1][1])
+        body = sk
+        for i, (value, _, _) in enumerate(slots0):
+            body = body.replace('\x00%d\x00' % i, fill.get(i, value))
+        helpers.append((signature(name, ['PLW* wk'] + [p for p, _ in params], '') + body + '\n',
+                        len(re.findall(r'case \d+:', body))))
+
+        for path, member, a, b, mslots in members:
+            args = ['wk']
+            for kind, what, pname in binders:
+                if kind == 'scalar':
+                    args.append(mslots[what][0])
+                else:
+                    first, arity, ty = what
+                    args.append('&(%s){ %s }'
+                                % (ty, ', '.join(mslots[first + k][0] for k in range(1, arity))))
+            edits[path].append((a, b, 'void %s(PLW* wk) {\n%s\n}'
+                                % (member, call('    ', name, args))))
+
+    if not helpers:
+        return 0, 0, 0
+
+    header = os.path.join(folder, 'com_pattern_args.h')
+    text = STEP_H
+    for ty in sorted(steps):
+        text += ('/* The %d values %s takes, in its own parameter order. */\ntypedef struct {\n'
+                 % (len(steps[ty]), ty[:-len('_Step')]))
+        text += ''.join('    %s %s;\n' % (t, n) for t, n in steps[ty])
+        text += '} %s;\n\n' % ty
+    open(header, 'w').write(text + '#endif\n')
+
+    existing = shared_files(folder)
+    for text_, cases in helpers:
+        open(shared_destination(existing, cases), 'a').write('\n' + text_)
+    rewrite_shared_header(folder)
+
+    total = 0
+    for path, es in edits.items():
+        src = sources[path]
+        for a, b, t in sorted(es, key=lambda e: -e[0]):
+            src = src[:a] + t + src[b:]
+        open(path, 'w').write(src)
+        total += len(es)
+    return len(steps), len(helpers), total
 
 
 # --------------------------------------------------------------------------
@@ -1059,10 +1450,13 @@ def split(path, max_funcs=90, max_lines=900):
 def main():
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument('command', choices=['fold', 'gfold', 'dedup', 'reshard', 'ffold', 'xsplit', 'split', 'verify', 'families'])
+    ap.add_argument('command', choices=['fold', 'gfold', 'dedup', 'reshard', 'ffold', 'xsplit', 'split', 'verify', 'families', 'generalise', 'inline', 'abfold'])
     ap.add_argument('files', nargs='+')
     ap.add_argument('--base', default='HEAD')
-    ap.add_argument('--family', default='passive', choices=['passive', 'active'],
+    ap.add_argument('--shared-dir', default=None,
+                    help='folder holding the shared skeleton files, when it is not '
+                         'the folder the scripts are in')
+    ap.add_argument('--family', default='passive', choices=['passive', 'active', 'com'],
                     help='which COM script folder: passive spells a script '
                          'Passive14_0122, active spells it Pattern14_0122')
     ap.add_argument('--min-members', type=int, default=3)
@@ -1072,22 +1466,36 @@ def main():
     ap.add_argument('--max-lines', type=int, default=900)
     args = ap.parse_args()
     set_family(args.family)
+    FAMILY['shared_dir'] = args.shared_dir
 
     if args.command == 'verify':
         sys.exit(1 if verify(args.base, args.files) else 0)
 
     protos = load_prototypes()
     if args.command == 'reshard':
-        made = reshard(os.path.dirname(args.files[0]), args.max_lines)
+        made = reshard(shared_dir(args.files), args.max_lines)
         print('shared skeletons in %d files: %s' % (len(made), ', '.join(made)))
         return
     if args.command == 'dedup':
-        folder = os.path.dirname(args.files[0])
+        folder = shared_dir(args.files)
         sharedp = sorted(glob.glob(os.path.join(folder, FAMILY['shared'] + '_*.c')))
         h, e = dedup(args.files, sharedp, os.path.join(folder, FAMILY['shared'] + '.h'))
         d = dedup_shared(folder)
         print('%d skeletons promoted to the shared files, %d copies removed, '
               '%d shared duplicates collapsed' % (h, e, d))
+        return
+    if args.command == 'inline':
+        folder = shared_dir(args.files)
+        g, t = inline_forwarders(folder, [f for f in args.files if os.path.dirname(f) != folder])
+        print('%d forwarding skeletons removed, %d call sites rewritten' % (g, t))
+        return
+    if args.command == 'generalise':
+        n = generalise(shared_dir(args.files), protos)
+        print('%d skeletons now call a more general sibling' % n)
+        return
+    if args.command == 'abfold':
+        t, h, e = abfold(args.files, protos, args.min_members, args.max_params)
+        print('%d step structs, %d shared skeletons, %d pattern functions folded' % (t, h, e))
         return
     if args.command == 'gfold':
         h, e = gfold(args.files, protos, args.min_members, args.max_params)

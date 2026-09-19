@@ -6,7 +6,7 @@
 
 #include "sf33rd/Source/Game/com/passive/pass12.h"
 #include "sf33rd/Source/Game/com/passive/pass12_internal.h"
-#include "sf33rd/Source/Game/com/passive/pass_patterns.h"
+#include "sf33rd/Source/Game/com/patterns/com_patterns.h"
 #include "common.h"
 #include "sf33rd/Source/Game/com/com_sub.h"
 #include "sf33rd/Source/Game/engine/workuser.h"
@@ -24,35 +24,7 @@ void Passive12_0128(PLW* wk) {
 }
 
 void Passive12_0129(PLW* wk) {
-    switch (CP_Index[wk->wu.id][0]) {
-    case 0:
-        Normal_Attack(wk, 9, 0x100);
-        break;
-
-    case 1:
-        Jump_Attack_Term(wk, &(Jump_Term_Args){-0x7FA8, -0x7FC0, 9, 0x20, 0, -0x7FB0, -1, 0x200});
-        break;
-
-    case 2:
-        Normal_Attack(wk, 9, 0x12);
-        break;
-
-    case 3:
-        Normal_Attack(wk, 9, 0x102);
-        break;
-
-    case 4:
-        Normal_Attack(wk, 8, 0x202);
-        break;
-
-    case 5:
-        Command_Attack(wk, &(Command_Attack_Args){8, 0x1C, 0x4008, -1});
-        break;
-
-    default:
-        End_Pattern(wk);
-        break;
-    }
+    pattern_normal_attack_jump_attack_term_normal_attack_2(wk, &(Command_Attack_Args){8, 0x1C, 0x4008, -1});
 }
 
 void Passive12_0130(PLW* wk) {
@@ -73,7 +45,7 @@ void Passive12_0131(PLW* wk) {
 }
 
 void Passive12_0132(PLW* wk) {
-    pattern_jump_attack_term_normal_attack_j_command_attack(
+    active_pattern_jump_attack_term_normal_attack_j_command_attack(
         wk,
         &(Jump_Term_Args){-0x7FA8, -0x7FC0, 0xB, 0x200, 0, -0x7FB0, -1, 0x40},
         0x400,
@@ -90,7 +62,7 @@ void Passive12_0133(PLW* wk) {
 }
 
 void Passive12_0134(PLW* wk) {
-    pattern_jump_attack_term_normal_attack_command_attack(
+    active_pattern_jump_attack_term_normal_attack_command_attack_2(
         wk,
         &(Jump_Term_Args){-0x7FA8, -0x7FC0, 9, 0x20, 0, -0x7FB0, -1, 0x200},
         0x40,
@@ -99,7 +71,7 @@ void Passive12_0134(PLW* wk) {
 }
 
 void Passive12_0135(PLW* wk) {
-    pattern_em_term_j_command_attack(
+    active_pattern_em_term_j_command_attack(
         wk,
         &(EM_Term_Params){-1, -0x7FB0, 6, 1, -1},
         &(Command_Attack_Args){8, 0x1D, 9, -1}
@@ -111,23 +83,7 @@ void Passive12_0136(PLW* wk) {
 }
 
 void Passive12_0137(PLW* wk) {
-    switch (CP_Index[wk->wu.id][0]) {
-    case 0:
-        Wait_Get_Up(wk, 0, -1);
-        break;
-
-    case 1:
-        Normal_Attack(wk, 0xC, 0x40);
-        break;
-
-    case 2:
-        Command_Attack(wk, &(Command_Attack_Args){8, 0x1C, 0x400A, -1});
-        break;
-
-    default:
-        End_Pattern(wk);
-        break;
-    }
+    pattern_wait_get_up_normal_attack_command_attack(wk, &(Command_Attack_Args){8, 0x1C, 0x400A, -1});
 }
 
 void Passive12_0138(PLW* wk) {
@@ -153,19 +109,7 @@ void Passive12_0140(PLW* wk) {
 }
 
 void Passive12_0141(PLW* wk) {
-    switch (CP_Index[wk->wu.id][0]) {
-    case 0:
-        Wait_Get_Up(wk, 0, 0);
-        break;
-
-    case 1:
-        J_Command_Attack(wk, &(Command_Attack_Args){8, 0x20, 0xA, -1});
-        break;
-
-    default:
-        End_Pattern(wk);
-        break;
-    }
+    pattern_wait_get_up_j_command_attack(wk, &(Command_Attack_Args){8, 0x20, 0xA, -1});
 }
 
 void Passive12_0142(PLW* wk) {
@@ -213,35 +157,7 @@ void Passive12_0146(PLW* wk) {
 }
 
 void Passive12_0147(PLW* wk) {
-    switch (CP_Index[wk->wu.id][0]) {
-    case 0:
-        Pierce_On(wk);
-        break;
-
-    case 1:
-        Command_Attack(wk, &(Command_Attack_Args){8, 0, -1, -1});
-        break;
-
-    case 2:
-        Normal_Attack(wk, 9, 0x102);
-        break;
-
-    case 3:
-        Normal_Attack(wk, 9, 0x102);
-        break;
-
-    case 4:
-        Normal_Attack(wk, 9, 0x202);
-        break;
-
-    case 5:
-        Command_Attack(wk, &(Command_Attack_Args){8, 0x1C, 0x400A, -1});
-        break;
-
-    default:
-        End_Pattern(wk);
-        break;
-    }
+    pattern_pierce_on_command_attack_normal_attack_5(wk, &(Command_Attack_Args){8, 0x1C, 0x400A, -1});
 }
 
 void Passive12_0148(PLW* wk) {
@@ -321,7 +237,7 @@ void Passive12_0158(PLW* wk) {
 }
 
 void Passive12_0159(PLW* wk) {
-    pattern_approach_walk_normal_attack_sa_term_4(
+    active_pattern_approach_walk_normal_attack_sa_term(
         wk,
         0x37,
         &(SA_Term_Args){0x30, 0x31, 0x32, 0},
@@ -346,7 +262,7 @@ void Passive12_0161(PLW* wk) {
 }
 
 void Passive12_0162(PLW* wk) {
-    pattern_normal_attack_j_command_attack_2(wk, 9, 0x10, &(Command_Attack_Args){8, 0x1D, 0xA, -1});
+    active_pattern_normal_attack_j_command_attack(wk, 9, 0x10, &(Command_Attack_Args){8, 0x1D, 0xA, -1});
 }
 
 void Passive12_0163(PLW* wk) {
@@ -368,7 +284,7 @@ void Passive12_0164(PLW* wk) {
 }
 
 void Passive12_0165(PLW* wk) {
-    pattern_jump_attack_term_normal_attack_command_attack(
+    active_pattern_jump_attack_term_normal_attack_command_attack_2(
         wk,
         &(Jump_Term_Args){-0x7FA0, -0x7FC0, 9, 0x400, 0, -0x7FB0, -1, 0x200},
         0x402,
@@ -386,7 +302,7 @@ void Passive12_0166(PLW* wk) {
 }
 
 void Passive12_0167(PLW* wk) {
-    pattern_jump_attack_term_normal_attack_command_attack(
+    active_pattern_jump_attack_term_normal_attack_command_attack_2(
         wk,
         &(Jump_Term_Args){-0x7FA0, -0x7FC0, 9, 0x400, 0, -0x7FB0, -1, 0x200},
         0x402,

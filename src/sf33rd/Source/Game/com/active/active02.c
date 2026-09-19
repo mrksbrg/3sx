@@ -4,7 +4,7 @@
  */
 
 #include "sf33rd/Source/Game/com/active/active02.h"
-#include "sf33rd/Source/Game/com/active/active_patterns.h"
+#include "sf33rd/Source/Game/com/patterns/com_patterns.h"
 #include "common.h"
 #include "sf33rd/Source/Game/com/com_sub.h"
 #include "sf33rd/Source/Game/engine/workuser.h"
@@ -44,19 +44,7 @@ void Pattern02_0006(PLW* wk) {
 }
 
 void Pattern02_0007(PLW* wk) {
-    switch (CP_Index[wk->wu.id][0]) {
-    case 0:
-        Pierce_On(wk);
-        break;
-
-    case 1:
-        Command_Attack(wk, &(Command_Attack_Args){8, 1, 0xB, -1});
-        break;
-
-    default:
-        End_Pattern(wk);
-        break;
-    }
+    pattern_pierce_on_command_attack(wk, &(Command_Attack_Args){8, 1, 0xB, -1});
 }
 
 void Pattern02_0008(PLW* wk) {
@@ -152,19 +140,7 @@ void Pattern02_0029(PLW* wk) {
 }
 
 void Pattern02_0030(PLW* wk) {
-    switch (CP_Index[wk->wu.id][0]) {
-    case 0:
-        Adjust_Attack(wk, 9, 0x100);
-        break;
-
-    case 1:
-        Lever_Attack(wk, 8, 0, 0x20);
-        break;
-
-    default:
-        End_Pattern(wk);
-        break;
-    }
+    active_pattern_adjust_attack_lever_attack_2(wk, 9, 0x100, 0);
 }
 
 void Pattern02_0031(PLW* wk) {
@@ -200,23 +176,7 @@ void Pattern02_0037(PLW* wk) {
 }
 
 void Pattern02_0038(PLW* wk) {
-    switch (CP_Index[wk->wu.id][0]) {
-    case 0:
-        Adjust_Attack(wk, 0xB, 0x20);
-        break;
-
-    case 1:
-        Normal_Attack(wk, 0xA, 0x202);
-        break;
-
-    case 2:
-        Command_Attack(wk, &(Command_Attack_Args){8, 0x1F, 0xA, -1});
-        break;
-
-    default:
-        End_Pattern(wk);
-        break;
-    }
+    active_pattern_adjust_attack_normal_attack_command_attack(wk, 0x20, 0xA, 0x202);
 }
 
 void Pattern02_0039(PLW* wk) {
@@ -232,23 +192,7 @@ void Pattern02_0040(PLW* wk) {
 }
 
 void Pattern02_0041(PLW* wk) {
-    switch (CP_Index[wk->wu.id][0]) {
-    case 0:
-        Approach_Walk(wk, 0x37, 2);
-        break;
-
-    case 1:
-        Normal_Attack(wk, 9, 0x40);
-        break;
-
-    case 2:
-        J_Command_Attack(wk, &(Command_Attack_Args){8, 0x1C, 0xA, -1});
-        break;
-
-    default:
-        End_Pattern(wk);
-        break;
-    }
+    active_pattern_approach_walk_normal_attack_j_command_attack(wk, 0x37, 9, 0x40);
 }
 
 void Pattern02_0042(PLW* wk) {
@@ -399,19 +343,7 @@ void Pattern02_0061(PLW* wk) {
 }
 
 void Pattern02_0062(PLW* wk) {
-    switch (CP_Index[wk->wu.id][0]) {
-    case 0:
-        SA_Term(wk, &(SA_Term_Args){0x35, 0x36, 0xFFFF, 0x47});
-        break;
-
-    case 1:
-        SA_Term(wk, &(SA_Term_Args){0xFFFF, 0xFFFF, 0x19, 0x3C});
-        break;
-
-    default:
-        End_Pattern(wk);
-        break;
-    }
+    pattern_sa_term_2(wk);
 }
 
 void Pattern02_0063(PLW* wk) {
@@ -496,19 +428,7 @@ void Pattern02_0073(PLW* wk) {
 }
 
 void Pattern02_0074(PLW* wk) {
-    switch (CP_Index[wk->wu.id][0]) {
-    case 0:
-        Lever_Attack(wk, 8, 0, 0x40);
-        break;
-
-    case 1:
-        J_Command_Attack(wk, &(Command_Attack_Args){8, 0x1C, 0xA, -1});
-        break;
-
-    default:
-        End_Pattern(wk);
-        break;
-    }
+    pattern_lever_attack_j_command_attack(wk, 0x40, &(Command_Attack_Args){8, 0x1C, 0xA, -1});
 }
 
 void (*const Pattern02_Tbl[75])(PLW*) = {

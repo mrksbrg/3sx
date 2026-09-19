@@ -4,7 +4,7 @@
  */
 
 #include "sf33rd/Source/Game/com/active/active07.h"
-#include "sf33rd/Source/Game/com/active/active_patterns.h"
+#include "sf33rd/Source/Game/com/patterns/com_patterns.h"
 #include "common.h"
 #include "sf33rd/Source/Game/com/com_sub.h"
 #include "sf33rd/Source/Game/engine/workuser.h"
@@ -108,23 +108,7 @@ void Pattern07_0006(PLW* wk) {
 }
 
 void Pattern07_0007(PLW* wk) {
-    switch (CP_Index[wk->wu.id][0]) {
-    case 0:
-        Search_Back_Term(wk, 0x60, 1, -1);
-        break;
-
-    case 1:
-        Pierce_On(wk);
-        break;
-
-    case 2:
-        Command_Attack(wk, &(Command_Attack_Args){8, 1, 0xA, -1});
-        break;
-
-    default:
-        End_Pattern(wk);
-        break;
-    }
+    active_pattern_search_back_term_pierce_on_command_attack_4(wk, 0x60, 1, -1);
 }
 
 void Pattern07_0008(PLW* wk) {
@@ -349,19 +333,11 @@ void Pattern07_0021(PLW* wk) {
 }
 
 void Pattern07_0022(PLW* wk) {
-    switch (CP_Index[wk->wu.id][0]) {
-    case 0:
-        Jump_Attack_Term(wk, &(Jump_Term_Args){-0x7FA0, -0x7FC0, 8, 0x40, 0, -0x7F90, -1, 0x100});
-        break;
-
-    case 1:
-        Command_Attack(wk, &(Command_Attack_Args){8, 0x1F, 9, -1});
-        break;
-
-    default:
-        End_Pattern(wk);
-        break;
-    }
+    active_pattern_jump_attack_term_command_attack(
+        wk,
+        &(Jump_Term_Args){-0x7FA0, -0x7FC0, 8, 0x40, 0, -0x7F90, -1, 0x100},
+        &(Command_Attack_Args){8, 0x1F, 9, -1}
+    );
 }
 
 void Pattern07_0023(PLW* wk) {
@@ -441,23 +417,7 @@ void Pattern07_0029(PLW* wk) {
 }
 
 void Pattern07_0030(PLW* wk) {
-    switch (CP_Index[wk->wu.id][0]) {
-    case 0:
-        Adjust_Attack(wk, 9, 0x100);
-        break;
-
-    case 1:
-        Adjust_Attack(wk, 9, 0x100);
-        break;
-
-    case 2:
-        Lever_Attack(wk, 8, 0, 0x200);
-        break;
-
-    default:
-        End_Pattern(wk);
-        break;
-    }
+    pattern_adjust_attack_lever_attack(wk, 9, &(Adjust_Attack_Step){ 9, 0x100 }, 0x200);
 }
 
 void Pattern07_0031(PLW* wk) {
@@ -593,23 +553,12 @@ void Pattern07_0040(PLW* wk) {
 }
 
 void Pattern07_0041(PLW* wk) {
-    switch (CP_Index[wk->wu.id][0]) {
-    case 0:
-        Normal_Attack(wk, 0xB, 0x102);
-        break;
-
-    case 1:
-        Normal_Attack(wk, 0xB, 0x20);
-        break;
-
-    case 2:
-        J_Command_Attack(wk, &(Command_Attack_Args){8, 0x20, 0xA, -1});
-        break;
-
-    default:
-        End_Pattern(wk);
-        break;
-    }
+    pattern_normal_attack_j_command_attack_2(
+        wk,
+        &(Normal_Attack_Step){ 0xB, 0x102 },
+        0x20,
+        &(Command_Attack_Args){8, 0x20, 0xA, -1}
+    );
 }
 
 void Pattern07_0042(PLW* wk) {
@@ -708,19 +657,11 @@ void Pattern07_0050(PLW* wk) {
 }
 
 void Pattern07_0051(PLW* wk) {
-    switch (CP_Index[wk->wu.id][0]) {
-    case 0:
-        Hi_Jump_Attack_Term(wk, &(Hi_Jump_Term_Args){-1, -0x7FC8, 8, 0x20, 0, -0x7FA8, -1, 0x200});
-        break;
-
-    case 1:
-        Command_Attack(wk, &(Command_Attack_Args){8, 0x1D, 0xA, -1});
-        break;
-
-    default:
-        End_Pattern(wk);
-        break;
-    }
+    pattern_hi_jump_attack_term_command_attack(
+        wk,
+        &(Hi_Jump_Term_Args){-1, -0x7FC8, 8, 0x20, 0, -0x7FA8, -1, 0x200},
+        &(Command_Attack_Args){8, 0x1D, 0xA, -1}
+    );
 }
 
 void Pattern07_0052(PLW* wk) {
@@ -864,47 +805,11 @@ void Pattern07_0069(PLW* wk) {
 }
 
 void Pattern07_0070(PLW* wk) {
-    switch (CP_Index[wk->wu.id][0]) {
-    case 0:
-        Command_Attack(wk, &(Command_Attack_Args){8, 0x1F, 0xA, -1});
-        break;
-
-    case 1:
-        EM_Term(wk, &(EM_Term_Params){0x50, -0x7FB0, 8, 1, -1});
-        break;
-
-    case 2:
-        Command_Attack(wk, &(Command_Attack_Args){8, 0x2E, 8, -1});
-        break;
-
-    default:
-        End_Pattern(wk);
-        break;
-    }
+    pattern_command_attack_em_term_command_attack(wk);
 }
 
 void Pattern07_0071(PLW* wk) {
-    switch (CP_Index[wk->wu.id][0]) {
-    case 0:
-        Command_Attack(wk, &(Command_Attack_Args){8, 0x1F, 0xA, -1});
-        break;
-
-    case 1:
-        EM_Term(wk, &(EM_Term_Params){0x50, -0x7FB0, 8, 1, -1});
-        break;
-
-    case 2:
-        SA_Term(wk, &(SA_Term_Args){0x48, 0xFFFF, 0xFFFF, 0});
-        break;
-
-    case 3:
-        Command_Attack(wk, &(Command_Attack_Args){8, 0x2E, 8, -1});
-        break;
-
-    default:
-        End_Pattern(wk);
-        break;
-    }
+    pattern_command_attack_em_term_sa_term(wk);
 }
 
 void Pattern07_0072(PLW* wk) {

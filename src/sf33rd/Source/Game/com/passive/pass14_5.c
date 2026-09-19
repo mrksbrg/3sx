@@ -6,7 +6,7 @@
 
 #include "sf33rd/Source/Game/com/passive/pass14.h"
 #include "sf33rd/Source/Game/com/passive/pass14_internal.h"
-#include "sf33rd/Source/Game/com/passive/pass_patterns.h"
+#include "sf33rd/Source/Game/com/patterns/com_patterns.h"
 #include "common.h"
 #include "sf33rd/Source/Game/com/com_sub.h"
 #include "sf33rd/Source/Game/engine/workuser.h"
@@ -247,35 +247,11 @@ void Passive14_0231(PLW* wk) {
 }
 
 void Passive14_0232(PLW* wk) {
-    switch (CP_Index[wk->wu.id][0]) {
-    case 0:
-        Approach_Walk(wk, 0xBF, 3);
-        break;
-
-    case 1:
-        Look(wk, 2);
-        break;
-
-    default:
-        End_Pattern(wk);
-        break;
-    }
+    pattern_approach_walk_look(wk, 3);
 }
 
 void Passive14_0233(PLW* wk) {
-    switch (CP_Index[wk->wu.id][0]) {
-    case 0:
-        Approach_Walk(wk, 0xBF, 2);
-        break;
-
-    case 1:
-        Look(wk, 2);
-        break;
-
-    default:
-        End_Pattern(wk);
-        break;
-    }
+    pattern_approach_walk_look(wk, 2);
 }
 
 void Passive14_0234(PLW* wk) {
@@ -342,7 +318,7 @@ void Passive14_0236(PLW* wk) {
 }
 
 void Passive14_0237(PLW* wk) {
-    pattern_em_term_j_command_attack(
+    active_pattern_em_term_j_command_attack(
         wk,
         &(EM_Term_Params){-0x7F80, -1, 6, 6, 1},
         &(Command_Attack_Args){8, 0x1E, 0xA, -1}
@@ -434,7 +410,7 @@ void Passive14_0242(PLW* wk) {
 }
 
 void Passive14_0243(PLW* wk) {
-    pattern_com_random_select(wk, &(Branch_Menu_Args){2, 0x26, 0x27, 0x28, 0x29}, 0);
+    active_pattern_com_random_select(wk, &(Branch_Menu_Args){2, 0x26, 0x27, 0x28, 0x29}, 0);
 }
 
 void Passive14_0244(PLW* wk) {
@@ -454,15 +430,15 @@ void Passive14_0247(PLW* wk) {
 }
 
 void Passive14_0248(PLW* wk) {
-    pattern_com_random_select(wk, &(Branch_Menu_Args){2, 0x89, 0x8A, 0x8B, 0x8C}, 0);
+    active_pattern_com_random_select(wk, &(Branch_Menu_Args){2, 0x89, 0x8A, 0x8B, 0x8C}, 0);
 }
 
 void Passive14_0249(PLW* wk) {
-    pattern_normal_attack_command_attack(wk, 0xC, 0x402, &(Command_Attack_Args){0xC, 0x1F, 0xA, -1});
+    active_pattern_normal_attack_command_attack(wk, 0xC, 0x402, &(Command_Attack_Args){0xC, 0x1F, 0xA, -1});
 }
 
 void Passive14_0250(PLW* wk) {
-    pattern_com_random_select(wk, &(Branch_Menu_Args){6, 0x77, 0x77, 0x78, 0x79}, 2);
+    active_pattern_com_random_select(wk, &(Branch_Menu_Args){6, 0x77, 0x77, 0x78, 0x79}, 2);
 }
 
 void Passive14_0251(PLW* wk) {
@@ -482,21 +458,5 @@ void Passive14_0251(PLW* wk) {
 }
 
 void Passive14_0252(PLW* wk) {
-    switch (CP_Index[wk->wu.id][0]) {
-    case 0:
-        Check_SA_Full(wk, 6, 0x7C);
-        break;
-
-    case 1:
-        EM_Term(wk, &(EM_Term_Params){-0x7F30, -1, 5, 2, 0});
-        break;
-
-    case 2:
-        Command_Attack(wk, &(Command_Attack_Args){8, 0x8019, 0xA, -1});
-        break;
-
-    default:
-        End_Pattern(wk);
-        break;
-    }
+    pattern_check_sa_full_em_term_command_attack(wk);
 }
