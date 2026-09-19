@@ -44,6 +44,43 @@ void advance_opening_step(s16 index) {
     op_w.index = index;
 }
 
+/* One step of an opening scene. When the step's cue has come the scene moves on
+ * to the next step - and whatever else that step starts, the caller does, which
+ * is where it was - and otherwise the background keeps running on the scene
+ * this step shows. The cue is evaluated at the call site, where it was, and
+ * every step's own values are written out there in full.
+ *
+ * Returns whether the scene advanced. */
+bool opening_cue_step(bool cue, s16 next, s16 bg) {
+    if (cue) {
+        advance_opening_step(next);
+        return true;
+    }
+
+    op_bg_move(bg);
+    return false;
+}
+
+/* The same step, for the steps that also turn the scene's objects on or off.
+ * The assignment is the one the arm made, in the place it made it. */
+bool opening_cue_step_disp(bool cue, s16 next, s16 bg, s16 disp) {
+    if (opening_cue_step(cue, next, bg)) {
+        op_obj_disp = disp;
+        return true;
+    }
+
+    return false;
+}
+
+/* The steps that turn the scene's objects off and start an effect as they
+ * advance. Every one of them turns the objects off, so the flag is not a
+ * parameter here - the effect is. */
+void opening_cue_step_effect(bool cue, s16 next, s16 bg, s16 effect) {
+    if (opening_cue_step_disp(cue, next, bg, 0)) {
+        effect_48_init(effect);
+    }
+}
+
 const s16 op_109_sound[5] = { 0, 3, 5, 7, 11 };
 
 static bool op_109_sound_ready() {
@@ -63,22 +100,12 @@ void op_109_move() {
         break;
 
     case 1:
-        if (op_109_sound_ready()) {
-            advance_opening_step(55);
-            op_obj_disp = 1;
-            return;
-        }
+        opening_cue_step_disp(op_109_sound_ready(), 55, 54, 1);
 
-        op_bg_move(54);
         break;
 
     case 2:
-        if (gSeqStatus[0] >= op_109_sound[op_w.r_no_2]) {
-            advance_opening_step(56);
-            return;
-        }
-
-        op_bg_move(55);
+        opening_cue_step(gSeqStatus[0] >= op_109_sound[op_w.r_no_2], 56, 55);
         break;
 
     case 3:
@@ -96,13 +123,8 @@ void op_109_move() {
         break;
 
     case 4:
-        if (gSeqStatus[0] >= op_109_sound[op_w.r_no_2]) {
-            advance_opening_step(58);
-            op_obj_disp = 1;
-            return;
-        }
+        opening_cue_step_disp(gSeqStatus[0] >= op_109_sound[op_w.r_no_2], 58, 57, 1);
 
-        op_bg_move(57);
         break;
 
     default:
@@ -130,55 +152,26 @@ void op_110_move() {
         break;
 
     case 1:
-        if (op_110_sound_ready()) {
-            advance_opening_step(60);
-            op_obj_disp = 1;
-            return;
-        }
+        opening_cue_step_disp(op_110_sound_ready(), 60, 59, 1);
 
-        op_bg_move(59);
         break;
 
     case 2:
-        if (gSeqStatus[0] >= op_110_sound[op_w.r_no_2]) {
-            advance_opening_step(61);
-            op_obj_disp = 0;
-            effect_48_init(3);
-            return;
-        }
-
-        op_bg_move(60);
+        opening_cue_step_effect(gSeqStatus[0] >= op_110_sound[op_w.r_no_2], 61, 60, 3);
         break;
 
     case 3:
-        if (gSeqStatus[0] >= op_110_sound[op_w.r_no_2]) {
-            advance_opening_step(62);
-            op_obj_disp = 1;
-            return;
-        }
+        opening_cue_step_disp(gSeqStatus[0] >= op_110_sound[op_w.r_no_2], 62, 61, 1);
 
-        op_bg_move(61);
         break;
 
     case 4:
-        if (gSeqStatus[0] >= op_110_sound[op_w.r_no_2]) {
-            advance_opening_step(63);
-            op_obj_disp = 0;
-            effect_48_init(4);
-            return;
-        }
-
-        op_bg_move(62);
+        opening_cue_step_effect(gSeqStatus[0] >= op_110_sound[op_w.r_no_2], 63, 62, 4);
         break;
 
     case 5:
-        if (gSeqStatus[0] >= op_110_sound[op_w.r_no_2]) {
-            advance_opening_step(64);
-            op_obj_disp = 1;
-            return;
-        }
+        opening_cue_step_disp(gSeqStatus[0] >= op_110_sound[op_w.r_no_2], 64, 63, 1);
 
-        op_bg_move(63);
         break;
 
     default:
@@ -206,39 +199,19 @@ void op_111_move() {
         break;
 
     case 1:
-        if (op_111_sound_ready()) {
-            advance_opening_step(66);
-            return;
-        }
-
-        op_bg_move(65);
+        opening_cue_step(op_111_sound_ready(), 66, 65);
         break;
 
     case 2:
-        if (gSeqStatus[0] >= op_111_sound[op_w.r_no_2]) {
-            advance_opening_step(67);
-            return;
-        }
-
-        op_bg_move(66);
+        opening_cue_step(gSeqStatus[0] >= op_111_sound[op_w.r_no_2], 67, 66);
         break;
 
     case 3:
-        if (gSeqStatus[0] >= op_111_sound[op_w.r_no_2]) {
-            advance_opening_step(68);
-            return;
-        }
-
-        op_bg_move(67);
+        opening_cue_step(gSeqStatus[0] >= op_111_sound[op_w.r_no_2], 68, 67);
         break;
 
     case 4:
-        if (gSeqStatus[0] >= op_111_sound[op_w.r_no_2]) {
-            advance_opening_step(69);
-            return;
-        }
-
-        op_bg_move(68);
+        opening_cue_step(gSeqStatus[0] >= op_111_sound[op_w.r_no_2], 69, 68);
         break;
 
     default:
@@ -253,38 +226,71 @@ static bool op_112_sound_ready() {
     return (gSeqStatus[0] >= op_112_sound[op_w.r_no_2]) && (gSeqStatus[0] != 0x70);
 }
 
-static void start_op_112_timed_sequence(void) {
-    if (op_112_sound_ready()) {
-        advance_opening_step(71);
-        op_w.mv_ctr = 0;
-        return;
+/* A step of scene 112 that is timed by a frame counter rather than by the sound
+ * position: the counter ticks, and the step's own entry in op_112_sound is how
+ * many frames it lasts. */
+static bool op_112_timed_step(s16 next, s16 bg) {
+    op_w.mv_ctr += 1;
+    return opening_cue_step(op_w.mv_ctr >= op_112_sound[op_w.r_no_2], next, bg);
+}
+
+/* The frame-timed step, for the steps that also turn the objects on or off. */
+static bool op_112_timed_step_disp(s16 next, s16 bg, s16 disp) {
+    if (op_112_timed_step(next, bg)) {
+        op_obj_disp = disp;
+        return true;
     }
 
-    op_bg_move(70);
+    return false;
+}
+
+static void start_op_112_timed_sequence(void) {
+    if (opening_cue_step(op_112_sound_ready(), 71, 70)) {
+        op_w.mv_ctr = 0;
+    }
 }
 
 static void update_op_112_scene_71_transition(void) {
-    op_w.mv_ctr += 1;
-
-    if (op_w.mv_ctr >= op_112_sound[op_w.r_no_2]) {
-        advance_opening_step(72);
-        return;
-    }
-
-    op_bg_move(71);
+    op_112_timed_step(72, 71);
 }
 
 static void update_op_112_scene_72_transition(void) {
-    op_w.mv_ctr += 1;
-
-    if (op_w.mv_ctr >= op_112_sound[op_w.r_no_2]) {
-        advance_opening_step(73);
+    if (op_112_timed_step(73, 72)) {
         op_obj_disp = 0;
         effect_48_init(18);
-        return;
     }
+}
 
-    op_bg_move(72);
+/* Scene 112 runs nine steps. Its tail is reached through the default arm of the
+ * head, which is what keeps either switch readable; no case label is
+ * renumbered. */
+static void op_112_move_late() {
+    switch (op_w.r_no_2) {
+    case 5:
+        op_112_timed_step(75, 74);
+        break;
+
+    case 6:
+        if (op_112_timed_step(76, 75)) {
+            op_obj_disp = 0;
+            effect_48_init(19);
+        }
+
+        break;
+
+    case 7:
+        op_112_timed_step_disp(77, 76, 1);
+
+        break;
+
+    case 8:
+        op_112_timed_step(78, 77);
+        break;
+
+    default:
+        op_bg_move(78);
+        break;
+    }
 }
 
 void op_112_move() {
@@ -318,66 +324,12 @@ void op_112_move() {
         break;
 
     case 4:
-        op_w.mv_ctr += 1;
+        op_112_timed_step_disp(74, 73, 1);
 
-        if (op_w.mv_ctr >= op_112_sound[op_w.r_no_2]) {
-            advance_opening_step(74);
-            op_obj_disp = 1;
-            return;
-        }
-
-        op_bg_move(73);
-        break;
-
-    case 5:
-        op_w.mv_ctr += 1;
-
-        if (op_w.mv_ctr >= op_112_sound[op_w.r_no_2]) {
-            advance_opening_step(75);
-            return;
-        }
-
-        op_bg_move(74);
-        break;
-
-    case 6:
-        op_w.mv_ctr += 1;
-
-        if (op_w.mv_ctr >= op_112_sound[op_w.r_no_2]) {
-            advance_opening_step(76);
-            op_obj_disp = 0;
-            effect_48_init(19);
-            return;
-        }
-
-        op_bg_move(75);
-        break;
-
-    case 7:
-        op_w.mv_ctr += 1;
-
-        if (op_w.mv_ctr >= op_112_sound[op_w.r_no_2]) {
-            advance_opening_step(77);
-            op_obj_disp = 1;
-            return;
-        }
-
-        op_bg_move(76);
-        break;
-
-    case 8:
-        op_w.mv_ctr += 1;
-
-        if (op_w.mv_ctr >= op_112_sound[op_w.r_no_2]) {
-            advance_opening_step(78);
-            return;
-        }
-
-        op_bg_move(77);
         break;
 
     default:
-        op_bg_move(78);
+        op_112_move_late();
         break;
     }
 }
@@ -403,13 +355,8 @@ void op_113_move() {
         break;
 
     case 1:
-        if (op_113_sound_ready()) {
-            advance_opening_step(80);
-            op_obj_disp = 1;
-            return;
-        }
+        opening_cue_step_disp(op_113_sound_ready(), 80, 79, 1);
 
-        op_bg_move(79);
         break;
 
     case 2:
@@ -427,13 +374,8 @@ void op_113_move() {
         break;
 
     case 3:
-        if (gSeqStatus[0] >= op_113_sound[op_w.r_no_2]) {
-            advance_opening_step(82);
-            op_obj_disp = 1;
-            return;
-        }
+        opening_cue_step_disp(gSeqStatus[0] >= op_113_sound[op_w.r_no_2], 82, 81, 1);
 
-        op_bg_move(81);
         break;
 
     default:
@@ -448,6 +390,23 @@ static bool op_114_sound_ready() {
     return (gSeqStatus[0] >= op_114_sound[op_w.r_no_2]) && (gSeqStatus[0] != 0x72);
 }
 
+/* The one step of scene 114 that does not fit the shared shape: it zooms
+ * between advancing the step counter and clearing the work, so the order is
+ * kept by leaving the block whole rather than calling advance_opening_step. */
+static void start_op_114_zoom_step(void) {
+    if (gSeqStatus[0] >= op_114_sound[op_w.r_no_2]) {
+        op_w.r_no_2 += 1;
+        Zoom_Value_Set(64);
+        op_work_clear();
+        op_w.index = 87;
+        op_obj_disp = 0;
+        effect_48_init(7);
+        return;
+    }
+
+    op_bg_move(86);
+}
+
 void op_114_move() {
     switch (op_w.r_no_2) {
     case 0:
@@ -460,58 +419,26 @@ void op_114_move() {
         break;
 
     case 1:
-        if (op_114_sound_ready()) {
-            advance_opening_step(84);
-            op_obj_disp = 1;
-            return;
-        }
+        opening_cue_step_disp(op_114_sound_ready(), 84, 83, 1);
 
-        op_bg_move(83);
         break;
 
     case 2:
-        if (gSeqStatus[0] >= op_114_sound[op_w.r_no_2]) {
-            advance_opening_step(85);
-            op_obj_disp = 0;
-            effect_48_init(6);
-            return;
-        }
-
-        op_bg_move(84);
+        opening_cue_step_effect(gSeqStatus[0] >= op_114_sound[op_w.r_no_2], 85, 84, 6);
         break;
 
     case 3:
-        if (gSeqStatus[0] >= op_114_sound[op_w.r_no_2]) {
-            advance_opening_step(86);
-            op_obj_disp = 1;
-            return;
-        }
+        opening_cue_step_disp(gSeqStatus[0] >= op_114_sound[op_w.r_no_2], 86, 85, 1);
 
-        op_bg_move(85);
         break;
 
     case 4:
-        if (gSeqStatus[0] >= op_114_sound[op_w.r_no_2]) {
-            op_w.r_no_2 += 1;
-            Zoom_Value_Set(64);
-            op_work_clear();
-            op_w.index = 87;
-            op_obj_disp = 0;
-            effect_48_init(7);
-            return;
-        }
-
-        op_bg_move(86);
+        start_op_114_zoom_step();
         break;
 
     case 5:
-        if (gSeqStatus[0] >= op_114_sound[op_w.r_no_2]) {
-            advance_opening_step(88);
-            op_obj_disp = 1;
-            return;
-        }
+        opening_cue_step_disp(gSeqStatus[0] >= op_114_sound[op_w.r_no_2], 88, 87, 1);
 
-        op_bg_move(87);
         break;
 
     default:
@@ -538,12 +465,7 @@ void op_115_move() {
         break;
 
     case 1:
-        if (op_115_sound_ready()) {
-            advance_opening_step(90);
-            return;
-        }
-
-        op_bg_move(89);
+        opening_cue_step(op_115_sound_ready(), 90, 89);
         break;
 
     default:

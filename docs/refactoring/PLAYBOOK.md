@@ -2720,3 +2720,160 @@ which **343 are still one of a kind**, and only **9 families / 18 scripts** come
 or fewer varying slots with a callee among them. The refusal was right, and it is now
 priced. What defeats it is that two scripts of the same step count rarely share a *signature
 sequence*: the engine calls take different argument shapes, so the combinations rarely repeat.
+
+### Two more levers priced against `Game/com/active`, and both refused
+
+*Added 2026-09-19, re-testing the folder's plateau rather than taking it on the record.*
+
+The folder's eleven sub-10.00 files were re-scored directly (`active07.c` 8.03,
+`active08.c` 8.03, `active14_2.c` 8.03, `active14.c` 8.28, `active04.c` 8.54,
+`active17.c` 8.81) and the plateau holds. **Code Duplication is the only finding left in
+any of them** - `active07.c` flags 25 of its 76 scripts, in nested groups that reach 25
+members. Two further levers were measured against it:
+
+- **A step table for a uniform-callee script.** A script whose every arm calls the *same*
+  engine function with the same signature needs no switch at all: the arguments become a
+  `static const` array and a shared helper indexes it by `CP_Index[wk->wu.id][0]`, falling
+  through to `End_Pattern`. That removes the flagged shape outright rather than folding it.
+  Its reach was counted over all 525 residual scripts in both folders plus the patterns
+  module: **35**, of which the largest family is 9 `Normal_Attack` scripts and 16 callees
+  have exactly one script each. 490 of the 525 are mixed-callee. Spread over ninety files
+  that is under one script per file, and no file loses a duplication group. Refused on
+  reach, alongside Recipe F's measured 18 of 502 - and for the same underlying reason: what
+  repeats in the residue is the *switch*, never the sequence of calls inside it.
+- **Splitting a character file to spread its duplication groups.** Measured on
+  `active07.c`, cut at function 38 of 76: the halves score **8.03** and **9.09**, a mean of
+  8.56 against 8.03 whole. It pays, and it is refused anyway, on the same ground as the two
+  skeleton regroupings above: the cut has no organising principle. Both halves are Ibuki's
+  scripts, numbered consecutively, and nothing but the metric decides where 38 falls. A file
+  boundary drawn to spread a smell is not a file boundary.
+
+The floor is unchanged and it is the one already recorded: a residual script is a switch
+over a step counter whose arms call different engine functions in a different order, and no
+legal recipe takes a branch out of a switch that is already the smallest form of what it
+does.
+
+### The duplication check ignores constants, so do not give each case its own setter
+
+*Added 2026-09-19, measured twice in the PPGFile family.*
+
+CodeScene's Code Duplication check compares the *shape* of two functions, not their
+values: `function_duplication_min_similarity_percentage` is 75 and two bodies that differ
+only in their literals are 100% alike to it. Two consequences, both measured:
+
+- **A per-case setter family costs more than the switch it replaces.** The PPG and PPL
+  header readers each hold a switch over the colour format, and four of the five layouts
+  are written out identically in both. Giving each layout its own setter - five helpers,
+  each twelve assignments differing only in constants - deduplicated 48 lines and took
+  `PPGFile_context.c` from **9.44 to 8.81**: the five helpers became a duplication family,
+  and so did the two switches, which were now `case X: set_pixelformat_X(bits);` twice
+  over. Splitting the reader's two switches apart instead, bodies untouched, gave **9.58**,
+  and chaining the wide formats through the default arm finished at **10.00**.
+- **The same applies to a helper pair that differs only in its element type.** A dot-block
+  copier for `u8` and one for `u16` are one shape twice. They are still worth extracting -
+  they cleared a Complex Method and six bumps - but expect the pair to be flagged and do
+  not try to "fix" it by merging the two behind a width flag.
+
+The rule that falls out: **extract what differs in structure, and leave what differs only
+in values inside the switch that chooses between them.** A switch arm is the cheapest
+place a constant can live.
+
+### A twin pair of files makes the one-sided extraction rule a file-level rule
+
+*Added 2026-09-19.*
+
+*Between two twin arms, extract from one of them only* was written about two arms of one
+function. `PPGFile.c` shows the same effect between two *functions* that are each other's
+twin - `ppgCheckTextureDataBe` and `ppgCheckPaletteDataBe`, which end with the same nested
+free block over a different type. Extracting both cost the file a band, **9.24 -> 9.09**,
+because the two helpers are twins as well. Extracting the texture side alone - the one with
+two tables to give back, so the bodies are not the same length - paid: **9.31**.
+
+### A fold that removes simple functions can push the file mean over its threshold
+
+*Added 2026-09-19, measured on `opening_scenes.c`.*
+
+`file_mean_cyclomatic_complexity_warning` is a **mean over the functions in the file**, so
+the count of functions is a denominator, and a fold that deletes several simple ones raises
+it. Scene 108's four `update_op_108_scene_NN_transition` functions are identical apart
+from two scene indices - a textbook Recipe V family, four members, forty lines removed -
+and folding them took the file from **9.09 to 8.54**: no duplication finding changed, and
+*Overall Code Complexity* came back, because four functions of cc 2 had been holding the
+mean down.
+
+The fold was reverted. Two things follow, and they are the same rule seen from both sides:
+
+- **Before folding a family of simple functions, check the file's mean.** A file already
+  near 4 cannot afford to lose its cheap functions. The fold is still right when the file
+  has room; it was right for the twenty-four scene steps in the same campaign, which
+  removed no function at all - it replaced repeated *blocks* with calls, so the denominator
+  grew by one instead of shrinking by four.
+- **The converse is not a licence.** Adding functions that do nothing but hold a name, to
+  pull a mean down, is the denominator trick in the other direction, and it was refused
+  earlier on `PPGFile_chunks.c` for that reason. Extract what deserves a name; do not
+  manufacture names to move an average.
+
+### Fold the repeated block before you judge a switch too long to chain
+
+*Added 2026-09-19, and it overturns a recorded plateau.*
+
+`Game/opening` was recorded as stopped because "chaining one scene pays and chaining the
+next costs" - `op_103_move` measured 6.91 -> 7.42 and `op_107_move` 7.42 -> 6.50. That was
+true of the scenes *as they were then*, and it was the wrong conclusion, because the thing
+being chained was the wrong thing.
+
+Every scene step was the same eight lines:
+
+```c
+    case 3:
+        if (gSeqStatus[0] >= op_110_sound[op_w.r_no_2]) {
+            advance_opening_step(62);
+            op_obj_disp = 1;
+            return;
+        }
+
+        op_bg_move(61);
+        break;
+```
+
+Fifty of those across the two scene files, differing in the cue, two scene indices and
+whatever else the step starts. Folded onto `opening_cue_step` and two variants - Recipe V,
+with every varying value written out at its call site - each arm becomes one line, and the
+switches that were "too long to chain" became short enough that chaining them paid:
+6.77 -> 9.09 and 7.42 -> 9.09 for the two files.
+
+**The order matters.** Recipe X moves *lines* between functions and cannot make a scene
+shorter; Recipe V removes the lines outright. Chaining first spreads the repetition over
+more functions, which is why the earlier attempt measured worse each time it was tried
+again. So: **when a long switch's arms repeat a shape, fold the shape first and chain only
+what is left.** A chain measured before the fold has been measured on the wrong code.
+
+### Three ways a recorded plateau can be wrong, all found in one pass
+
+*Added 2026-09-19, after re-testing four plateaus and overturning three of them.*
+
+A plateau note is a claim about what was measured, and it is worth reading as narrowly as
+it was written. Three failed that reading on the same day:
+
+- **A `static` function is not file-scope state.** `mtrans.c` was recorded as having "no
+  legal cut left - every seam runs through a shared `static`". Every `static` in it is a
+  *function*; the only file-scope variables are two `const` tables that nothing outside
+  the file reads. A seam that needs functions declared is the cut PPGFile already took:
+  an internal header, nothing widened past the file pair. Splitting the buffer pool out
+  cleared the size finding, **7.55 -> 8.03**, and the new file came in at 8.28.
+- **A refusal covers the functions it names.** `ck_pass.c` was recorded as stopped on
+  `KEN_vs`, `HUGO_vs` and `GILL_vs` being near-misses, which re-diffing confirms. Three
+  *area helpers* below them differ in exactly one callee each - textbook Recipe F - and
+  had simply never been diffed. **8.03 -> 8.28.**
+- **A measurement taken before a fold is a measurement of different code.** See *Fold the
+  repeated block before you judge a switch too long to chain*, above: the opening folder's
+  "chaining costs" was measured on scenes whose arms were still eight lines each.
+
+The fourth held: `pls03_super_arts.c`'s direct-cancel side was re-tested by extracting the
+grounded arm's body, and it cost the file a band (**9.92 -> 9.09**) exactly as the note
+said it would, because the extracted helper twins with the airborne one.
+
+**What to do with a plateau note.** Re-measure the file first - the score alone takes
+seconds - then read the note for *which functions* it names and diff those yourself. A
+note that names a mechanism ("every seam runs through X") is a claim to check, not a
+finding to inherit.

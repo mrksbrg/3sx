@@ -55,51 +55,49 @@ u32 flCreateTextureHandle(plContext* bits, u32 flag) {
     return th;
 }
 
-s32 flPS2GetTextureInfoFromContext(plContext* bits, s32 bnum, u32 th, u32 flag) {
-    FLTexture* lpflTexture;
+/* A mipmap chain is valid when every level after the first is half the size of
+ * the one before it, and when there are no more than seven of them. Returns 0
+ * where the caller used to return 0, having logged and asserted the same way. */
+static s32 mipmap_levels_are_valid(plContext* bits, s32 bnum) {
+    plContext* lpcon;
     s32 lp0;
     s32 dw;
     s32 dh;
-    plContext* lpcon;
 
-    lpflTexture = &flTexture[LO_16_BITS(th) - 1];
+    if (bnum <= 1) {
+        return 1;
+    }
 
-    if (bnum > 1) {
-        if (bnum > 7) {
+    if (bnum > 7) {
+        flLogOut("Not supported mipmap texture @flPS2GetTextureInfoFromContext");
+        assert(0);
+        return 0;
+    }
+
+    lpcon = bits + 1;
+    dw = bits->width;
+    dh = bits->height;
+
+    for (lp0 = 1; lp0 < bnum; lp0++) {
+        dw >>= 1;
+        dh >>= 1;
+
+        if ((lpcon->width != dw) || (lpcon->height != dh)) {
             flLogOut("Not supported mipmap texture @flPS2GetTextureInfoFromContext");
             assert(0);
             return 0;
         }
 
-        lpcon = bits + 1;
-        dw = bits->width;
-        dh = bits->height;
-
-        for (lp0 = 1; lp0 < bnum; lp0++) {
-            dw >>= 1;
-            dh >>= 1;
-
-            if ((lpcon->width != dw) || (lpcon->height != dh)) {
-                flLogOut("Not supported mipmap texture @flPS2GetTextureInfoFromContext");
-                assert(0);
-                return 0;
-            }
-
-            lpcon += 1;
-        }
+        lpcon += 1;
     }
 
-    lpflTexture->be_flag = 1;
-    lpflTexture->flag = flag;
-    lpflTexture->desc = bits->desc;
-    lpflTexture->width = bits->width;
-    lpflTexture->height = bits->height;
-    lpflTexture->mem_handle = 0;
-    lpflTexture->lock_ptr = 0;
-    lpflTexture->lock_flag = 0;
-    lpflTexture->tex_num = bnum;
+    return 1;
+}
 
-    switch (bits->bitdepth) {
+/* The GS pixel format for a context's bit depth. Returns 0 for a depth the
+ * hardware has no format for, which is where the caller returned 0. */
+static s32 set_texture_format(FLTexture* lpflTexture, s32 bitdepth) {
+    switch (bitdepth) {
     default:
         flLogOut("Not supported texture bit depth @flPS2GetTextureInfoFromContext");
         assert(0);
@@ -129,6 +127,32 @@ s32 flPS2GetTextureInfoFromContext(plContext* bits, s32 bnum, u32 th, u32 flag) 
         lpflTexture->format = SCE_GS_PSMCT32;
         lpflTexture->bitdepth = 4;
         break;
+    }
+
+    return 1;
+}
+
+s32 flPS2GetTextureInfoFromContext(plContext* bits, s32 bnum, u32 th, u32 flag) {
+    FLTexture* lpflTexture;
+
+    lpflTexture = &flTexture[LO_16_BITS(th) - 1];
+
+    if (!mipmap_levels_are_valid(bits, bnum)) {
+        return 0;
+    }
+
+    lpflTexture->be_flag = 1;
+    lpflTexture->flag = flag;
+    lpflTexture->desc = bits->desc;
+    lpflTexture->width = bits->width;
+    lpflTexture->height = bits->height;
+    lpflTexture->mem_handle = 0;
+    lpflTexture->lock_ptr = 0;
+    lpflTexture->lock_flag = 0;
+    lpflTexture->tex_num = bnum;
+
+    if (!set_texture_format(lpflTexture, bits->bitdepth)) {
+        return 0;
     }
 
     lpflTexture->size =
@@ -335,6 +359,215 @@ s32 flLockPalette(Rect* lprect, u32 th, plContext* lpcontext, u32 flag) {
     return 1;
 }
 
+/* The context fields a lock fills in for the texture's format. Three of the four
+ * lock modes wrote this switch out identically, character for character. */
+static void set_lock_context_format(plContext* lpcontext, u32 format) {
+    switch (format) {
+    case 20:
+        lpcontext->bitdepth = 0;
+        lpcontext->pitch = lpcontext->width / 2;
+        break;
+
+    case 19:
+        lpcontext->bitdepth = 1;
+        lpcontext->pitch = lpcontext->width * lpcontext->bitdepth;
+        break;
+
+    case 2:
+        lpcontext->bitdepth = 2;
+        lpcontext->pixelformat.rl = 5;
+        lpcontext->pixelformat.rs = 0xA;
+        lpcontext->pixelformat.rm = 0x1F;
+        lpcontext->pixelformat.gl = 5;
+        lpcontext->pixelformat.gs = 5;
+        lpcontext->pixelformat.gm = 0x1F;
+        lpcontext->pixelformat.bl = 5;
+        lpcontext->pixelformat.bs = 0;
+        lpcontext->pixelformat.bm = 0x1F;
+        lpcontext->pixelformat.al = 1;
+        lpcontext->pixelformat.as = 0xF;
+        lpcontext->pixelformat.am = 1;
+        lpcontext->pixelformat.rs = 0;
+        lpcontext->pixelformat.bs = 0xA;
+        lpcontext->pixelformat.gl = 5;
+        lpcontext->pixelformat.gm = 0x1F;
+        lpcontext->pitch = lpcontext->width * lpcontext->bitdepth;
+        break;
+
+    case 1:
+        lpcontext->bitdepth = 3;
+        lpcontext->pixelformat.rl = 8;
+        lpcontext->pixelformat.rs = 0x10;
+        lpcontext->pixelformat.rm = 0xFF;
+        lpcontext->pixelformat.gl = 8;
+        lpcontext->pixelformat.gs = 8;
+        lpcontext->pixelformat.gm = 0xFF;
+        lpcontext->pixelformat.bl = 8;
+        lpcontext->pixelformat.bs = 0;
+        lpcontext->pixelformat.bm = 0xFF;
+        lpcontext->pixelformat.al = 0;
+        lpcontext->pixelformat.as = 0;
+        lpcontext->pixelformat.am = 0;
+        lpcontext->pixelformat.rs = 0;
+        lpcontext->pixelformat.bs = 0x10;
+        lpcontext->pitch = lpcontext->width * lpcontext->bitdepth;
+        break;
+
+    case 0:
+        lpcontext->bitdepth = 4;
+        lpcontext->pixelformat.rl = 8;
+        lpcontext->pixelformat.rs = 0x10;
+        lpcontext->pixelformat.rm = 0xFF;
+        lpcontext->pixelformat.gl = 8;
+        lpcontext->pixelformat.gs = 8;
+        lpcontext->pixelformat.gm = 0xFF;
+        lpcontext->pixelformat.bl = 8;
+        lpcontext->pixelformat.bs = 0;
+        lpcontext->pixelformat.bm = 0xFF;
+        lpcontext->pixelformat.al = 8;
+        lpcontext->pixelformat.as = 0x18;
+        lpcontext->pixelformat.am = 0xFF;
+        lpcontext->pixelformat.rs = 0;
+        lpcontext->pixelformat.bs = 0x10;
+        lpcontext->pitch = lpcontext->width * lpcontext->bitdepth;
+        break;
+    }
+}
+
+/* Mode 0 hands the caller a converted copy: the texture's own bytes in one
+ * context and the lock buffer in another, converted between them for the
+ * formats that need it and copied straight across for the ones that do not.
+ * This is the arm's own switch, moved out whole. */
+/* The direct-colour half of the lock conversion, reached through the default
+ * arm of the paletted half. No case label is renumbered. */
+static void lock_convert_direct_formats(const FlLockArgs* a, plContext* src, u8* buff_ptr, u8* buff_ptr1) {
+    switch (a->lpflTexture->format) {
+    case 1:
+        a->lpcontext->bitdepth = 3;
+        a->lpcontext->pixelformat.rl = 8;
+        a->lpcontext->pixelformat.rs = 0x10;
+        a->lpcontext->pixelformat.rm = 0xFF;
+        a->lpcontext->pixelformat.gl = 8;
+        a->lpcontext->pixelformat.gs = 8;
+        a->lpcontext->pixelformat.gm = 0xFF;
+        a->lpcontext->pixelformat.bl = 8;
+        a->lpcontext->pixelformat.bs = 0;
+        a->lpcontext->pixelformat.bm = 0xFF;
+        a->lpcontext->pixelformat.al = 0;
+        a->lpcontext->pixelformat.as = 0;
+        a->lpcontext->pixelformat.am = 0;
+        a->lpcontext->pitch = a->lpcontext->width * a->lpcontext->bitdepth;
+        src->bitdepth = 3;
+        src->pixelformat.rl = 8;
+        src->pixelformat.rs = 0x10;
+        src->pixelformat.rm = 0xFF;
+        src->pixelformat.gl = 8;
+        src->pixelformat.gs = 8;
+        src->pixelformat.gm = 0xFF;
+        src->pixelformat.bl = 8;
+        src->pixelformat.bs = 0;
+        src->pixelformat.bm = 0xFF;
+        src->pixelformat.al = 0;
+        src->pixelformat.as = 0;
+        src->pixelformat.am = 0;
+        src->pixelformat.rs = 0;
+        src->pixelformat.bs = 0x10;
+        src->pitch = src->width * src->bitdepth;
+        plConvertContext(a->lpcontext, src);
+        break;
+
+    case 0:
+        a->lpcontext->bitdepth = 4;
+        a->lpcontext->pixelformat.rl = 8;
+        a->lpcontext->pixelformat.rs = 0x10;
+        a->lpcontext->pixelformat.rm = 0xFF;
+        a->lpcontext->pixelformat.gl = 8;
+        a->lpcontext->pixelformat.gs = 8;
+        a->lpcontext->pixelformat.gm = 0xFF;
+        a->lpcontext->pixelformat.bl = 8;
+        a->lpcontext->pixelformat.bs = 0;
+        a->lpcontext->pixelformat.bm = 0xFF;
+        a->lpcontext->pixelformat.al = 8;
+        a->lpcontext->pixelformat.as = 0x18;
+        a->lpcontext->pixelformat.am = 0xFF;
+        a->lpcontext->pitch = a->lpcontext->width * a->lpcontext->bitdepth;
+        src->bitdepth = 4;
+        src->pixelformat.rl = 8;
+        src->pixelformat.rs = 0x10;
+        src->pixelformat.rm = 0xFF;
+        src->pixelformat.gl = 8;
+        src->pixelformat.gs = 8;
+        src->pixelformat.gm = 0xFF;
+        src->pixelformat.bl = 8;
+        src->pixelformat.bs = 0;
+        src->pixelformat.bm = 0xFF;
+        src->pixelformat.al = 8;
+        src->pixelformat.as = 0x18;
+        src->pixelformat.am = 0xFF;
+        src->pixelformat.rs = 0;
+        src->pixelformat.bs = 0x10;
+        src->pitch = src->width * src->bitdepth;
+        plConvertContext(a->lpcontext, src);
+        break;
+    }
+}
+
+static void lock_convert_by_format(const FlLockArgs* a, plContext* src, u8* buff_ptr, u8* buff_ptr1) {
+    switch (a->lpflTexture->format) {
+    case 20:
+        a->lpcontext->bitdepth = 0;
+        a->lpcontext->pitch = a->lpcontext->width / 2;
+        flMemcpy(buff_ptr, buff_ptr1, a->lpflTexture->size);
+        break;
+
+    case 19:
+        a->lpcontext->bitdepth = 1;
+        a->lpcontext->pitch = a->lpcontext->width * a->lpcontext->bitdepth;
+        flMemcpy(buff_ptr, buff_ptr1, a->lpflTexture->size);
+        break;
+
+    case 2:
+        a->lpcontext->bitdepth = 2;
+        a->lpcontext->pixelformat.rl = 5;
+        a->lpcontext->pixelformat.rs = 0xA;
+        a->lpcontext->pixelformat.rm = 0x1F;
+        a->lpcontext->pixelformat.gl = 5;
+        a->lpcontext->pixelformat.gs = 5;
+        a->lpcontext->pixelformat.gm = 0x1F;
+        a->lpcontext->pixelformat.bl = 5;
+        a->lpcontext->pixelformat.bs = 0;
+        a->lpcontext->pixelformat.bm = 0x1F;
+        a->lpcontext->pixelformat.al = 1;
+        a->lpcontext->pixelformat.as = 0xF;
+        a->lpcontext->pixelformat.am = 1;
+        a->lpcontext->pitch = a->lpcontext->width * a->lpcontext->bitdepth;
+        src->bitdepth = 2;
+        src->pixelformat.rl = 5;
+        src->pixelformat.rs = 0xA;
+        src->pixelformat.rm = 0x1F;
+        src->pixelformat.gl = 5;
+        src->pixelformat.gs = 5;
+        src->pixelformat.gm = 0x1F;
+        src->pixelformat.bl = 5;
+        src->pixelformat.bs = 0;
+        src->pixelformat.bm = 0x1F;
+        src->pixelformat.al = 1;
+        src->pixelformat.as = 0xF;
+        src->pixelformat.am = 1;
+        src->pixelformat.rs = 0;
+        src->pixelformat.bs = 0xA;
+        src->pixelformat.gl = 5;
+        src->pixelformat.gm = 0x1F;
+        src->pitch = src->width * src->bitdepth;
+        plConvertContext(a->lpcontext, src);
+        break;
+
+    default:
+        lock_convert_direct_formats(a, src, buff_ptr, buff_ptr1);
+        break;
+    }
+}
+
 s32 flPS2LockTexture(const FlLockArgs* a) {
     u8* buff_ptr;
     u8* buff_ptr1;
@@ -363,123 +596,7 @@ s32 flPS2LockTexture(const FlLockArgs* a) {
         src.height = a->lpcontext->height;
         src.ptr = buff_ptr1;
 
-        switch (a->lpflTexture->format) {
-        case 20:
-            a->lpcontext->bitdepth = 0;
-            a->lpcontext->pitch = a->lpcontext->width / 2;
-            flMemcpy(buff_ptr, buff_ptr1, a->lpflTexture->size);
-            break;
-
-        case 19:
-            a->lpcontext->bitdepth = 1;
-            a->lpcontext->pitch = a->lpcontext->width * a->lpcontext->bitdepth;
-            flMemcpy(buff_ptr, buff_ptr1, a->lpflTexture->size);
-            break;
-
-        case 2:
-            a->lpcontext->bitdepth = 2;
-            a->lpcontext->pixelformat.rl = 5;
-            a->lpcontext->pixelformat.rs = 0xA;
-            a->lpcontext->pixelformat.rm = 0x1F;
-            a->lpcontext->pixelformat.gl = 5;
-            a->lpcontext->pixelformat.gs = 5;
-            a->lpcontext->pixelformat.gm = 0x1F;
-            a->lpcontext->pixelformat.bl = 5;
-            a->lpcontext->pixelformat.bs = 0;
-            a->lpcontext->pixelformat.bm = 0x1F;
-            a->lpcontext->pixelformat.al = 1;
-            a->lpcontext->pixelformat.as = 0xF;
-            a->lpcontext->pixelformat.am = 1;
-            a->lpcontext->pitch = a->lpcontext->width * a->lpcontext->bitdepth;
-            src.bitdepth = 2;
-            src.pixelformat.rl = 5;
-            src.pixelformat.rs = 0xA;
-            src.pixelformat.rm = 0x1F;
-            src.pixelformat.gl = 5;
-            src.pixelformat.gs = 5;
-            src.pixelformat.gm = 0x1F;
-            src.pixelformat.bl = 5;
-            src.pixelformat.bs = 0;
-            src.pixelformat.bm = 0x1F;
-            src.pixelformat.al = 1;
-            src.pixelformat.as = 0xF;
-            src.pixelformat.am = 1;
-            src.pixelformat.rs = 0;
-            src.pixelformat.bs = 0xA;
-            src.pixelformat.gl = 5;
-            src.pixelformat.gm = 0x1F;
-            src.pitch = src.width * src.bitdepth;
-            plConvertContext(a->lpcontext, &src);
-            break;
-
-        case 1:
-            a->lpcontext->bitdepth = 3;
-            a->lpcontext->pixelformat.rl = 8;
-            a->lpcontext->pixelformat.rs = 0x10;
-            a->lpcontext->pixelformat.rm = 0xFF;
-            a->lpcontext->pixelformat.gl = 8;
-            a->lpcontext->pixelformat.gs = 8;
-            a->lpcontext->pixelformat.gm = 0xFF;
-            a->lpcontext->pixelformat.bl = 8;
-            a->lpcontext->pixelformat.bs = 0;
-            a->lpcontext->pixelformat.bm = 0xFF;
-            a->lpcontext->pixelformat.al = 0;
-            a->lpcontext->pixelformat.as = 0;
-            a->lpcontext->pixelformat.am = 0;
-            a->lpcontext->pitch = a->lpcontext->width * a->lpcontext->bitdepth;
-            src.bitdepth = 3;
-            src.pixelformat.rl = 8;
-            src.pixelformat.rs = 0x10;
-            src.pixelformat.rm = 0xFF;
-            src.pixelformat.gl = 8;
-            src.pixelformat.gs = 8;
-            src.pixelformat.gm = 0xFF;
-            src.pixelformat.bl = 8;
-            src.pixelformat.bs = 0;
-            src.pixelformat.bm = 0xFF;
-            src.pixelformat.al = 0;
-            src.pixelformat.as = 0;
-            src.pixelformat.am = 0;
-            src.pixelformat.rs = 0;
-            src.pixelformat.bs = 0x10;
-            src.pitch = src.width * src.bitdepth;
-            plConvertContext(a->lpcontext, &src);
-            break;
-
-        case 0:
-            a->lpcontext->bitdepth = 4;
-            a->lpcontext->pixelformat.rl = 8;
-            a->lpcontext->pixelformat.rs = 0x10;
-            a->lpcontext->pixelformat.rm = 0xFF;
-            a->lpcontext->pixelformat.gl = 8;
-            a->lpcontext->pixelformat.gs = 8;
-            a->lpcontext->pixelformat.gm = 0xFF;
-            a->lpcontext->pixelformat.bl = 8;
-            a->lpcontext->pixelformat.bs = 0;
-            a->lpcontext->pixelformat.bm = 0xFF;
-            a->lpcontext->pixelformat.al = 8;
-            a->lpcontext->pixelformat.as = 0x18;
-            a->lpcontext->pixelformat.am = 0xFF;
-            a->lpcontext->pitch = a->lpcontext->width * a->lpcontext->bitdepth;
-            src.bitdepth = 4;
-            src.pixelformat.rl = 8;
-            src.pixelformat.rs = 0x10;
-            src.pixelformat.rm = 0xFF;
-            src.pixelformat.gl = 8;
-            src.pixelformat.gs = 8;
-            src.pixelformat.gm = 0xFF;
-            src.pixelformat.bl = 8;
-            src.pixelformat.bs = 0;
-            src.pixelformat.bm = 0xFF;
-            src.pixelformat.al = 8;
-            src.pixelformat.as = 0x18;
-            src.pixelformat.am = 0xFF;
-            src.pixelformat.rs = 0;
-            src.pixelformat.bs = 0x10;
-            src.pitch = src.width * src.bitdepth;
-            plConvertContext(a->lpcontext, &src);
-            break;
-        }
+        lock_convert_by_format(a, &src, buff_ptr, buff_ptr1);
 
         break;
 
@@ -496,162 +613,12 @@ s32 flPS2LockTexture(const FlLockArgs* a) {
         a->lpflTexture->lock_ptr = (uintptr_t)buff_ptr;
         a->lpcontext->ptr = buff_ptr;
 
-        switch (a->lpflTexture->format) {
-        case 20:
-            a->lpcontext->bitdepth = 0;
-            a->lpcontext->pitch = a->lpcontext->width / 2;
-            break;
-
-        case 19:
-            a->lpcontext->bitdepth = 1;
-            a->lpcontext->pitch = a->lpcontext->width * a->lpcontext->bitdepth;
-            break;
-
-        case 2:
-            a->lpcontext->bitdepth = 2;
-            a->lpcontext->pixelformat.rl = 5;
-            a->lpcontext->pixelformat.rs = 0xA;
-            a->lpcontext->pixelformat.rm = 0x1F;
-            a->lpcontext->pixelformat.gl = 5;
-            a->lpcontext->pixelformat.gs = 5;
-            a->lpcontext->pixelformat.gm = 0x1F;
-            a->lpcontext->pixelformat.bl = 5;
-            a->lpcontext->pixelformat.bs = 0;
-            a->lpcontext->pixelformat.bm = 0x1F;
-            a->lpcontext->pixelformat.al = 1;
-            a->lpcontext->pixelformat.as = 0xF;
-            a->lpcontext->pixelformat.am = 1;
-            a->lpcontext->pixelformat.rs = 0;
-            a->lpcontext->pixelformat.bs = 0xA;
-            a->lpcontext->pixelformat.gl = 5;
-            a->lpcontext->pixelformat.gm = 0x1F;
-            a->lpcontext->pitch = a->lpcontext->width * a->lpcontext->bitdepth;
-            break;
-
-        case 1:
-            a->lpcontext->bitdepth = 3;
-            a->lpcontext->pixelformat.rl = 8;
-            a->lpcontext->pixelformat.rs = 0x10;
-            a->lpcontext->pixelformat.rm = 0xFF;
-            a->lpcontext->pixelformat.gl = 8;
-            a->lpcontext->pixelformat.gs = 8;
-            a->lpcontext->pixelformat.gm = 0xFF;
-            a->lpcontext->pixelformat.bl = 8;
-            a->lpcontext->pixelformat.bs = 0;
-            a->lpcontext->pixelformat.bm = 0xFF;
-            a->lpcontext->pixelformat.al = 0;
-            a->lpcontext->pixelformat.as = 0;
-            a->lpcontext->pixelformat.am = 0;
-            a->lpcontext->pixelformat.rs = 0;
-            a->lpcontext->pixelformat.bs = 0x10;
-            a->lpcontext->pitch = a->lpcontext->width * a->lpcontext->bitdepth;
-            break;
-
-        case 0:
-            a->lpcontext->bitdepth = 4;
-            a->lpcontext->pixelformat.rl = 8;
-            a->lpcontext->pixelformat.rs = 0x10;
-            a->lpcontext->pixelformat.rm = 0xFF;
-            a->lpcontext->pixelformat.gl = 8;
-            a->lpcontext->pixelformat.gs = 8;
-            a->lpcontext->pixelformat.gm = 0xFF;
-            a->lpcontext->pixelformat.bl = 8;
-            a->lpcontext->pixelformat.bs = 0;
-            a->lpcontext->pixelformat.bm = 0xFF;
-            a->lpcontext->pixelformat.al = 8;
-            a->lpcontext->pixelformat.as = 0x18;
-            a->lpcontext->pixelformat.am = 0xFF;
-            a->lpcontext->pixelformat.rs = 0;
-            a->lpcontext->pixelformat.bs = 0x10;
-            a->lpcontext->pitch = a->lpcontext->width * a->lpcontext->bitdepth;
-            break;
-        }
+        set_lock_context_format(a->lpcontext, a->lpflTexture->format);
 
         break;
 
+    /* Modes 2 and 3 had the same twelve lines written out twice. */
     case 2:
-        if (a->lpflTexture->mem_handle == 0) {
-            buff_ptr = mflTemporaryUse(a->lpflTexture->size);
-        } else {
-            buff_ptr = flPS2GetSystemBuffAdrs(a->lpflTexture->mem_handle);
-        }
-
-        a->lpflTexture->lock_ptr = (uintptr_t)buff_ptr;
-        a->lpcontext->ptr = buff_ptr;
-
-        switch (a->lpflTexture->format) {
-        case 20:
-            a->lpcontext->bitdepth = 0;
-            a->lpcontext->pitch = a->lpcontext->width / 2;
-            break;
-
-        case 19:
-            a->lpcontext->bitdepth = 1;
-            a->lpcontext->pitch = a->lpcontext->width * a->lpcontext->bitdepth;
-            break;
-
-        case 2:
-            a->lpcontext->bitdepth = 2;
-            a->lpcontext->pixelformat.rl = 5;
-            a->lpcontext->pixelformat.rs = 0xA;
-            a->lpcontext->pixelformat.rm = 0x1F;
-            a->lpcontext->pixelformat.gl = 5;
-            a->lpcontext->pixelformat.gs = 5;
-            a->lpcontext->pixelformat.gm = 0x1F;
-            a->lpcontext->pixelformat.bl = 5;
-            a->lpcontext->pixelformat.bs = 0;
-            a->lpcontext->pixelformat.bm = 0x1F;
-            a->lpcontext->pixelformat.al = 1;
-            a->lpcontext->pixelformat.as = 0xF;
-            a->lpcontext->pixelformat.am = 1;
-            a->lpcontext->pixelformat.rs = 0;
-            a->lpcontext->pixelformat.bs = 0xA;
-            a->lpcontext->pixelformat.gl = 5;
-            a->lpcontext->pixelformat.gm = 0x1F;
-            a->lpcontext->pitch = a->lpcontext->width * a->lpcontext->bitdepth;
-            break;
-
-        case 1:
-            a->lpcontext->bitdepth = 3;
-            a->lpcontext->pixelformat.rl = 8;
-            a->lpcontext->pixelformat.rs = 0x10;
-            a->lpcontext->pixelformat.rm = 0xFF;
-            a->lpcontext->pixelformat.gl = 8;
-            a->lpcontext->pixelformat.gs = 8;
-            a->lpcontext->pixelformat.gm = 0xFF;
-            a->lpcontext->pixelformat.bl = 8;
-            a->lpcontext->pixelformat.bs = 0;
-            a->lpcontext->pixelformat.bm = 0xFF;
-            a->lpcontext->pixelformat.al = 0;
-            a->lpcontext->pixelformat.as = 0;
-            a->lpcontext->pixelformat.am = 0;
-            a->lpcontext->pixelformat.rs = 0;
-            a->lpcontext->pixelformat.bs = 0x10;
-            a->lpcontext->pitch = a->lpcontext->width * a->lpcontext->bitdepth;
-            break;
-
-        case 0:
-            a->lpcontext->bitdepth = 4;
-            a->lpcontext->pixelformat.rl = 8;
-            a->lpcontext->pixelformat.rs = 0x10;
-            a->lpcontext->pixelformat.rm = 0xFF;
-            a->lpcontext->pixelformat.gl = 8;
-            a->lpcontext->pixelformat.gs = 8;
-            a->lpcontext->pixelformat.gm = 0xFF;
-            a->lpcontext->pixelformat.bl = 8;
-            a->lpcontext->pixelformat.bs = 0;
-            a->lpcontext->pixelformat.bm = 0xFF;
-            a->lpcontext->pixelformat.al = 8;
-            a->lpcontext->pixelformat.as = 0x18;
-            a->lpcontext->pixelformat.am = 0xFF;
-            a->lpcontext->pixelformat.rs = 0;
-            a->lpcontext->pixelformat.bs = 0x10;
-            a->lpcontext->pitch = a->lpcontext->width * a->lpcontext->bitdepth;
-            break;
-        }
-
-        break;
-
     case 3:
         if (a->lpflTexture->mem_handle == 0) {
             buff_ptr = mflTemporaryUse(a->lpflTexture->size);
@@ -662,76 +629,7 @@ s32 flPS2LockTexture(const FlLockArgs* a) {
         a->lpflTexture->lock_ptr = (uintptr_t)buff_ptr;
         a->lpcontext->ptr = buff_ptr;
 
-        switch (a->lpflTexture->format) {
-        case 20:
-            a->lpcontext->bitdepth = 0;
-            a->lpcontext->pitch = a->lpcontext->width / 2;
-            break;
-
-        case 19:
-            a->lpcontext->bitdepth = 1;
-            a->lpcontext->pitch = a->lpcontext->width * a->lpcontext->bitdepth;
-            break;
-
-        case 2:
-            a->lpcontext->bitdepth = 2;
-            a->lpcontext->pixelformat.rl = 5;
-            a->lpcontext->pixelformat.rs = 0xA;
-            a->lpcontext->pixelformat.rm = 0x1F;
-            a->lpcontext->pixelformat.gl = 5;
-            a->lpcontext->pixelformat.gs = 5;
-            a->lpcontext->pixelformat.gm = 0x1F;
-            a->lpcontext->pixelformat.bl = 5;
-            a->lpcontext->pixelformat.bs = 0;
-            a->lpcontext->pixelformat.bm = 0x1F;
-            a->lpcontext->pixelformat.al = 1;
-            a->lpcontext->pixelformat.as = 0xF;
-            a->lpcontext->pixelformat.am = 1;
-            a->lpcontext->pixelformat.rs = 0;
-            a->lpcontext->pixelformat.bs = 0xA;
-            a->lpcontext->pixelformat.gl = 5;
-            a->lpcontext->pixelformat.gm = 0x1F;
-            a->lpcontext->pitch = a->lpcontext->width * a->lpcontext->bitdepth;
-            break;
-
-        case 1:
-            a->lpcontext->bitdepth = 3;
-            a->lpcontext->pixelformat.rl = 8;
-            a->lpcontext->pixelformat.rs = 0x10;
-            a->lpcontext->pixelformat.rm = 0xFF;
-            a->lpcontext->pixelformat.gl = 8;
-            a->lpcontext->pixelformat.gs = 8;
-            a->lpcontext->pixelformat.gm = 0xFF;
-            a->lpcontext->pixelformat.bl = 8;
-            a->lpcontext->pixelformat.bs = 0;
-            a->lpcontext->pixelformat.bm = 0xFF;
-            a->lpcontext->pixelformat.al = 0;
-            a->lpcontext->pixelformat.as = 0;
-            a->lpcontext->pixelformat.am = 0;
-            a->lpcontext->pixelformat.rs = 0;
-            a->lpcontext->pixelformat.bs = 0x10;
-            a->lpcontext->pitch = a->lpcontext->width * a->lpcontext->bitdepth;
-            break;
-
-        case 0:
-            a->lpcontext->bitdepth = 4;
-            a->lpcontext->pixelformat.rl = 8;
-            a->lpcontext->pixelformat.rs = 0x10;
-            a->lpcontext->pixelformat.rm = 0xFF;
-            a->lpcontext->pixelformat.gl = 8;
-            a->lpcontext->pixelformat.gs = 8;
-            a->lpcontext->pixelformat.gm = 0xFF;
-            a->lpcontext->pixelformat.bl = 8;
-            a->lpcontext->pixelformat.bs = 0;
-            a->lpcontext->pixelformat.bm = 0xFF;
-            a->lpcontext->pixelformat.al = 8;
-            a->lpcontext->pixelformat.as = 0x18;
-            a->lpcontext->pixelformat.am = 0xFF;
-            a->lpcontext->pixelformat.rs = 0;
-            a->lpcontext->pixelformat.bs = 0x10;
-            a->lpcontext->pitch = a->lpcontext->width * a->lpcontext->bitdepth;
-            break;
-        }
+        set_lock_context_format(a->lpcontext, a->lpflTexture->format);
 
         break;
     }
@@ -772,6 +670,133 @@ s32 flUnlockPalette(u32 th) {
     return ret;
 }
 
+/* Unlocking a read-write lock puts the buffer back the way the hardware wants
+ * it: a straight copy for the paletted formats, and a conversion between the
+ * two contexts the caller has just pointed at the lock buffer and the texture's
+ * own memory for the rest. This is the arm's own switch, moved out whole; the
+ * two buffers it copied between are the two contexts' own pointers. */
+/* The direct-colour half of the unlock conversion, reached the same way. */
+static void unlock_convert_direct_formats(FLTexture* lpflTexture, plContext* src, plContext* dst) {
+    switch (lpflTexture->format) {
+    case 1:
+        src->bitdepth = 3;
+        src->pixelformat.rl = 8;
+        src->pixelformat.rs = 0x10;
+        src->pixelformat.rm = 0xFF;
+        src->pixelformat.gl = 8;
+        src->pixelformat.gs = 8;
+        src->pixelformat.gm = 0xFF;
+        src->pixelformat.bl = 8;
+        src->pixelformat.bs = 0;
+        src->pixelformat.bm = 0xFF;
+        src->pixelformat.al = 0;
+        src->pixelformat.as = 0;
+        src->pixelformat.am = 0;
+        src->pitch = src->width * src->bitdepth;
+        dst->bitdepth = 3;
+        dst->pixelformat.rl = 8;
+        dst->pixelformat.rs = 0x10;
+        dst->pixelformat.rm = 0xFF;
+        dst->pixelformat.gl = 8;
+        dst->pixelformat.gs = 8;
+        dst->pixelformat.gm = 0xFF;
+        dst->pixelformat.bl = 8;
+        dst->pixelformat.bs = 0;
+        dst->pixelformat.bm = 0xFF;
+        dst->pixelformat.al = 0;
+        dst->pixelformat.as = 0;
+        dst->pixelformat.am = 0;
+        dst->pixelformat.rs = 0;
+        dst->pixelformat.bs = 0x10;
+        dst->pitch = dst->width * dst->bitdepth;
+        plConvertContext(dst, src);
+        break;
+
+    case 0:
+        src->bitdepth = 4;
+        src->pixelformat.rl = 8;
+        src->pixelformat.rs = 0x10;
+        src->pixelformat.rm = 0xFF;
+        src->pixelformat.gl = 8;
+        src->pixelformat.gs = 8;
+        src->pixelformat.gm = 0xFF;
+        src->pixelformat.bl = 8;
+        src->pixelformat.bs = 0;
+        src->pixelformat.bm = 0xFF;
+        src->pixelformat.al = 8;
+        src->pixelformat.as = 0x18;
+        src->pixelformat.am = 0xFF;
+        src->pitch = src->width * src->bitdepth;
+        dst->bitdepth = 4;
+        dst->pixelformat.rl = 8;
+        dst->pixelformat.rs = 0x10;
+        dst->pixelformat.rm = 0xFF;
+        dst->pixelformat.gl = 8;
+        dst->pixelformat.gs = 8;
+        dst->pixelformat.gm = 0xFF;
+        dst->pixelformat.bl = 8;
+        dst->pixelformat.bs = 0;
+        dst->pixelformat.bm = 0xFF;
+        dst->pixelformat.al = 8;
+        dst->pixelformat.as = 0x18;
+        dst->pixelformat.am = 0xFF;
+        dst->pixelformat.rs = 0;
+        dst->pixelformat.bs = 0x10;
+        dst->pitch = dst->width * dst->bitdepth;
+        plConvertContext(dst, src);
+        break;
+    }
+}
+
+static void unlock_convert_by_format(FLTexture* lpflTexture, plContext* src, plContext* dst) {
+    switch (lpflTexture->format) {
+    case 20:
+    case 19:
+        flMemcpy(dst->ptr, src->ptr, lpflTexture->size);
+        break;
+
+    case 2:
+        src->bitdepth = 2;
+        src->pixelformat.rl = 5;
+        src->pixelformat.rs = 0xA;
+        src->pixelformat.rm = 0x1F;
+        src->pixelformat.gl = 5;
+        src->pixelformat.gs = 5;
+        src->pixelformat.gm = 0x1F;
+        src->pixelformat.bl = 5;
+        src->pixelformat.bs = 0;
+        src->pixelformat.bm = 0x1F;
+        src->pixelformat.al = 1;
+        src->pixelformat.as = 0xF;
+        src->pixelformat.am = 1;
+        src->pitch = src->width * src->bitdepth;
+        dst->bitdepth = 2;
+        dst->pixelformat.rl = 5;
+        dst->pixelformat.rs = 0xA;
+        dst->pixelformat.rm = 0x1F;
+        dst->pixelformat.gl = 5;
+        dst->pixelformat.gs = 5;
+        dst->pixelformat.gm = 0x1F;
+        dst->pixelformat.bl = 5;
+        dst->pixelformat.bs = 0;
+        dst->pixelformat.bm = 0x1F;
+        dst->pixelformat.al = 1;
+        dst->pixelformat.as = 0xF;
+        dst->pixelformat.am = 1;
+        dst->pixelformat.rs = 0;
+        dst->pixelformat.bs = 0xA;
+        dst->pixelformat.gl = 5;
+        dst->pixelformat.gm = 0x1F;
+        dst->pitch = dst->width * dst->bitdepth;
+        plConvertContext(dst, src);
+        break;
+
+    default:
+        unlock_convert_direct_formats(lpflTexture, src, dst);
+        break;
+    }
+}
+
 s32 flPS2UnlockTexture(FLTexture* lpflTexture) {
     u8* buff_ptr;
     u8* buff_ptr1;
@@ -797,116 +822,7 @@ s32 flPS2UnlockTexture(FLTexture* lpflTexture) {
         dst.height = lpflTexture->height;
         dst.ptr = buff_ptr;
 
-        switch (lpflTexture->format) {
-        case 20:
-        case 19:
-            flMemcpy(buff_ptr, buff_ptr1, lpflTexture->size);
-            break;
-
-        case 2:
-            src.bitdepth = 2;
-            src.pixelformat.rl = 5;
-            src.pixelformat.rs = 0xA;
-            src.pixelformat.rm = 0x1F;
-            src.pixelformat.gl = 5;
-            src.pixelformat.gs = 5;
-            src.pixelformat.gm = 0x1F;
-            src.pixelformat.bl = 5;
-            src.pixelformat.bs = 0;
-            src.pixelformat.bm = 0x1F;
-            src.pixelformat.al = 1;
-            src.pixelformat.as = 0xF;
-            src.pixelformat.am = 1;
-            src.pitch = src.width * src.bitdepth;
-            dst.bitdepth = 2;
-            dst.pixelformat.rl = 5;
-            dst.pixelformat.rs = 0xA;
-            dst.pixelformat.rm = 0x1F;
-            dst.pixelformat.gl = 5;
-            dst.pixelformat.gs = 5;
-            dst.pixelformat.gm = 0x1F;
-            dst.pixelformat.bl = 5;
-            dst.pixelformat.bs = 0;
-            dst.pixelformat.bm = 0x1F;
-            dst.pixelformat.al = 1;
-            dst.pixelformat.as = 0xF;
-            dst.pixelformat.am = 1;
-            dst.pixelformat.rs = 0;
-            dst.pixelformat.bs = 0xA;
-            dst.pixelformat.gl = 5;
-            dst.pixelformat.gm = 0x1F;
-            dst.pitch = dst.width * dst.bitdepth;
-            plConvertContext(&dst, &src);
-            break;
-
-        case 1:
-            src.bitdepth = 3;
-            src.pixelformat.rl = 8;
-            src.pixelformat.rs = 0x10;
-            src.pixelformat.rm = 0xFF;
-            src.pixelformat.gl = 8;
-            src.pixelformat.gs = 8;
-            src.pixelformat.gm = 0xFF;
-            src.pixelformat.bl = 8;
-            src.pixelformat.bs = 0;
-            src.pixelformat.bm = 0xFF;
-            src.pixelformat.al = 0;
-            src.pixelformat.as = 0;
-            src.pixelformat.am = 0;
-            src.pitch = src.width * src.bitdepth;
-            dst.bitdepth = 3;
-            dst.pixelformat.rl = 8;
-            dst.pixelformat.rs = 0x10;
-            dst.pixelformat.rm = 0xFF;
-            dst.pixelformat.gl = 8;
-            dst.pixelformat.gs = 8;
-            dst.pixelformat.gm = 0xFF;
-            dst.pixelformat.bl = 8;
-            dst.pixelformat.bs = 0;
-            dst.pixelformat.bm = 0xFF;
-            dst.pixelformat.al = 0;
-            dst.pixelformat.as = 0;
-            dst.pixelformat.am = 0;
-            dst.pixelformat.rs = 0;
-            dst.pixelformat.bs = 0x10;
-            dst.pitch = dst.width * dst.bitdepth;
-            plConvertContext(&dst, &src);
-            break;
-
-        case 0:
-            src.bitdepth = 4;
-            src.pixelformat.rl = 8;
-            src.pixelformat.rs = 0x10;
-            src.pixelformat.rm = 0xFF;
-            src.pixelformat.gl = 8;
-            src.pixelformat.gs = 8;
-            src.pixelformat.gm = 0xFF;
-            src.pixelformat.bl = 8;
-            src.pixelformat.bs = 0;
-            src.pixelformat.bm = 0xFF;
-            src.pixelformat.al = 8;
-            src.pixelformat.as = 0x18;
-            src.pixelformat.am = 0xFF;
-            src.pitch = src.width * src.bitdepth;
-            dst.bitdepth = 4;
-            dst.pixelformat.rl = 8;
-            dst.pixelformat.rs = 0x10;
-            dst.pixelformat.rm = 0xFF;
-            dst.pixelformat.gl = 8;
-            dst.pixelformat.gs = 8;
-            dst.pixelformat.gm = 0xFF;
-            dst.pixelformat.bl = 8;
-            dst.pixelformat.bs = 0;
-            dst.pixelformat.bm = 0xFF;
-            dst.pixelformat.al = 8;
-            dst.pixelformat.as = 0x18;
-            dst.pixelformat.am = 0xFF;
-            dst.pixelformat.rs = 0;
-            dst.pixelformat.bs = 0x10;
-            dst.pitch = dst.width * dst.bitdepth;
-            plConvertContext(&dst, &src);
-            break;
-        }
+        unlock_convert_by_format(lpflTexture, &src, &dst);
 
         break;
 
@@ -965,6 +881,92 @@ u32 flPS2GetTextureSize(u32 format, s32 dw, s32 dh, s32 bnum) {
     return tex_size;
 }
 
+/* One mipmap level written into the texture's own memory, and how many bytes it
+ * takes there. The paletted formats copy straight across; the direct-colour
+ * ones convert through the level's context. The size is left uninitialised for
+ * a format the hardware has none for, which is what the switch this replaces
+ * did. */
+static s32 convert_texture_level(plContext* lpcontext, plContext* tcon, FLTexture* lpflTexture, u32 type) {
+    s32 tex_size;
+
+    switch (lpflTexture->format) {
+    default:
+        flLogOut("Not supported texture bit depth @flPS2ConvertTextureFromContext");
+        break;
+
+    case SCE_GS_PSMT4:
+        tex_size = (tcon->width * tcon->height) >> 1;
+        flMemcpy(tcon->ptr, lpcontext->ptr, lpflTexture->size);
+        break;
+
+    case SCE_GS_PSMT8:
+        tex_size = tcon->width * tcon->height;
+        flMemcpy(tcon->ptr, lpcontext->ptr, lpflTexture->size);
+        break;
+
+    case SCE_GS_PSMCT16:
+        tex_size = tcon->width * tcon->height * 2;
+                tcon->pixelformat.rl = 5;
+        tcon->pixelformat.rs = 0xA;
+        tcon->pixelformat.rm = 0x1F;
+        tcon->pixelformat.gl = 5;
+        tcon->pixelformat.gs = 5;
+        tcon->pixelformat.gm = 0x1F;
+        tcon->pixelformat.bl = 5;
+        tcon->pixelformat.bs = 0;
+        tcon->pixelformat.bm = 0x1F;
+        tcon->pixelformat.al = 1;
+        tcon->pixelformat.as = 0xF;
+        tcon->pixelformat.am = 1;
+        tcon->pixelformat.rs = 0;
+        tcon->pixelformat.bs = 0xA;
+        tcon->pixelformat.gl = 5;
+        tcon->pixelformat.gm = 0x1F;
+        flPS2ConvertContext(lpcontext, tcon, 0, type);
+        break;
+
+    case SCE_GS_PSMCT24:
+        tex_size = tcon->width * tcon->height * 4;
+                tcon->pixelformat.rl = 8;
+        tcon->pixelformat.rs = 0x10;
+        tcon->pixelformat.rm = 0xFF;
+        tcon->pixelformat.gl = 8;
+        tcon->pixelformat.gs = 8;
+        tcon->pixelformat.gm = 0xFF;
+        tcon->pixelformat.bl = 8;
+        tcon->pixelformat.bs = 0;
+        tcon->pixelformat.bm = 0xFF;
+        tcon->pixelformat.al = 0;
+        tcon->pixelformat.as = 0;
+        tcon->pixelformat.am = 0;
+        tcon->pixelformat.rs = 0;
+        tcon->pixelformat.bs = 0x10;
+        flPS2ConvertContext(lpcontext, tcon, 0, type);
+        break;
+
+    case SCE_GS_PSMCT32:
+        tex_size = tcon->width * tcon->height * 4;
+                tcon->pixelformat.rl = 8;
+        tcon->pixelformat.rs = 0x10;
+        tcon->pixelformat.rm = 0xFF;
+        tcon->pixelformat.gl = 8;
+        tcon->pixelformat.gs = 8;
+        tcon->pixelformat.gm = 0xFF;
+        tcon->pixelformat.bl = 8;
+        tcon->pixelformat.bs = 0;
+        tcon->pixelformat.bm = 0xFF;
+        tcon->pixelformat.al = 8;
+        tcon->pixelformat.as = 0x18;
+        tcon->pixelformat.am = 0xFF;
+        tcon->pixelformat.rs = 0;
+        tcon->pixelformat.bs = 0x10;
+        flPS2ConvertContext(lpcontext, tcon, 0, type);
+        break;
+    }
+
+    return tex_size;
+}
+
 s32 flPS2ConvertTextureFromContext(plContext* lpcontext, FLTexture* lpflTexture, u32 type) {
     s32 lp0;
     s32 dw;
@@ -984,86 +986,9 @@ s32 flPS2ConvertTextureFromContext(plContext* lpcontext, FLTexture* lpflTexture,
         tcon.width = dw;
         tcon.height = dh;
         tcon.pitch = tcon.width * tcon.bitdepth;
+        tcon.ptr = dst_ptr;
 
-        switch (lpflTexture->format) {
-        default:
-            flLogOut("Not supported texture bit depth @flPS2ConvertTextureFromContext");
-            break;
-
-        case SCE_GS_PSMT4:
-            tex_size = (dw * dh) >> 1;
-            flMemcpy(dst_ptr, lpcontext->ptr, lpflTexture->size);
-
-            break;
-
-        case SCE_GS_PSMT8:
-            tex_size = dw * dh;
-            flMemcpy(dst_ptr, lpcontext->ptr, lpflTexture->size);
-
-            break;
-
-        case SCE_GS_PSMCT16:
-            tex_size = dw * dh * 2;
-            tcon.ptr = dst_ptr;
-            tcon.pixelformat.rl = 5;
-            tcon.pixelformat.rs = 0xA;
-            tcon.pixelformat.rm = 0x1F;
-            tcon.pixelformat.gl = 5;
-            tcon.pixelformat.gs = 5;
-            tcon.pixelformat.gm = 0x1F;
-            tcon.pixelformat.bl = 5;
-            tcon.pixelformat.bs = 0;
-            tcon.pixelformat.bm = 0x1F;
-            tcon.pixelformat.al = 1;
-            tcon.pixelformat.as = 0xF;
-            tcon.pixelformat.am = 1;
-            tcon.pixelformat.rs = 0;
-            tcon.pixelformat.bs = 0xA;
-            tcon.pixelformat.gl = 5;
-            tcon.pixelformat.gm = 0x1F;
-            flPS2ConvertContext(lpcontext, &tcon, 0, type);
-            break;
-
-        case SCE_GS_PSMCT24:
-            tex_size = dw * dh * 4;
-            tcon.ptr = dst_ptr;
-            tcon.pixelformat.rl = 8;
-            tcon.pixelformat.rs = 0x10;
-            tcon.pixelformat.rm = 0xFF;
-            tcon.pixelformat.gl = 8;
-            tcon.pixelformat.gs = 8;
-            tcon.pixelformat.gm = 0xFF;
-            tcon.pixelformat.bl = 8;
-            tcon.pixelformat.bs = 0;
-            tcon.pixelformat.bm = 0xFF;
-            tcon.pixelformat.al = 0;
-            tcon.pixelformat.as = 0;
-            tcon.pixelformat.am = 0;
-            tcon.pixelformat.rs = 0;
-            tcon.pixelformat.bs = 0x10;
-            flPS2ConvertContext(lpcontext, &tcon, 0, type);
-            break;
-
-        case SCE_GS_PSMCT32:
-            tex_size = dw * dh * 4;
-            tcon.ptr = dst_ptr;
-            tcon.pixelformat.rl = 8;
-            tcon.pixelformat.rs = 0x10;
-            tcon.pixelformat.rm = 0xFF;
-            tcon.pixelformat.gl = 8;
-            tcon.pixelformat.gs = 8;
-            tcon.pixelformat.gm = 0xFF;
-            tcon.pixelformat.bl = 8;
-            tcon.pixelformat.bs = 0;
-            tcon.pixelformat.bm = 0xFF;
-            tcon.pixelformat.al = 8;
-            tcon.pixelformat.as = 0x18;
-            tcon.pixelformat.am = 0xFF;
-            tcon.pixelformat.rs = 0;
-            tcon.pixelformat.bs = 0x10;
-            flPS2ConvertContext(lpcontext, &tcon, 0, type);
-            break;
-        }
+        tex_size = convert_texture_level(lpcontext, &tcon, lpflTexture, type);
 
         dst_ptr = &dst_ptr[tex_size];
         dw >>= 1;
@@ -1072,6 +997,85 @@ s32 flPS2ConvertTextureFromContext(plContext* lpcontext, FLTexture* lpflTexture,
     }
 
     return 1;
+}
+
+/* One source pixel, read at the width its context says. The variable is left
+ * uninitialised for any other width, which is what the switch this replaces
+ * did; only 2, 3 and 4 reach here. */
+static u32 read_source_pixel(s32 bitdepth, const u8* src) {
+    u32 color;
+
+    switch (bitdepth) {
+    case 2:
+        color = ((u16*)src)[0];
+        break;
+
+    case 3:
+        color = (src[2] << 16) | (src[1] << 8) | src[0];
+        break;
+
+    case 4:
+        color = ((u32*)src)[0];
+        break;
+    }
+
+    return color;
+}
+
+/* The three channels a 24-bit write puts down one byte at a time; the other
+ * widths write the packed colour instead. */
+typedef struct {
+    u32 r;
+    u32 g;
+    u32 b;
+} ConvertedRGB;
+
+static void write_converted_pixel(s32 bitdepth, u8* dst, u32 color, const ConvertedRGB* rgb) {
+    switch (bitdepth) {
+    case 2:
+        ((u16*)dst)[0] = color;
+        break;
+
+    case 3:
+        dst[0] = rgb->r;
+        dst[1] = rgb->g;
+        dst[2] = rgb->b;
+        break;
+
+    case 4:
+        ((u32*)dst)[0] = color;
+        break;
+    }
+}
+
+/* Alpha between the eight-bit form and the PS2's seven-bit-plus-one form:
+ * outward, full alpha becomes 0x80 and anything else halves without reaching
+ * zero; inward, 0x80 becomes full and anything else doubles. Only a 32-bit
+ * source carries alpha, which is why the caller asks only then. */
+static u32 convert_alpha(u32 a, u32 direction) {
+    if (direction != 0) {
+        if (a == 0x80) {
+            return 0xFF;
+        }
+
+        return a * 2;
+    }
+
+    if (a == 0xFF) {
+        return 0x80;
+    }
+
+    if (a == 0) {
+        return 0;
+    }
+
+    a >>= 1;
+
+    if (a == 0) {
+        return 1;
+    }
+
+    return a;
 }
 
 s32 flPS2ConvertContext(plContext* lpSrc, plContext* lpDst, u32 direction, u32 type) {
@@ -1104,19 +1108,7 @@ s32 flPS2ConvertContext(plContext* lpSrc, plContext* lpDst, u32 direction, u32 t
                 wk1 += lpSrc->bitdepth;
             }
 
-            switch (lpSrc->bitdepth) {
-            case 2:
-                color = ((u16*)src)[0];
-                break;
-
-            case 3:
-                color = (src[2] << 16) | (src[1] << 8) | src[0];
-                break;
-
-            case 4:
-                color = ((u32*)src)[0];
-                break;
-            }
+            color = read_source_pixel(lpSrc->bitdepth, src);
 
             r = (lpSrc->pixelformat.rm & (color >> lpSrc->pixelformat.rs)) << (8 - lpSrc->pixelformat.rl);
             g = (lpSrc->pixelformat.gm & (color >> lpSrc->pixelformat.gs)) << (8 - lpSrc->pixelformat.gl);
@@ -1131,21 +1123,7 @@ s32 flPS2ConvertContext(plContext* lpSrc, plContext* lpDst, u32 direction, u32 t
             }
 
             if (lpSrc->bitdepth == 4) {
-                if (direction == 0) {
-                    if (a == 0xFF) {
-                        a = 0x80;
-                    } else if (a != 0) {
-                        a >>= 1;
-
-                        if (a == 0) {
-                            a = 1;
-                        }
-                    }
-                } else if (a == 0x80) {
-                    a = 0xFF;
-                } else {
-                    a *= 2;
-                }
+                a = convert_alpha(a, direction);
             }
 
             color = ((lpDst->pixelformat.am & (a >> (8 - lpDst->pixelformat.al))) << lpDst->pixelformat.as) |
@@ -1153,21 +1131,7 @@ s32 flPS2ConvertContext(plContext* lpSrc, plContext* lpDst, u32 direction, u32 t
                      (((lpDst->pixelformat.rm & (r >> (8 - lpDst->pixelformat.rl))) << lpDst->pixelformat.rs) |
                       ((lpDst->pixelformat.gm & (g >> (8 - lpDst->pixelformat.gl))) << lpDst->pixelformat.gs)));
 
-            switch (lpSrc->bitdepth) {
-            case 2:
-                ((u16*)dst)[0] = color;
-                break;
-
-            case 3:
-                dst[0] = r;
-                dst[1] = g;
-                dst[2] = b;
-                break;
-
-            case 4:
-                ((u32*)dst)[0] = color;
-                break;
-            }
+            write_converted_pixel(lpSrc->bitdepth, dst, color, &(ConvertedRGB){ r, g, b });
 
             wk0 += 1;
         }

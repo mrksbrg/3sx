@@ -170,12 +170,7 @@ static void op_103_move_from_9() {
         break;
 
     case 11:
-        if (gSeqStatus[0] >= op_103_sound[op_w.r_no_2]) {
-            advance_opening_step(16);
-            return;
-        }
-
-        op_bg_move(15);
+        opening_cue_step(gSeqStatus[0] >= op_103_sound[op_w.r_no_2], 16, 15);
         break;
 
     default:
@@ -187,42 +182,19 @@ static void op_103_move_from_9() {
 static void op_103_move_from_5() {
     switch (op_w.r_no_2) {
     case 5:
-        if (gSeqStatus[0] >= op_103_sound[op_w.r_no_2]) {
-            advance_opening_step(10);
-            return;
-        }
-
-        op_bg_move(9);
+        opening_cue_step(gSeqStatus[0] >= op_103_sound[op_w.r_no_2], 10, 9);
         break;
 
     case 6:
-        if (gSeqStatus[0] >= op_103_sound[op_w.r_no_2]) {
-            advance_opening_step(11);
-            return;
-        }
-
-        op_bg_move(10);
+        opening_cue_step(gSeqStatus[0] >= op_103_sound[op_w.r_no_2], 11, 10);
         break;
 
     case 7:
-        if (gSeqStatus[0] >= op_103_sound[op_w.r_no_2]) {
-            advance_opening_step(12);
-            op_obj_disp = 0;
-            effect_48_init(9);
-            return;
-        }
-
-        op_bg_move(11);
+        opening_cue_step_effect(gSeqStatus[0] >= op_103_sound[op_w.r_no_2], 12, 11, 9);
         break;
 
     case 8:
-        if (gSeqStatus[0] >= op_103_sound[op_w.r_no_2]) {
-            advance_opening_step(13);
-            op_obj_disp = 1;
-            return;
-        }
-
-        op_bg_move(12);
+        opening_cue_step_disp(gSeqStatus[0] >= op_103_sound[op_w.r_no_2], 13, 12, 1);
         break;
 
     default:
@@ -251,14 +223,7 @@ void op_103_move() {
         break;
 
     case 2:
-        if (gSeqStatus[0] >= op_103_sound[op_w.r_no_2]) {
-            advance_opening_step(7);
-            op_obj_disp = 0;
-            effect_48_init(8);
-            return;
-        }
-
-        op_bg_move(6);
+        opening_cue_step_effect(gSeqStatus[0] >= op_103_sound[op_w.r_no_2], 7, 6, 8);
         break;
 
     case 3:
@@ -274,12 +239,7 @@ void op_103_move() {
         break;
 
     case 4:
-        if (gSeqStatus[0] >= op_103_sound[op_w.r_no_2]) {
-            advance_opening_step(9);
-            return;
-        }
-
-        op_bg_move(8);
+        opening_cue_step(gSeqStatus[0] >= op_103_sound[op_w.r_no_2], 9, 8);
         break;
 
     default:
@@ -292,6 +252,29 @@ s16 op_104_sound[7] = { 0, 5, 6, 7, 9, 10, 11 };
 
 static bool op_104_sound_ready() {
     return (gSeqStatus[0] >= op_104_sound[op_w.r_no_2]) && (gSeqStatus[0] != 0x68);
+}
+
+/* Scene 104's tail, reached through the default arm; its last step and the
+ * out-of-range default share an arm and stay together. */
+static void op_104_move_late() {
+    switch (op_w.r_no_2) {
+    case 4:
+        opening_cue_step_effect(gSeqStatus[0] >= op_104_sound[op_w.r_no_2], 21, 20, 11);
+        break;
+
+    case 5:
+        opening_cue_step_disp(gSeqStatus[0] >= op_104_sound[op_w.r_no_2], 22, 21, 1);
+        break;
+
+    case 6:
+        opening_cue_step(gSeqStatus[0] >= op_104_sound[op_w.r_no_2], 23, 22);
+        break;
+
+    case 7:
+    default:
+        op_bg_move(23);
+        break;
+    }
 }
 
 void op_104_move() {
@@ -309,68 +292,19 @@ void op_104_move() {
         break;
 
     case 1:
-        if (op_104_sound_ready()) {
-            advance_opening_step(18);
-            return;
-        }
-
-        op_bg_move(17);
+        opening_cue_step(op_104_sound_ready(), 18, 17);
         break;
 
     case 2:
-        if (gSeqStatus[0] >= op_104_sound[op_w.r_no_2]) {
-            advance_opening_step(19);
-            op_obj_disp = 0;
-            effect_48_init(10);
-            return;
-        }
-
-        op_bg_move(18);
+        opening_cue_step_effect(gSeqStatus[0] >= op_104_sound[op_w.r_no_2], 19, 18, 10);
         break;
 
     case 3:
-        if (gSeqStatus[0] >= op_104_sound[op_w.r_no_2]) {
-            advance_opening_step(20);
-            op_obj_disp = 1;
-            return;
-        }
-
-        op_bg_move(19);
+        opening_cue_step_disp(gSeqStatus[0] >= op_104_sound[op_w.r_no_2], 20, 19, 1);
         break;
 
-    case 4:
-        if (gSeqStatus[0] >= op_104_sound[op_w.r_no_2]) {
-            advance_opening_step(21);
-            op_obj_disp = 0;
-            effect_48_init(11);
-            return;
-        }
-
-        op_bg_move(20);
-        break;
-
-    case 5:
-        if (gSeqStatus[0] >= op_104_sound[op_w.r_no_2]) {
-            advance_opening_step(22);
-            op_obj_disp = 1;
-            return;
-        }
-
-        op_bg_move(21);
-        break;
-
-    case 6:
-        if (gSeqStatus[0] >= op_104_sound[op_w.r_no_2]) {
-            advance_opening_step(23);
-            return;
-        }
-
-        op_bg_move(22);
-        break;
-
-    case 7:
     default:
-        op_bg_move(23);
+        op_104_move_late();
         break;
     }
 }
@@ -415,32 +349,15 @@ void op_106_move() {
         break;
 
     case 1:
-        if (op_106_sound_ready()) {
-            advance_opening_step(26);
-            return;
-        }
-
-        op_bg_move(25);
+        opening_cue_step(op_106_sound_ready(), 26, 25);
         break;
 
     case 2:
-        if (gSeqStatus[0] >= op_106_sound[op_w.r_no_2]) {
-            advance_opening_step(27);
-            return;
-        }
-
-        op_bg_move(26);
+        opening_cue_step(gSeqStatus[0] >= op_106_sound[op_w.r_no_2], 27, 26);
         break;
 
     case 3:
-        if (gSeqStatus[0] >= op_106_sound[op_w.r_no_2]) {
-            advance_opening_step(28);
-            op_obj_disp = 0;
-            effect_48_init(15);
-            return;
-        }
-
-        op_bg_move(27);
+        opening_cue_step_effect(gSeqStatus[0] >= op_106_sound[op_w.r_no_2], 28, 27, 15);
         break;
 
     default:
@@ -470,6 +387,41 @@ static void update_op_107_effect_sequence(void) {
     op_bg_move(33);
 }
 
+/* Scene 107 runs twelve steps; its tail is reached through the default arm.
+ * Step 6 ended in `return` rather than `break`, which is the same here and
+ * stays as it was. */
+static void op_107_move_late() {
+    switch (op_w.r_no_2) {
+    case 6:
+        opening_cue_step(gSeqStatus[0] >= op_107_sound[op_w.r_no_2], 35, 34);
+        return;
+
+    case 7:
+        opening_cue_step_effect(gSeqStatus[0] >= op_107_sound[op_w.r_no_2], 36, 35, 14);
+        break;
+
+    case 8:
+        opening_cue_step_disp(gSeqStatus[0] >= op_107_sound[op_w.r_no_2], 37, 36, 1);
+        break;
+
+    case 9:
+        opening_cue_step(gSeqStatus[0] >= op_107_sound[op_w.r_no_2], 38, 37);
+        break;
+
+    case 10:
+        opening_cue_step(gSeqStatus[0] >= op_107_sound[op_w.r_no_2], 39, 38);
+        break;
+
+    case 11:
+        opening_cue_step(gSeqStatus[0] >= op_107_sound[op_w.r_no_2], 40, 39);
+        break;
+
+    default:
+        op_bg_move(40);
+        break;
+    }
+}
+
 void op_107_move() {
     switch (op_w.r_no_2) {
     case 0:
@@ -486,107 +438,27 @@ void op_107_move() {
         break;
 
     case 1:
-        if (op_107_sound_ready()) {
-            advance_opening_step(30);
-            return;
-        }
-
-        op_bg_move(29);
+        opening_cue_step(op_107_sound_ready(), 30, 29);
         break;
 
     case 2:
-        if (gSeqStatus[0] >= op_107_sound[op_w.r_no_2]) {
-            advance_opening_step(31);
-            return;
-        }
-
-        op_bg_move(30);
+        opening_cue_step(gSeqStatus[0] >= op_107_sound[op_w.r_no_2], 31, 30);
         break;
 
     case 3:
-        if (gSeqStatus[0] >= op_107_sound[op_w.r_no_2]) {
-            advance_opening_step(32);
-            op_obj_disp = 0;
-            effect_48_init(13);
-            return;
-        }
-
-        op_bg_move(31);
+        opening_cue_step_effect(gSeqStatus[0] >= op_107_sound[op_w.r_no_2], 32, 31, 13);
         break;
 
     case 4:
-        if (gSeqStatus[0] >= op_107_sound[op_w.r_no_2]) {
-            advance_opening_step(33);
-            op_obj_disp = 1;
-            return;
-        }
-
-        op_bg_move(32);
+        opening_cue_step_disp(gSeqStatus[0] >= op_107_sound[op_w.r_no_2], 33, 32, 1);
         break;
 
     case 5:
         update_op_107_effect_sequence();
         break;
 
-    case 6:
-        if (gSeqStatus[0] >= op_107_sound[op_w.r_no_2]) {
-            advance_opening_step(35);
-            return;
-        }
-
-        op_bg_move(34);
-        return;
-
-    case 7:
-        if (gSeqStatus[0] >= op_107_sound[op_w.r_no_2]) {
-            advance_opening_step(36);
-            op_obj_disp = 0;
-            effect_48_init(14);
-            return;
-        }
-
-        op_bg_move(35);
-        break;
-
-    case 8:
-        if (gSeqStatus[0] >= op_107_sound[op_w.r_no_2]) {
-            advance_opening_step(37);
-            op_obj_disp = 1;
-            return;
-        }
-
-        op_bg_move(36);
-        break;
-
-    case 9:
-        if (gSeqStatus[0] >= op_107_sound[op_w.r_no_2]) {
-            advance_opening_step(38);
-            return;
-        }
-
-        op_bg_move(37);
-        break;
-
-    case 10:
-        if (gSeqStatus[0] >= op_107_sound[op_w.r_no_2]) {
-            advance_opening_step(39);
-            return;
-        }
-
-        op_bg_move(38);
-        break;
-
-    case 11:
-        if (gSeqStatus[0] >= op_107_sound[op_w.r_no_2]) {
-            advance_opening_step(40);
-            return;
-        }
-
-        op_bg_move(39);
-        break;
-
     default:
-        op_bg_move(40);
+        op_107_move_late();
         break;
     }
 }
@@ -702,6 +574,62 @@ static void update_op_108_final_transition(void) {
     }
 }
 
+/* Scene 108 runs thirteen steps, more than a switch can hold under the
+ * complexity threshold. The tail is reached through the default arm, twice
+ * over; no case label is renumbered, and the empty default the scene already
+ * had for an out-of-range step is what each link is written into. */
+static void op_108_move_last() {
+    switch (op_w.r_no_2) {
+    case 8:
+        update_op_108_timed_transition(49);
+        break;
+
+    case 9:
+        update_op_108_scene_49_transition();
+        break;
+
+    case 10:
+        update_op_108_timed_transition(51);
+        break;
+
+    case 11:
+        update_op_108_scene_51_transition();
+        break;
+
+    case 12:
+        update_op_108_final_transition();
+        break;
+    }
+}
+
+static void op_108_move_late() {
+    switch (op_w.r_no_2) {
+    case 3:
+        update_op_108_followup_step();
+        break;
+
+    case 4:
+        update_op_108_timed_transition(45);
+        break;
+
+    case 5:
+        update_op_108_scene_45_transition();
+        break;
+
+    case 6:
+        update_op_108_timed_transition(47);
+        break;
+
+    case 7:
+        update_op_108_scene_47_transition();
+        break;
+
+    default:
+        op_108_move_last();
+        break;
+    }
+}
+
 void op_108_move() {
     switch (op_w.r_no_2) {
     case 0:
@@ -727,46 +655,7 @@ void op_108_move() {
         break;
 
     default:
-        break;
-
-    case 3:
-        update_op_108_followup_step();
-        break;
-
-    case 4:
-        update_op_108_timed_transition(45);
-        break;
-
-    case 5:
-        update_op_108_scene_45_transition();
-        break;
-
-    case 6:
-        update_op_108_timed_transition(47);
-        break;
-
-    case 7:
-        update_op_108_scene_47_transition();
-        break;
-
-    case 8:
-        update_op_108_timed_transition(49);
-        break;
-
-    case 9:
-        update_op_108_scene_49_transition();
-        break;
-
-    case 10:
-        update_op_108_timed_transition(51);
-        break;
-
-    case 11:
-        update_op_108_scene_51_transition();
-        break;
-
-    case 12:
-        update_op_108_final_transition();
+        op_108_move_late();
         break;
     }
 }
