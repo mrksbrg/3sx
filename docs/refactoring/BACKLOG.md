@@ -17,16 +17,19 @@ for the allowed transformations.
 
 ## Where the whole repository stands
 
-| Band | Score | 2026-09-01 | 2026-09-19 |
-| --- | --- | --- | --- |
-| **Red** - severe debt | 1.0 - 3.9 | 19 | **0** |
-| **Yellow** - problematic debt | 4.0 - 8.9 | 207 | 93 |
-| Green | 9.0 - 9.9 | 158 | 91 |
-| Optimal | 10.0 | 98 | **475** |
-| Total scored | | 482 | 659 |
+| Band | Score | 2026-09-01 | 2026-09-19 | 2026-09-20 |
+| --- | --- | --- | --- | --- |
+| **Red** - severe debt | 1.0 - 3.9 | 19 | **0** | **0** |
+| **Yellow** - problematic debt | 4.0 - 8.9 | 207 | 93 | **28** |
+| Green | 9.0 - 9.9 | 158 | 91 | 79 |
+| Optimal | 10.0 | 98 | 475 | **553** |
+| Total scored | | 482 | 659 | 660 |
 
 The file count rises because the campaign splits files. Mean Code Health across every
-scorable first-party file is **9.64**.
+scorable first-party file is **9.85**.
+
+The 2026-09-20 column is the evening sweep in `codehealth-current.json` with the nine
+files re-measured after the `polish-the-green-band` merge folded in.
 
 ## The Red band is empty
 
