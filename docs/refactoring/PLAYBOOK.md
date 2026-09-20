@@ -1122,6 +1122,117 @@ allows.
 
 ---
 
+## Recipe J - Dispatch Table
+
+**Use when:** CodeScene reports *Overall Code Complexity* or *Code Duplication* on a file
+whose functions are all one `switch` whose every arm is a single **call**. Recipe L does
+this for arms that return a constant; this is the same transformation for arms that call
+something. A switch like that is a dispatch table written as control flow, and the whole
+file's complexity is the arm count.
+
+**The conditions, all five:**
+
+1. Every non-default arm is exactly one call statement followed by `break;`. No second
+   statement, no fallthrough, no arm that falls into the next.
+2. No argument list anywhere in the switch contains a call, an assignment, an increment,
+   or anything else with an effect. The table builds every step's arguments on entry, not
+   only the selected one's, so the arguments must be pure - literals, parameters, or
+   compound literals of those. Check this over the whole family before converting any of
+   it, not arm by arm.
+3. The case labels are unique and ascending, and the controlling expression is a plain
+   integer or enum value.
+4. The switch has a `default:`, and it too is a single statement.
+5. The callees are declared in one header, so their signatures - and therefore the
+   argument structs and the adapters - can be generated rather than typed.
+
+**How:**
+
+1. Generate one argument struct per callee, its fields in the callee's parameter order
+   and with the callee's own parameter types, and one adapter per callee that unpacks
+   the struct into the call. A callee that already takes one of the engine's argument
+   objects gets a typedef of that object instead, so its steps read like every other
+   step's. `tools/pattern_table.py --emit-infra` does this from `com_sub.h`.
+2. Write one interpreter: index the table with the switch's controlling expression,
+   fall through to the default arm when the index is past the end or lands on a hole.
+3. Replace each function body with the table, **keyed by designated initialisers whose
+   subscripts are the case labels**, and a call to the interpreter.
+
+**Before:**
+
+```c
+void pattern_approach_walk_em_term_normal_attack(PLW* wk, s16 target_pos, const EM_Term_Params* p) {
+    switch (CP_Index[wk->wu.id][0]) {
+    case 0:
+        Approach_Walk(wk, target_pos, 2);
+        break;
+
+    case 1:
+        EM_Term(wk, p);
+        break;
+
+    case 2:
+        Normal_Attack(wk, 8, 0x402);
+        break;
+
+    default:
+        End_Pattern(wk);
+        break;
+    }
+}
+```
+
+**After:**
+
+```c
+void pattern_approach_walk_em_term_normal_attack(PLW* wk, s16 target_pos, const EM_Term_Params* p) {
+    const Pattern_Step script[3] = { [0] = STEP(Approach_Walk, target_pos, 2),
+                                     [1] = STEP_WITH(EM_Term, p),
+                                     [2] = STEP(Normal_Attack, 8, 0x402) };
+    Run_Pattern(wk, script, 3);
+}
+```
+
+**Why the designators.** They are the case labels, unchanged. *Absolutely forbidden* calls
+a `case` label a literal and renumbering it a literal change, and it is right: a positional
+array would silently renumber every arm of a switch that does not start at zero. Eight of
+this folder's skeletons start at `case 6:`, and they convert to `[6] = ...` in a table of
+seven with six holes, which is what the switch did.
+
+**Why the inverse is the proof.** The transformation is invertible, and the tool runs it
+backwards: `--verify` parses a converted file, regenerates the switch from its tables, and
+diffs that against the pre-conversion source. An exact match says no call, no argument and
+no step number moved. That is what has to carry a 448-function change here, because
+statcheck is unavailable and replay verification excludes CPU AI by design
+(`REPLAY-VERIFICATION.md`). Do not apply this recipe by hand to more than one function:
+if it cannot be scripted, it cannot be verified, and the recipe does not apply.
+
+`refactor_guard.py` knows about this. Compared raw, a converted file looks like a
+substitution on every function - the case labels stop being literals and the step count
+starts being one - so the guard inverts a Recipe J file before counting, and still sees
+any value that really changed.
+
+**What it is worth.** `Game/com/patterns`, fourteen files and 448 skeletons, went from a
+mean of **8.02 to 9.73**, eleven of the fourteen reaching 10.00. *Overall Code Complexity*
+cleared on all of them - a file of switches has its mean cyclomatic complexity pinned at
+its arm count, and a file of tables has it at one.
+
+**The line budget, measured.** What decides whether *Code Duplication* clears is physical
+lines. CodeScene groups functions of **ten lines or more** by shape; nine lines is clear.
+Bisected on a synthetic file of thirty same-shaped functions: five table lines scored
+10.00, six scored 8.03. A converted function measures
+
+    signature (1, or 3 when it wraps past the column limit) + steps + 1 + 1
+
+so a skeleton of six steps and a one-line signature comes in at nine, and the same
+skeleton with a wrapped signature does not. Write the table without a trailing comma so
+clang-format packs it, and spell a step `STEP(Call, values...)` rather than
+`{ Step_Call, &(const Call_Step) { values } }`: the short notation is what brings the
+six-step file under the floor. This is a fact about the measurement and it is written down
+so the next plateau can be priced, not an invitation to shorten names or widen
+`ColumnLimit` to buy a line. See *Where `Game/com/patterns` stopped* in `BACKLOG.md`.
+
+---
+
 ## Recipe K - Check List
 
 **Use when:** a function is nothing but a run of guards that all have the same shape -
