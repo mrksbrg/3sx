@@ -303,10 +303,16 @@ worth taking and were probed:
 
 | File | Now | On the mean alone | Functions needed | Then what is left |
 | --- | --- | --- | --- | --- |
-| `Game/engine/cmd_main_checks.c` | 9.16 | **9.76** | **1** | Bumpy Road x3 - and each one lifted feeds the mean again |
-| `Game/animation/appear_late.c` | 9.38 | **10.00** | 4 | nothing; the mean is the only finding |
-| `Game/demo/demo00.c` | 9.38 | **10.00** | 4 | nothing; the mean is the only finding |
-| `Game/stage/bg_zoom.c` | 8.54 | **9.09** | 3 | Code Duplication x5 - then re-price the zoom-switch splits this file already rejected at 8.54 -> 8.28 |
+| `Game/engine/cmd_main_checks.c` | 9.16 | **9.76** | **2** | Bumpy Road x3 - and each one lifted feeds the mean again |
+| `Game/stage/bg_zoom.c` | 8.81 | **9.38** | 3 | Code Duplication x4 - then re-price the zoom-switch splits this file already rejected at 8.54 -> 8.28 |
+| `Game/animation/appear_late.c` | 9.38 | **10.00** | 8 | nothing; the mean is the only finding |
+| `Game/demo/demo00.c` | 9.38 | **10.00** | 8 | nothing; the mean is the only finding |
+
+*The first run of these probes reported half of each number.* `mean_probe.py`
+emitted a `static` and a caller per unit and counted units, so "4" meant eight
+functions. Fixed, and the table above is the re-measured truth. `bg_zoom.c`'s
+baseline also moved, from 8.54 to 8.81, on the green-band pass's Recipe E over
+its two fighter midpoints.
 
 `bg_zoom.c` is the closest match to `opening_bg0.c`: the same two findings, and a plateau
 note recording the same kind of refusal ("one split pays, and the full set of six measures
@@ -314,8 +320,8 @@ note recording the same kind of refusal ("one split pays, and the full set of si
 *add a function*, so they pay into the mean they were never measured against.
 
 The remaining nine are the `Game/com/patterns` skeleton files at 7.55-7.78, and there the
-probe argues for leaving them: `com_patterns_4step_3.c` needs 6 functions and
-`com_patterns_3step.c` needs 7, both reaching only **8.03**, because Code Duplication x14 to
+probe argues for leaving them: `com_patterns_4step_3.c` needs 12 functions and
+`com_patterns_3step.c` needs 14, both reaching only **8.03**, because Code Duplication x14 to
 x44 is what actually holds them down. That is the intrinsic-idiom finding already recorded
 for the folder, now with a number on the other half of it.
 

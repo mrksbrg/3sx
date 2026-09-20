@@ -17,7 +17,7 @@ the file back.
 
     python tools/mean_probe.py src/.../a.c src/.../b.c
 
-    src/.../a.c    9.38 -> 10.00 on 4 more low-complexity functions
+    src/.../a.c    9.38 -> 10.00 on 8 more low-complexity functions
 
 The number is what to spend before re-pricing anything the file's plateau note
 rejected. The score on the right is what the file reaches on those functions
@@ -37,12 +37,11 @@ from pathlib import Path
 REPO = Path(__file__).resolve().parent.parent
 FINDING = "Overall Code Complexity"
 
-# Two functions per unit, so neither is unused: the compiler never sees these,
-# but a reader who interrupts the probe should find something that builds.
-PROBE = (
-    "static int cs_probe_{i}(int x) {{ return x; }}\n"
-    "int cs_probe_use_{i}(int x) {{ return cs_probe_{i}(x); }}\n"
-)
+# Exactly one function per unit, so the number this tool prints is the number of
+# functions - an earlier version emitted a static and a caller, and reported half
+# the real cost. Non-static, so nothing is unused if a reader interrupts the probe
+# and builds what is left; CodeScene reads source and never compiles it.
+PROBE = "int cs_probe_{i}(int x) {{ return x; }}\n"
 
 
 def review(path: str) -> tuple[float, bool]:

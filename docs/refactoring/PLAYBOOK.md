@@ -3874,9 +3874,16 @@ The inverse is priced in *A fold that removes simple functions can push the file
 its threshold*. Both are the same arithmetic read from opposite ends.
 
 **Where the mean is the only finding, probe before you hunt.** Adding one, two, three, four
-and six throwaway functions to `appear_late.c` and re-scoring measures 9.38 every time,
-which says the gap is wider than any honest extraction closes. CodeScene reads source and
-does not need the file to compile, so the probe costs a re-score and no build.
+and six throwaway functions to `appear_late.c` and re-scoring measures 9.38 every time.
+CodeScene reads source and does not need the file to compile, so the probe costs a re-score
+and no build.
+
+*Amended 2026-09-20 on the merge with `refactor/halve-the-yellow-band`, which arrived with
+`tools/mean_probe.py`.* Six was not enough to conclude with: the binary search says
+**eight**, and at eight the file is at **10.00** with nothing else left in it. The reading
+"wider than any honest extraction closes" was the search stopping early, not the file
+refusing - eight extractions across thirty-eight functions is a session's work, not an
+impossibility. Run the probe to a bound rather than to a hunch.
 
 ### The one-arm rule needs the arms to differ by more than one expression
 
