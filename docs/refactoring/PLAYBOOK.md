@@ -1430,7 +1430,7 @@ Recipe X both refuse to merge.
 | `bg.c` | 9.09 | *was 3.62 at campaign start, 7.32 at the start of the stage wave.* Recipe A fourteen times cleared Excess Number of Function Arguments, Recipe S took the texture loading to `bg_textures.c`, and Recipes D, F and N took the reachable duplication. What remains is four chip-remap scanners: `remap_stage19_default_chip` against `remap_stage03_background_chip` differ in their limit *and* in a `*vtxColor` write that only happens on a match, so it cannot travel to the call site and a helper returning both a remapped index and a match verdict is two results; `remap_stage03_player_chip` differs in its key *and* its value, both indexed by the loop variable. A second Recipe S split is blocked by construction, verified against the call graph rather than argued: `draw_remapped_tiles` is called by `draw_stage19_tiles` and both ending drawers, and `draw_chip_and_restore_list` by the stage-02, stage-03 and shared passes, so every placement of an ending/stage line widens at least one `static` |
 | `bg_textures.c` | **10.00** | split from `bg.c`. Recipe D on the rewrite slot load *then* Recipe X on the two special-stage arms - see *Share the run before splitting the shape* |
 | `bg_sub.c` | 9.09 | *was 7.38.* Three Bumpy Roads cleared with Recipes C and E, four dedups, then Recipe S for `bg_zoom.c`. Three mirrored x/y pairs remain: `scr_11_22`/`scr_12_21` swap the player indices in three places, `scr_11_21`/`scr_12_22` differ in `<` against `>` and `-` against `+`, and the two chase start checks differ in five names and two callees |
-| `bg_zoom.c` | 8.54 | split from `bg_sub.c`. The zoom selector chain is four dispatchers per axis with the same shape, so any two left bare read as duplicates: one Recipe X split pays, and the full set of six measures 8.54 -> 8.28. `plpatuni.c`'s lesson again. **A further split by axis measures 8.54 -> 8.81 plus a second file at 9.38 and is refused, not blocked by the code**: exactly one `static` crosses the seam, because `check_cg_zoom` calls both axes' entry points, and Recipe S does not permit widening it. Recorded with the number so the rule can be priced |
+| `bg_zoom.c` | **8.81** | *was 7.38 in `bg_sub.c`, then 8.54.* The axis split stays refused, and for a better reason than the `static`: it separates `select_horizontal_zoom_request` and `select_vertical_zoom_request`, a flagged duplication pair, into two files. Naming the two fighter midpoints instead removes the duplicate text and measures 8.54 -> 8.81. Overall Code Complexity does not clear: the mean is 4.17 over 18 functions against a threshold of 4, and the third function needed would be padding. Naming the fighter *position* accessor, 17 sites, measures 8.81 -> 8.54 |
 | `bonus_bg.c` | **10.00** | *was 9.38.* A **two-instance** family differing in two literals - the case Recipe V refuses - cleared by Recipe C on the run the two inits end with, without relaxing the three-instance rule |
 | `bg000.c` | **10.00** | *was 9.92, and was wrongly recorded as a plateau.* The two demo arms differ in `+=` against `-=` and `>` against `<`, so splitting them alone costs 0.54; sharing the settle block they both end with is flat alone. Dedup first, then split, is worth 0.08 - see *Share the run before splitting the shape* |
 | `ta_sub.c`, `bg090.c` | **10.00** | *both were 9.38.* One Recipe D and one Recipe E respectively |
@@ -1451,10 +1451,10 @@ Recipe X both refuse to merge.
 | `game_state.c`, `game_state_load.c` | **10.00** each | *both were 7.26.* 569 `GS_SAVE`/`GS_LOAD` lines in one function apiece, split thirteen ways on the module comments the tail already carried and on changes of subject in the head. The cuts are positional and the commit says so. Verified past the usual three: the member sequence extracted as a list is identical in order on both sides and between them, and `replay_verify.sh` ran 16 seeds x 2400 frames identical - the stress harness saves and restores this state every frame, so it exercises these two functions directly |
 | `game_round.c` | **10.00** | *was 7.23.* Ten commits of Recipes E and X over the post-match and game-over flow. The last two are a deliberate pair: with Overall Code Complexity the only finding left and the file mean just over 4, a probe said **two** more low-complexity functions would clear it, so the first of the two measures flat and says in its message that the second carries it |
 | `test_runner.c` | **10.00** | *was 7.92.* Recipe E, Recipe P, then Recipe V twice on the two input bit maps - see the Recipe V amendment above - and Recipe X on the phase dispatch, cut where it is because `PHASE_GAME_TRANSITION` falls through into `PHASE_GAME` |
-| `arcade_char_data.c` | 9.53 | *was 7.37.* Recipe E over the ROM parser. `read_script` cannot leave Complex Method: three of its ten branches are the `||`s inside an `SDL_assert`, and Recipe P cannot reach them - see *Recipe P cannot name a condition inside an assertion* |
+| `arcade_char_data.c` | **9.92** | *was 7.37, then 9.53 - and that note is overturned.* It read that `read_script` cannot leave Complex Method because three of its ten branches are the `||`s inside an `SDL_assert` and Recipe P cannot reach them. Recipe E does not name the assertion, it carries it into a header helper, and the branches leave with it: cc 9 -> 5, **9.61 -> 9.92**. Bumpy Road remains - lifting the cg-entry arm needs five arguments against a threshold of four. See *Recipe E reaches the branches Recipe P cannot name* |
 | `cmd_main_checks.c` | 9.16 | *was 7.50, and was recorded as a plateau.* Overturned twice over - see *A plateau note covers the functions it names* and *Retry a rejected extraction - including one refused on duplication*. What remains is the `check_10`/`check_12` near-twin pair, re-priced and still costing 0.73 to break |
 | `flps2vram.c` | 8.54 | *was 7.36.* Recipe C on the three pixel layouts, then Recipe D on the context set-ups that fold made visible. What remains is four mirrored texture/palette pairs differing in two to four values each, and the three layout helpers, whose fold costs |
-| `emlShim.c` | 8.94 | *was 7.46.* `checkConditions` is the last finding at cc 17, and Recipe X does not reach it at any chain depth: splitting its eight-arm ladder measures 8.87 at four arms a level, 8.92 at three and 8.81 at two, all below the 8.94 it starts from, because the halves stay over the threshold until the chain is deep enough to be a duplication group |
+| `emlShim.c` | **9.68** | *was 7.46, then 8.94.* `checkConditions` at cc 17 still does not yield to Recipe X at any chain depth. The 8.94 note did not cover the two cc-9 functions below it: moving `checkOneIdCondition`'s guid and bank arms behind a new `default` measures 9.50 -> 9.68. A **second** link for `checkOneCondition` clears Complex Method outright and measures 9.38 - see *One new link in a dispatch chain is free, the second twins*. Clearing it by deleting the empty `MATCH_UNK` arm is refused: it names an enumerator |
 | `memmgr.c` | 8.64 | *was 7.58.* Recipe D twice and Recipe A once. `plmemAppendBlockList` is what remains: its two direction branches are twins differing in `<` against `>`, and each writes **three** outer locals - `now_han`, `next_han` and `now_block` - so Recipe E refuses them and there is no single result to return |
 | `prilay.c` | **10.00** | *was 7.60.* Recipe E on both pixel paths, Recipe P on the bounds test, then Recipe E on the two 4-bit cases. The last step is the one worth copying: both halves of a mirrored pair were extracted and it measured **+0.76 with no twin penalty**, because a writer that composes a byte and a reader that selects a nibble are not similar enough to pair |
 | `args.c`, `spu.c`, `savesub.c` | **10.00** each | *were 8.74, 8.41 and 8.36.* `args.c` is Recipe P six times then Recipe E three times; `spu.c` is Recipe P on the two envelope tests then Recipe E twice; `savesub.c`'s `SAVE_STATE_WORKING` arm turned out to be entirely self-contained, so its helper takes **no parameters at all** |
@@ -1464,11 +1464,11 @@ Recipe X both refuse to merge.
 | `sys_sub_ranking.c` | 9.38 | *was 8.54.* Recipe V on the insert three of the four ranking tables share. `Check_Sort_Score` is left out: its table starts at zero and is written without a `+ 0` to parameterise |
 | `Lz77Dec.c` | 8.79 | *was 8.33.* Recipe E cannot touch `decLZ77withSizeCheck` at all - every block in it advances `src`, `dst` and `size` at once, and a cursor struct is the out-parameter object Recipe E forbids inventing. Recipe D reaches the four families inside it that each produce one value; the three literal-copy loops that would come next advance **two** pointers and stay |
 | `pulpul.c` | 8.73 | *was 8.22.* `run_pulpul_device` keeps three findings and cannot lose them: its state machine falls through on every arm, so Recipe X cannot cut it, and it contains a **backward** `goto` that Recipe R does not reach either |
-| `opening_bg0.c` | **10.00** | *was 8.12, and was recorded here as "a family plateau, measured twice".* Overturned - see *Price the file's cheapest finding before inheriting a plateau*. Both moves the old note rejected are in the file now and both were worth taking; what it had not priced is that Overall Code Complexity clears on **two** more low-complexity functions, after which the twin they make is paid for |
+| `opening_bg0.c` | **10.00** | *was 8.12, and was recorded here as "a family plateau, measured twice".* Overturned - see *Price the file's cheapest finding before inheriting a plateau*. Overall Code Complexity clears on two more low-complexity functions, and once it has, both moves the old note rejected are worth taking. Two of the green-band pass's measurements survive the overturn and are the reason it is nine commits rather than three: **moving the `0x4B` arm up the chain costs 0.09, because that arm was the only thing making `_6` unlike `_4`** - move a plain `oh_bg_blk_w_rows` arm instead and the same rebalance pays **+0.16**; and Recipe C on the run `op_bg0_0010` and `op_bg0_0012` share is flat on score while `op_bg0_0010` leaves the duplication group, which is how the category was worn down rather than cleared in one move |
 | `sdl_gpu_renderer.c` | **10.00** | *was 6.82.* Recipe E eight times and two parameter objects, in that order: the frame's phases, the per-quad pipeline choice, the six set-up sections, `create_shader` and `create_pipeline`'s argument lists, the three remaining set-up blocks, the screen pass's bindings |
 | `flps2etc.c` | 9.84 | *was 6.94.* Recipes E, G and P over the four image loaders. What remains is the two PIC row decoders at two bumps each: the third arm of each run-length form advances **both** the source and the destination inside its loop, so lifting it is a block writing two outer locals, which Recipe E refuses |
 | `pltim2.c` | 9.38 | *was 7.21.* Recipe P on the header checks, Recipe D on the pixel-format blocks the two context setters share, Recipe E and Recipe X on the rest. The four format helpers are one Code Duplication group, and folding them onto one parameter object measures **8.77 -> 8.77** - it clears the duplication and brings Overall Code Complexity straight back, because three of the functions it removes are cc 1. See *A fold that removes simple functions can push the file mean over its threshold*, measured again |
-| `ps2PAD.c` | 9.29 | *was 7.01.* Recipes D and E over the read path. `PADRead_for_PS2` cannot leave Complex Method: seven of its eleven branches are the six grouped `case` labels of the pad-kind switch plus its `default`, all running one arm, and collapsing them is renumbering. `flPADShockSet`'s two arms each write three locals - `profile`, `vib_data_size` and `vib_data` - so Recipe E refuses them too |
+| `ps2PAD.c` | **9.92** | *was 7.01, then 9.29.* Recipes D and E over the read path. `PADRead_for_PS2` cannot leave Complex Method: seven of its eleven branches are the six grouped `case` labels of the pad-kind switch plus its `default`, all running one arm, and collapsing them is renumbering. Recipe C on the report test both `pad_reported` arms end with took 9.84 -> 9.92. `flPADShockSet`'s two arms each write three locals - `profile`, `vib_data_size` and `vib_data` - so Recipe E refuses them |
 | `Game/com/shell` | **10.00** x10 | *was 8.28-8.81.* The third COM script folder, never folded. `xfold` put 32 scripts onto skeletons earlier folds had already made, and `gfold --min-members 2` took the other 84 onto nine new ones. See *A third script folder, and the fold that reaches an existing skeleton* |
 | `Game/com/patterns` | 8.02 mean | the shared skeleton module, 14 files. Two findings, both intrinsic to the idiom and both priced mechanically - see *Where `Game/com/patterns` stops, against the published thresholds* |
 | `plpnm.c` | 7.52 | what is left of the 28-function group are state machines differing in two or more values; the two parry states keep Duff-style `case` arms that cannot be split |
@@ -1486,7 +1486,7 @@ Recipe X both refuse to merge.
 | `eff09_init.c` | 9.68 | ten case labels left after one split; a second split makes three dispatchers that read as duplicates, -0.30 |
 | `eff11.c` | 9.13 | near-miss siblings |
 | `effg6.c`, `eff00.c` | 9.21-9.22 | near-miss siblings |
-| `effect.c` | 9.38 | four functions whose two arms walk the same list in mirror - see the rule below |
+| `effect.c` | **10.00** | *was 9.38.* The four mirrored list walks, in three Recipe E steps: the two kill loops, the two push loops, then the backward arm of `search_effect_index` **and only that arm**. Extracting both arms of the last measures 9.09 and drags the four helpers the first two commits added into the duplication group with it |
 | `efff6.c` | 9.09 | near-miss siblings |
 | `effm2.c` | 9.53 | the two cat routines' dispatchers read as duplicates once their states are named |
 | `plcnt.c` | **10.00** | *was 9.47.* Recipe X on the victory pause and Recipe P on the hit-state pair cleared both Complex Methods and pushed the file over 1000 lines; Recipe S split the per-player setup into `plcnt_setup.c` |
@@ -1510,7 +1510,7 @@ Recipe X both refuse to merge.
 | `plmain.c` | **10.00** | *was 9.38.* Three Recipe S splits, then the extractions that had measured flat before them - see *A file can be too big for its own mean* below. 1430 lines and 65 functions became 606 and 35, plus `plmain_arts.c`, `plmain_ps2_arts.c` and `plmain_vital.c`, all at 10.00 |
 | `plmain_arts.c` | **10.00** | split from `plmain.c`. Almost any pair of helpers named out of its gauge state machines reads as a duplicate: naming `mpg_union`'s arms twins it with `eag_union`, and naming `spend_max_gauge`'s firing arm twins it with `spend_and_disarm_ex`, both -0.57. What paid was Recipe C, which removes a run instead of naming an arm |
 | `hitplpl.c` | 8.59 | `player_at_vs_player_dm` is one `while (1)` whose arms leave through `break` and `goto two`; no arm can move to a helper without a numeric verdict protocol |
-| `cmd_main.c` | 9.39 | `latch_sw_lvbt_bit_0x80` and `_0x800` differ only in their four case labels and two masks; splitting each in two trades their Complex Method for a Code Duplication pair at no net gain |
+| `cmd_main.c` | **9.68** | *was 9.39, and the note is refined rather than overturned.* It read that splitting each of `latch_sw_lvbt_bit_0x80` and `_0x800` trades Complex Method for a Code Duplication pair at no net gain, which is true of splitting **both**: Recipe P on both measures 9.38. On **one** it measures 9.68, because a single predicate twins with nothing. The other keeps its two switches |
 | `cmb_win.c` | **10.00** | *was 9.92.* Recipe F: two of the three passes over the players differed only in what they called |
 | `plpdm.c` | **10.00** | *was 9.61.* Recipe X on the rumble suppression list, then Recipe E on the death conversion |
 | `bbbscom.c` | **10.00** | *was 9.38.* Overall Code Complexity only, and two Recipe E extractions cleared it - the file has 15 functions, so the mean moves at once. Compare `plmain.c` above, where 65 functions make the same move worthless |
@@ -1549,9 +1549,15 @@ Recipe X both refuse to merge.
 | `saver.c`, `sys_sub2.c` | **10.00** | already clean at baseline |
 | `work_sys.c` | n/a | CodeScene returns no score |
 | `count.c`, `flash_lp.c`, `input_history.c` | **10.00** | *were 8.24, 8.95 and 9.02.* Ordinary Recipe P/C/D/E work; `flash_lp.c` went 8.95 -> 10.00 on two extractions from one cc-14 function |
-| `sc_sub.c` | 8.47 | *was 4.06.* Four Recipe S splits first, then the folder's headline job: **Recipe A across fifteen functions** and roughly 141 call sites in fifteen files, which is what took Excess Number of Function Arguments off the file. See *Recipe A clears one finding, not fifteen* below |
+| `sc_sub.c` | 9.31 | *was 4.06, then 8.47.* Four Recipe S splits first, then **Recipe A across fifteen functions** and roughly 141 call sites, which took Excess Number of Function Arguments off the file. `scfont_sqput2` is what remains and is a measured refusal: its two arms are the same doubly-nested loop differing in **one** sub-expression, so lifting either leaves a helper that pairs with the arm still inline - 9.31 -> 9.09. See *The one-arm rule needs the arms to differ by more than one expression* |
 | `sc_sub_logo.c` | 9.02 | *split out of `sc_sub.c`.* `hnc_wipeout` went 7.87 -> 9.02 on a single Recipe D of a four-line UV loop, because both copies sat three levels deep - deduplication paid there as nesting relief, not as line count |
-| `sc_sub_transition.c`, `sc_sub_combo.c`, `sc_sub_training.c` | 8.67, 8.56, 9.42 | *split out of `sc_sub.c`.* The transition file's `ToneDown`/`overwrite_panel`/`Akaobi` trio is a measured refusal: structurally identical but differing in a table, a colour and a priority - three values - *and* in their local variable names, so no recipe reaches it and no contiguous run exists to extract |
+| `sc_sub_transition.c`, `sc_sub_combo.c`, `sc_sub_training.c` | 9.31, 9.38, 9.42 | *split out of `sc_sub.c`.* The transition file's `ToneDown`/`overwrite_panel`/`Akaobi` trio is a measured refusal: structurally identical but differing in a table, a colour and a priority - three values - *and* in their local variable names, so no recipe reaches it and no contiguous run exists to extract. `WipeIn`'s two bumps **move rather than go**: lifting the whole drawing block measures flat because both nests travel into the helper intact, and lifting the row arm alone measures 9.02 |
+| `MemMan.c` | 9.92 | *was 9.24.* One change: the `else` that followed a `break` in both gap walks. It cleared Deep, Nested Complexity outright and one of two Bumpy Roads, added no function, and the guard read OK at 9 literals. `mmAllocSub` keeps two bumps - lifting its backward walk clears them and measures 9.38 on the twin it makes with `mm_find_gap_forward` |
+| `PPGFile.c` | 9.38 | *was 9.31.* Recipe E on the palette handle scan. `ppgCheckTextureDataBe` is its mirror and keeps its loop inline; the two could not share a helper in any case, since one walks a `Palette` and the other a `Texture` |
+| `plapx.c` | 9.48 | `set_apx_pixel_format` is 92 lines against a threshold of 70 and an obvious Recipe X, and **every** split is refused for one reason: `set_apx_clut_format` is the same table minus the pitch line, so whichever arms leave, the shortened parent pairs with it. Cutting 24 and 32 behind a `default` measures 9.38 |
+| `emlTSB.c` | 9.50 | `mlTsbRequest` is cc 18 - one base, one `while`, fourteen case labels, two for the `&&`. Reaching 8 means removing ten branches; extracting every action arm removes six. The remainder is seven enumerated no-op labels, and deleting those is refused by *A Recipe X split must still name every enumerator*. Priced by arithmetic, not attempted |
+| `appear_late.c` | 9.38 | Overall Code Complexity alone over 38 functions. Probing with one, two, three, four and six throwaway functions measures 9.38 every time, so the gap is wider than any honest extraction closes - `demo00.c`'s answer, re-measured |
+| the 9.38 two-member tier | 9.38 | Ten files - `renderer.c`, `sdl_pad.c`, `eff93.c`, `end_20.c`, `plcnt_setup.c`, `opening_bg1.c`, `opening_scenes.c`, `ramcnt.c`, `sc_sub_gauges.c`, `sc_sub_logo.c` - each holding one or two mirrored pairs differing in literals, an operator or a type. Extracting the shared run was measured on the two best candidates and moved nothing; in seven of the ten the longest balanced shared run is 0 to 3 lines. See *Extracting a shared run does not break a skeleton pair* |
 | `sc_data.c`, `glyph_renderer.c` | n/a, **10.00** | pure data, and already clean at baseline |
 
 ---
@@ -3394,9 +3400,11 @@ extraction of any size and for a straight-line deduplication alike. It is the
 one finding that every legal move pays into, including the ones that do nothing
 else. So measure it first:
 
-1. **Probe it.** Add `k` throwaway one-line `static` functions to the file,
-   measure, delete them. Binary-search `k`. It costs three or four score calls
-   and it turns "the mean is too high" into a number - here, *two*.
+1. **Probe it.** `python tools/mean_probe.py <file>` inserts `k` throwaway
+   one-line functions, binary-searches the smallest `k` that closes the finding,
+   and puts the file back. It costs three or four score calls and no build -
+   CodeScene reads source and never compiles it - and it turns "the mean is too
+   high" into a number. For `opening_bg0.c` that number was *two*.
 2. **Spend the extractions the file already wants** until that number is met.
    Each one measures flat on its own, which is the trap: rule 2 would revert
    every one of them individually and the finding would never clear. Commit them
@@ -3423,6 +3431,22 @@ asymmetry drops that side below CodeScene's similarity threshold and both
 functions leave the finding. Doing it to both sides puts the pair straight back,
 which is why the backlog's `effd1.c` and `effe9.c` rows record 10.00 for one arm
 and 9.38 for both.
+
+That is the one-arm rule, and it has a precondition measured in the same week:
+see *The one-arm rule needs the arms to differ by more than one expression*.
+`op_bg0_0006` against `op_bg0_0013` and `op_bg0_0007` against `op_bg0_0008` both
+have daylight to spare - a different scroll field, a different opening, a
+different approach - which is why lifting from one side of each worked here.
+Diff the arms before spending a commit on it.
+
+**This section and *Count the functions before you extract* are the same
+arithmetic read from opposite ends**, and they were written a day apart without
+knowing about each other. That one says an extraction on a file of six functions
+can *introduce* Overall Code Complexity and cost 0.53; this one says a file
+already carrying it can be walked out of the finding by spending extractions it
+wanted anyway. Both reduce to: the mean has a divisor, so count the functions
+before deciding what an extraction is worth. Probe first and you do not have to
+reason about it at all.
 
 ### Retry a rejected extraction - including one refused on duplication
 
@@ -3825,3 +3849,188 @@ than their counts - `set(literals(old)) - set(literals(new))` over every changed
 file, with files that share moved code taken together. That is a dozen lines and
 it answers the question the FAIL only pretends to.
 
+### Count the functions before you extract
+
+*Added 2026-09-20, measured on `effm2.c`, `effect.c` and `appear_late.c`.*
+
+Overall Code Complexity is the file's mean cyclomatic complexity against a threshold of 4,
+so every extraction moves two numbers: the branches it takes out of a function, and the
+divisor. On a large file the divisor barely moves. On a small one it decides the result.
+
+`effm2.c` holds **six** functions. Lifting the run/walk choice out of
+`place_cat_beside_owner` cleared its Bumpy Road exactly as intended - the guard read OK at
+117 literals unchanged - and the file measured **9.84 -> 9.31**, because the seventh
+function brought Overall Code Complexity in with it. The same shape of extraction on
+`effect.c`, which holds thirty-seven functions at a mean of 2.57, paid three times running
+and took the file to 10.00.
+
+So read the function count first. Below about a dozen functions, an extraction that clears
+a Complex Method or a Bumpy Road can hand back more than it takes, and the review will show
+a category the file did not have before. `eff11.c`, `effa2.c`, `efff6.c`, `plpat00.c`,
+`end_01.c`, `effb5.c`, `eff09_init.c` and `netplay_menu.c` are all two to six functions and
+all sit in this trap.
+
+The inverse is priced in *A fold that removes simple functions can push the file mean over
+its threshold*. Both are the same arithmetic read from opposite ends.
+
+**Where the mean is the only finding, probe before you hunt.** Adding one, two, three, four
+and six throwaway functions to `appear_late.c` and re-scoring measures 9.38 every time,
+which says the gap is wider than any honest extraction closes. CodeScene reads source and
+does not need the file to compile, so the probe costs a re-score and no build.
+
+### The one-arm rule needs the arms to differ by more than one expression
+
+*Added 2026-09-20, measured on `sc_sub.c` against `effect.c`.*
+
+*Between two twin arms, extract from one of them only* keeps the win and creates no twin -
+**when the arm that stays inline is different enough from the helper that leaves.**
+
+`effect.c`'s `search_effect_index` is the rule working. Its two arms walk `head_ix` with
+`->behind` and `tail_ix` with `->before`, four names apart. Lifting the backward arm
+measured **10.00 with no findings left**, against 9.09 for lifting both.
+
+`sc_sub.c`'s `scfont_sqput2` is the rule failing. Its two arms are the same doubly-nested
+loop and differ in **one sub-expression**, `cx1 + i` against `(cx1 + (cx2 - 1)) - i`.
+Lifting the upright arm cleared Bumpy Road and measured **9.31 -> 9.09**: the helper and
+the arm left behind are a duplication pair by themselves, so extracting one arm bought
+exactly the twin the rule exists to avoid.
+
+Diff the two arms before choosing. One differing expression is not enough daylight.
+
+### An extraction pays when it differentiates and costs when it homogenises
+
+*Added 2026-09-20. The common cause behind six reverts in one session.*
+
+Code Duplication is measured between functions at 75% similarity, so what an extraction
+does to a file is decided by whether it leaves functions **less** alike or **more**.
+
+Paying, because it differentiated:
+
+| Change | Score |
+| --- | --- |
+| `bg_zoom.c`, name the two fighter midpoints | 8.54 -> **8.81** |
+
+The midpoint is written out four times per axis and not at all in some selectors, so
+lifting it shortened the flagged functions by different amounts.
+`select_horizontal_zoom_request_later` stopped resembling its siblings and left the group -
+still 27 lines, so it left by being different rather than by falling under
+`function_duplication_min_lines_of_code_for_check`.
+
+Costing, because it homogenised:
+
+| Change | Score |
+| --- | --- |
+| `bg_zoom.c`, name the fighter position accessor, 17 sites | 8.81 -> 8.54 |
+| `opening_bg0.c`, move the `0x4B` arm up the `lay_blocks` chain | 8.12 -> 8.03 |
+| `sc_sub.c`, lift one arm of `scfont_sqput2` | 9.31 -> 9.09 |
+| `plapx.c`, split the 92-line pixel-format switch | 9.48 -> 9.38 |
+| `MemMan.c`, lift the backward gap walk as well | 9.92 -> 9.38 |
+| `cmd_main.c`, give both latch twins the same predicate | 9.68 -> 9.38 |
+
+Every one made something look like something else. The accessor gave every zoom selector
+the same short call where a long member chain had been. The arm move stripped
+`op_bg0_lay_blocks_6` of the one arm that made it unlike `_4`. `plapx.c`'s parent, once
+shortened, matched `set_apx_clut_format`, which is the same table minus a pitch line.
+
+The question to ask before extracting is not whether the text is duplicated but **which two
+functions will look more alike afterwards than they did before**. If that names a pair,
+price it first.
+
+### One new link in a dispatch chain is free, the second twins
+
+*Added 2026-09-20, measured on `emlShim.c`.*
+
+A chain of switches reached through `default` is the file's own idiom wherever one already
+exists, and extending it once costs nothing. Extending it twice builds the duplication
+group out of the links themselves.
+
+`emlShim.c` had two functions at cc 9, one over `function_cyclomatic_complexity_warning`,
+and already chained `checkOneCondition` into `checkOneIdCondition`:
+
+| What was done | Score |
+| --- | --- |
+| baseline | 9.50 |
+| guid and bank arms behind a new `default` | **9.68** |
+| the note arm behind a second new `default` | 9.38 |
+
+The first link clears `checkOneIdCondition` and stays under the ten-line duplication check.
+The second clears Complex Method outright and is still worth less: four functions land in a
+Code Duplication group, and two of them - `emlShimSeKeyOff` and `emlShimSeStop` - were
+never touched. The links of a chain are the same shape by construction, which is what the
+detector is looking for.
+
+Take the first link. Record the second.
+
+### Extracting a shared run does not break a skeleton pair
+
+*Added 2026-09-20, measured four times.*
+
+`bonus_bg.c` cleared a two-instance family with Recipe C on the run its two inits end with,
+and that reads like a general answer to the pairs Recipe V refuses. It is not:
+
+| File | What was shared and lifted | Score |
+| --- | --- | --- |
+| `opening_bg0.c` | the four-statement init prefix, **five** call sites | 8.12 -> 8.12 |
+| `opening_bg0.c` | the scroll settle both arms end with | 8.12 -> 8.12 |
+| `sc_sub_gauges.c` | a seven-line prologue, **three** call sites | 9.38 -> 9.38 |
+| `sc_sub_logo.c` | the in-loop quad and both band set-ups, ~15 lines of 55 | 9.38 -> 9.38 |
+
+The last settles it: better than a quarter of each function removed, and the pair still
+reads as a pair.
+
+**What pairs these functions is their skeleton** - the sequence of loops and assignments -
+and a verbatim run is not the skeleton. `bonus_bg.c` worked for a reason that does not
+generalise: its functions were short enough that what remained fell under
+`function_duplication_min_lines_of_code_for_check`, which is 10. Where the residue clears
+ten lines, expect flat.
+
+Measure the longest **balanced** shared run before starting - a run that straddles a closing
+brace and the `for` after it cannot be lifted. Across the ten two-member pairs in the 9.38
+band the longest balanced run is 0 to 3 lines in seven of them, which is not a run at all.
+
+### Recipe E reaches the branches Recipe P cannot name
+
+*Added 2026-09-20, overturning the `arcade_char_data.c` plateau.*
+
+The note read: `read_script` cannot leave Complex Method, because three of its ten branches
+are the `||`s inside an `SDL_assert` and Recipe P cannot reach them. Both halves are true
+and the conclusion does not follow. Recipe P cannot *name* a condition inside an assertion.
+Recipe E does not name it - it carries the whole assertion somewhere else, and the branches
+go with it.
+
+`read_script` read its header - the `cgd_type` word, its assertion, and six single-byte
+fields - before the loop that reads the body. Lifting the header is an ordinary Recipe E and
+takes the three `||`s out of the parent as a side effect:
+
+    read_script          cc 9 -> 5
+    read_script_header        cc 5
+
+**9.61 -> 9.92**, guard OK at 1222 literals unchanged.
+
+The general form, and the fourth plateau overturned by reading a note narrowly: a note that
+a recipe cannot reach a construct is a fact about *that recipe*. Before inheriting it, ask
+whether a different recipe moves the construct whole.
+
+### An else after a break is a level of nesting that carries no meaning
+
+*Added 2026-09-20, measured on `MemMan.c`.*
+
+The cheapest change in the campaign so far. Both gap walks wrote the exact-fit case as an
+`if` ending in `break`, with the narrower-fit case in its `else`. The `else` is reachable
+only by the path that skips the `break`, so dropping it and letting the second test follow
+the first at the same depth changes no control flow at all.
+
+    Deep, Nested Complexity   both functions at depth 4   ->  clear
+    Bumpy Road Ahead          mm_find_gap_forward 2 bumps ->  clear
+                              mmAllocSub          3 bumps ->  2
+
+**9.24 -> 9.92**, guard OK at 9 literals unchanged, no function added.
+
+It is worth applying to both copies precisely *because* it adds no function: the two walks
+were equally similar before and after, and no duplication finding appeared. Contrast
+lifting the backward walk into a function of its own, which clears the remaining bumps and
+measures **9.92 -> 9.38** on the twin it makes.
+
+Grepping the rest of the green band for `break`, `return` or `continue` followed by an
+`else` found no other instance, so this one is spent - but it is the first thing to look
+for in a band nobody has swept.

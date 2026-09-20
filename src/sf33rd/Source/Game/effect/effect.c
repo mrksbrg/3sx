@@ -70,34 +70,44 @@ void effect_work_quick_init() {
     }
 }
 
-void effect_work_list_init(s16 lix, s16 iid) {
+static void push_whole_list(s16 curr_ix) {
     WORK* c_addr;
-    s16 curr_ix;
     s16 next_ix;
 
-    curr_ix = head_ix[lix];
+    while (curr_ix != -1) {
+        c_addr = (WORK*)frw[curr_ix];
+        next_ix = c_addr->behind;
+        push_effect_work(c_addr);
+        curr_ix = next_ix;
+    }
+}
+
+static void push_list_entries_with_id(s16 curr_ix, s16 iid) {
+    WORK* c_addr;
+    s16 next_ix;
+
+    while (curr_ix != -1) {
+        c_addr = (WORK*)frw[curr_ix];
+        next_ix = c_addr->behind;
+
+        if (c_addr->id == iid) {
+            push_effect_work(c_addr);
+        }
+
+        curr_ix = next_ix;
+    }
+}
+
+void effect_work_list_init(s16 lix, s16 iid) {
+    s16 curr_ix = head_ix[lix];
 
     if (iid == -1) {
-        while (curr_ix != -1) {
-            c_addr = (WORK*)frw[curr_ix];
-            next_ix = c_addr->behind;
-            push_effect_work(c_addr);
-            curr_ix = next_ix;
-        }
-
+        push_whole_list(curr_ix);
         exec_tm[lix] = 0;
-    } else {
-        while (curr_ix != -1) {
-            c_addr = (WORK*)frw[curr_ix];
-            next_ix = c_addr->behind;
-
-            if (c_addr->id == iid) {
-                push_effect_work(c_addr);
-            }
-
-            curr_ix = next_ix;
-        }
+        return;
     }
+
+    push_list_entries_with_id(curr_ix, iid);
 }
 
 s16 pull_effect_work(s16 index) {
@@ -137,33 +147,39 @@ s16 pull_effect_work(s16 index) {
 /// @param flag Set to `true` to search from the tail, `false` to search from the head.
 /// @param tid ID to search for.
 /// @return Index of the effect, or `-1` if it couldn't be found.
+static s16 search_effect_index_backward(s16 aix, s16 tid) {
+    WORK* c_addr;
+
+    while (aix != -1) {
+        c_addr = (WORK*)frw[aix];
+
+        if (c_addr->id != tid) {
+            aix = c_addr->before;
+        } else {
+            break;
+        }
+    }
+
+    return aix;
+}
+
 s16 search_effect_index(s16 index, s16 flag, s16 tid) {
     WORK* c_addr;
     s16 aix;
 
     if (flag) {
-        aix = tail_ix[index];
+        return search_effect_index_backward(tail_ix[index], tid);
+    }
 
-        while (aix != -1) {
-            c_addr = (WORK*)frw[aix];
+    aix = head_ix[index];
 
-            if (c_addr->id != tid) {
-                aix = c_addr->before;
-            } else {
-                break;
-            }
-        }
-    } else {
-        aix = head_ix[index];
+    while (aix != -1) {
+        c_addr = (WORK*)frw[aix];
 
-        while (aix != -1) {
-            c_addr = (WORK*)frw[aix];
-
-            if (c_addr->id != tid) {
-                aix = c_addr->behind;
-            } else {
-                break;
-            }
+        if (c_addr->id != tid) {
+            aix = c_addr->behind;
+        } else {
+            break;
         }
     }
 
@@ -216,19 +232,18 @@ void push_effect_work(WORK* wkhd) {
     c_addr->myself = qix;
 }
 
-void effect_work_kill(s16 index, s16 kill_id) {
+static void kill_whole_list(s16 aix) {
     WORK* c_addr;
-    s16 aix = head_ix[index];
 
-    if (kill_id == -1) {
-        while (aix != -1) {
-            c_addr = (WORK*)frw[aix];
-            c_addr->dead_f = 1;
-            aix = c_addr->behind;
-        }
-
-        return;
+    while (aix != -1) {
+        c_addr = (WORK*)frw[aix];
+        c_addr->dead_f = 1;
+        aix = c_addr->behind;
     }
+}
+
+static void kill_list_entries_with_id(s16 aix, s16 kill_id) {
+    WORK* c_addr;
 
     while (aix != -1) {
         c_addr = (WORK*)frw[aix];
@@ -239,6 +254,17 @@ void effect_work_kill(s16 index, s16 kill_id) {
 
         aix = c_addr->behind;
     }
+}
+
+void effect_work_kill(s16 index, s16 kill_id) {
+    s16 aix = head_ix[index];
+
+    if (kill_id == -1) {
+        kill_whole_list(aix);
+        return;
+    }
+
+    kill_list_entries_with_id(aix, kill_id);
 }
 
 void write_my_shell_ix(WORK* wk, s16 ix) {

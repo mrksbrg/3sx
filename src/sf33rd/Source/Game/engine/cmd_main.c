@@ -180,31 +180,25 @@ s32 dead_lvr_check() { // 🟢
     return 1;
 }
 
-static u16 latch_sw_lvbt_bit_0x80(u16 work2, u16 hana2, u16 sw_0) {
-    switch (work2) {
+static s32 lever_is_forward_group_0x80(u16 lever) {
+    switch (lever) {
     case 0x70:
     case 0x30:
     case 0x50:
     case 0x60:
+        return 1;
+    }
+
+    return 0;
+}
+
+static u16 latch_sw_lvbt_bit_0x80(u16 work2, u16 hana2, u16 sw_0) {
+    if (lever_is_forward_group_0x80(work2) || lever_is_forward_group_0x80(hana2)) {
         wcp[cmd_id].sw_lvbt |= 0x80;
         sw_0 |= 0x80;
-        break;
-
-    default:
-        switch (hana2) {
-        case 0x70:
-        case 0x30:
-        case 0x50:
-        case 0x60:
-            wcp[cmd_id].sw_lvbt |= 0x80;
-            sw_0 |= 0x80;
-            break;
-
-        default:
-            wcp[cmd_id].sw_lvbt &= 0xFF7F;
-            sw_0 &= 0xFF7F;
-            break;
-        }
+    } else {
+        wcp[cmd_id].sw_lvbt &= 0xFF7F;
+        sw_0 &= 0xFF7F;
     }
 
     return sw_0;

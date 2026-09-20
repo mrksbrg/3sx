@@ -539,14 +539,16 @@ static s32 pad_slot_stable(s32 i) {
 }
 
 static s32 pad_reported(s32 i) {
+    s32 reported;
+
     if (ps2slot[i].phase == 0) {
-        if (identify_pad(i) == 0) {
-            return 0;
-        }
+        reported = identify_pad(i);
     } else {
-        if (read_pad_report(i) == 0) {
-            return 0;
-        }
+        reported = read_pad_report(i);
+    }
+
+    if (reported == 0) {
+        return 0;
     }
 
     return 1;
