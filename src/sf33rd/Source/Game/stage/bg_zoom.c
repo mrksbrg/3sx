@@ -11,6 +11,14 @@
 #include "sf33rd/Source/Game/stage/bg_data.h"
 #include "structs.h"
 
+static s16 fighters_horizontal_midpoint(void) {
+    return (plw[0].wu.xyz[0].disp.pos + plw[1].wu.xyz[0].disp.pos) >> 1;
+}
+
+static s16 fighters_vertical_midpoint(void) {
+    return (plw[0].wu.xyz[1].disp.pos + plw[1].wu.xyz[1].disp.pos) >> 1;
+}
+
 static void request_horizontal_zoom(s16 pos) {
     zoom_request_flag = 0x100;
     scr_req_x = pos;
@@ -23,7 +31,7 @@ static void select_horizontal_zoom_request_last(u16 p1zoom, u16 zoom_wk) {
         case 0x0:
         case 0x2200:
         case 0x4000:
-            request_horizontal_zoom((plw[0].wu.xyz[0].disp.pos + plw[1].wu.xyz[0].disp.pos) >> 1);
+            request_horizontal_zoom(fighters_horizontal_midpoint());
             break;
         case 0x2000:
             request_horizontal_zoom(plw[0].wu.xyz[0].disp.pos);
@@ -43,7 +51,7 @@ static void select_horizontal_zoom_request_later(u16 p1zoom, u16 zoom_wk) {
     case 0x0:
         switch (zoom_wk) {
         case 0x2200:
-            request_horizontal_zoom((plw[0].wu.xyz[0].disp.pos + plw[1].wu.xyz[0].disp.pos) >> 1);
+            request_horizontal_zoom(fighters_horizontal_midpoint());
             break;
 
         case 0x2000:
@@ -78,7 +86,7 @@ static void select_horizontal_zoom_request_middle(u16 p1zoom, u16 zoom_wk) {
             break;
 
         case 0x200:
-            request_horizontal_zoom((plw[0].wu.xyz[0].disp.pos + plw[1].wu.xyz[0].disp.pos) >> 1);
+            request_horizontal_zoom(fighters_horizontal_midpoint());
             break;
         }
         break;
@@ -96,7 +104,7 @@ static void select_horizontal_2000_zoom_request(u16 zoom_wk) {
             break;
 
         case 0x2000:
-            request_horizontal_zoom((plw[0].wu.xyz[0].disp.pos + plw[1].wu.xyz[0].disp.pos) >> 1);
+            request_horizontal_zoom(fighters_horizontal_midpoint());
             break;
 
         case 0x200:
@@ -145,7 +153,7 @@ static void select_vertical_zoom_request_last(u16 p1zoom, u16 zoom_wk) {
 
         case 0x1100:
         case 0x0:
-            request_vertical_zoom((plw[0].wu.xyz[1].disp.pos + plw[1].wu.xyz[1].disp.pos) >> 1);
+            request_vertical_zoom(fighters_vertical_midpoint());
             break;
 
         case 0x4000:
@@ -167,7 +175,7 @@ static void select_vertical_0_zoom_request(u16 zoom_wk) {
         break;
 
     case 0x1100:
-        request_vertical_zoom((plw[0].wu.xyz[1].disp.pos + plw[1].wu.xyz[1].disp.pos) >> 1);
+        request_vertical_zoom(fighters_vertical_midpoint());
         break;
 
     case 0x0:
@@ -202,7 +210,7 @@ static void select_vertical_zoom_request_middle(u16 p1zoom, u16 zoom_wk) {
             break;
 
         case 0x100:
-            request_vertical_zoom((plw[0].wu.xyz[1].disp.pos + plw[1].wu.xyz[1].disp.pos) >> 1);
+            request_vertical_zoom(fighters_vertical_midpoint());
             break;
 
         case 0x4000:
@@ -220,7 +228,7 @@ static void select_vertical_zoom_request_middle(u16 p1zoom, u16 zoom_wk) {
 static void select_vertical_1000_zoom_request(u16 zoom_wk) {
     switch (zoom_wk) {
         case 0x1000:
-            request_vertical_zoom((plw[0].wu.xyz[1].disp.pos + plw[1].wu.xyz[1].disp.pos) >> 1);
+            request_vertical_zoom(fighters_vertical_midpoint());
             break;
 
         case 0x100:
