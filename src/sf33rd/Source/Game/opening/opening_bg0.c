@@ -99,20 +99,17 @@ void op_bg0_0000(s16 /* unused */) {
 
 /* Which pair of background blocks this opening scene starts with. Every arm
  * lays blocks down and nothing else, so the whole choice moves out of the
- * scene's step 0; no case label is renumbered and no arm changes. */
-/* Which pair of background blocks this opening scene starts with. Thirty-two
- * case labels cost thirty-two branches in one switch, so the arms are carried
- * in five links, each reached through the previous one's default. No label is
- * renumbered, no arm changes, and a scene index in none of them still does
- * nothing. */
+ * scene's step 0.
+ *
+ * Thirty-two case labels cost thirty-two branches in one switch, so the arms
+ * are carried in six links, each reached through the previous one's default,
+ * written last link first. How the labels are shared out between the links is
+ * only a matter of keeping each one under the complexity threshold: the labels
+ * are mutually exclusive, so a scene index matches in exactly one link wherever
+ * it is written. No label is renumbered, no arm changes, and a scene index in
+ * none of them still does nothing. */
 static void op_bg0_lay_blocks_6(s16 r_index) {
     switch (r_index) {
-    case 0x3E:
-    case 0x50:
-    case 0x52:
-        oh_bg_blk_w_rows(0x57, 0x58, 0, 1);
-        break;
-
     case 0x41:
         oh_bg_blk_w_rows(0x4F, 0x50, 0, 1);
         break;
@@ -143,6 +140,12 @@ static void op_bg0_lay_blocks_5(s16 r_index) {
     case 0x37:
     case 0x38:
         oh_bg_blk_w_rows(0x4D, 0x4E, 0, 1);
+        break;
+
+    case 0x3E:
+    case 0x50:
+    case 0x52:
+        oh_bg_blk_w_rows(0x57, 0x58, 0, 1);
         break;
 
     case 0x3C:
