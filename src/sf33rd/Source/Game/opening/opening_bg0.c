@@ -503,6 +503,18 @@ void op_bg0_0005(s16 /* unused */) {
     op_scrn_pos_set2(0);
 }
 
+/* Two scenes travel one of the layer's scroll values a fixed step a frame and
+ * step on once it has gone past a limit. Which value, the step and the limit are
+ * all written out at the call site; the helper performs the same add and the
+ * same test on what it is handed. */
+static void scroll_bg0_until_past(XY* scroll, s32 step, s16 limit) {
+    scroll->cal += step;
+
+    if (scroll->disp.pos > limit) {
+        opw_ptr->r_no_0 += 1;
+    }
+}
+
 void op_bg0_0006(s16 /* unused */) {
     switch (opw_ptr->r_no_0) {
     case 0:
@@ -515,11 +527,7 @@ void op_bg0_0006(s16 /* unused */) {
         break;
 
     case 1:
-        bgw_ptr->wxy[0].cal += 0x40000;
-
-        if (bgw_ptr->wxy[0].disp.pos > 0x2C0) {
-            opw_ptr->r_no_0 += 1;
-        }
+        scroll_bg0_until_past(&bgw_ptr->wxy[0], 0x40000, 0x2C0);
 
         break;
     }
@@ -687,11 +695,7 @@ void op_bg0_0013(s16 /* unused */) {
         break;
 
     case 1:
-        bgw_ptr->xy[1].cal += 0x20000;
-
-        if (bgw_ptr->xy[1].disp.pos > 0x100) {
-            opw_ptr->r_no_0 += 1;
-        }
+        scroll_bg0_until_past(&bgw_ptr->xy[1], 0x20000, 0x100);
 
         break;
     }
