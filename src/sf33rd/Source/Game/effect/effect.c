@@ -147,33 +147,39 @@ s16 pull_effect_work(s16 index) {
 /// @param flag Set to `true` to search from the tail, `false` to search from the head.
 /// @param tid ID to search for.
 /// @return Index of the effect, or `-1` if it couldn't be found.
+static s16 search_effect_index_backward(s16 aix, s16 tid) {
+    WORK* c_addr;
+
+    while (aix != -1) {
+        c_addr = (WORK*)frw[aix];
+
+        if (c_addr->id != tid) {
+            aix = c_addr->before;
+        } else {
+            break;
+        }
+    }
+
+    return aix;
+}
+
 s16 search_effect_index(s16 index, s16 flag, s16 tid) {
     WORK* c_addr;
     s16 aix;
 
     if (flag) {
-        aix = tail_ix[index];
+        return search_effect_index_backward(tail_ix[index], tid);
+    }
 
-        while (aix != -1) {
-            c_addr = (WORK*)frw[aix];
+    aix = head_ix[index];
 
-            if (c_addr->id != tid) {
-                aix = c_addr->before;
-            } else {
-                break;
-            }
-        }
-    } else {
-        aix = head_ix[index];
+    while (aix != -1) {
+        c_addr = (WORK*)frw[aix];
 
-        while (aix != -1) {
-            c_addr = (WORK*)frw[aix];
-
-            if (c_addr->id != tid) {
-                aix = c_addr->behind;
-            } else {
-                break;
-            }
+        if (c_addr->id != tid) {
+            aix = c_addr->behind;
+        } else {
+            break;
         }
     }
 
