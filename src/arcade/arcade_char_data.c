@@ -207,18 +207,25 @@ static Uint8* read_cg_header(SDL_IOStream* rom, Uint8* p, Uint16 code, Character
     return p;
 }
 
-static void read_script(SDL_IOStream* rom, Uint8* p, const Uint8* end, Character character) {
-    // Read script header
-    Sint16 cgd_type = 0;
-    SDL_ReadS16BE(rom, &cgd_type);
-    SDL_assert(cgd_type == 1 || cgd_type == 2 || cgd_type == 4 || cgd_type == 6);
-    *(Sint16*)p = cgd_type;
+// Read script header
+static Uint8* read_script_header(SDL_IOStream* rom, Uint8* p, Sint16* cgd_type) {
+    SDL_ReadS16BE(rom, cgd_type);
+    SDL_assert(*cgd_type == 1 || *cgd_type == 2 || *cgd_type == 4 || *cgd_type == 6);
+    *(Sint16*)p = *cgd_type;
     p += 2;
 
     for (int i = 0; i < 6; i++) {
         SDL_ReadU8(rom, p); // pat_status ... sp_tech_id
         p += 1;
     }
+
+    return p;
+}
+
+static void read_script(SDL_IOStream* rom, Uint8* p, const Uint8* end, Character character) {
+    Sint16 cgd_type = 0;
+
+    p = read_script_header(rom, p, &cgd_type);
 
     while (p < end) {
         Uint16 code = 0;
