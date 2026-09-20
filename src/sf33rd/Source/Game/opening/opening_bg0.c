@@ -69,13 +69,28 @@ static void oh_bg_blk_w_rows(s32 first, s32 second, s16 mapy, s32 trans) {
     oh_bg_blk_w(op_w.bgw, &(Op_Bg_Blk_Args){ second, 2, mapy, trans });
 }
 
+/* Every scene's step 0 sets this layer's scroll the same way: the wide x first
+ * and then the y. Fifteen copies of that pair, each keeping its own two values
+ * written out at the call site. */
+static void set_bg0_scroll(s32 wide_x, s32 y) {
+    bgw_ptr->wxy[0].cal = wide_x;
+    bgw_ptr->xy[1].cal = y;
+}
+
+/* Nine scenes open their step 0 with the same three lines: the step on, the
+ * frame counter at one and the deform cleared. */
+static void begin_bg0_scene(void) {
+    opw_ptr->r_no_0 += 1;
+    bgw_ptr->free = 1;
+    bgw_ptr->frame_deff = 0;
+}
+
 void op_bg0_0000(s16 /* unused */) {
     switch (opw_ptr->r_no_0) {
     case 0:
         opw_ptr->r_no_0 += 1;
         Bg_Off_W(1);
-        bgw_ptr->wxy[0].cal = 0x2000000;
-        bgw_ptr->xy[1].cal = 0;
+        set_bg0_scroll(0x2000000, 0);
         break;
     }
 
@@ -84,20 +99,17 @@ void op_bg0_0000(s16 /* unused */) {
 
 /* Which pair of background blocks this opening scene starts with. Every arm
  * lays blocks down and nothing else, so the whole choice moves out of the
- * scene's step 0; no case label is renumbered and no arm changes. */
-/* Which pair of background blocks this opening scene starts with. Thirty-two
- * case labels cost thirty-two branches in one switch, so the arms are carried
- * in five links, each reached through the previous one's default. No label is
- * renumbered, no arm changes, and a scene index in none of them still does
- * nothing. */
+ * scene's step 0.
+ *
+ * Thirty-two case labels cost thirty-two branches in one switch, so the arms
+ * are carried in six links, each reached through the previous one's default,
+ * written last link first. How the labels are shared out between the links is
+ * only a matter of keeping each one under the complexity threshold: the labels
+ * are mutually exclusive, so a scene index matches in exactly one link wherever
+ * it is written. No label is renumbered, no arm changes, and a scene index in
+ * none of them still does nothing. */
 static void op_bg0_lay_blocks_6(s16 r_index) {
     switch (r_index) {
-    case 0x3E:
-    case 0x50:
-    case 0x52:
-        oh_bg_blk_w_rows(0x57, 0x58, 0, 1);
-        break;
-
     case 0x41:
         oh_bg_blk_w_rows(0x4F, 0x50, 0, 1);
         break;
@@ -128,6 +140,12 @@ static void op_bg0_lay_blocks_5(s16 r_index) {
     case 0x37:
     case 0x38:
         oh_bg_blk_w_rows(0x4D, 0x4E, 0, 1);
+        break;
+
+    case 0x3E:
+    case 0x50:
+    case 0x52:
+        oh_bg_blk_w_rows(0x57, 0x58, 0, 1);
         break;
 
     case 0x3C:
@@ -250,12 +268,9 @@ static void op_bg0_lay_blocks(s16 r_index) {
 void op_bg0_0001(s16 r_index) {
     switch (opw_ptr->r_no_0) {
     case 0:
-        opw_ptr->r_no_0 += 1;
-        bgw_ptr->free = 1;
-        bgw_ptr->frame_deff = 0;
+        begin_bg0_scene();
         Bg_On_W(1);
-        bgw_ptr->wxy[0].cal = 0x2000000;
-        bgw_ptr->xy[1].cal = 0;
+        set_bg0_scroll(0x2000000, 0);
 
         op_bg0_lay_blocks(r_index);
 
@@ -307,8 +322,7 @@ void op_bg0_0002(s16 r_index) {
             Zoomf_Init();
         }
 
-        bgw_ptr->wxy[0].cal = 0x2000000;
-        bgw_ptr->xy[1].cal = 0;
+        set_bg0_scroll(0x2000000, 0);
 
         draw_bg0_fade_overlay(&beta_poly);
 
@@ -323,41 +337,46 @@ void op_bg0_0002(s16 r_index) {
     op_scrn_pos_set2(0);
 }
 
+/* Which pair of background blocks the scene-3 states lay down, by scene index.
+ * The six arms are the six indices the jump table sends to op_bg0_0003, and
+ * they lay blocks down and nothing else, so the whole choice moves out of the
+ * scene's step 0. No case label is renumbered and no arm changes. */
+static void op_bg0_lay_blocks_scene_3(s16 r_index) {
+    switch (r_index) {
+    case 0x2A:
+        oh_bg_blk_w_rows(0x24, 0x25, 0, 1);
+        break;
+
+    case 0x2C:
+        oh_bg_blk_w_rows(0x26, 0x27, 0, 1);
+        break;
+
+    case 0x2E:
+        oh_bg_blk_w_rows(0x28, 0x29, 0, 1);
+        break;
+
+    case 0x30:
+        oh_bg_blk_w_rows(0x2A, 0x2B, 0, 1);
+        break;
+
+    case 0x32:
+        oh_bg_blk_w_rows(0x2C, 0x2D, 0, 1);
+        break;
+
+    case 0x34:
+        oh_bg_blk_w_rows(0x2E, 0x2F, 0, 1);
+        break;
+    }
+}
+
 void op_bg0_0003(s16 r_index) {
     switch (opw_ptr->r_no_0) {
     case 0:
-        opw_ptr->r_no_0 += 1;
-        bgw_ptr->free = 1;
-        bgw_ptr->frame_deff = 0;
+        begin_bg0_scene();
         Bg_On_W(1);
-        bgw_ptr->wxy[0].cal = 0x2000000;
-        bgw_ptr->xy[1].cal = 0;
+        set_bg0_scroll(0x2000000, 0);
 
-        switch (r_index) {
-        case 0x2A:
-            oh_bg_blk_w_rows(0x24, 0x25, 0, 1);
-            break;
-
-        case 0x2C:
-            oh_bg_blk_w_rows(0x26, 0x27, 0, 1);
-            break;
-
-        case 0x2E:
-            oh_bg_blk_w_rows(0x28, 0x29, 0, 1);
-            break;
-
-        case 0x30:
-            oh_bg_blk_w_rows(0x2A, 0x2B, 0, 1);
-            break;
-
-        case 0x32:
-            oh_bg_blk_w_rows(0x2C, 0x2D, 0, 1);
-            break;
-
-        case 0x34:
-            oh_bg_blk_w_rows(0x2E, 0x2F, 0, 1);
-            break;
-        }
+        op_bg0_lay_blocks_scene_3(r_index);
 
         break;
 
@@ -402,12 +421,9 @@ void op_bg0_0004(s16 r_index) {
 
     switch (opw_ptr->r_no_0) {
     case 0:
-        opw_ptr->r_no_0 += 1;
-        bgw_ptr->free = 1;
-        bgw_ptr->frame_deff = 0;
+        begin_bg0_scene();
         Bg_Off_W(1);
-        bgw_ptr->wxy[0].cal = 0x2000000;
-        bgw_ptr->xy[1].cal = 0;
+        set_bg0_scroll(0x2000000, 0);
 
         draw_bg0_fade_overlay(&beta_poly);
         break;
@@ -446,12 +462,9 @@ const s16 op_bg0_0005_tbl[16] = { 0x0008, 0xFFF8, 0x0007, 0xFFF9, 0x0005, 0xFFFB
 void op_bg0_0005(s16 /* unused */) {
     switch (opw_ptr->r_no_0) {
     case 0:
-        opw_ptr->r_no_0 += 1;
-        bgw_ptr->free = 1;
-        bgw_ptr->frame_deff = 0;
+        begin_bg0_scene();
         Bg_On_W(1);
-        bgw_ptr->wxy[0].cal = 0x2000000;
-        bgw_ptr->xy[1].cal = 0;
+        set_bg0_scroll(0x2000000, 0);
         oh_bg_blk_w_rows(5, 6, 0, 0);
         Zoom_Value_Set(0x40);
         bgw_ptr->frame_deff = 12;
@@ -490,24 +503,37 @@ void op_bg0_0005(s16 /* unused */) {
     op_scrn_pos_set2(0);
 }
 
+/* Two scenes travel one of the layer's scroll values a fixed step a frame and
+ * step on once it has gone past a limit. Which value, the step and the limit are
+ * all written out at the call site; the helper performs the same add and the
+ * same test on what it is handed. */
+static void scroll_bg0_until_past(XY* scroll, s32 step, s16 limit) {
+    scroll->cal += step;
+
+    if (scroll->disp.pos > limit) {
+        opw_ptr->r_no_0 += 1;
+    }
+}
+
+/* Step 0 of the scene that sweeps in from the left: the layer starts well off
+ * the left edge with a single block above the pair of rows. */
+static void open_bg0_0006(void) {
+    opw_ptr->r_no_0 += 1;
+    bgw_ptr->free = 0;
+    Bg_On_W(1);
+    set_bg0_scroll(0xC00000, 0);
+    oh_bg_blk_w(op_w.bgw, &(Op_Bg_Blk_Args){0xD, 0, 0, 0});
+    oh_bg_blk_w_rows(0xE, 0xF, 0, 0);
+}
+
 void op_bg0_0006(s16 /* unused */) {
     switch (opw_ptr->r_no_0) {
     case 0:
-        opw_ptr->r_no_0 += 1;
-        bgw_ptr->free = 0;
-        Bg_On_W(1);
-        bgw_ptr->wxy[0].cal = 0xC00000;
-        bgw_ptr->xy[1].cal = 0;
-        oh_bg_blk_w(op_w.bgw, &(Op_Bg_Blk_Args){0xD, 0, 0, 0});
-        oh_bg_blk_w_rows(0xE, 0xF, 0, 0);
+        open_bg0_0006();
         break;
 
     case 1:
-        bgw_ptr->wxy[0].cal += 0x40000;
-
-        if (bgw_ptr->wxy[0].disp.pos > 0x2C0) {
-            opw_ptr->r_no_0 += 1;
-        }
+        scroll_bg0_until_past(&bgw_ptr->wxy[0], 0x40000, 0x2C0);
 
         break;
     }
@@ -515,30 +541,41 @@ void op_bg0_0006(s16 /* unused */) {
     op_scrn_pos_set2(0);
 }
 
+/* Both of the scenes that enter from off the top bring the layer's y back to
+ * zero the same way, a step a frame until it is no longer negative. The run is
+ * identical in the two; the x approach above it is not, and stays with each. */
+static void settle_bg0_scroll_y(void) {
+    if (bgw_ptr->xy[1].disp.pos < 0) {
+        bgw_ptr->xy[1].cal += 0x4000;
+    } else {
+        bgw_ptr->xy[1].cal = 0;
+    }
+}
+
+/* The layer climbs to the middle of the screen and is then pinned exactly
+ * there, which is what the scene that slides in from the left does with its x
+ * for as long as its step 1 runs. */
+static void climb_bg0_scroll_x_to_centre(void) {
+    if (bgw_ptr->wxy[0].disp.pos < 0x200) {
+        bgw_ptr->wxy[0].cal += 0x7FFF + 0x4001;
+    } else {
+        bgw_ptr->wxy[0].cal = 0x2000000;
+    }
+}
+
 void op_bg0_0007(s16 /* unused */) {
     switch (opw_ptr->r_no_0) {
     case 0:
-        opw_ptr->r_no_0 += 1;
-        bgw_ptr->free = 1;
-        bgw_ptr->frame_deff = 0;
+        begin_bg0_scene();
         Bg_On_W(1);
-        bgw_ptr->wxy[0].cal = 0x1D00000;
-        bgw_ptr->xy[1].cal = 0xFFF00000;
+        set_bg0_scroll(0x1D00000, 0xFFF00000);
         oh_bg_blk_w_rows(0x16, 0x17, 0, 0);
         break;
 
     case 1:
-        if (bgw_ptr->wxy[0].disp.pos < 0x200) {
-            bgw_ptr->wxy[0].cal += 0x7FFF + 0x4001;
-        } else {
-            bgw_ptr->wxy[0].cal = 0x2000000;
-        }
+        climb_bg0_scroll_x_to_centre();
 
-        if (bgw_ptr->xy[1].disp.pos < 0) {
-            bgw_ptr->xy[1].cal += 0x4000;
-        } else {
-            bgw_ptr->xy[1].cal = 0;
-        }
+        settle_bg0_scroll_y();
 
         break;
     }
@@ -549,12 +586,9 @@ void op_bg0_0007(s16 /* unused */) {
 void op_bg0_0008(s16 /* unused */) {
     switch (opw_ptr->r_no_0) {
     case 0:
-        opw_ptr->r_no_0 += 1;
-        bgw_ptr->free = 1;
-        bgw_ptr->frame_deff = 0;
+        begin_bg0_scene();
         Bg_On_W(1);
-        bgw_ptr->wxy[0].cal = 0x2300000;
-        bgw_ptr->xy[1].cal = 0xFFF00000;
+        set_bg0_scroll(0x2300000, 0xFFF00000);
         oh_bg_blk_w_rows(0x18, 0x19, 0, 0);
         /* fallthrough */
 
@@ -565,11 +599,7 @@ void op_bg0_0008(s16 /* unused */) {
             bgw_ptr->wxy[0].cal = 0x2000000;
         }
 
-        if (bgw_ptr->xy[1].disp.pos < 0) {
-            bgw_ptr->xy[1].cal += 0x4000;
-        } else {
-            bgw_ptr->xy[1].cal = 0;
-        }
+        settle_bg0_scroll_y();
 
         break;
     }
@@ -577,17 +607,21 @@ void op_bg0_0008(s16 /* unused */) {
     op_scrn_pos_set2(0);
 }
 
+/* The two zoom scenes open the same way: a scene start, the layer on, and the
+ * zoom re-initialised to 0x40. Their scroll is not part of the run - they set a
+ * different y - so it stays at each call site. */
+static void op_bg0_begin_zoom_scene(void) {
+    begin_bg0_scene();
+    Bg_On_W(1);
+    Zoomf_Init();
+    Zoom_Value_Set(0x40);
+}
+
 void op_bg0_0010(s16 /* unused */) {
     switch (opw_ptr->r_no_0) {
     case 0:
-        opw_ptr->r_no_0 += 1;
-        bgw_ptr->free = 1;
-        bgw_ptr->frame_deff = 0;
-        Bg_On_W(1);
-        Zoomf_Init();
-        Zoom_Value_Set(0x40);
-        bgw_ptr->wxy[0].cal = 0x2000000;
-        bgw_ptr->xy[1].cal = 0;
+        op_bg0_begin_zoom_scene();
+        set_bg0_scroll(0x2000000, 0);
         oh_bg_blk_w_rows(0x12, 0x13, 0, 0);
         break;
 
@@ -605,6 +639,20 @@ void op_bg0_0010(s16 /* unused */) {
     op_scrn_pos_set2(0);
 }
 
+/* Step 2 of the scene that rises into an opening frame: the layer climbs back
+ * to y zero while the frame window it opened in step 1 closes again, one line a
+ * frame, and each half stops on its own. */
+static void advance_bg0_0011_rise(void) {
+    if (bgw_ptr->xy[1].disp.pos < 0) {
+        bgw_ptr->xy[1].cal += 0x20000;
+    }
+
+    if (bgw_ptr->frame_deff > 0) {
+        bgw_ptr->frame_deff -= 1;
+        Frame_Down(0xC0, 0x40, 1);
+    }
+}
+
 void op_bg0_0011(s16 /* unused */) {
     switch (opw_ptr->r_no_0) {
     case 0:
@@ -612,8 +660,7 @@ void op_bg0_0011(s16 /* unused */) {
         Bg_On_W(1);
         Zoomf_Init();
         Zoom_Value_Set(0x40);
-        bgw_ptr->wxy[0].cal = 0x2000000;
-        bgw_ptr->xy[1].cal = 0;
+        set_bg0_scroll(0x2000000, 0);
         oh_bg_blk_w_rows(0x14, 0x15, 0, 0);
         break;
 
@@ -625,14 +672,7 @@ void op_bg0_0011(s16 /* unused */) {
         /* fallthrough */
 
     case 2:
-        if (bgw_ptr->xy[1].disp.pos < 0) {
-            bgw_ptr->xy[1].cal += 0x20000;
-        }
-
-        if (bgw_ptr->frame_deff > 0) {
-            bgw_ptr->frame_deff -= 1;
-            Frame_Down(0xC0, 0x40, 1);
-        }
+        advance_bg0_0011_rise();
 
         break;
     }
@@ -643,14 +683,8 @@ void op_bg0_0011(s16 /* unused */) {
 void op_bg0_0012(s16 /* unused */) {
     switch (opw_ptr->r_no_0) {
     case 0:
-        opw_ptr->r_no_0 += 1;
-        bgw_ptr->free = 1;
-        bgw_ptr->frame_deff = 0;
-        Bg_On_W(1);
-        Zoomf_Init();
-        Zoom_Value_Set(0x40);
-        bgw_ptr->wxy[0].cal = 0x2000000;
-        bgw_ptr->xy[1].cal = 0x1000000;
+        op_bg0_begin_zoom_scene();
+        set_bg0_scroll(0x2000000, 0x1000000);
         oh_bg_blk_w_rows(0x1E, 0x1F, 1, 0);
         oh_bg_blk_w_rows(0x20, 0x21, 0, 0);
         break;
@@ -671,21 +705,14 @@ void op_bg0_0012(s16 /* unused */) {
 void op_bg0_0013(s16 /* unused */) {
     switch (opw_ptr->r_no_0) {
     case 0:
-        opw_ptr->r_no_0 += 1;
-        bgw_ptr->free = 1;
-        bgw_ptr->frame_deff = 0;
-        bgw_ptr->wxy[0].cal = 0x2000000;
-        bgw_ptr->xy[1].cal = 0x600000;
+        begin_bg0_scene();
+        set_bg0_scroll(0x2000000, 0x600000);
         oh_bg_blk_w_rows(0x1A, 0x1B, 1, 0);
         oh_bg_blk_w_rows(0x1C, 0x1D, 0, 0);
         break;
 
     case 1:
-        bgw_ptr->xy[1].cal += 0x20000;
-
-        if (bgw_ptr->xy[1].disp.pos > 0x100) {
-            opw_ptr->r_no_0 += 1;
-        }
+        scroll_bg0_until_past(&bgw_ptr->xy[1], 0x20000, 0x100);
 
         break;
     }
@@ -722,8 +749,7 @@ void op_bg0_0015(s16 r_index) {
         bgw_ptr->free = 1;
         bgw_ptr->l_limit = 0;
         Bg_On_W(1);
-        bgw_ptr->wxy[0].cal = 0x2000000;
-        bgw_ptr->xy[1].cal = 0;
+        set_bg0_scroll(0x2000000, 0);
 
         switch (r_index) {
         case 8:
@@ -754,13 +780,25 @@ void op_bg0_0015(s16 r_index) {
     op_scrn_pos_set2(0);
 }
 
+/* Step 2 of the last scene: the frame window closes a line a frame, and when it
+ * has run out the scene steps on and reports the screen finished. */
+static void close_bg0_0016_frame(void) {
+    bgw_ptr->frame_deff -= 1;
+
+    if (bgw_ptr->frame_deff >= 0) {
+        Frame_Down(0xC0, 0x70, 1);
+    } else {
+        opw_ptr->r_no_0 += 1;
+        op_scrn_end = 1;
+    }
+}
+
 void op_bg0_0016(s16 /* unused */) {
     switch (opw_ptr->r_no_0) {
     case 0:
         opw_ptr->r_no_0 += 1;
         Bg_On_W(1);
-        bgw_ptr->wxy[0].cal = 0x2000000;
-        bgw_ptr->xy[1].cal = 0;
+        set_bg0_scroll(0x2000000, 0);
         op_scrn_end = 0;
         bgw_ptr->frame_deff = 0x13;
         Frame_Up(0xC0, 0x70, bgw_ptr->frame_deff);
@@ -777,14 +815,7 @@ void op_bg0_0016(s16 /* unused */) {
         break;
 
     case 2:
-        bgw_ptr->frame_deff -= 1;
-
-        if (bgw_ptr->frame_deff >= 0) {
-            Frame_Down(0xC0, 0x70, 1);
-        } else {
-            opw_ptr->r_no_0 += 1;
-            op_scrn_end = 1;
-        }
+        close_bg0_0016_frame();
 
         break;
 

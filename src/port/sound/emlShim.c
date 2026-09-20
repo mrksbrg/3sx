@@ -304,6 +304,22 @@ static u32 makeConditions(CSE_REQP* rq) {
 
 /* The identity half of the condition test, reached from the bank half's
  * default. Every case keeps its original label. */
+static int checkOneHandleCondition(struct VId* id, CSE_REQP* match, u32 masked) {
+    switch (masked) {
+    case MATCH_GUID:
+        if (id->guid != match->guid) {
+            return 0;
+        }
+        break;
+    case MATCH_BANK:
+        if ((id->bank & 0xf) != (match->bank & 0xf)) {
+            return 0;
+        }
+        break;
+    }
+
+    return 1;
+}
 static int checkOneIdCondition(struct VId* id, CSE_REQP* match, u32 masked) {
     switch (masked) {
     case MATCH_ID1:
@@ -316,16 +332,8 @@ static int checkOneIdCondition(struct VId* id, CSE_REQP* match, u32 masked) {
             return 0;
         }
         break;
-    case MATCH_GUID:
-        if (id->guid != match->guid) {
-            return 0;
-        }
-        break;
-    case MATCH_BANK:
-        if ((id->bank & 0xf) != (match->bank & 0xf)) {
-            return 0;
-        }
-        break;
+    default:
+        return checkOneHandleCondition(id, match, masked);
     }
 
     return 1;

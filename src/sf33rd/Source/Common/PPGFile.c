@@ -244,12 +244,8 @@ s32 ppgCheckTextureDataBe(Texture* tch) {
     return tch->be;
 }
 
-s32 ppgCheckPaletteDataBe(Palette* pch) {
+static s32 first_used_palette_handle(Palette* pch) {
     s32 i;
-
-    if (pch->be == 0) {
-        return 0;
-    }
 
     for (i = 0; i < pch->total; i++) {
         if (pch->handle[i]) {
@@ -257,7 +253,15 @@ s32 ppgCheckPaletteDataBe(Palette* pch) {
         }
     }
 
-    if (i == pch->total) {
+    return i;
+}
+
+s32 ppgCheckPaletteDataBe(Palette* pch) {
+    if (pch->be == 0) {
+        return 0;
+    }
+
+    if (first_used_palette_handle(pch) == pch->total) {
         if (pch->handle != NULL) {
             ppgFree(pch->handle);
         }

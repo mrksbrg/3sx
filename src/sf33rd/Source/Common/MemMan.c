@@ -78,11 +78,11 @@ static struct _MEMMAN_CELL* mm_find_gap_forward(_MEMMAN_OBJ* mmobj, ssize_t size
             if (gap == sizeTrue) {
                 cell = myself;
                 break;
-            } else {
-                if ((gap - sizeTrue) < gapMin) {
-                    gapMin = gap - sizeTrue;
-                    cell = myself;
-                }
+            }
+
+            if ((gap - sizeTrue) < gapMin) {
+                gapMin = gap - sizeTrue;
+                cell = myself;
             }
         }
 
@@ -130,11 +130,11 @@ struct _MEMMAN_CELL* mmAllocSub(_MEMMAN_OBJ* mmobj, ssize_t size, s32 flag) {
             if (gap == sizeTrue) {
                 cell = myself;
                 break;
-            } else {
-                if ((gap - sizeTrue) < gapMin) {
-                    gapMin = gap - sizeTrue;
-                    cell = myself;
-                }
+            }
+
+            if ((gap - sizeTrue) < gapMin) {
+                gapMin = gap - sizeTrue;
+                cell = myself;
             }
         }
 
