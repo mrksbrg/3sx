@@ -370,6 +370,34 @@ def report_literal_changes(rel: str, before: Counter, after: Counter, strict: bo
     return not strict
 
 
+RECIPE_J_MARKER = "const Pattern_Step script["
+
+
+def undo_recipe_j(before: str, after: str, rel: str) -> str:
+    """Put a Recipe J file back into switch form before its literals are counted.
+
+    Recipe J replaces a `switch` on the COM step counter with a table of the
+    same calls (docs/refactoring/PLAYBOOK.md). The case labels stop being
+    literals and the step count starts being one, so a raw comparison reports a
+    substitution for a change that moved no value at all.
+
+    The recipe is invertible, and tools/pattern_table.py can run it backwards.
+    Inverting first is what keeps this script dumb: it still compares one
+    switch's literals against another switch's, and it still sees any value
+    that actually changed, because the inverse writes every argument back into
+    the call it came from.
+    """
+    if RECIPE_J_MARKER not in after or RECIPE_J_MARKER in before:
+        return after
+    sys.path.insert(0, str(REPO / "tools"))
+    try:
+        import pattern_table
+    except ImportError:
+        return after
+    print("NOTE  " + rel + "  Recipe J: comparing the table's inverse against " + "the base")
+    return pattern_table.invert_source(after)
+
+
 def check(rel: str, base: str, strict: bool = False) -> bool:
     """Return True if the file is clean.
 
@@ -401,7 +429,7 @@ def check(rel: str, base: str, strict: bool = False) -> bool:
         print("FAIL  " + rel + "  (deleted from working tree)")
         return False
 
-    after = path.read_text(encoding="utf-8", errors="replace")
+    after = undo_recipe_j(before, path.read_text(encoding="utf-8", errors="replace"), rel)
     return report_literal_changes(rel, literals(before), literals(after), strict)
 
 
