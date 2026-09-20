@@ -611,6 +611,20 @@ void op_bg0_0010(s16 /* unused */) {
     op_scrn_pos_set2(0);
 }
 
+/* Step 2 of the scene that rises into an opening frame: the layer climbs back
+ * to y zero while the frame window it opened in step 1 closes again, one line a
+ * frame, and each half stops on its own. */
+static void advance_bg0_0011_rise(void) {
+    if (bgw_ptr->xy[1].disp.pos < 0) {
+        bgw_ptr->xy[1].cal += 0x20000;
+    }
+
+    if (bgw_ptr->frame_deff > 0) {
+        bgw_ptr->frame_deff -= 1;
+        Frame_Down(0xC0, 0x40, 1);
+    }
+}
+
 void op_bg0_0011(s16 /* unused */) {
     switch (opw_ptr->r_no_0) {
     case 0:
@@ -630,14 +644,7 @@ void op_bg0_0011(s16 /* unused */) {
         /* fallthrough */
 
     case 2:
-        if (bgw_ptr->xy[1].disp.pos < 0) {
-            bgw_ptr->xy[1].cal += 0x20000;
-        }
-
-        if (bgw_ptr->frame_deff > 0) {
-            bgw_ptr->frame_deff -= 1;
-            Frame_Down(0xC0, 0x40, 1);
-        }
+        advance_bg0_0011_rise();
 
         break;
     }
