@@ -759,6 +759,19 @@ void op_bg0_0015(s16 r_index) {
     op_scrn_pos_set2(0);
 }
 
+/* Step 2 of the last scene: the frame window closes a line a frame, and when it
+ * has run out the scene steps on and reports the screen finished. */
+static void close_bg0_0016_frame(void) {
+    bgw_ptr->frame_deff -= 1;
+
+    if (bgw_ptr->frame_deff >= 0) {
+        Frame_Down(0xC0, 0x70, 1);
+    } else {
+        opw_ptr->r_no_0 += 1;
+        op_scrn_end = 1;
+    }
+}
+
 void op_bg0_0016(s16 /* unused */) {
     switch (opw_ptr->r_no_0) {
     case 0:
@@ -781,14 +794,7 @@ void op_bg0_0016(s16 /* unused */) {
         break;
 
     case 2:
-        bgw_ptr->frame_deff -= 1;
-
-        if (bgw_ptr->frame_deff >= 0) {
-            Frame_Down(0xC0, 0x70, 1);
-        } else {
-            opw_ptr->r_no_0 += 1;
-            op_scrn_end = 1;
-        }
+        close_bg0_0016_frame();
 
         break;
 
