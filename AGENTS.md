@@ -19,15 +19,29 @@ control flow are typically arcade-accurate. **Report them, do not fix them.**
 
 ## Build
 
-`cmake` is not on PATH by default on the Windows dev machine. Prepend both the
-MinGW toolchain and MSYS2 utilities. The latter provides `cygpath`, which the Windows
-install rules need in order to locate runtime DLLs:
+On macOS, `./build-local.sh` does the right thing and nothing below applies.
+
+On the **Windows dev machine**, `cmake` is not on PATH by default. Prepend both the
+MinGW toolchain and MSYS2 utilities - the latter provides `cygpath`, which the Windows
+install rules need in order to locate runtime DLLs - and **configure with clang**:
 
 ```bash
 export PATH="/c/msys64/usr/bin:/c/msys64/mingw64/bin:$PATH"
-cmake -S . -B build
+CC=clang CXX=clang++ cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
 cmake --build build
 ```
+
+`CC=clang` is not a preference, it is the only compiler this tree builds with on Windows.
+MinGW **gcc** fails on `src/arcade/arcade_char_data.c`, where an `SDL_Log` uses `%zu`:
+gcc checks format strings against the MSVCRT `printf`, which has no `%z`, and `-Werror`
+turns that into `unknown conversion type character 'z' in format`. The `%zu` predates the
+refactoring campaign and is correct C - do not "fix" it to make gcc happy, and do not
+conclude your change broke the build. [`build_windows.yml`](.github/workflows/build_windows.yml)
+builds with clang for this reason, which is why CI stays green while a local gcc build
+does not.
+
+`CC` is only read when a build directory is first configured. If `build/` already has gcc
+in its cache, adding `CC=clang` changes nothing - delete the directory and configure again.
 
 - A no-op build takes ~2 seconds; a single-file change rebuilds and links in ~30 seconds.
 - The build globs sources, so adding a `.c` file needs no CMake edit.
@@ -45,7 +59,7 @@ exists after the install step:
 
 ```bash
 export PATH="/c/msys64/usr/bin:/c/msys64/mingw64/bin:$PATH"
-cmake -S . -B build
+CC=clang CXX=clang++ cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
 cmake --build build
 cmake --install build --prefix build/application
 (cd build/application/bin && ./3sx.exe)
@@ -60,7 +74,8 @@ For PowerShell, use the equivalent sequence:
 
 ```powershell
 $env:Path = "C:\msys64\usr\bin;C:\msys64\mingw64\bin;$env:Path"
-cmake -S . -B build
+$env:CC = "clang"; $env:CXX = "clang++"
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
 cmake --build build
 cmake --install build --prefix build/application
 $bin = (Resolve-Path "build/application/bin").Path
