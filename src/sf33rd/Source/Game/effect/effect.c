@@ -70,34 +70,44 @@ void effect_work_quick_init() {
     }
 }
 
-void effect_work_list_init(s16 lix, s16 iid) {
+static void push_whole_list(s16 curr_ix) {
     WORK* c_addr;
-    s16 curr_ix;
     s16 next_ix;
 
-    curr_ix = head_ix[lix];
+    while (curr_ix != -1) {
+        c_addr = (WORK*)frw[curr_ix];
+        next_ix = c_addr->behind;
+        push_effect_work(c_addr);
+        curr_ix = next_ix;
+    }
+}
+
+static void push_list_entries_with_id(s16 curr_ix, s16 iid) {
+    WORK* c_addr;
+    s16 next_ix;
+
+    while (curr_ix != -1) {
+        c_addr = (WORK*)frw[curr_ix];
+        next_ix = c_addr->behind;
+
+        if (c_addr->id == iid) {
+            push_effect_work(c_addr);
+        }
+
+        curr_ix = next_ix;
+    }
+}
+
+void effect_work_list_init(s16 lix, s16 iid) {
+    s16 curr_ix = head_ix[lix];
 
     if (iid == -1) {
-        while (curr_ix != -1) {
-            c_addr = (WORK*)frw[curr_ix];
-            next_ix = c_addr->behind;
-            push_effect_work(c_addr);
-            curr_ix = next_ix;
-        }
-
+        push_whole_list(curr_ix);
         exec_tm[lix] = 0;
-    } else {
-        while (curr_ix != -1) {
-            c_addr = (WORK*)frw[curr_ix];
-            next_ix = c_addr->behind;
-
-            if (c_addr->id == iid) {
-                push_effect_work(c_addr);
-            }
-
-            curr_ix = next_ix;
-        }
+        return;
     }
+
+    push_list_entries_with_id(curr_ix, iid);
 }
 
 s16 pull_effect_work(s16 index) {
