@@ -577,16 +577,20 @@ void op_bg0_0008(s16 /* unused */) {
     op_scrn_pos_set2(0);
 }
 
+static void op_bg0_begin_zoom_scene(void) {
+    opw_ptr->r_no_0 += 1;
+    bgw_ptr->free = 1;
+    bgw_ptr->frame_deff = 0;
+    Bg_On_W(1);
+    Zoomf_Init();
+    Zoom_Value_Set(0x40);
+    bgw_ptr->wxy[0].cal = 0x2000000;
+}
+
 void op_bg0_0010(s16 /* unused */) {
     switch (opw_ptr->r_no_0) {
     case 0:
-        opw_ptr->r_no_0 += 1;
-        bgw_ptr->free = 1;
-        bgw_ptr->frame_deff = 0;
-        Bg_On_W(1);
-        Zoomf_Init();
-        Zoom_Value_Set(0x40);
-        bgw_ptr->wxy[0].cal = 0x2000000;
+        op_bg0_begin_zoom_scene();
         bgw_ptr->xy[1].cal = 0;
         oh_bg_blk_w_rows(0x12, 0x13, 0, 0);
         break;
@@ -643,13 +647,7 @@ void op_bg0_0011(s16 /* unused */) {
 void op_bg0_0012(s16 /* unused */) {
     switch (opw_ptr->r_no_0) {
     case 0:
-        opw_ptr->r_no_0 += 1;
-        bgw_ptr->free = 1;
-        bgw_ptr->frame_deff = 0;
-        Bg_On_W(1);
-        Zoomf_Init();
-        Zoom_Value_Set(0x40);
-        bgw_ptr->wxy[0].cal = 0x2000000;
+        op_bg0_begin_zoom_scene();
         bgw_ptr->xy[1].cal = 0x1000000;
         oh_bg_blk_w_rows(0x1E, 0x1F, 1, 0);
         oh_bg_blk_w_rows(0x20, 0x21, 0, 0);
