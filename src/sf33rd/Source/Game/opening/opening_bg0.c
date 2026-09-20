@@ -516,6 +516,17 @@ void op_bg0_0006(s16 /* unused */) {
     op_scrn_pos_set2(0);
 }
 
+/* Both of the scenes that enter from off the top bring the layer's y back to
+ * zero the same way, a step a frame until it is no longer negative. The run is
+ * identical in the two; the x approach above it is not, and stays with each. */
+static void settle_bg0_scroll_y(void) {
+    if (bgw_ptr->xy[1].disp.pos < 0) {
+        bgw_ptr->xy[1].cal += 0x4000;
+    } else {
+        bgw_ptr->xy[1].cal = 0;
+    }
+}
+
 void op_bg0_0007(s16 /* unused */) {
     switch (opw_ptr->r_no_0) {
     case 0:
@@ -532,11 +543,7 @@ void op_bg0_0007(s16 /* unused */) {
             bgw_ptr->wxy[0].cal = 0x2000000;
         }
 
-        if (bgw_ptr->xy[1].disp.pos < 0) {
-            bgw_ptr->xy[1].cal += 0x4000;
-        } else {
-            bgw_ptr->xy[1].cal = 0;
-        }
+        settle_bg0_scroll_y();
 
         break;
     }
@@ -560,11 +567,7 @@ void op_bg0_0008(s16 /* unused */) {
             bgw_ptr->wxy[0].cal = 0x2000000;
         }
 
-        if (bgw_ptr->xy[1].disp.pos < 0) {
-            bgw_ptr->xy[1].cal += 0x4000;
-        } else {
-            bgw_ptr->xy[1].cal = 0;
-        }
+        settle_bg0_scroll_y();
 
         break;
     }
