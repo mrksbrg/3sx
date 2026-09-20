@@ -337,6 +337,38 @@ void op_bg0_0002(s16 r_index) {
     op_scrn_pos_set2(0);
 }
 
+/* Which pair of background blocks the scene-3 states lay down, by scene index.
+ * The six arms are the six indices the jump table sends to op_bg0_0003, and
+ * they lay blocks down and nothing else, so the whole choice moves out of the
+ * scene's step 0. No case label is renumbered and no arm changes. */
+static void op_bg0_lay_blocks_scene_3(s16 r_index) {
+    switch (r_index) {
+    case 0x2A:
+        oh_bg_blk_w_rows(0x24, 0x25, 0, 1);
+        break;
+
+    case 0x2C:
+        oh_bg_blk_w_rows(0x26, 0x27, 0, 1);
+        break;
+
+    case 0x2E:
+        oh_bg_blk_w_rows(0x28, 0x29, 0, 1);
+        break;
+
+    case 0x30:
+        oh_bg_blk_w_rows(0x2A, 0x2B, 0, 1);
+        break;
+
+    case 0x32:
+        oh_bg_blk_w_rows(0x2C, 0x2D, 0, 1);
+        break;
+
+    case 0x34:
+        oh_bg_blk_w_rows(0x2E, 0x2F, 0, 1);
+        break;
+    }
+}
+
 void op_bg0_0003(s16 r_index) {
     switch (opw_ptr->r_no_0) {
     case 0:
@@ -344,31 +376,7 @@ void op_bg0_0003(s16 r_index) {
         Bg_On_W(1);
         set_bg0_scroll(0x2000000, 0);
 
-        switch (r_index) {
-        case 0x2A:
-            oh_bg_blk_w_rows(0x24, 0x25, 0, 1);
-            break;
-
-        case 0x2C:
-            oh_bg_blk_w_rows(0x26, 0x27, 0, 1);
-            break;
-
-        case 0x2E:
-            oh_bg_blk_w_rows(0x28, 0x29, 0, 1);
-            break;
-
-        case 0x30:
-            oh_bg_blk_w_rows(0x2A, 0x2B, 0, 1);
-            break;
-
-        case 0x32:
-            oh_bg_blk_w_rows(0x2C, 0x2D, 0, 1);
-            break;
-
-        case 0x34:
-            oh_bg_blk_w_rows(0x2E, 0x2F, 0, 1);
-            break;
-        }
+        op_bg0_lay_blocks_scene_3(r_index);
 
         break;
 
