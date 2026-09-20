@@ -106,6 +106,22 @@ static void end_10_wait_out_hold() {
     }
 }
 
+/* The colour cycle both 1000 scenes run while they hold: count the dwell down,
+ * and on each expiry step the colour and wrap it. They differ in the dwell and
+ * in how many colours they cycle through. */
+static void step_end_1000_colour_cycle(s16 interval, s16 limit) {
+    bgw_ptr->free--;
+
+    if (bgw_ptr->free <= 0) {
+        bgw_ptr->free = interval;
+        bgw_ptr->l_limit++;
+
+        if (bgw_ptr->l_limit >= limit) {
+            bgw_ptr->l_limit = 0;
+        }
+    }
+}
+
 void end_1000_0000() {
     switch (bgw_ptr->r_no_1) {
     case 0:
@@ -120,16 +136,7 @@ void end_1000_0000() {
         break;
 
     case 1:
-        bgw_ptr->free--;
-
-        if (bgw_ptr->free <= 0) {
-            bgw_ptr->free = 4;
-            bgw_ptr->l_limit++;
-
-            if (bgw_ptr->l_limit >= 6) {
-                bgw_ptr->l_limit = 0;
-            }
-        }
+        step_end_1000_colour_cycle(4, 6);
 
         break;
     }
@@ -223,16 +230,7 @@ void end_1000_4000() {
         break;
 
     case 1:
-        bgw_ptr->free--;
-
-        if (bgw_ptr->free <= 0) {
-            bgw_ptr->free = 8;
-            bgw_ptr->l_limit++;
-
-            if (bgw_ptr->l_limit >= 5) {
-                bgw_ptr->l_limit = 0;
-            }
-        }
+        step_end_1000_colour_cycle(8, 5);
 
         break;
     }
@@ -244,12 +242,29 @@ void end_1001_move() {
     end_101_jp[end_w.r_no_2]();
 }
 
-void end_1001_1000() {
+/* What ends each rise. 1001 watches its own background up to a mark and snaps
+ * it there; 1002 waits for the first layer to reach step 3. */
+static void advance_end_1001_1000_rise(void) {
+    if (bgw_ptr->xy[1].disp.pos < 401) {
+        bgw_ptr->r_no_1++;
+        bgw_ptr->xy[1].cal = 0x1900000;
+    }
+}
+
+static void advance_end_1002_1000_rise(void) {
+    if (bg_w.bgw[1].r_no_1 >= 3) {
+        bgw_ptr->r_no_1++;
+    }
+}
+
+/* The rise scene end_1001_1000 and end_1002_1000 share: open and spawn the
+ * scene's effect, hold, then rise at the scene's speed until it is done. */
+static void run_end_10_rise_scene(u8 effect_id, s32 speed_y, void (*advance)(void)) {
     switch (bgw_ptr->r_no_1) {
     case 0:
         end_10_open_scene();
-        effect_E6_init(0x4D);
-        bgw_ptr->speed_y = 0x8000;
+        effect_E6_init(effect_id);
+        bgw_ptr->speed_y = speed_y;
         bgw_ptr->free = 0xB4;
         break;
 
@@ -260,18 +275,17 @@ void end_1001_1000() {
 
     case 2:
         bgw_ptr->xy[1].cal -= bgw_ptr->speed_y;
-
-        if (bgw_ptr->xy[1].disp.pos < 401) {
-            bgw_ptr->r_no_1++;
-            bgw_ptr->xy[1].cal = 0x1900000;
-        }
-
+        advance();
         bgw_ptr->abs_y = bgw_ptr->xy[1].disp.pos;
         break;
 
     case 3:
         break;
     }
+}
+
+void end_1001_1000() {
+    run_end_10_rise_scene(0x4D, 0x8000, advance_end_1001_1000_rise);
 }
 
 void end_1002_move() {
@@ -281,32 +295,7 @@ void end_1002_move() {
 }
 
 void end_1002_1000() {
-    switch (bgw_ptr->r_no_1) {
-    case 0:
-        end_10_open_scene();
-        effect_E6_init(0x4E);
-        bgw_ptr->speed_y = 0xB000;
-        bgw_ptr->free = 0xB4;
-        break;
-
-    case 1:
-        end_10_wait_out_hold();
-
-        break;
-
-    case 2:
-        bgw_ptr->xy[1].cal -= bgw_ptr->speed_y;
-
-        if (bg_w.bgw[1].r_no_1 >= 3) {
-            bgw_ptr->r_no_1++;
-        }
-
-        bgw_ptr->abs_y = bgw_ptr->xy[1].disp.pos;
-        break;
-
-    case 3:
-        break;
-    }
+    run_end_10_rise_scene(0x4E, 0xB000, advance_end_1002_1000_rise);
 }
 
 void end_1003_move() {

@@ -216,20 +216,28 @@ s32 flPS2CreateTextureHandle(u32 th, u32 flag) {
     return 1;
 }
 
-u32 flPS2GetTextureHandle() {
+/* The first free slot in a handle table. The texture and palette tables differ
+ * in where they live, how many slots they have, and what they say when they are
+ * full; how a slot index becomes a handle differs too, so that stays at the call
+ * site. */
+static s32 find_free_fl_slot(const FLTexture* table, s32 max, const char* full_message) {
     s32 i;
 
-    for (i = 0; i < FL_TEXTURE_MAX; i++) {
-        if (!flTexture[i].be_flag) {
+    for (i = 0; i < max; i++) {
+        if (!table[i].be_flag) {
             break;
         }
     }
 
-    if (i == FL_TEXTURE_MAX) {
-        fatal_error("ERROR flPS2GetTextureHandle flps2vram.c");
+    if (i == max) {
+        fatal_error(full_message);
     }
 
-    return i + 1;
+    return i;
+}
+
+u32 flPS2GetTextureHandle() {
+    return find_free_fl_slot(flTexture, FL_TEXTURE_MAX, "ERROR flPS2GetTextureHandle flps2vram.c") + 1;
 }
 
 u32 flCreatePaletteHandle(plContext* lpcontext, u32 flag) {
@@ -313,19 +321,7 @@ s32 flPS2CreatePaletteHandle(u32 ph, u32 flag) {
 }
 
 u32 flPS2GetPaletteHandle() {
-    s32 i;
-
-    for (i = 0; i < FL_PALETTE_MAX; i++) {
-        if (!flPalette[i].be_flag) {
-            break;
-        }
-    }
-
-    if (i == FL_PALETTE_MAX) {
-        fatal_error("ERROR flPS2GetPaletteHandle flps2vram.c");
-    }
-
-    return (i + 1) << 16;
+    return (find_free_fl_slot(flPalette, FL_PALETTE_MAX, "ERROR flPS2GetPaletteHandle flps2vram.c") + 1) << 16;
 }
 
 /* A handle that was never taken, is past the end of its table, or names an
@@ -381,7 +377,7 @@ s32 flLockTexture(Rect* lprect, u32 th, plContext* lpcontext, u32 flag) {
         return 0;
     }
 
-    return flPS2LockTexture(&(FlLockArgs){ lprect, lpflTexture, lpcontext, flag, 0 });
+    return flPS2LockTexture(&(FlLockArgs) { lprect, lpflTexture, lpcontext, flag, 0 });
 }
 
 s32 flLockPalette(Rect* lprect, u32 th, plContext* lpcontext, u32 flag) {
@@ -395,7 +391,7 @@ s32 flLockPalette(Rect* lprect, u32 th, plContext* lpcontext, u32 flag) {
         return 0;
     }
 
-    if (flPS2LockTexture(&(FlLockArgs){ lprect, lpflPalette, lpcontext, flag, 1 }) == 0) {
+    if (flPS2LockTexture(&(FlLockArgs) { lprect, lpflPalette, lpcontext, flag, 1 }) == 0) {
         return 0;
     }
 
@@ -490,20 +486,36 @@ static void setup_bgra8888_context(plContext* c) {
     c->pitch = c->width * c->bitdepth;
 }
 
-static void lock_convert_direct_formats(const FlLockArgs* a, plContext* src, u8* buff_ptr, u8* buff_ptr1) {
-    switch (a->lpflTexture->format) {
+/* A direct-colour conversion, as the two sides of a lock see it. Both apply the
+ * same pair of setups - the rgb one to one context and the bgr one to the other -
+ * and then convert between them; they disagree only on which context is which
+ * and which way the conversion runs. */
+typedef struct {
+    plContext* rgb_side;
+    plContext* bgr_side;
+    plContext* convert_to;
+    plContext* convert_from;
+} DirectFormatConvert;
+
+static void convert_direct_formats(s32 format, const DirectFormatConvert* c) {
+    switch (format) {
     case 1:
-        setup_rgb888_context(a->lpcontext);
-        setup_bgr888_context(src);
-        plConvertContext(a->lpcontext, src);
+        setup_rgb888_context(c->rgb_side);
+        setup_bgr888_context(c->bgr_side);
+        plConvertContext(c->convert_to, c->convert_from);
         break;
 
     case 0:
-        setup_rgba8888_context(a->lpcontext);
-        setup_bgra8888_context(src);
-        plConvertContext(a->lpcontext, src);
+        setup_rgba8888_context(c->rgb_side);
+        setup_bgra8888_context(c->bgr_side);
+        plConvertContext(c->convert_to, c->convert_from);
         break;
     }
+}
+
+/* Locking reads the texture's bgr into the caller's context. */
+static void lock_convert_direct_formats(const FlLockArgs* a, plContext* src, u8* buff_ptr, u8* buff_ptr1) {
+    convert_direct_formats(a->lpflTexture->format, &(DirectFormatConvert) { a->lpcontext, src, a->lpcontext, src });
 }
 
 static void lock_convert_by_format(const FlLockArgs* a, plContext* src, u8* buff_ptr, u8* buff_ptr1) {
@@ -610,58 +622,38 @@ s32 flPS2LockTexture(const FlLockArgs* a) {
     return 1;
 }
 
-s32 flUnlockTexture(u32 th) {
-    FLTexture* lpflTexture = &flTexture[th - 1];
+/* Unlocking an entry in one of the two handle tables. Which table, how big it
+ * is, and which renderer-side unlock to report to are all that differ.
+ *
+ * The entry pointer is taken before the bound is checked, which is what both
+ * originals did; nothing is read through it until after the check. */
+static s32 unlock_fl_entry(FLTexture* table, u32 th, u32 max, void (*renderer_unlock)(unsigned int th)) {
+    FLTexture* entry = &table[th - 1];
 
-    if (th > FL_TEXTURE_MAX) {
+    if (th > max) {
         return 0;
     }
 
-    if (!lpflTexture->be_flag) {
+    if (!entry->be_flag) {
         return 0;
     }
 
-    const s32 ret = flPS2UnlockTexture(lpflTexture);
-    Renderer_UnlockTexture(th);
+    const s32 ret = flPS2UnlockTexture(entry);
+    renderer_unlock(th);
     return ret;
+}
+
+s32 flUnlockTexture(u32 th) {
+    return unlock_fl_entry(flTexture, th, FL_TEXTURE_MAX, Renderer_UnlockTexture);
 }
 
 s32 flUnlockPalette(u32 th) {
-    FLTexture* lpflPalette = &flPalette[th - 1];
-
-    if (th > FL_PALETTE_MAX) {
-        return 0;
-    }
-
-    if (!lpflPalette->be_flag) {
-        return 0;
-    }
-
-    const s32 ret = flPS2UnlockTexture(lpflPalette);
-    Renderer_UnlockPalette(th);
-    return ret;
+    return unlock_fl_entry(flPalette, th, FL_PALETTE_MAX, Renderer_UnlockPalette);
 }
 
-/* Unlocking a read-write lock puts the buffer back the way the hardware wants
- * it: a straight copy for the paletted formats, and a conversion between the
- * two contexts the caller has just pointed at the lock buffer and the texture's
- * own memory for the rest. This is the arm's own switch, moved out whole; the
- * two buffers it copied between are the two contexts' own pointers. */
-/* The direct-colour half of the unlock conversion, reached the same way. */
+/* Unlocking writes it back the other way. */
 static void unlock_convert_direct_formats(FLTexture* lpflTexture, plContext* src, plContext* dst) {
-    switch (lpflTexture->format) {
-    case 1:
-        setup_rgb888_context(src);
-        setup_bgr888_context(dst);
-        plConvertContext(dst, src);
-        break;
-
-    case 0:
-        setup_rgba8888_context(src);
-        setup_bgra8888_context(dst);
-        plConvertContext(dst, src);
-        break;
-    }
+    convert_direct_formats(lpflTexture->format, &(DirectFormatConvert) { src, dst, dst, src });
 }
 
 static void unlock_convert_by_format(FLTexture* lpflTexture, plContext* src, plContext* dst) {
@@ -800,7 +792,7 @@ static s32 convert_texture_level(plContext* lpcontext, plContext* tcon, FLTextur
 
     case SCE_GS_PSMCT16:
         tex_size = tcon->width * tcon->height * 2;
-                set_pixelformat_rgba5551(tcon);
+        set_pixelformat_rgba5551(tcon);
         tcon->pixelformat.rs = 0;
         tcon->pixelformat.bs = 0xA;
         tcon->pixelformat.gl = 5;
@@ -810,7 +802,7 @@ static s32 convert_texture_level(plContext* lpcontext, plContext* tcon, FLTextur
 
     case SCE_GS_PSMCT24:
         tex_size = tcon->width * tcon->height * 4;
-                set_pixelformat_rgb888(tcon);
+        set_pixelformat_rgb888(tcon);
         tcon->pixelformat.rs = 0;
         tcon->pixelformat.bs = 0x10;
         flPS2ConvertContext(lpcontext, tcon, 0, type);
@@ -818,7 +810,7 @@ static s32 convert_texture_level(plContext* lpcontext, plContext* tcon, FLTextur
 
     case SCE_GS_PSMCT32:
         tex_size = tcon->width * tcon->height * 4;
-                set_pixelformat_rgba8888(tcon);
+        set_pixelformat_rgba8888(tcon);
         tcon->pixelformat.rs = 0;
         tcon->pixelformat.bs = 0x10;
         flPS2ConvertContext(lpcontext, tcon, 0, type);
@@ -992,7 +984,7 @@ s32 flPS2ConvertContext(plContext* lpSrc, plContext* lpDst, u32 direction, u32 t
                      (((lpDst->pixelformat.rm & (r >> (8 - lpDst->pixelformat.rl))) << lpDst->pixelformat.rs) |
                       ((lpDst->pixelformat.gm & (g >> (8 - lpDst->pixelformat.gl))) << lpDst->pixelformat.gs)));
 
-            write_converted_pixel(lpSrc->bitdepth, dst, color, &(ConvertedRGB){ r, g, b });
+            write_converted_pixel(lpSrc->bitdepth, dst, color, &(ConvertedRGB) { r, g, b });
 
             wk0 += 1;
         }

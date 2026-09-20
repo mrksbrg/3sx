@@ -212,7 +212,18 @@ void end_e00_0000() {
 
 const u8 end_e00_0000_col_tbl[12] = { 0, 1, 2, 3, 4, 5, 6, 5, 6, 5, 6, 6 };
 
-s16 end_e00_0000_col_sub() {
+/* What end_e00_0000_col_sub does when the limit advances, and what
+ * end_e00_0000_col_sub2 does instead, which is nothing. */
+static void end_e00_0000_col_set(void) {
+    *g_number = end_e00_0000_col_tbl[bgw_ptr->l_limit];
+}
+
+static void end_e00_0000_col_keep(void) {}
+
+/* The colour step the two e00 subs share: count the dwell down, advance the
+ * limit when it runs out, and report when the limit is spent. The only thing
+ * they disagree on is what happens on an advance that is not the last. */
+static s16 end_e00_0000_col_step(void (*on_advance)(void)) {
     bgw_ptr->free--;
 
     if (bgw_ptr->free <= 0) {
@@ -223,25 +234,18 @@ s16 end_e00_0000_col_sub() {
             return 1;
         }
 
-        *g_number = end_e00_0000_col_tbl[bgw_ptr->l_limit];
+        on_advance();
     }
 
     return 0;
 }
 
+s16 end_e00_0000_col_sub() {
+    return end_e00_0000_col_step(end_e00_0000_col_set);
+}
+
 s16 end_e00_0000_col_sub2() {
-    bgw_ptr->free--;
-
-    if (bgw_ptr->free <= 0) {
-        bgw_ptr->free = 7;
-        bgw_ptr->l_limit++;
-
-        if (bgw_ptr->l_limit >= 12) {
-            return 1;
-        }
-    }
-
-    return 0;
+    return end_e00_0000_col_step(end_e00_0000_col_keep);
 }
 
 const u8 end_e00_1000_col_tbl[8] = { 0, 0, 1, 2, 3, 4, 5, 6 };
@@ -700,7 +704,22 @@ void end_e01_0000() {
     }
 }
 
-void end_e01_7000() {
+/* The effects each 7000 scene spawns on its first frame. */
+static void end_e01_7000_effects(void) {
+    effect_E6_init(0x23);
+}
+
+static void end_e02_7000_effects(void) {
+    effect_E6_init(0x20);
+    effect_E6_init(0x21);
+    effect_E6_init(0x22);
+}
+
+/* end_e01_7000 and end_e02_7000 are the same three-case scene: place the
+ * background, spawn its effects, then fall until the first background layer has
+ * reached step 4. They disagree on which effects to spawn and on how fast the
+ * fall is. */
+static void run_end_e_7000(void (*spawn_effects)(void), s32 fall_speed) {
     switch (bgw_ptr->r_no_1) {
     case 0:
         bgw_ptr->r_no_1++;
@@ -708,14 +727,14 @@ void end_e01_7000() {
         bgw_ptr->xy[1].disp.pos = end_e_pos[end_w.r_no_2][1];
         bgw_ptr->abs_x = 512;
         bgw_ptr->abs_y = bgw_ptr->xy[1].disp.pos;
-        effect_E6_init(0x23);
+        spawn_effects();
         break;
 
     case 1:
         if (bg_w.bgw[0].r_no_1 >= 4) {
             bgw_ptr->r_no_1++;
         } else {
-            bgw_ptr->xy[1].cal -= 0x7000;
+            bgw_ptr->xy[1].cal -= fall_speed;
         }
 
         bgw_ptr->abs_y = bgw_ptr->xy[1].disp.pos;
@@ -724,6 +743,10 @@ void end_e01_7000() {
     case 2:
         break;
     }
+}
+
+void end_e01_7000() {
+    run_end_e_7000(end_e01_7000_effects, 0x7000);
 }
 
 void end_e02_move() {
@@ -783,14 +806,21 @@ void end_e02_1000() {
     }
 }
 
+/* The opening run end_e02_2000 and end_e02_3000 share: the background goes to
+ * the right-hand column at the height the arm names, which is the one value
+ * that differs between them. */
+static void end_e_place_bg_right(s16 y) {
+    bgw_ptr->r_no_1++;
+    bgw_ptr->xy[0].disp.pos = 768;
+    bgw_ptr->xy[1].disp.pos = y;
+    bgw_ptr->abs_x = 512;
+    bgw_ptr->abs_y = bgw_ptr->xy[1].disp.pos;
+}
+
 void end_e02_2000() {
     switch (bgw_ptr->r_no_1) {
     case 0:
-        bgw_ptr->r_no_1++;
-        bgw_ptr->xy[0].disp.pos = 768;
-        bgw_ptr->xy[1].disp.pos = 256;
-        bgw_ptr->abs_x = 512;
-        bgw_ptr->abs_y = bgw_ptr->xy[1].disp.pos;
+        end_e_place_bg_right(256);
         break;
 
     case 1:
@@ -811,11 +841,7 @@ void end_e02_2000() {
 void end_e02_3000() {
     switch (bgw_ptr->r_no_1) {
     case 0:
-        bgw_ptr->r_no_1++;
-        bgw_ptr->xy[0].disp.pos = 768;
-        bgw_ptr->xy[1].disp.pos = 408;
-        bgw_ptr->abs_x = 512;
-        bgw_ptr->abs_y = bgw_ptr->xy[1].disp.pos;
+        end_e_place_bg_right(408);
         break;
 
     case 1:
@@ -855,29 +881,5 @@ void end_e02_4000() {
 }
 
 void end_e02_7000() {
-    switch (bgw_ptr->r_no_1) {
-    case 0:
-        bgw_ptr->r_no_1++;
-        bgw_ptr->xy[0].disp.pos = end_e_pos[end_w.r_no_2][0];
-        bgw_ptr->xy[1].disp.pos = end_e_pos[end_w.r_no_2][1];
-        bgw_ptr->abs_x = 512;
-        bgw_ptr->abs_y = bgw_ptr->xy[1].disp.pos;
-        effect_E6_init(0x20);
-        effect_E6_init(0x21);
-        effect_E6_init(0x22);
-        break;
-
-    case 1:
-        if (bg_w.bgw[0].r_no_1 >= 4) {
-            bgw_ptr->r_no_1++;
-        } else {
-            bgw_ptr->xy[1].cal -= 0x6000;
-        }
-
-        bgw_ptr->abs_y = bgw_ptr->xy[1].disp.pos;
-        break;
-
-    case 2:
-        break;
-    }
+    run_end_e_7000(end_e02_7000_effects, 0x6000);
 }

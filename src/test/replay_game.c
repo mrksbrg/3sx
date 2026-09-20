@@ -14,6 +14,40 @@ static void adjust_character_numbers(ReplayGame* game) {
     }
 }
 
+/* The three scene numbers a match's first frame carries. Copied operand for
+ * operand. */
+static bool is_game_start_frame(Uint16 g_no_1, Uint16 g_no_2, Uint16 g_no_3) {
+    return (g_no_1 == 2) && (g_no_2 == 0) && (g_no_3 == 0);
+}
+
+/* The frame the game starts on carries the whole match setup: the characters,
+ * their supers and colours, the stage, and which side the CPU is on. */
+static void read_game_start_state(ReplayGame* game, SDL_IOStream* io, int frame_num) {
+    SDL_SeekIO(io, MY_CHAR_OFFSET, SDL_IO_SEEK_SET);
+    SDL_ReadIO(io, game->characters, 2);
+
+    SDL_SeekIO(io, SUPER_ARTS_OFFSET, SDL_IO_SEEK_SET);
+    SDL_ReadIO(io, game->supers, 2);
+
+    SDL_SeekIO(io, NEW_CHALLENGER_OFFSET, SDL_IO_SEEK_SET);
+    SDL_ReadU8(io, &game->new_challenger);
+
+    // Character-associated stage IDs use the CPS3 character numbering too.
+    game->stage = CHAR_ARCADE_TO_3SX(read_u16(io, BATTLE_COUNTRY_OFFSET));
+
+    SDL_SeekIO(io, PLAYER_COLOR_OFFSET, SDL_IO_SEEK_SET);
+    SDL_ReadIO(io, game->colors, 2);
+
+    for (int player = 0; player < 2; player++) {
+        if (read_u8(io, OPERATOR_STATUS_OFFSET + player) == 0) {
+            game->has_cpu_player = true;
+        }
+    }
+
+    adjust_character_numbers(game);
+    game->start_index = frame_num + 1;
+}
+
 bool ReplayGame_Init(ReplayGame* game, const char* ram_archive_path) {
     SDL_zerop(game);
     game->start_index = -1;
@@ -33,32 +67,10 @@ bool ReplayGame_Init(ReplayGame* game, const char* ram_archive_path) {
         const Uint16 g_no_1 = read_u16(io, G_NO_OFFSET + 2);
         const Uint16 g_no_2 = read_u16(io, G_NO_OFFSET + 4);
         const Uint16 g_no_3 = read_u16(io, G_NO_OFFSET + 6);
-        const bool game_just_started = (g_no_1 == 2) && (g_no_2 == 0) && (g_no_3 == 0);
+        const bool game_just_started = is_game_start_frame(g_no_1, g_no_2, g_no_3);
 
         if (game_just_started) {
-            SDL_SeekIO(io, MY_CHAR_OFFSET, SDL_IO_SEEK_SET);
-            SDL_ReadIO(io, game->characters, 2);
-
-            SDL_SeekIO(io, SUPER_ARTS_OFFSET, SDL_IO_SEEK_SET);
-            SDL_ReadIO(io, game->supers, 2);
-
-            SDL_SeekIO(io, NEW_CHALLENGER_OFFSET, SDL_IO_SEEK_SET);
-            SDL_ReadU8(io, &game->new_challenger);
-
-            // Character-associated stage IDs use the CPS3 character numbering too.
-            game->stage = CHAR_ARCADE_TO_3SX(read_u16(io, BATTLE_COUNTRY_OFFSET));
-
-            SDL_SeekIO(io, PLAYER_COLOR_OFFSET, SDL_IO_SEEK_SET);
-            SDL_ReadIO(io, game->colors, 2);
-
-            for (int player = 0; player < 2; player++) {
-                if (read_u8(io, OPERATOR_STATUS_OFFSET + player) == 0) {
-                    game->has_cpu_player = true;
-                }
-            }
-
-            adjust_character_numbers(game);
-            game->start_index = frame_num + 1;
+            read_game_start_state(game, io, frame_num);
         }
 
         SDL_CloseIO(io);

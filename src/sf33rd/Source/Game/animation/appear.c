@@ -86,14 +86,21 @@ s32 home_visitor_check(PLW* wk) {
     return hv_type;
 }
 
+/* Player two's side of the entry data: mirrored x, flipped facing, and the
+ * other side's appear flag. Only this arm is lifted - the two differ in three
+ * places and are not one block. */
+static void appear_data_set_second(PLW* wk, APPEAR_DATA* dtbl) {
+    wk->wu.xyz[0].disp.pos = bg_w.bgw[1].pos_x_work - dtbl->hx;
+    wk->wu.xyz[1].disp.pos = dtbl->hy;
+    wk->wu.rl_flag = (s8)((dtbl->rl + 1) & 1);
+    wk->wu.routine_no[4] = dtbl->rno;
+    Appear_flag[0] = dtbl->ixod;
+    wk->wu.char_index = dtbl->char_index;
+}
+
 void appear_data_set(PLW* wk, APPEAR_DATA* dtbl) {
     if (wk->wu.id) {
-        wk->wu.xyz[0].disp.pos = bg_w.bgw[1].pos_x_work - dtbl->hx;
-        wk->wu.xyz[1].disp.pos = dtbl->hy;
-        wk->wu.rl_flag = (s8)((dtbl->rl + 1) & 1);
-        wk->wu.routine_no[4] = dtbl->rno;
-        Appear_flag[0] = dtbl->ixod;
-        wk->wu.char_index = dtbl->char_index;
+        appear_data_set_second(wk, dtbl);
 
     } else {
         wk->wu.xyz[0].disp.pos = bg_w.bgw[1].pos_x_work + dtbl->hx;
@@ -128,13 +135,14 @@ void appear_data_init_set(PLW* wk) {
 }
 
 void appear_player(PLW* wk) {
-    void (*appear_jmp_tbl[42])(
-        PLW* wk) = { Appear_00000, Appear_01000, Appear_01000, Appear_03000, Appear_04000, Appear_05000, Appear_06000,
-                     Appear_07000, Appear_08000, Appear_09000, Appear_10000, Appear_11000, Appear_12000, Appear_13000,
-                     Appear_14000, Appear_15000, Appear_16000, Appear_17000, Appear_18000, Appear_19000, Appear_20000,
-                     Appear_21000, Appear_22000, Appear_23000, Appear_24000, Appear_25000, Appear_26000, Appear_06000,
-                     Appear_28000, Appear_29000, Appear_30000, Appear_31000, Appear_32000, Appear_33000, Appear_34000,
-                     Appear_01000, Appear_36000, Appear_37000, Appear_38000, Appear_39000, Appear_06000, Appear_41000 };
+    void (*appear_jmp_tbl[42])(PLW* wk) = {
+        Appear_00000, Appear_01000, Appear_01000, Appear_03000, Appear_04000, Appear_05000, Appear_06000,
+        Appear_07000, Appear_08000, Appear_09000, Appear_10000, Appear_11000, Appear_12000, Appear_13000,
+        Appear_14000, Appear_15000, Appear_16000, Appear_17000, Appear_18000, Appear_19000, Appear_20000,
+        Appear_21000, Appear_22000, Appear_23000, Appear_24000, Appear_25000, Appear_26000, Appear_06000,
+        Appear_28000, Appear_29000, Appear_30000, Appear_31000, Appear_32000, Appear_33000, Appear_34000,
+        Appear_01000, Appear_36000, Appear_37000, Appear_38000, Appear_39000, Appear_06000, Appear_41000
+    };
     appear_jmp_tbl[(short)wk->wu.routine_no[4]](wk);
 }
 
@@ -163,17 +171,23 @@ static void start_appear_01000_pose(PLW* wk, s16 work) {
     }
 }
 
-void Appear_01000(PLW* wk) {
+/* The first frame of the posed entry: the pose is picked at random. */
+static void begin_appear_01000(PLW* wk) {
     s16 work;
+
+    wk->wu.routine_no[3]++;
+    wk->wu.disp_flag = 1;
+    bg_app_stop = 1;
+    work = random_16();
+
+    start_appear_01000_pose(wk, work);
+}
+
+void Appear_01000(PLW* wk) {
 
     switch (wk->wu.routine_no[3]) {
     case 0:
-        wk->wu.routine_no[3]++;
-        wk->wu.disp_flag = 1;
-        bg_app_stop = 1;
-        work = random_16();
-
-        start_appear_01000_pose(wk, work);
+        begin_appear_01000(wk);
         break;
 
     case 1:
@@ -221,11 +235,13 @@ static void launch_appear_04000(PLW* wk) {
     app_counter[wk->wu.id] = 0x1C;
 
     if (wk->wu.id) {
-        cal_all_speed_data(&wk->wu, app_counter[wk->wu.id], bg_w.bgw[1].pos_x_work + 0x58, 0, 0, 1);
+        cal_all_speed_data(
+            &wk->wu, &(Motion_Target) { app_counter[wk->wu.id], bg_w.bgw[1].pos_x_work + 0x58, 0, 0, 1 }
+        );
         return;
     }
 
-    cal_all_speed_data(&wk->wu, app_counter[wk->wu.id], bg_w.bgw[1].pos_x_work - 0x58, 0, 0, 1);
+    cal_all_speed_data(&wk->wu, &(Motion_Target) { app_counter[wk->wu.id], bg_w.bgw[1].pos_x_work - 0x58, 0, 0, 1 });
 }
 
 static void land_appear_04000(PLW* wk) {
@@ -242,13 +258,18 @@ static void land_appear_04000(PLW* wk) {
     wk->wu.xyz[1].cal = 0;
 }
 
+/* The first frame of the jump-in entry. */
+static void begin_appear_04000(PLW* wk) {
+    wk->wu.routine_no[3]++;
+    bg_app_stop = 1;
+    wk->wu.disp_flag = 1;
+    set_char_move_init(&wk->wu, 9, 0x10);
+}
+
 void Appear_04000(PLW* wk) {
     switch (wk->wu.routine_no[3]) {
     case 0:
-        wk->wu.routine_no[3]++;
-        bg_app_stop = 1;
-        wk->wu.disp_flag = 1;
-        set_char_move_init(&wk->wu, 9, 0x10);
+        begin_appear_04000(wk);
         break;
 
     case 1:
@@ -289,11 +310,13 @@ static void launch_appear_05000(PLW* wk) {
     appear_work[wk->wu.id] = 0x1B;
 
     if (wk->wu.id) {
-        cal_all_speed_data(&wk->wu, appear_work[wk->wu.id], bg_w.bgw[1].pos_x_work + 0x60, 0, 2, 0);
+        cal_all_speed_data(
+            &wk->wu, &(Motion_Target) { appear_work[wk->wu.id], bg_w.bgw[1].pos_x_work + 0x60, 0, 2, 0 }
+        );
         return;
     }
 
-    cal_all_speed_data(&wk->wu, appear_work[wk->wu.id], bg_w.bgw[1].pos_x_work - 0x60, 0, 2, 0);
+    cal_all_speed_data(&wk->wu, &(Motion_Target) { appear_work[wk->wu.id], bg_w.bgw[1].pos_x_work - 0x60, 0, 2, 0 });
 }
 
 static void land_appear_05000(PLW* wk) {
@@ -831,16 +854,21 @@ void Appear_12000(PLW* wk) {
     }
 }
 
+/* The first frame of the drop-in entry. */
+static void begin_appear_13000(PLW* wk) {
+    wk->wu.routine_no[3]++;
+    wk->wu.disp_flag = 1;
+    bg_app_stop = 1;
+    set_char_move_init2(&wk->wu, 9, 0x3D, 4, 0);
+    wk->wu.mvxy.a[1].sp = 0x78000;
+    wk->wu.mvxy.d[1].sp = -0x3000;
+    wk->wu.kage_flag = 0;
+}
+
 void Appear_13000(PLW* wk) {
     switch (wk->wu.routine_no[3]) {
     case 0:
-        wk->wu.routine_no[3]++;
-        wk->wu.disp_flag = 1;
-        bg_app_stop = 1;
-        set_char_move_init2(&wk->wu, 9, 0x3D, 4, 0);
-        wk->wu.mvxy.a[1].sp = 0x78000;
-        wk->wu.mvxy.d[1].sp = -0x3000;
-        wk->wu.kage_flag = 0;
+        begin_appear_13000(wk);
         break;
 
     case 1:
@@ -1097,11 +1125,11 @@ static void start_appear_18000(PLW* wk) {
     appear_work[wk->wu.id] = 0x1F;
 
     if (wk->wu.id) {
-        cal_delta_speed(&wk->wu, appear_work[wk->wu.id], (bg_w.bgw[1].pos_x_work + 0x58), 0, 0, 1);
+        cal_delta_speed(&wk->wu, &(Motion_Target) { appear_work[wk->wu.id], (bg_w.bgw[1].pos_x_work + 0x58), 0, 0, 1 });
         bg_app_stop = 1;
         return;
     }
-    cal_delta_speed(&wk->wu, appear_work[wk->wu.id], (bg_w.bgw[1].pos_x_work - 0x58), 0, 0, 1);
+    cal_delta_speed(&wk->wu, &(Motion_Target) { appear_work[wk->wu.id], (bg_w.bgw[1].pos_x_work - 0x58), 0, 0, 1 });
 
     bg_app_stop = 1;
 }
@@ -1114,9 +1142,13 @@ static void land_appear_18000(PLW* wk) {
         appear_work[wk->wu.id] = 0x1F;
 
         if (wk->wu.id) {
-            cal_delta_speed(&wk->wu, appear_work[wk->wu.id], bg_w.bgw[1].pos_x_work + 0x58, 0, 0, 1);
+            cal_delta_speed(
+                &wk->wu, &(Motion_Target) { appear_work[wk->wu.id], bg_w.bgw[1].pos_x_work + 0x58, 0, 0, 1 }
+            );
         } else {
-            cal_delta_speed(&wk->wu, appear_work[wk->wu.id], bg_w.bgw[1].pos_x_work - 0x58, 0, 0, 1);
+            cal_delta_speed(
+                &wk->wu, &(Motion_Target) { appear_work[wk->wu.id], bg_w.bgw[1].pos_x_work - 0x58, 0, 0, 1 }
+            );
         }
     }
 
@@ -1174,9 +1206,13 @@ static void launch_appear_19000(PLW* wk) {
     appear_work[wk->wu.id] = 0x20;
 
     if (wk->wu.id) {
-        cal_all_speed_data(&wk->wu, appear_work[wk->wu.id], bg_w.bgw[1].pos_x_work + 0x58, 0, 1, 1);
+        cal_all_speed_data(
+            &wk->wu, &(Motion_Target) { appear_work[wk->wu.id], bg_w.bgw[1].pos_x_work + 0x58, 0, 1, 1 }
+        );
     } else {
-        cal_all_speed_data(&wk->wu, appear_work[wk->wu.id], bg_w.bgw[1].pos_x_work - 0x58, 0, 1, 1);
+        cal_all_speed_data(
+            &wk->wu, &(Motion_Target) { appear_work[wk->wu.id], bg_w.bgw[1].pos_x_work - 0x58, 0, 1, 1 }
+        );
     }
 
     if (wk->wu.id == 0) {

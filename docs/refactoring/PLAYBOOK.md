@@ -291,6 +291,36 @@ in families of exactly two: `gfold --min-members 2` folded **72 of them onto 36 
 `verify` reported 1621 pattern functions and 0 differing, and the folder's mean went to
 **8.91** with the files at 10.00 rising from four to nine.
 
+**Amended 2026-09-20: two is enough when `inline_equiv.py` checks the fold.**
+The 2026-09-19 amendment relaxed the three-instance rule where the fold was
+*generated* and *verified by re-expansion*, and said in its own words that "it is the
+verification, not the instance count, that makes the merge safe". The generator was
+`passive_fold.py`, because that is what the pattern folders had. `tools/inline_equiv.py`
+answers the same question for a fold written by hand: it substitutes the helper's body
+back into each call site and diffs the result against the original function, so a
+transposed argument, a renamed parameter or a dropped statement shows up as a differing
+function rather than as a judgement call.
+
+So a **two-instance** family may be folded when **all** of these hold, on top of every
+precondition above:
+
+- **The skeleton is byte-identical apart from the literals.** Not nearly - run a diff, do
+  not read it by eye. If a statement, an operator or a subscript differs anywhere, this is
+  Recipe D's refused near-miss and stays refused.
+- **Only literals vary**, under this recipe's existing reading of "literal": a number, a
+  named constant, or a struct field travelling as its address.
+- **`tools/inline_equiv.py --helper <name> <file>` reports 0 differ.** A DIFFERS is read
+  rather than obeyed - the four blind spots below apply - but it has to be resolved before
+  the fold lands, not after.
+- **The guard shows the deduplication WARN** with every value still present.
+
+What this does not relax: two blocks that differ in anything but their literals are still
+Recipe D's forbidden case, and no amount of checking makes them one idiom.
+
+Measured on `Game/ending`, which is where the question was raised: `end_18.c`'s pair
+differs in an effect id and a message index and nothing else, and folding it measures
+**9.38 -> 10.00**.
+
 **The original open question, left for the record.** Six files in `Game/ending`
 plateau at 9.38 with nothing left but a *two-instance* family of this exact shape - one
 skeleton, identical character for character, differing only in literals that would be
@@ -994,6 +1024,200 @@ exclusive, so a `cg_type` of 20 that used to match the caller's own arm now fall
 nothing before, and still does nothing - **provided neither caller had a `default` of its
 own and the helper does not add one.** If either switch already has a `default`, this
 variant does not apply: the values that used to reach it would now reach the helper first.
+
+---
+
+## Recipe L - Lookup Table
+
+**Use when:** CodeScene reports *Complex Method* on a function that is a `switch` whose
+every arm is a single `return <constant>;`. Recipe X can split such a switch in two, but it
+only halves a number that need not exist at all: a switch like this is a lookup table
+written as control flow, and the complexity is entirely the arms.
+
+**The conditions, all four:**
+
+1. Every arm is exactly one `return` of a compile-time constant - a literal, a string
+   literal, or an enumerator. No side effects, no calls, no fallthrough between arms.
+2. The controlling expression is a plain enum or integer value, not an expression with its
+   own effects.
+3. The switch has a `default:`, and it too returns a constant.
+4. The enum has a count macro or a last enumerator that bounds it. Without one there is no
+   bound to check and the recipe does not apply.
+
+**How:**
+
+1. Write a `static const` array of the arm type, sized by the count macro, using
+   **designated initialisers keyed by the case labels**. One entry per arm, in the order the
+   arms were written.
+2. Replace the function body with a range guard returning the old `default:` constant, a
+   second guard for a hole in the table returning the same, and the table lookup.
+
+**Before:**
+
+```c
+static const char *name_of(Button b) {
+    switch (b) {
+    case BUTTON_UP:    return "up";
+    case BUTTON_DOWN:  return "down";
+    /* ... fourteen more ... */
+    default:           return "";
+    }
+}
+```
+
+**After:**
+
+```c
+/* The names, one per enumerator, keyed by the enumerator itself. */
+static const char *const button_names[BUTTON_COUNT] = {
+    [BUTTON_UP] = "up",
+    [BUTTON_DOWN] = "down",
+    /* ... fourteen more ... */
+};
+
+/* The empty string stands for every button the table does not name, which is what
+ * the switch's default arm did: out of range, and the hole an enumerator added
+ * without a name would leave. */
+static const char *name_of(Button b) {
+    if (b < 0 || b >= BUTTON_COUNT) {
+        return "";
+    }
+
+    if (button_names[b] == NULL) {
+        return "";
+    }
+
+    return button_names[b];
+}
+```
+
+**Why the designators matter.** Keying each entry by its case label is what makes the
+transformation checkable: the table is the same set of label-to-constant pairs the switch
+held, readable side by side against the original, and nothing depends on the enum being
+dense, zero-based, or listed in order. A positional array would depend on all three, and
+would go wrong silently the first time an enumerator was inserted.
+
+**Why the second guard.** A `switch` sends *every* unlisted value to `default:`, including
+enumerators someone adds later. The table sends them to a zero entry instead. The
+`== NULL` test - or `== 0` for an integer table whose real values are all non-zero - is
+what keeps that case returning what `default:` returned. Where a table's legitimate values
+include the zero it would use as its hole, the recipe does not apply; use Recipe X.
+
+**Keep the two guards separate.** Folding them into one `||` chain of three tests trades
+*Complex Method* for *Complex Conditional*, measured on `keymap.c`: the one-condition form
+scored 9.68 and the two-guard form 10.00.
+
+**What it is worth.** `keymap.c`'s `get_button_name` went cc 18 -> 4 and the file 8.92 ->
+10.00, clearing *Complex Method* and *Overall Code Complexity* together - the second
+because a file's mean complexity falls a long way when its largest function stops being a
+switch.
+
+**The forbidden list bars touching a `const` data table.** Recipe L *creates* one, out of
+the arms of a switch that is already in front of you. It gives no licence to read from,
+reorder, index into, or edit a table that was already there.
+
+`refactor_guard.py` sees no constant change: the arms' constants all survive as table
+values. The bound and the `0` of the range guard are additions, which the guard reports and
+allows.
+
+---
+
+## Recipe K - Check List
+
+**Use when:** a function is nothing but a run of guards that all have the same shape -
+
+```c
+void nm_state(PLW *wk) {
+    if (first_check(wk))  { return; }
+    if (second_check(wk)) { return; }
+    if (third_check(wk))  { return; }
+    last_thing(wk);
+}
+```
+
+\- and CodeScene reports *Code Duplication* across several such functions. They are a
+list written as control flow. Recipe D refuses them because they differ in more than one
+check; Recipe C finds no identical run because each picks its own checks in its own order;
+Recipe F cannot help because there is nothing in common to parameterise except the shape
+itself.
+
+Measured on `pls00_normal_states.c`, where CodeScene read six states plus three
+attack-check helpers as one web: **8.03 -> 10.00** over four commits.
+
+**The conditions:**
+
+1. Every guard is `if (<call>(x)) { return <constant or nothing>; }` over the *same* single
+   argument. No other statements between the guards.
+2. The function ends in a plain `return <constant>` or falls off the end, and may end in
+   one unguarded call - see below.
+3. Every listed function can be reached through one function-pointer type. Where it cannot,
+   it gets an adapter; see *The adapters*.
+
+**How:**
+
+1. Name the pointer type once, next to the states that use it, and write the scan:
+
+   ```c
+   typedef s32 (*NmStateCheck)(PLW *wk);
+
+   static s32 run_nm_state_checks(PLW *wk, const NmStateCheck *checks) {
+       s32 i;
+
+       for (i = 0; checks[i] != NULL; i++) {
+           if (checks[i](wk)) {
+               return 1;
+           }
+       }
+
+       return 0;
+   }
+   ```
+
+2. Each function becomes its own table and one call:
+
+   ```c
+   void nm_state(PLW *wk) {
+       static const NmStateCheck checks[] = { first_check, second_check, third_check,
+                                              last_thing_adapter, NULL };
+
+       run_nm_state_checks(wk, checks);
+   }
+   ```
+
+**The last call.** A trailing unguarded call joins the table like any other entry. Testing
+its result and returning changes nothing, because nothing followed it. A trailing call that
+returns `void` needs an adapter that returns 0.
+
+**The adapters.** This is where the recipe is easy to get wrong. C decompilations are full
+of check functions reporting `s32`, `s16` and `bool` interchangeably, and **calling a
+`bool (*)(PLW *)` through an `s32 (*)(PLW *)` is undefined behaviour** - not a warning, and
+not something the build will catch. Every check whose type is not the table's type gets a
+three-line adapter:
+
+```c
+static s32 nm_check_f_r_walk(PLW *wk) {
+    return check_F_R_walk(wk);
+}
+```
+
+The same adapter form carries a call with a fixed extra argument
+(`check_full_gauge_attack(wk, 0)`), a call guarded by something else
+(`if (ArcadeBalance_IsEnabled())`, returning 0 where the guard fails), and a nested pair of
+guards. **Each adapter returns the value its own `if` tested**, so nothing is converted that
+was not already being converted at that `if`.
+
+Adapters are three or four lines, under the duplication check's ten-line floor, so they do
+not become a new finding. A *pair* of adapters that grows past that does: on
+`pls00_normal_states.c` the two lever-guarded ones were a duplicate pair on their own until
+the guard itself became a helper taking the list to run, which is worth 0.27.
+
+**What it costs.** One function-pointer indirection per check, in the fight loop. That is
+the same cost Recipe F already pays, and the same argument applies: it is a jump through a
+table rather than a direct call, in code that is doing a state transition.
+
+**What `refactor_guard.py` sees.** Nothing removed and nothing substituted: the checks were
+names, not constants. The `NULL` terminator is not a number, and the scan's `0` and `1` are
+the values the lists already returned.
 
 ---
 
@@ -3241,6 +3465,255 @@ not enough.
 `-Werror=-Wunneeded-internal-declaration` turns every one of these into a build
 failure rather than a warning, which is the good news: the gate catches it, as
 long as the gate is run on both configurations.
+
+### `passive_fold.py` does not apply to the skeleton module it writes
+
+*Added 2026-09-20, after running it there and reading the result.*
+
+`passive_fold.py families --min-members 2` over `Game/com/patterns/*.c` reports **twelve
+families**, which reads like twelve unfolded Recipe V merges sitting in the lowest-scoring
+files in the repository. It is an artefact, and the tool must not be run there.
+
+`find_families` selects functions whose names match `\w+_\d+`, which catches the
+skeleton module's own `_2` and `_3` variants, and `skeletonize` then treats every
+argument it does not recognise as a varying *literal slot*. That is correct for a COM
+script, which takes only `wk` and writes its arguments out as constants. It is wrong for
+a skeleton, which already has parameters. Running `fold` on
+`com_patterns_3step.c` produced a helper calling `J_Command_Attack(wk, p)` with no `p` in
+scope, and wrappers reduced to `(PLW* wk)` whose bodies still referenced the parameters
+that had just been removed. It does not compile, and the two functions it merged had
+different parameter lists to begin with.
+
+**The check that catches it is reading the diff**, not the build - which is why it is
+worth writing down. `refactor_guard.py` would have been happy: no literal changed.
+
+The underlying question - are there genuine Recipe V families among the skeletons? - is a
+separate one, and the answer measured by hand is that the promising pair costs more than
+it gives. `active_pattern_adjust_attack` and `_2` are byte-identical apart from two
+literals, so they qualify; but their skeleton already takes three lever arguments, and a
+shared version needs five or six parameters. Code Duplication comes off and Excess Number
+of Function Arguments goes on.
+
+### Overall Code Complexity is a file mean, so its unit of work is a group
+
+*Added 2026-09-20, measured on `appear.c`, `effa9.c`, `demo02.c` and
+`sc_sub_combo.c`.*
+
+Every other finding in this catalogue belongs to a function, and rule 2 - keep a flat
+step only if the targeted function left a category or lost complexity - reads naturally
+against it. **Overall Code Complexity does not.** It is the mean cyclomatic complexity
+across the file's functions, so no single extraction clears it unless the file was
+already on the edge, and a run of perfectly good steps will each measure flat.
+
+Read literally, rule 2 reverts all of them and the finding never goes.
+
+**Work out how many steps it needs before starting.** Extracting a block of *b* branches
+into a helper of cc *b+1* moves the file's total by **+1** and its function count by
+**+1**, whatever *b* is - including *b* = 0, a block with no branches at all. So from a
+file of *n* functions totalling *T*:
+
+    (T + k) / (n + k) < 4      →      k > (T - 4n) / 3
+
+`appear.c` was 53 functions totalling 222, so *k* = 4 and four branch-free extractions
+did it: 9.38 -> 9.38 -> 9.38 -> 9.38 -> **10.00**. `effa9.c` needed two, `demo02.c` two,
+`sc_sub_combo.c` two.
+
+**Commit them one function at a time anyway**, and say in each message which step of how
+many it is and that the mean crosses on the last. The one-function rule is about being
+able to revert a single behaviour, and that reason is untouched by the arithmetic. What
+changes is only how rule 2 is read: **the flat steps are kept because the group clears a
+finding, and the group is measured before the first of them is committed.** If the group
+does not clear it, revert all of them.
+
+**Pick blocks that stay under ten lines** where the file has several similar
+first-frame or setup blocks. Below `function_duplication_min_lines_of_code_for_check`
+they are never compared against each other, so a family of four `begin_appear_*` helpers
+costs no Code Duplication finding. Above it, it would.
+
+**And that is exactly where the arithmetic can run out.** `appear_late.c` needs *nine*
+steps by the formula above, and the only branch-free blocks it has are nine near-identical
+entry setups - `routine_no[3]++`, a display flag, a `set_char_move_init` and
+`bg_app_stop`. Lifting six of them brought **Code Duplication** on as a group of six and
+measured **9.38 -> 8.54**; lifting three of them paired with nothing and measured **9.38**,
+because three is not nine. There is no subset that is both large enough to move the mean
+and varied enough not to pair.
+
+So run the count *and* look at what the blocks are before starting. Where a file needs
+many steps and its only spare blocks are one idiom repeated, Overall Code Complexity is a
+plateau, and the honest record is the two measurements.
+
+### A fold that shortens its call sites can win by not being looked at
+
+*Added 2026-09-20, measured on `flps2vram.c` and reverted.*
+
+`function_duplication_min_lines_of_code_for_check` is 10. The catalogue already
+refuses **reformatting** an arm to slip under it, on the grounds that the
+duplication is then unmeasured rather than gone. The same thing can happen
+without anyone reformatting anything, and it is easy to miss.
+
+The three pixel layouts in `flps2vram.c` are twelve assignments each, identical
+apart from the values - a clean Recipe V, three instances, only literals varying.
+Folded onto one helper with the values in a `PixelFormat` compound literal, it
+measured **8.54 -> 9.09**. Run through `clang-format`, which puts one field per
+line, the same code measured **8.54**. Nothing changed but the line count of the
+three call sites: at three fields per line each variant is eight lines and is not
+compared against anything; at one field per line each is fifteen and the three
+literals pair exactly as the three assignment runs did.
+
+Two things follow:
+
+- **Measure in the layout the file is written in.** Format first, then run
+  `ch.py`. A score taken before `clang-format` is a score for code that is not
+  going to be committed.
+- **A duplication group that reappears in the folded form is telling you
+  something true.** Three compound literals that differ only in their values are
+  as alike as the three runs they replaced; the fold moved the repetition rather
+  than removing it. That can still be worth doing for a reader, but it is not
+  worth a commit under rule 2, and the honest record is that the file stays where
+  it was.
+
+### Recipe G's early exit inside a loop is `continue`
+
+*Added 2026-09-20, measured on `plpat09.c`.*
+
+Recipe G is written about a function: invert the outermost condition and return
+early. The same shape occurs one level in, where a loop body is a single `if`
+whose whole contents are the iteration's work and whose failure falls through to
+the next iteration. There the early exit is `continue`, and it is the same
+transformation with the same safety argument - the fall-through the guard
+reproduces is the end of the loop body rather than the end of the function.
+
+`place_tenguiwa_set`'s rock loop is the case: `if (num < 36) { ... }` wrapped
+seven statements and a `break`, and
+
+    if (!(num < 36)) {
+        continue;
+    }
+
+measured **9.92 -> 10.00** on its own. Note the negation: the condition is
+wrapped whole rather than rewritten as `num >= 36`, so no comparison operator
+changes and the rule against touching them is not tested.
+
+**It is not free, and it is not always right.** The same move on
+`Lz77Dec.c`'s decoder - three nested arms turned into two `continue` guards -
+cleared two of its four bumps and its nesting depth, and measured **flat at
+8.81 with cyclomatic complexity up by one**, because each `continue` is a branch
+the `else` was not. It reverted under rule 2. Measure it like any other step.
+
+### Type-check the configuration your machine cannot build
+
+*Added 2026-09-20, measured on `core/renderer.c` and `psp_renderer.c`.*
+
+"Build every configuration the file has code for" is easy where both configurations
+build here. It is not the whole story for a file whose other branch targets a platform
+this machine has no toolchain for. `core/renderer.c` carries an
+`#elif CRS_VIDEO_DRIVER_PSP` arm that never compiles on a Mac or a PC, and a Recipe F
+fold has to change that arm as well as the one that does.
+
+**`clang -fsyntax-only` with the other configuration's macros forced gets most of the
+way there**, provided the branch's own includes are plain headers:
+
+    clang -fsyntax-only -Isrc -Isrc/sdk \
+          -DCRS_VIDEO_DRIVER_PSP=1 -DCRS_VIDEO_DRIVER_SDL_GENERIC=0 \
+          src/core/renderer.c
+
+That parses the PSP arm and type-checks every call in it against the real prototypes in
+`psp_renderer.h` - which is what a function-pointer fold most needs checking, because a
+signature mismatch there is the one way Recipe F goes wrong. Run it before committing a
+change that touches a branch you cannot build.
+
+**Where it does not reach, do not refactor.** `psp_renderer.c` is one `#if
+CRS_VIDEO_DRIVER_PSP` from its first line, and it includes `<libgraph.h>` and the rest
+of the PSP SDK, so neither the build nor `-fsyntax-only` can see it. Its
+`draw_textured_sprite_rect` takes ten arguments and is an obvious Recipe A, with two call
+sites both in the same file - and it stays as it is, because the campaign's first gate
+cannot be run on it. Record the finding and move on; that is what "stop and report" is
+for.
+
+### A Recipe X split must still name every enumerator
+
+*Added 2026-09-20, measured on `fistbump.c` - and caught by the Debug build,
+not by the Release one.*
+
+Splitting a `switch` over an `enum` leaves each half naming only some of the
+enumerators. Clang's `-Wswitch` objects to that, and this repository's Debug
+configuration turns it into an error:
+
+    error: enumeration values 'FISTBUMP_IDLE', 'FISTBUMP_CONNECTING', and
+    'FISTBUMP_SENDING_TOKEN' not handled in switch [-Werror,-Wswitch]
+
+Two things make this worth its own note. The first is that **the Release build
+compiled it cleanly**: the difference was the warning flags, not conditional
+compilation, so "build every configuration the file has code for" applies to a
+file with no `#if` in it at all. The second is the **cost of the fix**: a bare
+`default: break;` in the helper satisfies the compiler and is behaviour-neutral -
+a value matching nothing did nothing before - but it is one more branch, and on
+`fistbump.c` it put the helper back over the Complex Method threshold at cc 9
+and the file back from 9.68 to 9.20. Splitting once more cleared it.
+
+So there are two legal shapes, and which one to reach for is a measurement:
+
+- **No default anywhere**, where the parts *between them* name every enumerator.
+  That is the cheapest, and it is what `Fistbump_Run` ended up with.
+- **`default: break;` in the tail**, where they do not. Expect to pay a branch
+  for it, and be ready to split again.
+
+An `event->type` that is a `Uint32` rather than an enum raises none of this;
+`sdl_app.c`'s split needed no default at all.
+
+### An else-if prefix chain splits like a switch
+
+*Added 2026-09-20, measured on `fistbump.c`'s command parser.*
+
+Recipe X is written for a `switch`, and its safety argument is that case labels
+are mutually exclusive, so a value that used to match an arm in the first half
+still matches the same label in the second. A chain of `else if`s over disjoint
+prefixes has that property too - `strncmp(line, "SESSION ", 8) == 0` and
+`strncmp(line, "MATCH ", 6) == 0` cannot both hold - and the split is the same
+move, with the tail reached from the chain's new `else`:
+
+    } else if (strncmp(line, "TOKEN ", 6) == 0) {
+        Fistbump_HandleTOKEN(line);
+    } else {
+        Fistbump_ParseMatchCommand(line);
+    }
+
+`Fistbump_ParseCommand` went cc 9 -> 5 and the file **9.38 -> 9.68**.
+
+**The precondition is the exclusivity, and it has to be checked rather than
+assumed.** Prefixes where one is a prefix of another - `"MATCH "` and
+`"MATCHED "` - are not disjoint, and there the chain encodes an order that
+splitting would change. Read the arms before cutting.
+
+### A dispatch shim's entry points group by signature
+
+*Added 2026-09-20, measured on `core/renderer.c`.*
+
+A platform shim is often one dispatch written once per entry point: a guard, and
+the backend call this build has. Eleven of those in `renderer.c` differ only in
+the pair of backend names, which is exactly Recipe F's relaxed case - except
+that Recipe F requires the pointed-to functions to share a signature, and a
+shim's entry points do not all share one.
+
+**Group them by signature and fold each group.** Seven `void(unsigned int)`
+handle operations folded onto one helper (**8.28 -> 9.38**) and the two
+`(const Sprite*, unsigned int)` draws onto another; `DrawSprite2` takes a
+`Sprite2*` and `DrawSolidQuad` a `Quad*`, so each is alone and both stay as they
+are.
+
+**Define the helper once per configuration rather than once with casts.** The
+two backends here spell the handle differently - `Uint32` against
+`unsigned int` - and Recipe F forbids casting a function pointer to make two
+signatures fit. Writing
+
+    #if CRS_VIDEO_DRIVER_SDL_GENERIC
+    static void renderer_handle_op(Uint32 handle, void (*op)(Uint32)) { ... }
+    #elif CRS_VIDEO_DRIVER_PSP
+    static void renderer_handle_op(unsigned int handle, void (*op)(unsigned int)) { ... }
+    #endif
+
+costs a few lines, needs no cast, and puts each definition inside the same `#if`
+as the call sites that name it, so neither build carries an unreferenced static.
 
 ### Three gates, and what each one is blind to
 

@@ -22,11 +22,9 @@ static s32 game_is_active(void) {
     return !EXE_flag && !Game_pause;
 }
 
-
 static s32 animation_can_advance(void) {
     return !EXE_flag && !Game_pause;
 }
-
 
 /* Travel until close enough to the master, then sound the effect and start the
  * depth move. */
@@ -78,7 +76,9 @@ void effect_82_move(WORK_Other* ewk) {
         setup_shadow_of_the_Effy(&ewk->wu);
         set_char_move_init(&ewk->wu, 0, ewk->wu.char_index);
         ewk->wu.old_rno[0] = 50;
-        cal_all_speed_data(&ewk->wu, ewk->wu.old_rno[0], ewk->wu.old_rno[1], ewk->wu.xyz[1].disp.pos, 2, 2);
+        cal_all_speed_data(
+            &ewk->wu, &(Motion_Target) { ewk->wu.old_rno[0], ewk->wu.old_rno[1], ewk->wu.xyz[1].disp.pos, 2, 2 }
+        );
         break;
 
     case 1:

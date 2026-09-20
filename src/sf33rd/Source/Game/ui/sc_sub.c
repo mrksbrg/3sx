@@ -207,7 +207,7 @@ void Scrscreen_Init() {
     ppgScrListShot.pal = &ppgScrPalShot;
     ppgScrListOpt.pal = &ppgScrPalOpt;
     ppgSetupCurrentDataList(&ppgScrList);
-    loadSize = load_it_use_any_key2(10, &loadAdrs, &key, 2, 0); // scrscrn.ppg
+    loadSize = load_it_use_any_key2(&(LoadAnyKeyArgs){ 10, &loadAdrs, &key, 2, 0 }); // scrscrn.ppg
 
     if (loadSize == 0) {
         flLogOut("Couldn't load scrscrn.ppg\n");
@@ -491,6 +491,16 @@ void SSPutStrTexInputB2(f32 x, f32 y, s8 str) {
     scrscrntex[1].y = scrscrntex[3].y = (8.0f + y);
 }
 
+/* The four corner colours a text sprite is drawn in. Three of this file's
+ * drawing functions wrote the same three lines. */
+static void set_scrscrntex_colours(u8 gr) {
+    u8 i;
+
+    for (i = 0; i < 4; i++) {
+        scrscrntex[i].col = bigger_col_tbl[gr][i];
+    }
+}
+
 void SSPutStr_Bigger(const ScStrBig* s, f32 sc, u8 gr, u16 priority) {
     u16 x = s->x;
     u16 y = s->y;
@@ -508,9 +518,7 @@ void SSPutStr_Bigger(const ScStrBig* s, f32 sc, u8 gr, u16 priority) {
     ppgSetupCurrentDataList(&ppgScrList);
     njColorBlendingMode(0, 1);
 
-    for (i = 0; i < 4; i++) {
-        scrscrntex[i].col = bigger_col_tbl[gr][i];
-    }
+    set_scrscrntex_colours(gr);
 
     scrscrntex[0].z = scrscrntex[1].z = scrscrntex[2].z = scrscrntex[3].z = PrioBase[priority];
     njSetPaletteBankNumG(1, atr & 0x3F);
@@ -598,6 +606,22 @@ void SSPutDec(const ScDec* d, u8 size) {
     put_dec_high_digits(x, y, str, size);
 }
 
+/* The three decimal digits the value splits into. */
+static void split_dec3_digits(s16 dec, s8* str) {
+    s16 work;
+    u8 num;
+    u8 i;
+
+    work = 100;
+
+    for (i = 0; i < 3; i++) {
+        for (num = 0; dec + 1 > work; dec = dec - work, num++) {}
+
+        str[i] = num;
+        work = work / 10;
+    }
+}
+
 void SSPutDec3(const ScDec3* d, u8 size, u8 gr, u16 priority) {
     u16 x = d->x;
     u16 y = d->y;
@@ -605,9 +629,6 @@ void SSPutDec3(const ScDec3* d, u8 size, u8 gr, u16 priority) {
     s16 dec = d->dec;
 
     s8 str[3];
-    s16 work;
-    u8 num;
-    u8 i;
     u8 zero_sw;
     f32 xx;
     f32 yy;
@@ -619,28 +640,19 @@ void SSPutDec3(const ScDec3* d, u8 size, u8 gr, u16 priority) {
     ppgSetupCurrentDataList(&ppgScrList);
     njColorBlendingMode(0, 1);
 
-    for (i = 0; i < 4; i++) {
-        scrscrntex[i].col = bigger_col_tbl[gr][i];
-    }
+    set_scrscrntex_colours(gr);
 
     scrscrntex[0].z = scrscrntex[1].z = scrscrntex[2].z = scrscrntex[3].z = PrioBase[priority];
     njSetPaletteBankNumG(1, atr & 0x3F);
 
     xx = x;
     yy = y;
-    zero_sw = 0;
-    work = 100;
-
-    for (i = 0; i < 3; i++) {
-        for (num = 0; dec + 1 > work; dec = dec - work, num++) {}
-
-        str[i] = num;
-        work = work / 10;
-    }
+    split_dec3_digits(dec, str);
 
     SSPutStrTexInputB2(xx, yy, str[2]);
     njDrawTexture(scrscrntex, 4, 4, 1);
 
+    zero_sw = 0;
     if (size == 0) {
         return;
     }
@@ -836,9 +848,7 @@ void scfont_sqput3(const ScFontSquareWide* c, u8 gr, u16 priority) {
     ppgSetupCurrentDataList(&ppgScrList);
     njColorBlendingMode(0, 1);
 
-    for (i = 0; i < 4; i++) {
-        scrscrntex[i].col = bigger_col_tbl[gr][i];
-    }
+    set_scrscrntex_colours(gr);
 
     scrscrntex[0].z = scrscrntex[1].z = scrscrntex[2].z = scrscrntex[3].z = PrioBase[priority];
     njSetPaletteBankNumG(page, atr & 0x3F);

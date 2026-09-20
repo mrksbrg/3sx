@@ -70,83 +70,34 @@
 #include "sf33rd/Source/Game/game_internal.h"
 
 
-void Loop_Demo(struct _TASK* /* unused */) {
-    if (Ck_Coin()) {
-        Next_Title_Sub();
-        return;
-    }
+/* The demo loop's first frame: every counter and flag the attract sequence
+ * starts from. */
+static void enter_demo_loop() {
+    G_No[1] += 1;
+    G_No[2] = 0;
+    G_No[3] = 0;
+    D_No[0] = 0;
+    D_No[1] = 0;
+    D_No[2] = 0;
+    D_No[3] = 0;
+    E_No[1] = 99;
+    Demo_PL_Index = 0;
+    Demo_Stage_Index = 0;
+    Select_Demo_Index = 0;
+    Insert_Y = 23;
+    Demo_Flag = 0;
+    Play_Mode = 0;
+    Replay_Status[0] = 0;
+    Replay_Status[1] = 0;
+    Present_Mode = 0;
+    title_tex_flag = 0;
+    Reset_Bootrom = 0;
+}
 
-    switch (G_No[1]) {
-    case 0:
-        G_No[1] += 1;
-        G_No[2] = 0;
-        G_No[3] = 0;
-        D_No[0] = 0;
-        D_No[1] = 0;
-        D_No[2] = 0;
-        D_No[3] = 0;
-        E_No[1] = 99;
-        Demo_PL_Index = 0;
-        Demo_Stage_Index = 0;
-        Select_Demo_Index = 0;
-        Insert_Y = 23;
-        Demo_Flag = 0;
-        Play_Mode = 0;
-        Replay_Status[0] = 0;
-        Replay_Status[1] = 0;
-        Present_Mode = 0;
-        title_tex_flag = 0;
-        Reset_Bootrom = 0;
-        break;
-
-    case 1:
-        Basic_Sub();
-
-        if (CAPCOM_Logo() != 0) {
-            Loop_Demo_Sub();
-            Insert_Y = 23;
-            E_No[1] = 2;
-            E_Timer = 1;
-            return;
-        }
-
-        break;
-
-    case 2:
-        Basic_Sub();
-
-        if (Title()) {
-            Loop_Demo_Sub();
-            Insert_Y = 17;
-            D_No[0] = 1;
-            return;
-        }
-
-        break;
-
-    case 3:
-        if (Play_Demo() != 0) {
-            Switch_Screen(1);
-            Loop_Demo_Sub();
-            Rank_Type = 0;
-            Demo_Type = 0;
-            SsAllNoteOff();
-            return;
-        }
-
-        break;
-
-    case 4:
-        Basic_Sub();
-
-        if (Ranking() != 0) {
-            Switch_Screen(1);
-            Loop_Demo_Sub();
-            return;
-        }
-
-        break;
-
+/* The second half of the attract sequence, reached from the first half's
+ * default; the cover timer stays the default arm. */
+static void run_demo_ranking_stage(u8 stage) {
+    switch (stage) {
     case 5:
         if (Play_Demo() != 0) {
             Loop_Demo_Sub();
@@ -182,6 +133,82 @@ void Loop_Demo(struct _TASK* /* unused */) {
             Next_Demo_Loop();
         }
 
+        break;
+    }
+}
+
+/* The attract sequence's later stages, reached from the demo loop's new
+ * default. Every case keeps its original label, and the original default -
+ * the cover timer - is the default here. */
+static void run_demo_attract_stage(u8 stage) {
+    switch (stage) {
+    case 3:
+        if (Play_Demo() != 0) {
+            Switch_Screen(1);
+            Loop_Demo_Sub();
+            Rank_Type = 0;
+            Demo_Type = 0;
+            SsAllNoteOff();
+            return;
+        }
+
+        break;
+
+    case 4:
+        Basic_Sub();
+
+        if (Ranking() != 0) {
+            Switch_Screen(1);
+            Loop_Demo_Sub();
+            return;
+        }
+
+        break;
+
+    default:
+        run_demo_ranking_stage(stage);
+        break;
+    }
+}
+
+void Loop_Demo(struct _TASK* /* unused */) {
+    if (Ck_Coin()) {
+        Next_Title_Sub();
+        return;
+    }
+
+    switch (G_No[1]) {
+    case 0:
+        enter_demo_loop();
+        break;
+
+    case 1:
+        Basic_Sub();
+
+        if (CAPCOM_Logo() != 0) {
+            Loop_Demo_Sub();
+            Insert_Y = 23;
+            E_No[1] = 2;
+            E_Timer = 1;
+            return;
+        }
+
+        break;
+
+    case 2:
+        Basic_Sub();
+
+        if (Title()) {
+            Loop_Demo_Sub();
+            Insert_Y = 17;
+            D_No[0] = 1;
+            return;
+        }
+
+        break;
+
+    default:
+        run_demo_attract_stage(G_No[1]);
         break;
     }
 }

@@ -289,11 +289,112 @@ s32 chkVibUnit(s32 port) {
 
 /* Everything the pad does while its vibration unit is present: lose it if the
  * unit has gone, otherwise run the one pattern slot's state machine. */
-static void run_pulpul_device(PPWORK* wk) {
-    s32 i;
+/* A row that hands the pattern on to another request, and a row that picks the
+ * next row by the player's remaining vitality. */
+static void request_pulpul_row(PPWORK* wk, s32 i, s32 data) {
+    wk->p[i].rno[0] = 0;
+
+    if (test_flag) {
+        *ot_mot_of = data;
+        ot_make_curr_vib_data();
+    }
+
+    pulpul_request((s16)wk->id, data);
+}
+
+static void skip_pulpul_vital_row(PPWORK* wk, s32 i, s32 data) {
+    if (wk->vital >= data) {
+        wk->p[i].exix += 1;
+    } else {
+        wk->p[i].exix += 2;
+    }
+}
+
+/* Walking the pattern rows until one of them is a real vibration index.
+ * Returns 0 where the row ended the pattern - each of those returns is a
+ * `break` out of the device switch - and 1 where a row is ready to start,
+ * which is where the arm fell through. The two backward jumps are the
+ * pattern's own row-skips and travel unchanged. */
+static s32 advance_pulpul_step(PPWORK* wk, s32 i) {
     s32 index;
     s32 data;
+
+lbl:
+    index = wk->p[i].padr[wk->p[i].exix].ix;
+    data = wk->p[i].padr[wk->p[i].exix].timer;
+
+    if (index <= 0) {
+        if (index == 0) {
+            wk->p[i].rno[0] = 0;
+            vib_req[wk->id][i] = 0;
+            vibParamTrans(wk->id, &pulpara[1]);
+            return 0;
+        } else if (index == -1) {
+            wk->p[i].exix = data;
+            goto lbl;
+        }
+
+        if (index == -3) {
+            request_pulpul_row(wk, i, data);
+            return 0;
+        }
+
+        if (index == -2) {
+            skip_pulpul_vital_row(wk, i, data);
+            goto lbl;
+        }
+
+        wk->p[i].rno[0] = 0;
+        return 0;
+    }
+
+    wk->p[i].rno[0] = 2;
+    return 1;
+}
+
+/* Taking up a newly requested pattern, and counting down the row that is
+ * playing. */
+static s32 begin_pulpul_pattern(PPWORK* wk, s32 i) {
+    if (wk->p[i].ppnew == 0) {
+        return 0;
+    }
+
+    wk->p[i].rno[0] = 1;
+    wk->p[i].ppnew = 0;
+    wk->p[i].exix = -1;
+    return 1;
+}
+
+static void tick_pulpul_row(PPWORK* wk, s32 i) {
+    if (--wk->p[i].life < 0) {
+        wk->p[i].rno[0] = 1;
+    }
+}
+
+/* Starting the row the pattern stopped on, and setting the life it runs for.
+ * Returns 0 where the arm broke out and 1 where it fell through. */
+static s32 start_pulpul_row(PPWORK* wk, s32 i) {
     s32 result;
+
+    result = pulpul_pdVibMxStart(wk, i, wk->port, &pulpara[wk->p[i].padr[wk->p[i].exix].ix]);
+
+    if (!result) {
+        return 0;
+    }
+
+    wk->p[i].rno[0] = 3;
+
+    if (i == 1) {
+        wk->p[i].life = ((wk->p[i].padr[wk->p[i].exix].timer) * (0x20 - pul[wk->id].tim_ans)) / 0x20;
+    } else {
+        wk->p[i].life = wk->p[i].padr[wk->p[i].exix].timer;
+    }
+
+    return 1;
+}
+
+static void run_pulpul_device(PPWORK* wk) {
+    s32 i;
 
     if (chkVibUnit(wk->id) == 0) {
         wk->ok_dev = 0;
@@ -304,78 +405,25 @@ static void run_pulpul_device(PPWORK* wk) {
     for (i = 0; i <= 0; i++) {
         switch (wk->p[i].rno[0]) {
         case 0:
-            if (wk->p[i].ppnew == 0)
+            if (!begin_pulpul_pattern(wk, i))
                 break;
-
-            wk->p[i].rno[0] = 1;
-            wk->p[i].ppnew = 0;
-            wk->p[i].exix = -1;
             /* fallthrough */
         case 1:
             wk->p[i].exix += 1;
 
-        lbl:
-            index = wk->p[i].padr[wk->p[i].exix].ix;
-            data = wk->p[i].padr[wk->p[i].exix].timer;
-
-            if (index <= 0) {
-                if (index == 0) {
-                    wk->p[i].rno[0] = 0;
-                    vib_req[wk->id][i] = 0;
-                    vibParamTrans(wk->id, &pulpara[1]);
-                    break;
-                } else if (index == -1) {
-                    wk->p[i].exix = data;
-                    goto lbl;
-                }
-
-                if (index == -3) {
-                    wk->p[i].rno[0] = 0;
-
-                    if (test_flag) {
-                        *ot_mot_of = data;
-                        ot_make_curr_vib_data();
-                    }
-
-                    pulpul_request((s16)wk->id, data);
-                    break;
-                }
-
-                if (index == -2) {
-                    if (wk->vital >= data) {
-                        wk->p[i].exix += 1;
-                    } else {
-                        wk->p[i].exix += 2;
-                    }
-                    goto lbl;
-                }
-
-                wk->p[i].rno[0] = 0;
+            if (!advance_pulpul_step(wk, i)) {
                 break;
             }
-            wk->p[i].rno[0] = 2;
             /* fallthrough */
 
         case 2:
-            result = pulpul_pdVibMxStart(wk, i, wk->port, &pulpara[wk->p[i].padr[wk->p[i].exix].ix]);
-
-            if (!result) {
+            if (!start_pulpul_row(wk, i)) {
                 break;
-            }
-
-            wk->p[i].rno[0] = 3;
-
-            if (i == 1) {
-                wk->p[i].life = ((wk->p[i].padr[wk->p[i].exix].timer) * (0x20 - pul[wk->id].tim_ans)) / 0x20;
-            } else {
-                wk->p[i].life = wk->p[i].padr[wk->p[i].exix].timer;
             }
             /* fallthrough */
 
         case 3:
-            if (--wk->p[i].life < 0) {
-                wk->p[i].rno[0] = 1;
-            }
+            tick_pulpul_row(wk, i);
             break;
         }
     }
@@ -422,51 +470,71 @@ static s32 vibration_is_off(const PULPARA* prm, u8 profile) {
     return (prm->power == 0) || (prm->unit == 0) || (profile == 0);
 }
 
+/* The packet a silent unit takes, and the packet a vibrating one takes. Each
+ * fills the caller's buffer and returns its length, the one value it produces;
+ * the profile the second arm narrows is narrowed at the call site, because the
+ * caller sends it on afterwards. */
+static s32 fill_vib_off_data(u8* vib_data, u8 profile) {
+    s32 vib_data_size;
+
+    switch (profile) {
+    case 1:
+    case 2:
+        vib_data_size = 1;
+        vib_data[0] = 0;
+        break;
+
+    default:
+        vib_data_size = 2;
+        vib_data[0] = 0;
+        vib_data[1] = 0;
+        break;
+    }
+
+    return vib_data_size;
+}
+
+static s32 fill_vib_on_data(u8* vib_data, u8 profile, const PULPARA* prm) {
+    s32 vib_data_size;
+    u16 big;
+
+    big = prm->freq + pulpul_level[prm->power];
+
+    switch (profile) {
+    case 1:
+        vib_data_size = 1;
+        vib_data[0] = 1;
+        break;
+
+    case 2:
+        vib_data_size = 1;
+        vib_data[0] = big;
+        break;
+
+    default:
+        vib_data_size = 2;
+        vib_data[0] = (((big * 2) & 0xFE) | 1);
+        vib_data[1] = (big >> 7) & 1;
+        break;
+    }
+
+    return vib_data_size;
+}
+
 s32 vibParamTrans(s32 id, PULPARA* prm) {
     s32 vib_data_size;
     s32 rnum;
-    u16 big;
     u8 vib_data[2];
     u8 profile;
 
     profile = ps2slot[id].vprofile & 3;
     if (vibration_is_off(prm, profile)) {
-        switch (profile) {
-        case 1:
-        case 2:
-            vib_data_size = 1;
-            vib_data[0] = 0;
-            break;
-
-        default:
-            vib_data_size = 2;
-            vib_data[0] = 0;
-            vib_data[1] = 0;
-            break;
-        }
+        vib_data_size = fill_vib_off_data(vib_data, profile);
 
         profile = 3;
     } else {
-
-        big = prm->freq + pulpul_level[prm->power];
-
-        switch (profile &= prm->unit) {
-        case 1:
-            vib_data_size = 1;
-            vib_data[0] = 1;
-            break;
-
-        case 2:
-            vib_data_size = 1;
-            vib_data[0] = big;
-            break;
-
-        default:
-            vib_data_size = 2;
-            vib_data[0] = (((big * 2) & 0xFE) | 1);
-            vib_data[1] = (big >> 7) & 1;
-            break;
-        }
+        profile &= prm->unit;
+        vib_data_size = fill_vib_on_data(vib_data, profile, prm);
     }
 
     rnum = sceVibSetActParam(ps2slot[id].socket_id, 1, &profile, vib_data_size, vib_data);

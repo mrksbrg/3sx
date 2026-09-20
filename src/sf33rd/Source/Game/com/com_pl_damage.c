@@ -87,80 +87,90 @@ static u8 level_after_demo_overrides(PLW* wk, u8 Lv, u8 forced) {
     return Lv;
 }
 
-void Damage_1st(PLW* wk) {
+static void Damage_1st_Receive_Select(PLW* wk) {
     u8 Lv;
     u8 Rnd;
     u8 xx;
+
+    if (wk->py->flag) {
+        CP_No[wk->wu.id][1] = 9;
+        return;
+    }
+
+    if (PL_Blow_Off_Data[wk->wu.routine_no[2]] == 0) {
+        CP_No[wk->wu.id][1] = 1;
+        return;
+    }
+
+    CP_No[wk->wu.id][2]++;
+    Lv = Setup_Lv08(0);
+
+    Lv = level_after_demo_overrides(wk, Lv, 7);
+
+    Rnd = random_32_com();
+    xx = Setup_EM_Rank_Index(wk);
+
+    if (Receive_Data[xx][emLevelRemake(Lv, 8, 0)] > Rnd) {
+        Receive_Flag[wk->wu.id] = 1;
+        return;
+    }
+}
+
+static void Damage_1st_Get_Up_Select(PLW* wk) {
+    u8 Lv;
+    u8 Rnd;
     WORK* em;
 
+    if (wk->wu.routine_no[3] == 0) {
+        CP_No[wk->wu.id][2] = 0;
+        return;
+    }
+
+    Lv = Setup_Lv04(0);
+
+    Lv = level_after_demo_overrides(wk, Lv, 3);
+
+    Rnd = random_32_com();
+    CP_No[wk->wu.id][1] = Get_Up_Data[wk->player_number][emLevelRemake(Lv, 4, 0)][Rnd] + 1;
+    CP_No[wk->wu.id][2] = 0;
+
+    if (Get_Up_Action_Check_Data[wk->player_number][CP_No[wk->wu.id][1] - 1][Area_Number[wk->wu.id]] == -1) {
+        CP_No[wk->wu.id][1] = Get_Up_Action_Check_Data[wk->player_number][CP_No[wk->wu.id][1]][4];
+    }
+
+    if (CP_No[wk->wu.id][1] != 0) {
+        return;
+    }
+
+    Lv = Setup_Lv10(0);
+
+    Lv = level_after_demo_overrides(wk, Lv, 10);
+
+    Rnd = random_16_com();
+    Lv += CC_Value[0];
+    Lv = emLevelRemake(Lv, 11, 1);
+    em = (WORK*)wk->wu.target_adrs;
+
+    if (EM_Rank != 0) {
+        Guard_Type[wk->wu.id] = Guard_Data[17][Lv][Rnd];
+    } else {
+        Guard_Type[wk->wu.id] = Guard_Data[wk->player_number][Lv][Rnd];
+    }
+
+    Check_Guard_Type(wk, em);
+}
+
+void Damage_1st(PLW* wk) {
     Lever_Buff[wk->wu.id] = Setup_Guard_Lever(wk, 1);
     Lever_Buff[wk->wu.id] |= 2;
 
     switch (CP_No[wk->wu.id][2]) {
     case 0:
-        if (wk->py->flag) {
-            CP_No[wk->wu.id][1] = 9;
-            break;
-        }
-
-        if (PL_Blow_Off_Data[wk->wu.routine_no[2]] == 0) {
-            CP_No[wk->wu.id][1] = 1;
-            break;
-        }
-
-        CP_No[wk->wu.id][2]++;
-        Lv = Setup_Lv08(0);
-
-        Lv = level_after_demo_overrides(wk, Lv, 7);
-
-        Rnd = random_32_com();
-        xx = Setup_EM_Rank_Index(wk);
-
-        if (Receive_Data[xx][emLevelRemake(Lv, 8, 0)] > Rnd) {
-            Receive_Flag[wk->wu.id] = 1;
-            break;
-        }
-
+        Damage_1st_Receive_Select(wk);
         break;
 
     case 1:
-        if (wk->wu.routine_no[3] == 0) {
-            CP_No[wk->wu.id][2] = 0;
-            break;
-        }
-
-        Lv = Setup_Lv04(0);
-
-        Lv = level_after_demo_overrides(wk, Lv, 3);
-
-        Rnd = random_32_com();
-        CP_No[wk->wu.id][1] = Get_Up_Data[wk->player_number][emLevelRemake(Lv, 4, 0)][Rnd] + 1;
-        CP_No[wk->wu.id][2] = 0;
-
-        if (Get_Up_Action_Check_Data[wk->player_number][CP_No[wk->wu.id][1] - 1][Area_Number[wk->wu.id]] == -1) {
-            CP_No[wk->wu.id][1] = Get_Up_Action_Check_Data[wk->player_number][CP_No[wk->wu.id][1]][4];
-        }
-
-        if (CP_No[wk->wu.id][1] != 0) {
-            break;
-        }
-
-        Lv = Setup_Lv10(0);
-
-        Lv = level_after_demo_overrides(wk, Lv, 10);
-
-        Rnd = random_16_com();
-        Lv += CC_Value[0];
-        Lv = emLevelRemake(Lv, 11, 1);
-        em = (WORK*)wk->wu.target_adrs;
-
-        if (EM_Rank != 0) {
-            Guard_Type[wk->wu.id] = Guard_Data[17][Lv][Rnd];
-        } else {
-            Guard_Type[wk->wu.id] = Guard_Data[wk->player_number][Lv][Rnd];
-        }
-
-        Check_Guard_Type(wk, em);
+        Damage_1st_Get_Up_Select(wk);
         break;
     }
 }
@@ -189,25 +199,44 @@ void Damage_3rd(PLW* /* unused */) {}
 
 void Damage_4th(PLW* /* unused */) {}
 
-void Damage_5th(PLW* wk) {
+static s32 Damage_Sub_State_Active(PLW* wk) {
     if (wk->wu.routine_no[3] == 0) {
         CP_No[wk->wu.id][1] = 0;
         CP_No[wk->wu.id][2] = 0;
+        return 0;
+    }
+
+    return 1;
+}
+
+static s32 Damage_Recovery_Reached(PLW* wk) {
+    if (wk->wu.routine_no[1] != 1) {
+        Exit_Damage_Sub(wk);
+        return 0;
+    }
+
+    return 1;
+}
+
+static void Damage_5th_Wait_Recovery(PLW* wk) {
+    if (!Damage_Recovery_Reached(wk)) {
+        return;
+    }
+
+    if (wk->wu.cg_type == 9) {
+        CP_No[wk->wu.id][2]++;
+        CP_Index[wk->wu.id][1] = 0;
+    }
+}
+
+void Damage_5th(PLW* wk) {
+    if (!Damage_Sub_State_Active(wk)) {
         return;
     }
 
     switch (CP_No[wk->wu.id][2]) {
     case 0:
-        if (wk->wu.routine_no[1] != 1) {
-            Exit_Damage_Sub(wk);
-            break;
-        }
-
-        if (wk->wu.cg_type == 9) {
-            CP_No[wk->wu.id][2]++;
-            CP_Index[wk->wu.id][1] = 0;
-        }
-
+        Damage_5th_Wait_Recovery(wk);
         break;
 
     case 1:
@@ -262,11 +291,19 @@ static void pick_get_up_action(PLW* wk) {
     }
 }
 
+static void Damage_6th_Wait_Recovery(PLW* wk) {
+    if (!Damage_Recovery_Reached(wk)) {
+        return;
+    }
+
+    if (wk->wu.cg_type == 12) {
+        pick_get_up_action(wk);
+    }
+}
+
 void Damage_6th(PLW* wk) {
 
-    if (wk->wu.routine_no[3] == 0) {
-        CP_No[wk->wu.id][1] = 0;
-        CP_No[wk->wu.id][2] = 0;
+    if (!Damage_Sub_State_Active(wk)) {
         return;
     }
 
@@ -281,16 +318,7 @@ void Damage_6th(PLW* wk) {
 
     switch (CP_No[wk->wu.id][2]) {
     case 0:
-        if (wk->wu.routine_no[1] != 1) {
-            Exit_Damage_Sub(wk);
-            break;
-        }
-
-        if (wk->wu.cg_type == 12) {
-            pick_get_up_action(wk);
-        }
-
-
+        Damage_6th_Wait_Recovery(wk);
         break;
 
     case 1:
@@ -309,9 +337,47 @@ void Damage_6th(PLW* wk) {
     }
 }
 
-void Damage_7th(PLW* wk) {
+static void Damage_7th_Set_Guard_Type(PLW* wk) {
+    switch (CP_No[wk->wu.id][1]) {
+    case 6:
+        Guard_Type[wk->wu.id] = 0;
+        break;
+
+    case 7:
+        Guard_Type[wk->wu.id] = 1;
+        break;
+
+    default:
+        Guard_Type[wk->wu.id] = 2;
+        break;
+    }
+}
+
+static void Damage_7th_Check_Exit(PLW* wk) {
     WORK* em;
 
+    em = (WORK*)wk->wu.target_adrs;
+    Check_Guard_Type(wk, em);
+
+    if (wk->wu.cg_type != 0x40 && wk->wu.routine_no[1] != 0) {
+        return;
+    }
+
+    if (Attack_Flag[wk->wu.id] != 0) {
+        return;
+    }
+
+    if (Attack_Flag[wk->wu.id] == 0) {
+        Exit_Damage_Sub(wk);
+        return;
+    }
+
+    if (wk->tsukamarenai_flag == 0) {
+        Exit_Damage_Sub(wk);
+    }
+}
+
+void Damage_7th(PLW* wk) {
     switch (CP_No[wk->wu.id][2]) {
     case 0:
         if (wk->wu.routine_no[1] != 1) {
@@ -320,52 +386,35 @@ void Damage_7th(PLW* wk) {
         }
 
         CP_No[wk->wu.id][2]++;
-
-        switch (CP_No[wk->wu.id][1]) {
-        case 6:
-            Guard_Type[wk->wu.id] = 0;
-            break;
-
-        case 7:
-            Guard_Type[wk->wu.id] = 1;
-            break;
-
-        default:
-            Guard_Type[wk->wu.id] = 2;
-            break;
-        }
-
+        Damage_7th_Set_Guard_Type(wk);
         break;
 
     default:
-        em = (WORK*)wk->wu.target_adrs;
-        Check_Guard_Type(wk, em);
-
-        if (wk->wu.cg_type != 0x40 && wk->wu.routine_no[1] != 0) {
-            break;
-        }
-
-        if (Attack_Flag[wk->wu.id] != 0) {
-            break;
-        }
-
-        if (Attack_Flag[wk->wu.id] == 0) {
-            Exit_Damage_Sub(wk);
-            break;
-        }
-
-        if (wk->tsukamarenai_flag == 0) {
-            Exit_Damage_Sub(wk);
-        }
-
+        Damage_7th_Check_Exit(wk);
         break;
     }
 }
 
-void Damage_8th(PLW* wk) {
+static void Damage_8th_Setup_Faint_Rapid(PLW* wk) {
     s16 Rnd;
     s16 Lv;
 
+    CP_No[wk->wu.id][2] += 1;
+    Timer_00[wk->wu.id] = 1;
+    Lv = Setup_Lv08(0);
+
+    if (Break_Into_CPU == 2) {
+        Lv = 7;
+    }
+
+    if (Demo_Flag == 0 && Weak_PL == wk->wu.id) {
+        Lv = 0;
+    }
+
+    Timer_01[wk->wu.id] = Faint_Rapid_Data[emLevelRemake(Lv, 8, 0)][(Rnd = random_16_com() & 7)];
+}
+
+void Damage_8th(PLW* wk) {
     if (wk->wu.routine_no[1] != 1) {
         Exit_Damage_Sub(wk);
         return;
@@ -374,19 +423,7 @@ void Damage_8th(PLW* wk) {
     switch (CP_No[wk->wu.id][2]) {
     case 0:
         if (wk->wu.routine_no[2] == 0x19 && wk->wu.routine_no[3] != 0) {
-            CP_No[wk->wu.id][2] += 1;
-            Timer_00[wk->wu.id] = 1;
-            Lv = Setup_Lv08(0);
-
-            if (Break_Into_CPU == 2) {
-                Lv = 7;
-            }
-
-            if (Demo_Flag == 0 && Weak_PL == wk->wu.id) {
-                Lv = 0;
-            }
-
-            Timer_01[wk->wu.id] = Faint_Rapid_Data[emLevelRemake(Lv, 8, 0)][(Rnd = random_16_com() & 7)];
+            Damage_8th_Setup_Faint_Rapid(wk);
         }
 
         break;

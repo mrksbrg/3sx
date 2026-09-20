@@ -140,33 +140,36 @@ static void loop_info_destroy(ADXLoopInfo* info) {
     SDL_zerop(info);
 }
 
-static void process_track(ADXTrack* track) {
-    if ((stream_data_needed() > 0) && track_needs_decoding(track)) {
-        const Uint32 samples_needed = stream_data_needed() / (BYTES_PER_SAMPLE * N_CHANNELS);
+/* One chunk decoded into the stream: the samples the stream is short of, the
+ * mono fan-out, and the loop buffer's copy of them. The early return is the
+ * arm's own - it left process_track with nothing queued. */
+static void decode_track_chunk(ADXTrack* track) {
+    const Uint32 samples_needed = stream_data_needed() / (BYTES_PER_SAMPLE * N_CHANNELS);
 
-        if (samples_needed == 0) {
-            return;
-        }
-
-        const Uint32 sample_size = samples_needed * N_CHANNELS * BYTES_PER_SAMPLE;
-        const Uint32 buffer_start_sample = track->decoder.sample_index;
-        Sint16* buffer = SDL_malloc(sample_size);
-        const Uint32 decoded_samples = ADXDecoder_Decode(&track->decoder, buffer, samples_needed);
-
-        if (track->decoder.header.channel_count == 1) {
-            for (Uint32 i = decoded_samples; i > 0; i--) {
-                const Sint16 sample = buffer[i - 1];
-                buffer[(i - 1) * N_CHANNELS] = sample;
-                buffer[(i - 1) * N_CHANNELS + 1] = sample;
-            }
-        }
-
-        const Uint32 overflow = track_add_samples_to_loop(track, buffer, decoded_samples, buffer_start_sample);
-        SDL_PutAudioStreamData(stream, buffer, (decoded_samples - overflow) * BYTES_PER_SAMPLE * N_CHANNELS);
-        SDL_free(buffer);
+    if (samples_needed == 0) {
+        return;
     }
 
-    // Queue looped samples (if needed)
+    const Uint32 sample_size = samples_needed * N_CHANNELS * BYTES_PER_SAMPLE;
+    const Uint32 buffer_start_sample = track->decoder.sample_index;
+    Sint16* buffer = SDL_malloc(sample_size);
+    const Uint32 decoded_samples = ADXDecoder_Decode(&track->decoder, buffer, samples_needed);
+
+    if (track->decoder.header.channel_count == 1) {
+        for (Uint32 i = decoded_samples; i > 0; i--) {
+            const Sint16 sample = buffer[i - 1];
+            buffer[(i - 1) * N_CHANNELS] = sample;
+            buffer[(i - 1) * N_CHANNELS + 1] = sample;
+        }
+    }
+
+    const Uint32 overflow = track_add_samples_to_loop(track, buffer, decoded_samples, buffer_start_sample);
+    SDL_PutAudioStreamData(stream, buffer, (decoded_samples - overflow) * BYTES_PER_SAMPLE * N_CHANNELS);
+    SDL_free(buffer);
+}
+
+/* Whatever the loop buffer can still supply this frame. */
+static void queue_looped_samples(ADXTrack* track) {
     while (track_loop_filled(track) && (stream_data_needed() > 0)) {
         const int available_data = track->loop_info.pcm_size - track->loop_info.position;
         const int data_to_queue = SDL_min(stream_data_needed(), available_data);
@@ -179,17 +182,35 @@ static void process_track(ADXTrack* track) {
     }
 }
 
-static void track_init(ADXTrack* track, int file_id, void* buf, size_t buf_size, bool looping_allowed) {
-    if (file_id == -1 && buf == NULL) {
+static void process_track(ADXTrack* track) {
+    if ((stream_data_needed() > 0) && track_needs_decoding(track)) {
+        decode_track_chunk(track);
+    }
+
+    // Queue looped samples (if needed)
+    queue_looped_samples(track);
+}
+
+/* The four values track_init takes beside the track, in the order and with the
+ * types its parameter list had them. */
+typedef struct {
+    int file_id;
+    void* buf;
+    size_t buf_size;
+    bool looping_allowed;
+} AdxTrackSource;
+
+static void track_init(ADXTrack* track, const AdxTrackSource* a) {
+    if (a->file_id == -1 && a->buf == NULL) {
         fatal_error("One of file_id or buf must be valid.");
     }
 
-    if (file_id != -1) {
-        track->data = load_file(file_id, &track->size);
+    if (a->file_id != -1) {
+        track->data = load_file(a->file_id, &track->size);
         track->should_free_data_after_use = true;
     } else {
-        track->data = buf;
-        track->size = buf_size;
+        track->data = a->buf;
+        track->size = a->buf_size;
         track->should_free_data_after_use = false;
     }
 
@@ -201,7 +222,7 @@ static void track_init(ADXTrack* track, int file_id, void* buf, size_t buf_size,
 
     SDL_zerop(&track->loop_info);
 
-    if (looping_allowed) {
+    if (a->looping_allowed) {
         loop_info_init(&track->loop_info, &track->decoder.header);
     }
 
@@ -324,7 +345,7 @@ void ADX_StartMem(void* buf, size_t size) {
     ADX_Stop();
 
     ADXTrack* track = alloc_track();
-    track_init(track, -1, buf, size, true);
+    track_init(track, &(AdxTrackSource){ -1, buf, size, true });
 }
 
 int ADX_GetNumFiles() {
@@ -341,7 +362,7 @@ void ADX_EntryAfs(int file_id) {
     }
 
     ADXTrack* track = alloc_track();
-    track_init(track, file_id, NULL, 0, false);
+    track_init(track, &(AdxTrackSource){ file_id, NULL, 0, false });
 }
 
 void ADX_StartSeamless() {
@@ -364,7 +385,7 @@ void ADX_StartAfs(int file_id) {
     ADX_Stop();
 
     ADXTrack* track = alloc_track();
-    track_init(track, file_id, NULL, 0, true);
+    track_init(track, &(AdxTrackSource){ file_id, NULL, 0, true });
 }
 
 void ADX_SetOutVol(int volume) {

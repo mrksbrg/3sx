@@ -122,22 +122,22 @@ bool fsFileReadSync(void* buff) {
     return fsCheckFileReaded() == FS_READ_IDLE;
 }
 
-s32 load_it_use_any_key2(u16 fnum, void** adrs, s16* key, u8 kokey, u8 group) {
+s32 load_it_use_any_key2(const LoadAnyKeyArgs* a) {
     u32 size;
 
-    if (fnum >= AFS_GetFileCount()) {
-        flLogOut("ファイルナンバーに異常があります。ファイル番号：%d\n", fnum);
+    if (a->fnum >= AFS_GetFileCount()) {
+        flLogOut("ファイルナンバーに異常があります。ファイル番号：%d\n", a->fnum);
         while (1) {}
     }
 
-    size = fsGetFileSize(fnum);
-    *key = Pull_ramcnt_key(size, kokey, group, 0);
-    *adrs = Get_ramcnt_pointer(*key);
+    size = fsGetFileSize(a->fnum);
+    *a->key = Pull_ramcnt_key(size, a->kokey, a->group, 0);
+    *a->adrs = Get_ramcnt_pointer(*a->key);
 
-    if (load_it_use_this_key(fnum, *key)) {
+    if (load_it_use_this_key(a->fnum, *a->key)) {
         return size;
     } else {
-        Push_ramcnt_key(*key);
+        Push_ramcnt_key(*a->key);
         return 0;
     }
 }
@@ -147,7 +147,7 @@ s16 load_it_use_any_key(u16 fnum, u8 kokey, u8 group) {
     void* adrs;
     s16 key;
 
-    err = load_it_use_any_key2(fnum, &adrs, &key, kokey, group);
+    err = load_it_use_any_key2(&(LoadAnyKeyArgs){ fnum, &adrs, &key, kokey, group });
 
     if (err != 0) {
         return key;
@@ -308,28 +308,44 @@ void Push_LDREQ_Queue_Direct(s16 ix, LoadRequestID id) {
     Push_LDREQ_Queue(&ldreq);
 }
 
+/* The finished request leaves the head of the queue and the rest shuffle down,
+ * with the last slot left free. */
+static void Pop_Load_Request_Queue() {
+    int i;
+
+    for (i = 0; i < SDL_arraysize(q_ldreq) - 1; i++) {
+        q_ldreq[i] = q_ldreq[i + 1];
+    }
+
+    q_ldreq[i].status = LDREQ_STATUS_FREE;
+    q_ldreq[i].type = LDREQ_INVALID;
+}
+
+/* Running the head of the queue for a frame, and throwing the whole queue
+ * away when a break has been asked for. */
+static void Step_Load_Request_Queue() {
+    if (q_ldreq[0].status != LDREQ_STATUS_FREE) {
+        ldreq_process[q_ldreq[0].type](&q_ldreq[0]);
+
+        if (q_ldreq[0].status == LDREQ_STATUS_FREE) {
+            Pop_Load_Request_Queue();
+        }
+    }
+}
+
+static void Abort_Load_Request_Queue() {
+    if (q_ldreq[0].status == LDREQ_STATUS_RUNNING) {
+        fsCansel();
+    }
+
+    Init_Load_Request_Queue();
+}
+
 void Check_LDREQ_Queue() {
     if (!ldreq_break) {
-        if (q_ldreq[0].status != LDREQ_STATUS_FREE) {
-            ldreq_process[q_ldreq[0].type](&q_ldreq[0]);
-
-            if (q_ldreq[0].status == LDREQ_STATUS_FREE) {
-                int i;
-
-                for (i = 0; i < SDL_arraysize(q_ldreq) - 1; i++) {
-                    q_ldreq[i] = q_ldreq[i + 1];
-                }
-
-                q_ldreq[i].status = LDREQ_STATUS_FREE;
-                q_ldreq[i].type = LDREQ_INVALID;
-            }
-        }
+        Step_Load_Request_Queue();
     } else {
-        if (q_ldreq[0].status == LDREQ_STATUS_RUNNING) {
-            fsCansel();
-        }
-
-        Init_Load_Request_Queue();
+        Abort_Load_Request_Queue();
     }
 }
 

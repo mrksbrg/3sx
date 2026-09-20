@@ -812,36 +812,39 @@ s16 cal_move_quantity3(WORK* wk, s16 tm) {
     return ps.ry.h;
 }
 
-void cmsd_all_x_speed_data(MotionState* cc) {
-    switch (cc->swx) {
+/* The three speed curves an axis can follow, in the order its switch named
+ * them. */
+typedef struct {
+    void (*curve_1)(MotionState* cc);
+    void (*curve_2)(MotionState* cc);
+    void (*curve_default)(MotionState* cc);
+} Cmsd_Speed_Curves;
+
+/* The x and y dispatches are the same three-arm switch. They differ in which
+ * switch field they read and which three functions the arms call, so the field
+ * arrives as a value and the functions as one parameter object. */
+static void cmsd_all_speed_data(MotionState* cc, s8 sw, const Cmsd_Speed_Curves* curves) {
+    switch (sw) {
     case 1:
-        cmsd_swx_1(cc);
+        curves->curve_1(cc);
         break;
 
     case 2:
-        cmsd_swx_2(cc);
+        curves->curve_2(cc);
         break;
 
     default:
-        cmsd_swx_0(cc);
+        curves->curve_default(cc);
         break;
     }
 }
 
+void cmsd_all_x_speed_data(MotionState* cc) {
+    cmsd_all_speed_data(cc, cc->swx, &(Cmsd_Speed_Curves) { cmsd_swx_1, cmsd_swx_2, cmsd_swx_0 });
+}
+
 void cmsd_all_y_speed_data(MotionState* cc) {
-    switch (cc->swy) {
-    case 1:
-        cmsd_swy_1(cc);
-        break;
-
-    case 2:
-        cmsd_swy_2(cc);
-        break;
-
-    default:
-        cmsd_swy_0(cc);
-        break;
-    }
+    cmsd_all_speed_data(cc, cc->swy, &(Cmsd_Speed_Curves) { cmsd_swy_1, cmsd_swy_2, cmsd_swy_0 });
 }
 
 void cmsd_swx_0(MotionState* cc) {
@@ -892,28 +895,38 @@ void cmsd_y_initial_speed(MotionState* cc) {
     cc->amy %= cc->timer;
 }
 
-void cmsd_x_delta_speed(MotionState* cc) {
-    if (cc->spx != 0) {
-        cc->amx = cc->x.pl - (cc->timer * cc->spx);
-        cc->dlx = cc->amx / cc->timer2;
-        cc->amx %= cc->timer2;
-        cc->spx += cc->dlx;
+/* One axis of a motion state, as the delta-speed step reads it: the three
+ * accumulators it updates, the distance it is solving for, and the full speed
+ * calculation it falls back to when the axis is not moving yet. C has no
+ * pointer-to-member, so the fields travel as pointers into the caller's own
+ * MotionState. */
+typedef struct {
+    s32* am;
+    s32* sp;
+    s32* dl;
+    s32 pl;
+    void (*all_speed_data)(MotionState* cc);
+} Cmsd_Axis;
+
+/* The x and y delta steps are the same five statements over different fields. */
+static void cmsd_delta_speed(MotionState* cc, const Cmsd_Axis* axis) {
+    if (*axis->sp != 0) {
+        *axis->am = axis->pl - (cc->timer * *axis->sp);
+        *axis->dl = *axis->am / cc->timer2;
+        *axis->am %= cc->timer2;
+        *axis->sp += *axis->dl;
         return;
     }
 
-    cmsd_all_x_speed_data(cc);
+    axis->all_speed_data(cc);
+}
+
+void cmsd_x_delta_speed(MotionState* cc) {
+    cmsd_delta_speed(cc, &(Cmsd_Axis) { &cc->amx, &cc->spx, &cc->dlx, cc->x.pl, cmsd_all_x_speed_data });
 }
 
 void cmsd_y_delta_speed(MotionState* cc) {
-    if (cc->spy != 0) {
-        cc->amy = cc->y.pl - (cc->timer * cc->spy);
-        cc->dly = cc->amy / cc->timer2;
-        cc->amy %= cc->timer2;
-        cc->spy += cc->dly;
-        return;
-    }
-
-    cmsd_all_y_speed_data(cc);
+    cmsd_delta_speed(cc, &(Cmsd_Axis) { &cc->amy, &cc->spy, &cc->dly, cc->y.pl, cmsd_all_y_speed_data });
 }
 
 /* Both speed calculations end the same way: the computed speeds and
@@ -928,17 +941,17 @@ static void store_motion_result(WORK* wk, const MotionState* bb) {
     wk->xyz[1].cal += bb->amy;
 }
 
-void cal_all_speed_data(WORK* wk, s16 tm, s16 x1, s16 y1, s8 xsw, s8 ysw) {
+void cal_all_speed_data(WORK* wk, const Motion_Target* t) {
     MotionState bb;
 
     wk->xyz[0].disp.low = wk->xyz[1].disp.low = -0x8000;
-    bb.timer = tm;
+    bb.timer = t->tm;
     bb.timer2 = bb.timer + (bb.timer * (bb.timer - 1) / 2);
-    bb.x.ps.h = x1 - wk->xyz[0].disp.pos;
-    bb.y.ps.h = y1 - wk->xyz[1].disp.pos;
+    bb.x.ps.h = t->x1 - wk->xyz[0].disp.pos;
+    bb.y.ps.h = t->y1 - wk->xyz[1].disp.pos;
     bb.x.ps.l = bb.y.ps.l = 0;
-    bb.swx = xsw;
-    bb.swy = ysw;
+    bb.swx = t->xsw;
+    bb.swy = t->ysw;
 
     if (bb.timer == 0) {
         bb.amy = 0;
@@ -1005,17 +1018,17 @@ void cal_initial_speed_y(WORK* wk, s16 tm, s16 y1) {
     wk->xyz[1].cal += bb.amy;
 }
 
-void cal_delta_speed(WORK* wk, s16 tm, s16 x1, s16 y1, s8 xsw, s8 ysw) {
+void cal_delta_speed(WORK* wk, const Motion_Target* t) {
     MotionState bb;
 
     wk->xyz[0].disp.low = wk->xyz[1].disp.low = 0;
-    bb.timer = tm + 0;
+    bb.timer = t->tm + 0;
     bb.timer2 = bb.timer + bb.timer * (bb.timer - 1) / 2;
-    bb.x.ps.h = x1 - wk->xyz[0].disp.pos;
-    bb.y.ps.h = y1 - wk->xyz[1].disp.pos;
+    bb.x.ps.h = t->x1 - wk->xyz[0].disp.pos;
+    bb.y.ps.h = t->y1 - wk->xyz[1].disp.pos;
     bb.x.ps.l = bb.y.ps.l = 0;
-    bb.swx = xsw;
-    bb.swy = ysw;
+    bb.swx = t->xsw;
+    bb.swy = t->ysw;
     bb.spx = wk->mvxy.a[0].sp;
     bb.spy = wk->mvxy.a[1].sp;
 

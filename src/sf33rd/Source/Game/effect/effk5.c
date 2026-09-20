@@ -136,7 +136,6 @@ static void update_effect_K5(WORK_Other* ewk, WORK* mwk) {
     mwk->h_han = &ramhan[mwk->id];
 }
 
-
 void effect_K5_move(WORK_Other* ewk) {
     WORK* mwk = (WORK*)ewk->my_master;
 
@@ -212,11 +211,7 @@ static void update_matching_delay_K5(WORK* ewk, GOTCP* gotcp) {
     }
 }
 
-typedef enum {
-    K5_TIMING_CONTINUE,
-    K5_TIMING_DECODED,
-    K5_TIMING_STOP
-} K5TimingResult;
+typedef enum { K5_TIMING_CONTINUE, K5_TIMING_DECODED, K5_TIMING_STOP } K5TimingResult;
 
 static K5TimingResult process_hit_index_K5(WORK* ewk, MVJ* mvj, GOTCP* gotcp, u16 now_mf) {
     ST st;
@@ -316,7 +311,7 @@ static void update_motion_entry_K5(WORK* wk, MVJ* mvj, K5Data* data, MVSW mvsw) 
             t0 = wk->xyz[0].disp.pos + wk->xyz[1].disp.pos / 2;
         }
 
-        cal_all_speed_data(wk, wk->old_rno[0], t0, t1, mvsw.swc.hh, mvsw.swc.l);
+        cal_all_speed_data(wk, &(Motion_Target) { wk->old_rno[0], t0, t1, mvsw.swc.hh, mvsw.swc.l });
         mvj->r[0].cal = wk->xyz[0].cal;
         mvj->r[1].cal = wk->xyz[1].cal;
         mvj->a[0].sp = wk->mvxy.a[0].sp;
@@ -332,7 +327,7 @@ static void update_motion_entry_K5(WORK* wk, MVJ* mvj, K5Data* data, MVSW mvsw) 
             t0 = wk->xyz[0].disp.pos + wk->xyz[1].disp.pos / 2;
         }
 
-        cal_all_speed_data(wk, wk->old_rno[0], t0, t1, mvsw.swc.h, mvsw.swc.ll);
+        cal_all_speed_data(wk, &(Motion_Target) { wk->old_rno[0], t0, t1, mvsw.swc.h, mvsw.swc.ll });
         mvj->r[2].cal = wk->xyz[0].cal;
         mvj->r[3].cal = wk->xyz[1].cal;
         mvj->a[2].sp = wk->mvxy.a[0].sp;

@@ -4,12 +4,12 @@
  */
 
 #include "sf33rd/Source/Game/effect/eff09.h"
-#include "sf33rd/Source/Game/effect/eff09_animation.h"
-#include "sf33rd/Source/Game/effect/eff09_endgame.h"
-#include "sf33rd/Source/Game/effect/eff09_late.h"
 #include "bin2obj/char_table.h"
 #include "common.h"
 #include "sf33rd/Source/Game/animation/appear.h"
+#include "sf33rd/Source/Game/effect/eff09_animation.h"
+#include "sf33rd/Source/Game/effect/eff09_endgame.h"
+#include "sf33rd/Source/Game/effect/eff09_late.h"
 #include "sf33rd/Source/Game/effect/effb4.h"
 #include "sf33rd/Source/Game/effect/effect.h"
 #include "sf33rd/Source/Game/engine/caldir.h"
@@ -86,11 +86,33 @@ static s32 eff09_0000_animation_updates_enabled(const WORK_Other* ewk) {
     return !EXE_flag && !Game_pause && ewk->wu.hit_stop;
 }
 
-void eff09_0000(WORK_Other* ewk) {
-    if (obr_no_disp_check()) {
-        return;
-    }
+/* eff09_8000 asks only for the hit stop, where eff09_0000 also refuses while the
+ * game is paused. */
+static s32 eff09_8000_animation_updates_enabled(const WORK_Other* ewk) {
+    return ewk->wu.hit_stop;
+}
 
+/* The two balls disagree on what counts as the animation having ended:
+ * eff09_0000 takes any non-zero cg_type, eff09_8000 only 0xFF. */
+static s32 eff09_0000_animation_ended(const WORK_Other* ewk) {
+    return ewk->wu.cg_type;
+}
+
+static s32 eff09_8000_animation_ended(const WORK_Other* ewk) {
+    return ewk->wu.cg_type == 0xFF;
+}
+
+/* What eff09_0000 and eff09_8000 do not share: the two tests in case 1 and the
+ * transfer entry it posts. Three more parameters would put the helper over the
+ * argument-count threshold, so they travel together. */
+typedef struct {
+    s32 (*updates_enabled)(const WORK_Other* ewk);
+    s32 (*animation_ended)(const WORK_Other* ewk);
+    void (*disp_pos_trans_entry)(WORK_Other* ewk);
+} Eff09_Ball_Ops;
+
+/* The ball state machine both eff09_0000 and eff09_8000 run. */
+static void run_eff09_ball_state(WORK_Other* ewk, const Eff09_Ball_Ops* ops) {
     switch (ewk->wu.routine_no[1]) {
     case 0:
         ewk->wu.routine_no[1]++;
@@ -100,16 +122,16 @@ void eff09_0000(WORK_Other* ewk) {
         break;
 
     case 1:
-        if (eff09_0000_animation_updates_enabled(ewk)) {
+        if (ops->updates_enabled(ewk)) {
             char_move(&ewk->wu);
 
-            if (ewk->wu.cg_type) {
+            if (ops->animation_ended(ewk)) {
                 ewk->wu.routine_no[1]++;
                 ewk->wu.disp_flag = 0;
             }
         }
 
-        disp_pos_trans_entry_rs(ewk);
+        ops->disp_pos_trans_entry(ewk);
         break;
 
     case 2:
@@ -120,6 +142,17 @@ void eff09_0000(WORK_Other* ewk) {
         push_effect_work(&ewk->wu);
         break;
     }
+}
+
+void eff09_0000(WORK_Other* ewk) {
+    if (obr_no_disp_check()) {
+        return;
+    }
+
+    run_eff09_ball_state(
+        ewk,
+        &(Eff09_Ball_Ops) { eff09_0000_animation_updates_enabled, eff09_0000_animation_ended, disp_pos_trans_entry_rs }
+    );
 }
 
 static s32 eff09_1000_updates_enabled() {
@@ -231,8 +264,7 @@ static s32 eff09_2000_is_outside_horizontal_bounds(const WORK_Other* ewk) {
 }
 
 static s32 eff09_2000_is_outside_bounds(const WORK_Other* ewk) {
-    return (ewk->wu.xyz[0].disp.pos >= 785 || ewk->wu.xyz[0].disp.pos < 240) ||
-           ewk->wu.xyz[1].disp.pos < -56;
+    return (ewk->wu.xyz[0].disp.pos >= 785 || ewk->wu.xyz[0].disp.pos < 240) || ewk->wu.xyz[1].disp.pos < -56;
 }
 
 static void handle_eff09_2000_horizontal_exit(WORK_Other* ewk) {
@@ -345,7 +377,8 @@ void eff09_2000(WORK_Other* ewk) {
                 work = random_16();
                 work &= 7;
                 add_super_arts_gauge(
-                    plw[ewk->master_id].sa, plw[ewk->master_id].wu.id, 1, plw[ewk->master_id].metamorphose);
+                    plw[ewk->master_id].sa, plw[ewk->master_id].wu.id, 1, plw[ewk->master_id].metamorphose
+                );
                 break;
             }
 
@@ -392,32 +425,37 @@ static void adjust_sean_ball_down(WORK_Other* ewk, u16 sw_work) {
     }
 }
 
-static void adjust_sean_ball_left(WORK_Other* ewk, u16 sw_work) {
-    if (sw_work & 4) {
-        ewk->wu.old_rno[2]++;
+/* Which side of Sean's ball this is: the button that pushes it, the counter it
+ * counts on, how far that counter may run while facing and while turned away,
+ * and the column of the two add tables it reads. */
+typedef struct {
+    u16 button;
+    s16 counter;
+    s16 limit_facing;
+    s16 limit_away;
+    s16 column;
+} SeanBallSide;
+
+static void adjust_sean_ball(WORK_Other* ewk, u16 sw_work, const SeanBallSide* side) {
+    if (sw_work & side->button) {
+        ewk->wu.old_rno[side->counter]++;
 
         if (ewk->wu.rl_flag) {
-            if (ewk->wu.old_rno[2] < 4) {
-                ewk->wu.mvxy.d[0].sp += eff09_add_tbl1[ewk->wu.dir_step][0];
+            if (ewk->wu.old_rno[side->counter] < side->limit_facing) {
+                ewk->wu.mvxy.d[0].sp += eff09_add_tbl1[ewk->wu.dir_step][side->column];
             }
-        } else if (ewk->wu.old_rno[2] < 8) {
-            ewk->wu.mvxy.d[0].sp += eff09_add_tbl2[ewk->wu.dir_step][0];
+        } else if (ewk->wu.old_rno[side->counter] < side->limit_away) {
+            ewk->wu.mvxy.d[0].sp += eff09_add_tbl2[ewk->wu.dir_step][side->column];
         }
     }
 }
 
-static void adjust_sean_ball_right(WORK_Other* ewk, u16 sw_work) {
-    if (sw_work & 8) {
-        ewk->wu.old_rno[3]++;
+static void adjust_sean_ball_left(WORK_Other* ewk, u16 sw_work) {
+    adjust_sean_ball(ewk, sw_work, &(SeanBallSide) { 4, 2, 4, 8, 0 });
+}
 
-        if (ewk->wu.rl_flag) {
-            if (ewk->wu.old_rno[3] < 8) {
-                ewk->wu.mvxy.d[0].sp += eff09_add_tbl1[ewk->wu.dir_step][1];
-            }
-        } else if (ewk->wu.old_rno[3] < 4) {
-            ewk->wu.mvxy.d[0].sp += eff09_add_tbl2[ewk->wu.dir_step][1];
-        }
-    }
+static void adjust_sean_ball_right(WORK_Other* ewk, u16 sw_work) {
+    adjust_sean_ball(ewk, sw_work, &(SeanBallSide) { 8, 3, 8, 4, 1 });
 }
 
 void sean_ball_move(WORK_Other* ewk, u16 sw_work) {
@@ -481,7 +519,7 @@ void eff09_3000(WORK_Other* ewk) {
         ewk->wu.disp_flag = 1;
         ewk->wu.old_rno[0] = 96;
         set_char_move_init(&ewk->wu, 0, ewk->wu.char_index);
-        cal_all_speed_data(&ewk->wu, ewk->wu.old_rno[0], ewk->wu.xyz[0].disp.pos, 40, 1, 2);
+        cal_all_speed_data(&ewk->wu, &(Motion_Target) { ewk->wu.old_rno[0], ewk->wu.xyz[0].disp.pos, 40, 1, 2 });
         break;
 
     case 1:
@@ -529,7 +567,7 @@ static void initialize_eff09_4000(WORK_Other* ewk) {
 
     ewk->wu.xyz[0].disp.pos = work;
     ewk->wu.old_rno[0] = 202;
-    cal_all_speed_data(&ewk->wu, ewk->wu.old_rno[0], work2, 0, 0, 2);
+    cal_all_speed_data(&ewk->wu, &(Motion_Target) { ewk->wu.old_rno[0], work2, 0, 0, 2 });
 }
 
 /* The timed approach both effects run: while updates are enabled, move the
@@ -704,35 +742,10 @@ void eff09_7000(WORK_Other* ewk) {
 }
 
 void eff09_8000(WORK_Other* ewk) {
-    switch (ewk->wu.routine_no[1]) {
-    case 0:
-        ewk->wu.routine_no[1]++;
-        ewk->wu.disp_flag = 1;
-        ewk->wu.dead_f = 1;
-        set_char_move_init(&ewk->wu, 0, ewk->wu.char_index);
-        break;
-
-    case 1:
-        if (ewk->wu.hit_stop) {
-            char_move(&ewk->wu);
-
-            if (ewk->wu.cg_type == 0xFF) {
-                ewk->wu.routine_no[1]++;
-                ewk->wu.disp_flag = 0;
-            }
-        }
-
-        disp_pos_trans_entry_s(ewk);
-        break;
-
-    case 2:
-        ewk->wu.routine_no[1]++;
-        break;
-
-    default:
-        push_effect_work(&ewk->wu);
-        break;
-    }
+    run_eff09_ball_state(
+        ewk,
+        &(Eff09_Ball_Ops) { eff09_8000_animation_updates_enabled, eff09_8000_animation_ended, disp_pos_trans_entry_s }
+    );
 }
 
 static void initialize_eff09_11000(WORK_Other* ewk, const WORK* oya_ptr) {
@@ -761,7 +774,7 @@ static void initialize_eff09_11000(WORK_Other* ewk, const WORK* oya_ptr) {
 
     ewk->wu.xyz[0].disp.pos = work;
     ewk->wu.old_rno[0] = 220;
-    cal_all_speed_data(&ewk->wu, ewk->wu.old_rno[0], work2, 0, 0, 2);
+    cal_all_speed_data(&ewk->wu, &(Motion_Target) { ewk->wu.old_rno[0], work2, 0, 0, 2 });
 }
 
 static void advance_eff09_11000(WORK_Other* ewk, WORK* oya_ptr) {
@@ -982,7 +995,7 @@ static void initialize_eff09_21000(WORK_Other* ewk) {
         initialize_eff09_21000_winner(ewk, &arrive_x, &arrive_y);
     }
 
-    cal_all_speed_data(&ewk->wu, ewk->wu.old_rno[0], arrive_x, arrive_y, 2, 2);
+    cal_all_speed_data(&ewk->wu, &(Motion_Target) { ewk->wu.old_rno[0], arrive_x, arrive_y, 2, 2 });
 }
 
 static void advance_eff09_21000_arrival(WORK_Other* ewk) {
@@ -1000,16 +1013,35 @@ static void advance_eff09_21000_arrival(WORK_Other* ewk) {
     }
 }
 
-static void advance_eff09_21000_animation(WORK_Other* ewk) {
+/* What each of the two late animations does when it ends. */
+static void end_eff09_21000_animation(WORK_Other* ewk) {
+    ewk->wu.disp_flag = 0;
+    plw[Winner_id].wu.cmwk[0] = 1;
+}
+
+static void end_eff09_26000_transition(WORK_Other* ewk) {
+    set_char_move_init(&ewk->wu, 0, 102);
+}
+
+/* The late animation step 21000 and 26000 share: while updates are enabled,
+ * move, and when the animation has ended step the routine and do the state's own
+ * ending. They disagree on what counts as ended - any cg_type against 0xFF - and
+ * on the ending itself. */
+static void advance_eff09_late_animation(
+    WORK_Other* ewk, s32 (*animation_ended)(const WORK_Other* ewk), void (*on_end)(WORK_Other* ewk)
+) {
     if (eff09_2000_updates_enabled()) {
         char_move(&ewk->wu);
 
-        if (ewk->wu.cg_type) {
+        if (animation_ended(ewk)) {
             ewk->wu.routine_no[1]++;
-            ewk->wu.disp_flag = 0;
-            plw[Winner_id].wu.cmwk[0] = 1;
+            on_end(ewk);
         }
     }
+}
+
+static void advance_eff09_21000_animation(WORK_Other* ewk) {
+    advance_eff09_late_animation(ewk, eff09_0000_animation_ended, end_eff09_21000_animation);
 }
 
 void eff09_21000(WORK_Other* ewk) {
@@ -1063,14 +1095,7 @@ static void advance_eff09_26000_start_animation(WORK_Other* ewk, WORK* oya_ptr) 
 }
 
 static void advance_eff09_26000_transition(WORK_Other* ewk) {
-    if (eff09_2000_updates_enabled()) {
-        char_move(&ewk->wu);
-
-        if (ewk->wu.cg_type == 0xFF) {
-            ewk->wu.routine_no[1]++;
-            set_char_move_init(&ewk->wu, 0, 102);
-        }
-    }
+    advance_eff09_late_animation(ewk, eff09_8000_animation_ended, end_eff09_26000_transition);
 }
 
 static void advance_eff09_26000_parent_wait(WORK_Other* ewk, const WORK* oya_ptr) {

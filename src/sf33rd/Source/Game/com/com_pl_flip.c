@@ -75,7 +75,7 @@ static s32 Check_Shell_Flip(PLW* wk);
 static s32 Check_Flip_Attack(PLW* wk);
 
 
-void Float_3rd(PLW* wk) {
+static void Float_Guard_Lever(PLW* wk, s32 lever_type) {
     if (wk->wu.routine_no[1] != 1) {
         Next_Be_Free(wk);
     }
@@ -84,7 +84,7 @@ void Float_3rd(PLW* wk) {
     case 0:
         CP_No[wk->wu.id][2]++;
         Timer_00[wk->wu.id] = 4;
-        Lever_Pool[wk->wu.id] = Setup_Guard_Lever(wk, 0);
+        Lever_Pool[wk->wu.id] = Setup_Guard_Lever(wk, lever_type);
         Lever_Buff[wk->wu.id] = Lever_Pool[wk->wu.id];
         break;
 
@@ -99,28 +99,12 @@ void Float_3rd(PLW* wk) {
     }
 }
 
+void Float_3rd(PLW* wk) {
+    Float_Guard_Lever(wk, 0);
+}
+
 void Float_4th(PLW* wk) {
-    if (wk->wu.routine_no[1] != 1) {
-        Next_Be_Free(wk);
-    }
-
-    switch (CP_No[wk->wu.id][2]) {
-    case 0:
-        CP_No[wk->wu.id][2]++;
-        Timer_00[wk->wu.id] = 4;
-        Lever_Pool[wk->wu.id] = Setup_Guard_Lever(wk, 1);
-        Lever_Buff[wk->wu.id] = Lever_Pool[wk->wu.id];
-        break;
-
-    default:
-        if (--Timer_00[wk->wu.id] != 0) {
-            break;
-        }
-
-        Timer_00[wk->wu.id] = 3;
-        Lever_Buff[wk->wu.id] = Lever_Pool[wk->wu.id];
-        break;
-    }
+    Float_Guard_Lever(wk, 1);
 }
 
 void Flip_Zero(PLW* wk) {
@@ -198,6 +182,23 @@ void Flip_2nd(PLW* wk) {
     }
 }
 
+static void Flip_Enter_Shell_Guard(PLW* wk) {
+    CP_No[wk->wu.id][0] = 9;
+    CP_No[wk->wu.id][1] = 0;
+    CP_No[wk->wu.id][2] = 0;
+    CP_No[wk->wu.id][3] = 0;
+    Timer_00[wk->wu.id] = 10;
+    Flip_Counter[wk->wu.id] = 255;
+    dash_flag_clear(wk->wu.id);
+    Lever_Buff[wk->wu.id] = Setup_Guard_Lever(wk, 1);
+
+    if (((WORK*)wk->wu.dmg_adrs)->att.guard & 0x10) {
+        return;
+    }
+
+    Lever_Buff[wk->wu.id] |= 2;
+}
+
 void Flip_3rd(PLW* wk) {
     s16 next_disposal;
 
@@ -221,20 +222,7 @@ void Flip_3rd(PLW* wk) {
         return;
 
     case 2:
-        CP_No[wk->wu.id][0] = 9;
-        CP_No[wk->wu.id][1] = 0;
-        CP_No[wk->wu.id][2] = 0;
-        CP_No[wk->wu.id][3] = 0;
-        Timer_00[wk->wu.id] = 10;
-        Flip_Counter[wk->wu.id] = 255;
-        dash_flag_clear(wk->wu.id);
-        Lever_Buff[wk->wu.id] = Setup_Guard_Lever(wk, 1);
-
-        if (((WORK*)wk->wu.dmg_adrs)->att.guard & 0x10) {
-            break;
-        }
-
-        Lever_Buff[wk->wu.id] |= 2;
+        Flip_Enter_Shell_Guard(wk);
         break;
 
     default:
@@ -287,21 +275,8 @@ s32 SetShellFlipLever(PLW* wk) {
     return 1;
 }
 
-static s32 Check_Shell_Flip(PLW* wk) {
-    WORK* shell;
-    s32 Rnd;
-    s32 Lv;
-    s32 xx;
-    s32 res;
-
-    res = 0;
-    Flip_Counter[wk->wu.id]++;
-
-    if (Timer_01[wk->wu.id] != 8) {
-        return 0;
-    }
-
-    shell = (WORK*)wk->wu.dmg_adrs;
+static s32 Shell_Flip_Target_Rejected(WORK* shell) {
+    s32 res = 0;
 
     if (shell == NULL) {
         res = 1;
@@ -311,13 +286,51 @@ static s32 Check_Shell_Flip(PLW* wk) {
         res = 1;
     }
 
-    if (res || shell->vital_new < 256) {
-        if ((xx = Check_Shell_Another_in_Flip(wk)) == 0) {
-            if (res) {
-                return -1;
-            }
+    return res;
+}
 
-            return 0;
+static s32 Shell_Flip_None_Result(s32 res) {
+    if (res) {
+        return -1;
+    }
+
+    return 0;
+}
+
+static s32 Shell_Flip_Needs_Another(s32 res, WORK* shell) {
+    return res || shell->vital_new < 256;
+}
+
+static s32 Shell_Flip_Delay_Result(PLW* wk, s32 xx) {
+    xx -= 8;
+
+    if (xx > 0) {
+        Timer_00[wk->wu.id] = xx;
+        return 3;
+    }
+
+    return 0;
+}
+
+static s32 Check_Shell_Flip(PLW* wk) {
+    WORK* shell;
+    s32 Rnd;
+    s32 Lv;
+    s32 xx;
+    s32 res;
+
+    Flip_Counter[wk->wu.id]++;
+
+    if (Timer_01[wk->wu.id] != 8) {
+        return 0;
+    }
+
+    shell = (WORK*)wk->wu.dmg_adrs;
+    res = Shell_Flip_Target_Rejected(shell);
+
+    if (Shell_Flip_Needs_Another(res, shell)) {
+        if ((xx = Check_Shell_Another_in_Flip(wk)) == 0) {
+            return Shell_Flip_None_Result(res);
         }
 
         if (xx > 16) {
@@ -337,20 +350,15 @@ static s32 Check_Shell_Flip(PLW* wk) {
         return 2;
     }
 
-    if (Flip_Counter[wk->wu.id] < emGetMaxBlocking()) {
-        if (res == 0) {
-            return 1;
-        }
-
-        xx -= 8;
-
-        if (xx > 0) {
-            Timer_00[wk->wu.id] = xx;
-            return 3;
-        }
+    if (Flip_Counter[wk->wu.id] >= emGetMaxBlocking()) {
+        return 0;
     }
 
-    return 0;
+    if (res == 0) {
+        return 1;
+    }
+
+    return Shell_Flip_Delay_Result(wk, xx);
 }
 
 s32 Check_Flip(PLW* wk) {

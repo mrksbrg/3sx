@@ -248,6 +248,34 @@ static void halve_button_depths(s32 i, u8* kan) {
     }
 }
 
+/* What this frame's reading leaves in the pad: the buttons and sticks a pad
+ * kind the driver knows reports, or zeroes for anything else. */
+static void store_ps2_pad_state(s32 i, u8* kan) {
+switch (tarpad_root[i].kind) {
+case 1:
+case 2:
+case 4:
+case 8:
+case 16:
+case 32:
+    tarpad_root[i].sw = read_ps2_buttons(i, kan);
+
+    read_ps2_sticks(i);
+
+    ps2pad_backup[i] = ps2pad_state[i];
+    ps2pad_backup[i].ix.sw = ~ps2pad_backup[i].ix.sw;
+    break;
+
+default:
+    tarpad_root[i].sw = 0;
+    tarpad_root[i].stick[0].x = 0;
+    tarpad_root[i].stick[0].y = 0;
+    tarpad_root[i].stick[1].x = 0;
+    tarpad_root[i].stick[1].y = 0;
+    break;
+}
+}
+
 static s32 PADRead_for_PS2(s32 i) {
     u8 kan[12];
 
@@ -267,29 +295,7 @@ static s32 PADRead_for_PS2(s32 i) {
 
     ps2pad_state[i].ix.sw = ~ps2pad_state[i].ix.sw;
 
-    switch (tarpad_root[i].kind) {
-    case 1:
-    case 2:
-    case 4:
-    case 8:
-    case 16:
-    case 32:
-        tarpad_root[i].sw = read_ps2_buttons(i, kan);
-
-        read_ps2_sticks(i);
-
-        ps2pad_backup[i] = ps2pad_state[i];
-        ps2pad_backup[i].ix.sw = ~ps2pad_backup[i].ix.sw;
-        break;
-
-    default:
-        tarpad_root[i].sw = 0;
-        tarpad_root[i].stick[0].x = 0;
-        tarpad_root[i].stick[0].y = 0;
-        tarpad_root[i].stick[1].x = 0;
-        tarpad_root[i].stick[1].y = 0;
-        break;
-    }
+    store_ps2_pad_state(i, kan);
 
     return 1;
 }
@@ -506,10 +512,11 @@ static s32 identify_pad(s32 i) {
     return 1;
 }
 
-void PADReadSub(s32 i) {
+/* Whether the slot is usable this frame, and whether the pad answered. Each
+ * returns 0 where PADReadSub returned and 1 where it carried on. */
+static s32 pad_slot_stable(s32 i) {
     s32 pstate;
 
-    ps2pad_state[i] = ps2pad_backup[i];
     pstate = scePad2GetState(ps2slot[i].socket_id);
 
     switch (pstate) {
@@ -519,23 +526,41 @@ void PADReadSub(s32 i) {
 
     case scePad2StateNoLink:
         clear_pad_slot(i, 1);
-        return;
+        return 0;
 
     case scePad2StateExecCmd:
     case scePad2StateError:
     default:
         clear_pad_slot(i, 2);
-        return;
+        return 0;
     }
 
+    return 1;
+}
+
+static s32 pad_reported(s32 i) {
     if (ps2slot[i].phase == 0) {
         if (identify_pad(i) == 0) {
-            return;
+            return 0;
         }
     } else {
         if (read_pad_report(i) == 0) {
-            return;
+            return 0;
         }
+    }
+
+    return 1;
+}
+
+void PADReadSub(s32 i) {
+    ps2pad_state[i] = ps2pad_backup[i];
+
+    if (!pad_slot_stable(i)) {
+        return;
+    }
+
+    if (!pad_reported(i)) {
+        return;
     }
 
     tarpad_root[i].state = ps2slot[i].state;

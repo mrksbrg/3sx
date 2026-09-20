@@ -20,9 +20,11 @@ s32 Check_EM_Sub(s16 ix, s16 ok_urien, s16 Rnd);
 
 u8 Candidate_Buff[16];
 
-void Initialize_EM_Candidate(s16 PL_id) {
+/* The candidate ladder both entry points build: the buffer cleared, the
+ * eligible characters collected, the eight rungs filled and the mid-boss put
+ * on the ninth. The two differ in one value, the rung the fill starts at. */
+static void build_em_candidates(s16 PL_id, s16 first, s16 ok_urien) {
     s16 ix;
-    s16 ok_urien = random_16();
 
     for (ix = 0; ix < 16; ix++) {
         Candidate_Buff[ix] = 0xFF;
@@ -30,13 +32,19 @@ void Initialize_EM_Candidate(s16 PL_id) {
 
     Setup_Candidate_Buff(PL_id);
 
-    for (ix = 0; ix < 8; ix++) {
+    for (ix = first; ix < 8; ix++) {
         EM_Candidate[PL_id][0][ix] = Check_EM_Buff(ix, ok_urien);
         EM_Candidate[PL_id][1][ix] = Check_EM_Buff(ix, ok_urien);
     }
 
     EM_Candidate[PL_id][0][8] = Middle_Class_Boss_Data[My_char[PL_id]];
     EM_Candidate[PL_id][1][8] = Middle_Class_Boss_Data[My_char[PL_id]];
+}
+
+void Initialize_EM_Candidate(s16 PL_id) {
+    s16 ok_urien = random_16();
+
+    build_em_candidates(PL_id, 0, ok_urien);
 
     if (My_char[PL_id] != 0) {
         EM_Candidate[PL_id][0][9] = 0;
@@ -45,6 +53,21 @@ void Initialize_EM_Candidate(s16 PL_id) {
         EM_Candidate[PL_id][0][9] = 1;
         EM_Candidate[PL_id][1][9] = 1;
     }
+}
+
+/* The last two reasons a character is not offered: it is this character's
+ * mid-boss, or the player has already broken it. Reached only when none of the
+ * earlier tests fired, which is what falling through to them meant. */
+static s32 candidate_is_excluded_late(s16 PL_id, s16 ix) {
+    if (ix == Middle_Class_Boss_Data[My_char[PL_id]]) {
+        return 1;
+    }
+
+    if (Break_Com[PL_id][ix]) {
+        return 1;
+    }
+
+    return 0;
 }
 
 static s32 candidate_is_excluded(s16 PL_id, s16 ix) {
@@ -60,15 +83,7 @@ static s32 candidate_is_excluded(s16 PL_id, s16 ix) {
         return 1;
     }
 
-    if (ix == Middle_Class_Boss_Data[My_char[PL_id]]) {
-        return 1;
-    }
-
-    if (Break_Com[PL_id][ix]) {
-        return 1;
-    }
-
-    return 0;
+    return candidate_is_excluded_late(PL_id, ix);
 }
 
 void Setup_Candidate_Buff(s16 PL_id) {
@@ -90,16 +105,18 @@ void Setup_Candidate_Buff(s16 PL_id) {
     }
 }
 
-s16 Check_EM_Buff(s16 ix, s16 ok_urien) {
+/* Taking a slot out of the candidate buffer, the direction the scan walks in,
+ * and the step that wraps it round the sixteen slots. */
+static s16 claim_candidate(s16 Rnd) {
     s16 em;
-    s16 Rnd = random_16();
-    s16 Next;
 
-    if (Check_EM_Sub(ix, ok_urien, Rnd)) {
-        em = Candidate_Buff[Rnd];
-        Candidate_Buff[Rnd] = 0xFF;
-        return em;
-    }
+    em = Candidate_Buff[Rnd];
+    Candidate_Buff[Rnd] = 0xFF;
+    return em;
+}
+
+static s16 pick_scan_direction() {
+    s16 Next;
 
     Next = random_16() & 1;
 
@@ -107,22 +124,39 @@ s16 Check_EM_Buff(s16 ix, s16 ok_urien) {
         Next = -1;
     }
 
+    return Next;
+}
+
+static s16 next_candidate_slot(s16 Rnd, s16 Next) {
+    Rnd += Next;
+
+    if (Rnd < 0) {
+        Rnd = 15;
+    }
+
+    if (Rnd > 15) {
+        Rnd = 0;
+    }
+
+    return Rnd;
+}
+
+s16 Check_EM_Buff(s16 ix, s16 ok_urien) {
+    s16 Rnd = random_16();
+    s16 Next;
+
+    if (Check_EM_Sub(ix, ok_urien, Rnd)) {
+        return claim_candidate(Rnd);
+    }
+
+    Next = pick_scan_direction();
+
     while (1) {
         if (Check_EM_Sub(ix, ok_urien, Rnd)) {
-            em = Candidate_Buff[Rnd];
-            Candidate_Buff[Rnd] = 0xFF;
-            return em;
+            return claim_candidate(Rnd);
         }
 
-        Rnd += Next;
-
-        if (Rnd < 0) {
-            Rnd = 15;
-        }
-
-        if (Rnd > 15) {
-            Rnd = 0;
-        }
+        Rnd = next_candidate_slot(Rnd, Next);
     }
 }
 
@@ -173,7 +207,6 @@ s32 Check_EM_Sub(s16 ix, s16 ok_urien, s16 Rnd) {
 }
 
 void Check_Same_CPU(s16 PL_id) {
-    s16 ix;
     s16 ok_urien;
 
     if (VS_Index[PL_id] >= 9) {
@@ -186,17 +219,5 @@ void Check_Same_CPU(s16 PL_id) {
 
     ok_urien = random_16();
 
-    for (ix = 0; ix < 16; ix++) {
-        Candidate_Buff[ix] = 0xFF;
-    }
-
-    Setup_Candidate_Buff(PL_id);
-
-    for (ix = VS_Index[PL_id]; ix < 8; ix++) {
-        EM_Candidate[PL_id][0][ix] = Check_EM_Buff(ix, ok_urien);
-        EM_Candidate[PL_id][1][ix] = Check_EM_Buff(ix, ok_urien);
-    }
-
-    EM_Candidate[PL_id][0][8] = Middle_Class_Boss_Data[My_char[PL_id]];
-    EM_Candidate[PL_id][1][8] = Middle_Class_Boss_Data[My_char[PL_id]];
+    build_em_candidates(PL_id, VS_Index[PL_id], ok_urien);
 }

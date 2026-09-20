@@ -6,11 +6,11 @@
  * MultiTexture it is given, so the cut needed no file-scope state to move.
  */
 
-#include "sf33rd/Source/Game/rendering/mtrans.h"
-#include "sf33rd/Source/Game/rendering/mtrans_internal.h"
 #include "common.h"
 #include "sf33rd/AcrSDK/ps2/flps2render.h"
 #include "sf33rd/AcrSDK/ps2/foundaps2.h"
+#include "sf33rd/Source/Game/rendering/mtrans.h"
+#include "sf33rd/Source/Game/rendering/mtrans_internal.h"
 #include "sf33rd/Source/Game/rendering/texcash.h"
 #include "sf33rd/Source/Game/rendering/texgroup.h"
 #include "structs.h"
@@ -29,31 +29,76 @@ static bool is_first_available_pattern_slot(PatternState* mc, s32 free_index) {
     return (mc->cs.code == -1) && (free_index < 0);
 }
 
-static s32 claim_mltbuf16_slot(MultiTexture* mt, s32 b, u32 code, u32 palt) {
+/* One of the two pattern caches, as the claim sees it: where it starts, how many
+ * slots it has, the time stamp a fresh slot is given, and what the log says when
+ * there is no slot to give. */
+typedef struct {
+    MultiTexture* mt;
+    PatternState* cache;
+    s32 count;
+    s32 time;
+    const char* full_message;
+} MltbufClaimBank;
+
+/* Claiming the free slot the search found, for either cache. The bank's count
+ * and time are read at the call site, where the originals read mt->mltnum and
+ * mt->mltcshtime inside the branch; nothing runs in between. */
+static s32 claim_mltbuf_slot(const MltbufClaimBank* bank, s32 b, u32 code, u32 palt) {
     if (b >= 0) {
-        b = mt->mltnum16 - b;
-        mt->mltcsh16[b].time = mt->mltcshtime16;
-        mt->mltcsh16[b].state = palt;
-        mt->mltcsh16[b].cs.code = code;
+        b = bank->count - b;
+        bank->cache[b].time = bank->time;
+        bank->cache[b].state = palt;
+        bank->cache[b].cs.code = code;
         return b;
     }
 
-    // CG cache is full. 16x16: %d\n
-    flLogOut("ＣＧキャッシュが一杯になりました。１６×１６ : %d\n", mt->id);
+    flLogOut(bank->full_message, bank->mt->id);
     while (1) {}
 }
 
-s32 get_mltbuf16(MultiTexture* mt, u32 code, u32 palt, s32* ret) {
+static s32 claim_mltbuf16_slot(MultiTexture* mt, s32 b, u32 code, u32 palt) {
+    // CG cache is full. 16x16: %d\n
+    return claim_mltbuf_slot(
+        &(MltbufClaimBank) {
+            mt, mt->mltcsh16, mt->mltnum16, mt->mltcshtime16, "ＣＧキャッシュが一杯になりました。１６×１６ : %d\n" },
+        b,
+        code,
+        palt
+    );
+}
+
+/* One of the two multi-texture pattern caches, with everything the search needs
+ * to work it: where the cache starts, how many slots it has, the time stamp a
+ * hit refreshes to, and how a miss claims a slot. The two halves read these
+ * from mt themselves; holding them here keeps the search at four arguments. */
+typedef struct {
+    MultiTexture* mt;
+    PatternState* cache;
+    s32 count;
+    s32 time;
+    s32 (*claim_slot)(MultiTexture* mt, s32 b, u32 code, u32 palt);
+} MltbufBank;
+
+/* The search get_mltbuf16 and get_mltbuf32 share: walk the cache down from its
+ * last slot, return on a hit, remember the first free slot on the way, and
+ * claim one when the walk runs out.
+ *
+ * The bank's count and time are read once at the call site where the originals
+ * read mt->mltnum and mt->mltcshtime on each pass. Nothing between those reads
+ * writes either field - the loop calls only is_cached_pattern_state and
+ * is_first_available_pattern_slot, and the claim happens on the way out - so
+ * every read still sees the same value it saw before. */
+static s32 get_mltbuf(const MltbufBank* bank, u32 code, u32 palt, s32* ret) {
     s32 i;
     s32 b = -1;
-    PatternState* mc = mt->mltcsh16;
+    PatternState* mc = bank->cache;
 
-    i = mt->mltnum16;
+    i = bank->count;
 
     while (1) {
         if (is_cached_pattern_state(mc, code, palt)) {
-            mc->time = mt->mltcshtime16;
-            *ret = mt->mltnum16 - i;
+            mc->time = bank->time;
+            *ret = bank->count - i;
             return 0;
         }
 
@@ -65,55 +110,33 @@ s32 get_mltbuf16(MultiTexture* mt, u32 code, u32 palt, s32* ret) {
         i -= 1;
 
         if (i <= 0) {
-            *ret = claim_mltbuf16_slot(mt, b, code, palt);
+            *ret = bank->claim_slot(bank->mt, b, code, palt);
             return 1;
         }
     }
 }
 
-// The tail of get_mltbuf32's scan: take the slot the scan set aside, or hang if
-// it found none. It returns the slot rather than writing it, because the other
-// exit never comes back.
-static s32 claim_mltbuf32_slot(MultiTexture* mt, s32 b, u32 code, u32 palt) {
-    if (b >= 0) {
-        b = mt->mltnum32 - b;
-        mt->mltcsh32[b].time = mt->mltcshtime32;
-        mt->mltcsh32[b].state = palt;
-        mt->mltcsh32[b].cs.code = code;
-        return b;
-    }
+s32 get_mltbuf16(MultiTexture* mt, u32 code, u32 palt, s32* ret) {
+    return get_mltbuf(
+        &(MltbufBank) { mt, mt->mltcsh16, mt->mltnum16, mt->mltcshtime16, claim_mltbuf16_slot }, code, palt, ret
+    );
+}
 
+static s32 claim_mltbuf32_slot(MultiTexture* mt, s32 b, u32 code, u32 palt) {
     // CG cache is full. 32x32 : %d\n
-    flLogOut("ＣＧキャッシュが一杯になりました。３２×３２ : %d\n", mt->id);
-    while (1) {}
+    return claim_mltbuf_slot(
+        &(MltbufClaimBank) {
+            mt, mt->mltcsh32, mt->mltnum32, mt->mltcshtime32, "ＣＧキャッシュが一杯になりました。３２×３２ : %d\n" },
+        b,
+        code,
+        palt
+    );
 }
 
 s32 get_mltbuf32(MultiTexture* mt, u32 code, u32 palt, s32* ret) {
-    s32 i;
-    s32 b = -1;
-    PatternState* mc = mt->mltcsh32;
-
-    i = mt->mltnum32;
-
-    while (1) {
-        if (is_cached_pattern_state(mc, code, palt)) {
-            mc->time = mt->mltcshtime32;
-            *ret = mt->mltnum32 - i;
-            return 0;
-        }
-
-        if ((mc->cs.code == -1) && (b < 0)) {
-            b = i;
-        }
-
-        mc++;
-        i -= 1;
-
-        if (i <= 0) {
-            *ret = claim_mltbuf32_slot(mt, b, code, palt);
-            return 1;
-        }
-    }
+    return get_mltbuf(
+        &(MltbufBank) { mt, mt->mltcsh32, mt->mltnum32, mt->mltcshtime32, claim_mltbuf32_slot }, code, palt, ret
+    );
 }
 
 // Take the next free 16x16 slot, record the pattern in it, and note it in the
@@ -205,32 +228,42 @@ s32 get_mltbuf32_ext_2(const MltbufExtLookup* look) {
     while (1) {}
 }
 
-s32 get_mltbuf16_ext(MultiTexture* mt, u32 code, u32 palt) {
-    PatternState* mc = mt->mltcsh16;
+/* One of the two extended caches, as the lookup sees it: where it starts, how
+ * many slots the pool has in use, which slots those are, and what the log says
+ * when the pattern is not among them.
+ *
+ * The count is a pointer, not a value, because the originals re-read
+ * tpu_free->x16 on every pass of the loop. */
+typedef struct {
+    PatternState* cache;
+    const s32* count;
+    const u16* used;
+    const char* missing_message;
+} MltbufExtBank;
+
+static s32 get_mltbuf_ext(const MltbufExtBank* bank, u32 code, u32 palt) {
     s32 i;
 
-    for (i = 0; i < tpu_free->x16; i++) {
-        if ((code == mc[tpu_free->x16_used[i]].cs.code) && (palt == mc[tpu_free->x16_used[i]].state)) {
-            return tpu_free->x16_used[i];
+    for (i = 0; i < *bank->count; i++) {
+        if ((code == bank->cache[bank->used[i]].cs.code) && (palt == bank->cache[bank->used[i]].state)) {
+            return bank->used[i];
         }
     }
 
-    flLogOut("ＣＧ展開エラー　１６×１６\n");
+    flLogOut(bank->missing_message);
     while (1) {}
 }
 
+s32 get_mltbuf16_ext(MultiTexture* mt, u32 code, u32 palt) {
+    return get_mltbuf_ext(
+        &(MltbufExtBank) { mt->mltcsh16, &tpu_free->x16, tpu_free->x16_used, "ＣＧ展開エラー　１６×１６\n" }, code, palt
+    );
+}
+
 s32 get_mltbuf32_ext(MultiTexture* mt, u32 code, u32 palt) {
-    PatternState* mc = mt->mltcsh32;
-    s32 i;
-
-    for (i = 0; i < tpu_free->x32; i++) {
-        if ((code == mc[tpu_free->x32_used[i]].cs.code) && (palt == mc[tpu_free->x32_used[i]].state)) {
-            return tpu_free->x32_used[i];
-        }
-    }
-
-    flLogOut("ＣＧ展開エラー　３２×３２\n");
-    while (1) {}
+    return get_mltbuf_ext(
+        &(MltbufExtBank) { mt->mltcsh32, &tpu_free->x32, tpu_free->x32_used, "ＣＧ展開エラー　３２×３２\n" }, code, palt
+    );
 }
 
 u16 x16_mapping_set(PatternMap* map, s32 code) {
@@ -259,11 +292,6 @@ u16 x32_mapping_set(PatternMap* map, s32 code) {
 
     return flg;
 }
-
-
-
-
-
 
 s16 check_patcash_ex_trans(PatternCollection* padr, u32 cg) {
     s16 rnum = -1;

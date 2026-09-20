@@ -469,6 +469,28 @@ static s16 Check_Hamari(PLW* wk) {
     return VS_Tech[wk->wu.id] = 32;
 }
 
+/* The frame the shell guard ends on: the reasons the guard is dropped, and the
+ * timer that holds it for one more frame otherwise. */
+static void End_Guard_VS_Shell(PLW* wk, WORK_Other* tmw) {
+    if (wk->player_number != 18) {
+        if (wk->wu.routine_no[1] != 1) {
+            Exit_Damage_Sub(wk);
+        }
+    } else if (Check_No12_Shell_Guard(wk, tmw) != 0) {
+        Exit_Damage_Sub(wk);
+    }
+
+    if (tmw->wu.routine_no[0] == 2) {
+        Exit_Damage_Sub(wk);
+    }
+
+    if (tmw->wu.id != 13) {
+        Exit_Damage_Sub(wk);
+    }
+
+    Timer_00[wk->wu.id] = 1;
+}
+
 void Com_Guard_VS_Shell(PLW* wk) {
     WORK_Other* tmw;
 
@@ -485,47 +507,44 @@ void Com_Guard_VS_Shell(PLW* wk) {
     Check_Guard_Type(wk, &tmw->wu);
 
     if (Timer_00[wk->wu.id] == 0) {
-        if (wk->player_number != 18) {
-            if (wk->wu.routine_no[1] != 1) {
-                Exit_Damage_Sub(wk);
-            }
-        } else if (Check_No12_Shell_Guard(wk, tmw) != 0) {
-            Exit_Damage_Sub(wk);
-        }
-
-        if (tmw->wu.routine_no[0] == 2) {
-            Exit_Damage_Sub(wk);
-        }
-
-        if (tmw->wu.id != 13) {
-            Exit_Damage_Sub(wk);
-        }
-
-        Timer_00[wk->wu.id] = 1;
+        End_Guard_VS_Shell(wk, tmw);
         return;
     }
 
     Timer_00[wk->wu.id]--;
 }
 
-static s32 Check_No12_Shell_Guard(PLW* wk, WORK_Other* tmw) {
+static s32 Shell_Past_Left_Guard(PLW* wk, WORK_Other* tmw) {
     s16 pos_x;
 
-    if (wk->wu.rl_flag) {
-        pos_x = wk->wu.xyz[0].disp.pos - 48;
+    pos_x = wk->wu.xyz[0].disp.pos - 48;
 
-        if (tmw->wu.xyz[0].disp.pos < pos_x) {
-            return 1;
-        }
-    } else {
-        pos_x = wk->wu.xyz[0].disp.pos + 48;
-
-        if (tmw->wu.xyz[0].disp.pos > pos_x) {
-            return 1;
-        }
+    if (tmw->wu.xyz[0].disp.pos < pos_x) {
+        return 1;
     }
 
     return 0;
+}
+
+static s32 Shell_Past_Right_Guard(PLW* wk, WORK_Other* tmw) {
+    s16 pos_x;
+
+    pos_x = wk->wu.xyz[0].disp.pos + 48;
+
+    if (tmw->wu.xyz[0].disp.pos > pos_x) {
+        return 1;
+    }
+
+    return 0;
+}
+
+static s32 Check_No12_Shell_Guard(PLW* wk, WORK_Other* tmw) {
+
+    if (wk->wu.rl_flag) {
+        return Shell_Past_Left_Guard(wk, tmw);
+    }
+
+    return Shell_Past_Right_Guard(wk, tmw);
 }
 
 void Check_Guard_Type(PLW* wk, WORK* em) {
@@ -775,6 +794,21 @@ static void setup_rapid_escape_timers(PLW* wk) {
     Timer_01[wk->wu.id] = Rapid_Exit_Data[emLevelRemake(Lv, 8, 0)][(Rnd = random_16_com() & 7)];
 }
 
+/* Waiting out a throw: freed, damaged, or mashing to escape. */
+static void Wait_Caught_Release(PLW* wk) {
+    if (wk->wu.routine_no[1] != 3) {
+        if (wk->wu.routine_no[1] == 0) {
+            Next_Be_Free(wk);
+            return;
+        }
+
+        Check_Damage(wk);
+        return;
+    }
+
+    Lever_Buff[wk->wu.id] = Com_Rapid_Sub(wk, 0xFF0, &CP_No[wk->wu.id][2]);
+}
+
 void Com_Caught(PLW* wk) {
     WORK* em = (WORK*)wk->wu.target_adrs;
 
@@ -793,17 +827,7 @@ void Com_Caught(PLW* wk) {
         break;
 
     case 1:
-        if (wk->wu.routine_no[1] != 3) {
-            if (wk->wu.routine_no[1] == 0) {
-                Next_Be_Free(wk);
-                break;
-            }
-
-            Check_Damage(wk);
-            break;
-        }
-
-        Lever_Buff[wk->wu.id] = Com_Rapid_Sub(wk, 0xFF0, &CP_No[wk->wu.id][2]);
+        Wait_Caught_Release(wk);
         break;
     }
 }
@@ -1079,28 +1103,37 @@ void Check_Store_Lv(PLW* wk) {
     }
 }
 
+static void Store_LR_Facing_Left(PLW* wk) {
+    if (Lever_Buff[wk->wu.id] & 8) {
+        Lever_Store[wk->wu.id][1]++;
+        Lever_Store[wk->wu.id][2] = 0;
+    }
+
+    if (Lever_Buff[wk->wu.id] & 4) {
+        Lever_Store[wk->wu.id][1] = 0;
+        Lever_Store[wk->wu.id][2]++;
+    }
+}
+
+static void Store_LR_Facing_Right(PLW* wk) {
+    if (Lever_Buff[wk->wu.id] & 4) {
+        Lever_Store[wk->wu.id][1]++;
+        Lever_Store[wk->wu.id][2] = 0;
+    }
+
+    if (Lever_Buff[wk->wu.id] & 8) {
+        Lever_Store[wk->wu.id][1] = 0;
+        Lever_Store[wk->wu.id][2]++;
+    }
+}
+
 void Store_LR_Sub(PLW* wk) {
     if (wk->wu.rl_waza) {
-        if (Lever_Buff[wk->wu.id] & 8) {
-            Lever_Store[wk->wu.id][1]++;
-            Lever_Store[wk->wu.id][2] = 0;
-        }
-
-        if (Lever_Buff[wk->wu.id] & 4) {
-            Lever_Store[wk->wu.id][1] = 0;
-            Lever_Store[wk->wu.id][2]++;
-        }
-    } else {
-        if (Lever_Buff[wk->wu.id] & 4) {
-            Lever_Store[wk->wu.id][1]++;
-            Lever_Store[wk->wu.id][2] = 0;
-        }
-
-        if (Lever_Buff[wk->wu.id] & 8) {
-            Lever_Store[wk->wu.id][1] = 0;
-            Lever_Store[wk->wu.id][2]++;
-        }
+        Store_LR_Facing_Left(wk);
+        return;
     }
+
+    Store_LR_Facing_Right(wk);
 }
 
 void Setup_Bullet_Counter(PLW* wk) {

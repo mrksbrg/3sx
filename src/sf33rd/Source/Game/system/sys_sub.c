@@ -82,6 +82,19 @@ s32 Switch_Screen_Revival(u8 Wipe_Type) {
     return 0;
 }
 
+/* One button's contribution to the converted pad word: where the switch is
+ * held, the shot slot it is bound to names a Convert_Data row. Eight buttons
+ * differ in two values, the switch mask and the slot, both written out at the
+ * call site. The slot read is a plain load from a global and cannot trap, so
+ * evaluating it whether or not the bit is set is the same program. */
+static u16 add_shot_mapping(u16 answer, u16 sw, u16 mask, u8 shot) {
+    if (sw & mask) {
+        answer |= Convert_Data[shot];
+    }
+
+    return answer;
+}
+
 u16 Convert_User_Setting(s16 PL_id) {
     u16 sw;
     u16 answer;
@@ -94,37 +107,14 @@ u16 Convert_User_Setting(s16 PL_id) {
 
     answer = sw & (SWK_DIRECTIONS | SWK_START);
 
-    if (sw & SWK_WEST) {
-        answer |= Convert_Data[save_w[Present_Mode].Pad_Infor[PL_id].Shot[0]];
-    }
-
-    if (sw & SWK_NORTH) {
-        answer |= Convert_Data[save_w[Present_Mode].Pad_Infor[PL_id].Shot[1]];
-    }
-
-    if (sw & SWK_RIGHT_SHOULDER) {
-        answer |= Convert_Data[save_w[Present_Mode].Pad_Infor[PL_id].Shot[2]];
-    }
-
-    if (sw & SWK_LEFT_SHOULDER) {
-        answer |= Convert_Data[save_w[Present_Mode].Pad_Infor[PL_id].Shot[3]];
-    }
-
-    if (sw & SWK_SOUTH) {
-        answer |= Convert_Data[save_w[Present_Mode].Pad_Infor[PL_id].Shot[4]];
-    }
-
-    if (sw & SWK_EAST) {
-        answer |= Convert_Data[save_w[Present_Mode].Pad_Infor[PL_id].Shot[5]];
-    }
-
-    if (sw & SWK_RIGHT_TRIGGER) {
-        answer |= Convert_Data[save_w[Present_Mode].Pad_Infor[PL_id].Shot[6]];
-    }
-
-    if (sw & SWK_LEFT_TRIGGER) {
-        answer |= Convert_Data[save_w[Present_Mode].Pad_Infor[PL_id].Shot[7]];
-    }
+    answer = add_shot_mapping(answer, sw, SWK_WEST, save_w[Present_Mode].Pad_Infor[PL_id].Shot[0]);
+    answer = add_shot_mapping(answer, sw, SWK_NORTH, save_w[Present_Mode].Pad_Infor[PL_id].Shot[1]);
+    answer = add_shot_mapping(answer, sw, SWK_RIGHT_SHOULDER, save_w[Present_Mode].Pad_Infor[PL_id].Shot[2]);
+    answer = add_shot_mapping(answer, sw, SWK_LEFT_SHOULDER, save_w[Present_Mode].Pad_Infor[PL_id].Shot[3]);
+    answer = add_shot_mapping(answer, sw, SWK_SOUTH, save_w[Present_Mode].Pad_Infor[PL_id].Shot[4]);
+    answer = add_shot_mapping(answer, sw, SWK_EAST, save_w[Present_Mode].Pad_Infor[PL_id].Shot[5]);
+    answer = add_shot_mapping(answer, sw, SWK_RIGHT_TRIGGER, save_w[Present_Mode].Pad_Infor[PL_id].Shot[6]);
+    answer = add_shot_mapping(answer, sw, SWK_LEFT_TRIGGER, save_w[Present_Mode].Pad_Infor[PL_id].Shot[7]);
 
     return answer;
 }
@@ -318,6 +308,15 @@ void Score_Sub() {
     }
 }
 
+/* Which screen column a side's win record is drawn in. */
+static s16 win_record_column(s16 PL_id) {
+    if (PL_id == 0) {
+        return 5;
+    }
+
+    return 43;
+}
+
 static void disp_arcade_win_record() {
     s16 PL_id;
     s16 zz;
@@ -338,12 +337,7 @@ static void disp_arcade_win_record() {
         return;
     } else {
         PL_id = Player_id;
-
-        if (Player_id == 0) {
-            zz = 5;
-        } else {
-            zz = 43;
-        }
+        zz = win_record_column(Player_id);
     }
 
     Disp_Win_Record_Sub(Win_Record[PL_id], zz);
@@ -483,12 +477,41 @@ void Clear_Disp_Ranking(s16 PL_id) {
     }
 }
 
+/* The run a melt record asks for: s_cnt zeroes, or s_cnt words copied from
+ * s_len back in the output. Returns the write pointer where it stopped. */
+static u16* meltw_fill_zeroes(u16* d, u32 s_cnt) {
+    do {
+        *d++ = 0;
+    } while (--s_cnt);
+
+    return d;
+}
+
+static u16* meltw_copy_back(u16* d, u32 s_len, u32 s_cnt) {
+    u16* s_ptr;
+
+    s_ptr = d - s_len;
+
+    do {
+        *d++ = *s_ptr++;
+    } while (--s_cnt);
+
+    return d;
+}
+
+static u16* meltw_write_run(u16* d, u32 s_len, u32 s_cnt) {
+    if (s_len == 0) {
+        return meltw_fill_zeroes(d, s_cnt);
+    }
+
+    return meltw_copy_back(d, s_len, s_cnt);
+}
+
 void Meltw(u16* s, u16* d, s32 file_ptr) {
     s32 flag;
     s32 i;
     u32 s_cnt;
     u32 s_len;
-    u16* s_ptr;
 
     while (1) {
         flag = *s++ * 0x10000;
@@ -515,17 +538,7 @@ void Meltw(u16* s, u16* d, s32 file_ptr) {
                     return;
                 }
 
-                if (s_len == 0) {
-                    do {
-                        *d++ = 0;
-                    } while (--s_cnt);
-                } else {
-                    s_ptr = d - s_len;
-
-                    do {
-                        *d++ = *s_ptr++;
-                    } while (--s_cnt);
-                }
+                d = meltw_write_run(d, s_len, s_cnt);
             }
 
             flag <<= 1;
@@ -1124,7 +1137,9 @@ void Copy_Key_Disp_Work() {
     Convert_Buff[1][1][8] = save_w[1].Pad_Infor[1].Vibration;
 }
 
-s32 Check_Extra_Setting() {
+/* The part of each extra-option page past the one the player can reach is
+ * taken from the live settings before the comparison. */
+static void copy_hidden_extra_options() {
     s16 ix;
     s16 page;
 
@@ -1133,6 +1148,13 @@ s32 Check_Extra_Setting() {
             save_w[1].extra_option.contents[page][ix] = save_w[0].extra_option.contents[page][ix];
         }
     }
+}
+
+s32 Check_Extra_Setting() {
+    s16 ix;
+    s16 page;
+
+    copy_hidden_extra_options();
 
     for (page = 0; page < 4; page++) {
         for (ix = 0; ix < 4; ix++) {

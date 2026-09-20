@@ -34,11 +34,40 @@ void WipeInit() {
     WipeLimit = 0;
 }
 
+/* The wipe-out's two directions: bands closing up the screen, and bands
+ * sweeping across it. Each owns its counter and writes only the caller's quad. */
+static void wipe_out_vertical(PAL_CURSOR* wipe_pc, PAL_CURSOR_P* wipe_p, s32 dmylim) {
+    s32 i;
+
+    wipe_p[0].x = wipe_p[2].x = 0.0f;
+    wipe_p[1].x = wipe_p[3].x = 384.0f;
+
+    for (i = 224; i > 0; i -= 8) {
+        wipe_p[0].y = wipe_p[1].y = i;
+        wipe_p[2].y = wipe_p[3].y = (i - (dmylim + 1));
+        njDrawPolygon2D(wipe_pc, 4, PrioBase[0], 32);
+    }
+}
+
+static void wipe_out_horizontal(PAL_CURSOR* wipe_pc, PAL_CURSOR_P* wipe_p, s32 dmylim) {
+    s32 i;
+
+    wipe_p[0].y = wipe_p[1].y = 0.0f;
+    wipe_p[2].y = wipe_p[3].y = 224.0f;
+
+    for (i = -224; i < 384; i += 8) {
+        wipe_p[0].x = i;
+        wipe_p[1].x = (i + dmylim + 1);
+        wipe_p[2].x = 224.0f + wipe_p[0].x;
+        wipe_p[3].x = 224.0f + wipe_p[1].x;
+        njDrawPolygon2D(wipe_pc, 4, PrioBase[0], 32);
+    }
+}
+
 static void draw_wipe_out(u8 type) {
     PAL_CURSOR wipe_pc;
     PAL_CURSOR_P wipe_p[4];
     PAL_CURSOR_COL wipe_col[4];
-    s32 i;
     s32 dmylim;
 
     if (WipeLimit > 7) {
@@ -54,25 +83,9 @@ static void draw_wipe_out(u8 type) {
     wipe_col[0].color = wipe_col[1].color = wipe_col[2].color = wipe_col[3].color = 0xFF000000;
 
     if (type == 0) {
-        wipe_p[0].x = wipe_p[2].x = 0.0f;
-        wipe_p[1].x = wipe_p[3].x = 384.0f;
-
-        for (i = 224; i > 0; i -= 8) {
-            wipe_p[0].y = wipe_p[1].y = i;
-            wipe_p[2].y = wipe_p[3].y = (i - (dmylim + 1));
-            njDrawPolygon2D(&wipe_pc, 4, PrioBase[0], 32);
-        }
+        wipe_out_vertical(&wipe_pc, wipe_p, dmylim);
     } else if (WipeLimit != 8) {
-        wipe_p[0].y = wipe_p[1].y = 0.0f;
-        wipe_p[2].y = wipe_p[3].y = 224.0f;
-
-        for (i = -224; i < 384; i += 8) {
-            wipe_p[0].x = i;
-            wipe_p[1].x = (i + dmylim + 1);
-            wipe_p[2].x = 224.0f + wipe_p[0].x;
-            wipe_p[3].x = 224.0f + wipe_p[1].x;
-            njDrawPolygon2D(&wipe_pc, 4, PrioBase[0], 32);
-        }
+        wipe_out_horizontal(&wipe_pc, wipe_p, dmylim);
     }
 }
 
@@ -138,12 +151,24 @@ void FadeInit() {
     FadeLimit = 1;
 }
 
+/* The full-screen quad the fades, the tone-down and the panel all draw: the
+ * four corners from Fade_Pos_tbl and one colour on every vertex. The four
+ * differ in nothing but that colour. */
+static void fill_fade_quad(PAL_CURSOR_P* p, PAL_CURSOR_COL* col, u32 color) {
+    u8 i;
+
+    for (i = 0; i < 4; i++) {
+        p[i].x = Fade_Pos_tbl[i * 2];
+        p[i].y = Fade_Pos_tbl[i * 2 + 1];
+        col[i].color = color;
+    }
+}
+
 s32 FadeOut(u8 type, u8 step, u8 priority) {
     PAL_CURSOR fade_pc;
     PAL_CURSOR_P fade_p[4];
     PAL_CURSOR_COL fade_col[4];
     u32 Alpha;
-    u8 i;
     u8 flag;
 
     Alpha = 0xFF000000;
@@ -168,11 +193,7 @@ s32 FadeOut(u8 type, u8 step, u8 priority) {
         Alpha |= 0x00FFFFFF;
     }
 
-    for (i = 0; i < 4; i++) {
-        fade_p[i].x = Fade_Pos_tbl[i * 2];
-        fade_p[i].y = Fade_Pos_tbl[i * 2 + 1];
-        fade_col[i].color = Alpha;
-    }
+    fill_fade_quad(fade_p, fade_col, Alpha);
 
     njDrawPolygon2D(&fade_pc, 4, PrioBase[priority], 0x60);
 
@@ -189,7 +210,6 @@ s32 FadeIn(u8 type, u8 step, u8 priority) {
     PAL_CURSOR_P fade_p[4];
     PAL_CURSOR_COL fade_col[4];
     u32 Alpha;
-    u8 i;
     u8 flag;
 
     Alpha = 0;
@@ -210,11 +230,7 @@ s32 FadeIn(u8 type, u8 step, u8 priority) {
         Alpha |= 0x00FFFFFF;
     }
 
-    for (i = 0; i < 4; i++) {
-        fade_p[i].x = Fade_Pos_tbl[i * 2];
-        fade_p[i].y = Fade_Pos_tbl[i * 2 + 1];
-        fade_col[i].color = Alpha;
-    }
+    fill_fade_quad(fade_p, fade_col, Alpha);
 
     if (!No_Trans) {
         njDrawPolygon2D(&fade_pc, 4, PrioBase[priority], 0x60);
@@ -228,53 +244,40 @@ s32 FadeIn(u8 type, u8 step, u8 priority) {
     return 0;
 }
 
-void ToneDown(u8 tone, u8 priority) {
-    PAL_CURSOR tone_pc;
-    PAL_CURSOR_P tone_p[4];
-    PAL_CURSOR_COL tone_col[4];
-    u8 i;
+/* The run ToneDown and overwrite_panel share, from the blending mode to the
+ * draw. Only the colour differs inside it; overwrite_panel's own
+ * ppgSetupCurrentDataList stays at its call site. */
+static void draw_full_screen_quad(u32 color, u8 priority) {
+    PAL_CURSOR quad_pc;
+    PAL_CURSOR_P quad_p[4];
+    PAL_CURSOR_COL quad_col[4];
 
+    njColorBlendingMode(0, 1);
+    quad_pc.p = quad_p;
+    quad_pc.col = quad_col;
+    quad_pc.num = 4;
+
+    fill_fade_quad(quad_p, quad_col, color);
+
+    njDrawPolygon2D(&quad_pc, 4, PrioBase[priority], 0x60);
+}
+
+void ToneDown(u8 tone, u8 priority) {
     if (No_Trans) {
         return;
     }
 
-    njColorBlendingMode(0, 1);
-    tone_pc.p = tone_p;
-    tone_pc.col = tone_col;
-    tone_pc.num = 4;
-
-    for (i = 0; i < 4; i++) {
-        tone_p[i].x = Fade_Pos_tbl[i * 2];
-        tone_p[i].y = Fade_Pos_tbl[i * 2 + 1];
-        tone_col[i].color = tone << 24;
-    }
-
-    njDrawPolygon2D(&tone_pc, 4, PrioBase[priority], 0x60);
+    draw_full_screen_quad(tone << 24, priority);
 }
 
 void overwrite_panel(u32 color, u8 priority) {
-    PAL_CURSOR panel_pc;
-    PAL_CURSOR_P panel_p[4];
-    PAL_CURSOR_COL panel_col[4];
-    u8 i;
-
     if (No_Trans) {
         return;
     }
 
     ppgSetupCurrentDataList(&ppgScrList);
-    njColorBlendingMode(0, 1);
-    panel_pc.p = panel_p;
-    panel_pc.col = panel_col;
-    panel_pc.num = 4;
 
-    for (i = 0; i < 4; i++) {
-        panel_p[i].x = Fade_Pos_tbl[i * 2];
-        panel_p[i].y = Fade_Pos_tbl[(i * 2) + 1];
-        panel_col[i].color = color;
-    }
-
-    njDrawPolygon2D(&panel_pc, 4, PrioBase[priority], 0x60);
+    draw_full_screen_quad(color, priority);
 }
 
 void fade_cont_init() {

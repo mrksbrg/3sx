@@ -200,19 +200,31 @@ static void cleanup() {
 }
 
 #if DEBUG && IMGUI
+/* The debug window's own key: backtick, pressed, and not an auto-repeat.
+ * Copied operand for operand. */
+static bool is_debug_toggle_press(const SDL_KeyboardEvent* event) {
+    return (event->key == SDLK_GRAVE) && event->down && !event->repeat;
+}
+
 static void toggle_debug_window_visibility(SDL_KeyboardEvent* event) {
-    if ((event->key == SDLK_GRAVE) && event->down && !event->repeat) {
+    if (is_debug_toggle_press(event)) {
         ImGuiW_ToggleVisivility();
     }
 }
 #endif
+
+/* Key events the fullscreen toggle passes over: the wrong key, a release, or
+ * an auto-repeat. Copied operand for operand. */
+static bool fullscreen_toggle_ignored(bool correct_key, const SDL_KeyboardEvent* event) {
+    return !correct_key || !event->down || event->repeat;
+}
 
 static void handle_fullscreen_toggle(SDL_KeyboardEvent* event) {
     const bool is_alt_enter = (event->key == SDLK_RETURN) && (event->mod & SDL_KMOD_ALT);
     const bool is_f11 = (event->key == SDLK_F11);
     const bool correct_key = (is_alt_enter || is_f11);
 
-    if (!correct_key || !event->down || event->repeat) {
+    if (fullscreen_toggle_ignored(correct_key, event)) {
         return;
     }
 
@@ -238,6 +250,22 @@ static void hide_cursor_if_needed() {
     }
 }
 
+/* The events that are not input, reached from handle_event's new default.
+ * Both case labels are the original ones, handle_event had no default of its
+ * own, and returning true is what falling out of its switch meant. */
+static bool handle_window_event(const SDL_Event* event) {
+    switch (event->type) {
+    case SDL_EVENT_MOUSE_MOTION:
+        handle_mouse_motion();
+        break;
+
+    case SDL_EVENT_QUIT:
+        return false;
+    }
+
+    return true;
+}
+
 static bool handle_event(const SDL_Event* event) {
 #if DEBUG && IMGUI
     ImGuiW_ProcessEvent(event);
@@ -260,12 +288,8 @@ static bool handle_event(const SDL_Event* event) {
         handle_fullscreen_toggle(&event->key);
         break;
 
-    case SDL_EVENT_MOUSE_MOTION:
-        handle_mouse_motion();
-        break;
-
-    case SDL_EVENT_QUIT:
-        return false;
+    default:
+        return handle_window_event(event);
     }
 
     return true;

@@ -4,9 +4,9 @@
  */
 
 #include "sf33rd/Source/Game/effect/eff13_tengu.h"
-#include "sf33rd/Source/Game/effect/eff13_internal.h"
 #include "common.h"
 #include "sf33rd/Source/Game/effect/eff00.h"
+#include "sf33rd/Source/Game/effect/eff13_internal.h"
 #include "sf33rd/Source/Game/effect/eff96.h"
 #include "sf33rd/Source/Game/effect/effect.h"
 #include "sf33rd/Source/Game/effect/effi9.h"
@@ -57,7 +57,7 @@ static void update_tengu_home_phase(WORK_Other* ewk, TAMA* twk, PLW* mwk) {
     if (ewk->wu.dir_step > 8) {
         ewk->wu.routine_no[2] = 1;
         ewk->wu.dir_timer = 8;
-        cal_all_speed_data(&ewk->wu, ewk->wu.dir_timer, ewk->wu.dmcal_m, ewk->wu.dmcal_d, 2, 2);
+        cal_all_speed_data(&ewk->wu, &(Motion_Target) { ewk->wu.dir_timer, ewk->wu.dmcal_m, ewk->wu.dmcal_d, 2, 2 });
     }
 }
 
@@ -79,7 +79,7 @@ static void update_tengu_return_phase(WORK_Other* ewk, TAMA* twk, PLW* mwk) {
         ewk->wu.att_hit_ok = 0;
         ewk->wu.dir_timer = twk->hos_x;
         set_tengu_my_home(&ewk->wu, &mwk->wu);
-        cal_all_speed_data(&ewk->wu, ewk->wu.dir_timer, ewk->wu.dmcal_m, ewk->wu.dmcal_d, 2, 2);
+        cal_all_speed_data(&ewk->wu, &(Motion_Target) { ewk->wu.dir_timer, ewk->wu.dmcal_m, ewk->wu.dmcal_d, 2, 2 });
     }
 }
 
@@ -91,10 +91,12 @@ static void update_tengu_routine(WORK_Other* ewk, TAMA* twk, PLW* mwk) {
         ewk->wu.dir_timer = twk->data00;
         ewk->wu.mvxy.d[0].sp = 0;
         ewk->wu.mvxy.d[1].sp = -0x7000;
-        cal_initial_speed(&ewk->wu,
-                          ewk->wu.dir_timer,
-                          mwk->wu.xyz[0].disp.pos + ewk->wu.old_pos[0],
-                          mwk->wu.xyz[1].disp.pos + ewk->wu.old_pos[1]);
+        cal_initial_speed(
+            &ewk->wu,
+            ewk->wu.dir_timer,
+            mwk->wu.xyz[0].disp.pos + ewk->wu.old_pos[0],
+            mwk->wu.xyz[1].disp.pos + ewk->wu.old_pos[1]
+        );
         break;
 
     case 1:
@@ -208,7 +210,7 @@ void make_speed_xy_att(WORK* ewk, WORK* mwk, u8 xsw, u8 ysw) {
     s16 ay;
 
     get_target_att_position(mwk, &ax, &ay);
-    cal_all_speed_data(ewk, ewk->dir_timer, ax, ay, xsw, ysw);
+    cal_all_speed_data(ewk, &(Motion_Target) { ewk->dir_timer, ax, ay, xsw, ysw });
 }
 
 void make_speed_xy_back(WORK* ewk, WORK* mwk, TAMA* twk) {

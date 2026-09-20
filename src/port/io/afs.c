@@ -52,25 +52,34 @@ static void _log(const char* fmt, ...) {
     va_end(args);
 }
 
-static bool is_valid_attribute_data(Uint32 attributes_offset, Uint32 attributes_size, Sint64 file_size,
-                                    Uint32 entries_end_offset, Uint32 entry_count) {
-    if ((attributes_offset == 0) || (attributes_size == 0)) {
+/* The five values is_valid_attribute_data weighs, in the order and with the
+ * types its parameter list had them. */
+typedef struct {
+    Uint32 attributes_offset;
+    Uint32 attributes_size;
+    Sint64 file_size;
+    Uint32 entries_end_offset;
+    Uint32 entry_count;
+} AfsAttributeSpan;
+
+static bool is_valid_attribute_data(const AfsAttributeSpan* a) {
+    if ((a->attributes_offset == 0) || (a->attributes_size == 0)) {
         return false;
     }
 
-    if (attributes_size > (file_size - entries_end_offset)) {
+    if (a->attributes_size > (a->file_size - a->entries_end_offset)) {
         return false;
     }
 
-    if (attributes_size < (entry_count * AFS_ATTRIBUTE_ENTRY_SIZE)) {
+    if (a->attributes_size < (a->entry_count * AFS_ATTRIBUTE_ENTRY_SIZE)) {
         return false;
     }
 
-    if (attributes_offset < entries_end_offset) {
+    if (a->attributes_offset < a->entries_end_offset) {
         return false;
     }
 
-    if (attributes_offset > (file_size - attributes_size)) {
+    if (a->attributes_offset > (a->file_size - a->attributes_size)) {
         return false;
     }
 
@@ -84,6 +93,21 @@ static void read_string(SDL_IOStream* src, char* dst) {
         SDL_ReadS8(src, &c);
         *dst++ = c;
     } while (c != '\0');
+}
+
+/* Each entry's name, where the archive carries an attribute table and the entry
+ * is present. */
+static void read_afs_entry_names(SDL_IOStream* io, bool has_attributes, Uint32 attributes_offset) {
+    for (int i = 0; i < afs.entry_count; i++) {
+        AFSEntry* entry = &afs.entries[i];
+
+        if ((entry->offset != 0) && has_attributes) {
+            SDL_SeekIO(io, attributes_offset + i * AFS_ATTRIBUTE_ENTRY_SIZE, SDL_IO_SEEK_SET);
+            read_string(io, entry->name);
+        } else {
+            SDL_zeroa(entry->name);
+        }
+    }
 }
 
 static bool init_afs(const char* file_path) {
@@ -135,8 +159,8 @@ static bool init_afs(const char* file_path) {
     SDL_ReadU32LE(io, &attributes_offset);
     SDL_ReadU32LE(io, &attributes_size);
 
-    if (is_valid_attribute_data(
-            attributes_offset, attributes_size, SDL_GetIOSize(io), entries_end_offset, afs.entry_count)) {
+    if (is_valid_attribute_data(&(AfsAttributeSpan){
+                attributes_offset, attributes_size, SDL_GetIOSize(io), entries_end_offset, afs.entry_count })) {
         has_attributes = true;
     } else {
         SDL_SeekIO(io, entries_start_offset - AFS_ATTRIBUTE_HEADER_SIZE, SDL_IO_SEEK_SET);
@@ -144,22 +168,13 @@ static bool init_afs(const char* file_path) {
         SDL_ReadU32LE(io, &attributes_offset);
         SDL_ReadU32LE(io, &attributes_size);
 
-        if (is_valid_attribute_data(
-                attributes_offset, attributes_size, SDL_GetIOSize(io), entries_end_offset, afs.entry_count)) {
+        if (is_valid_attribute_data(&(AfsAttributeSpan){
+                    attributes_offset, attributes_size, SDL_GetIOSize(io), entries_end_offset, afs.entry_count })) {
             has_attributes = true;
         }
     }
 
-    for (int i = 0; i < afs.entry_count; i++) {
-        AFSEntry* entry = &afs.entries[i];
-
-        if ((entry->offset != 0) && has_attributes) {
-            SDL_SeekIO(io, attributes_offset + i * AFS_ATTRIBUTE_ENTRY_SIZE, SDL_IO_SEEK_SET);
-            read_string(io, entry->name);
-        } else {
-            SDL_zeroa(entry->name);
-        }
-    }
+    read_afs_entry_names(io, has_attributes, attributes_offset);
 
     stream = io;
     return true;
@@ -224,7 +239,8 @@ static void read_into_request(ReadRequest* request, size_t max_read) {
     }
 }
 
-void AFS_RunServer() {
+/* How many reads are in flight this frame, and one chunk for each of them. */
+static int count_running_requests() {
     int running_requests = 0;
 
     for (int i = 0; i < arrlen(requests); i++) {
@@ -233,12 +249,10 @@ void AFS_RunServer() {
         }
     }
 
-    if (running_requests <= 0) {
-        return;
-    }
+    return running_requests;
+}
 
-    const size_t max_read_per_request = _read_chunk_size / running_requests;
-
+static void run_pending_requests(size_t max_read_per_request) {
     for (int i = 0; i < arrlen(requests); i++) {
         ReadRequest* request = &requests[i];
 
@@ -248,6 +262,18 @@ void AFS_RunServer() {
 
         read_into_request(request, max_read_per_request);
     }
+}
+
+void AFS_RunServer() {
+    const int running_requests = count_running_requests();
+
+    if (running_requests <= 0) {
+        return;
+    }
+
+    const size_t max_read_per_request = _read_chunk_size / running_requests;
+
+    run_pending_requests(max_read_per_request);
 }
 
 AFSHandle AFS_Open(size_t file_num) {

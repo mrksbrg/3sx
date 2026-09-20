@@ -6,7 +6,6 @@
  * pls00.c, which still owns the dispatch tables.
  */
 
-#include "sf33rd/Source/Game/engine/pls00.h"
 #include "arcade/arcade_balance.h"
 #include "common.h"
 #include "constants.h"
@@ -15,10 +14,11 @@
 #include "sf33rd/Source/Game/engine/charset.h"
 #include "sf33rd/Source/Game/engine/plcnt.h"
 #include "sf33rd/Source/Game/engine/plpdm.h"
+#include "sf33rd/Source/Game/engine/pls00.h"
+#include "sf33rd/Source/Game/engine/pls00_internal.h"
 #include "sf33rd/Source/Game/engine/pls01.h"
 #include "sf33rd/Source/Game/engine/pls03.h"
 #include "sf33rd/Source/Game/system/sysdir.h"
-#include "sf33rd/Source/Game/engine/pls00_internal.h"
 
 /* The end-of-animation marker sends the state back to standing. Three states
  * wrote this out; the 0/1 protocol is Recipe C's for a run that ends in a
@@ -58,42 +58,139 @@ void nm_00000(PLW* /* unused */) { // 🟢
     // Do nothing
 }
 
-void nm_01000(PLW* wk) { // 🟡
-    if (setup_kuzureochi(wk)) {
-        return;
+/* Defined below, next to the states that share them. */
+static bool run_common_nm_attack_checks(PLW* wk);
+static bool run_common_nm_attack_checks_no_turn(PLW* wk);
+static bool run_attack_checks_before_leap(PLW* wk);
+
+/* A check that may take over the normal state, as the check lists see it. Every
+ * one of these functions was already being called in a boolean context; the
+ * adapters below carry the narrower types - and the one guarded call - into this
+ * one, so nothing is converted that was not already tested. */
+typedef s32 (*NmStateCheck)(PLW* wk);
+
+/* Run a list of checks in order and stop at the first that takes. Reports
+ * whether one did, for the lists whose callers ask. */
+static s32 run_nm_state_checks(PLW* wk, const NmStateCheck* checks) {
+    s32 i;
+
+    for (i = 0; checks[i] != NULL; i++) {
+        if (checks[i](wk)) {
+            return 1;
+        }
     }
 
-    if (run_common_nm_attack_checks(wk)) {
-        return;
-    }
-
-    if (check_bend_myself(wk)) {
-        return;
-    }
-
-    if (check_defense_lever(wk)) {
-        return;
-    }
-
-    check_F_R_walk(wk);
+    return 0;
 }
 
-/* The three checks every attack path tries first: both full-gauge attacks and
- * the super art. */
+/* The adapters. Each returns the value its own `if` tested. */
+static s32 nm_check_common_attacks(PLW* wk) {
+    return run_common_nm_attack_checks(wk);
+}
+
+static s32 nm_check_common_attacks_no_turn(PLW* wk) {
+    return run_common_nm_attack_checks_no_turn(wk);
+}
+
+static s32 nm_check_f_r_walk(PLW* wk) {
+    return check_F_R_walk(wk);
+}
+
+/* nm_09000 guards its walk start on the arcade balance being on, and does
+ * nothing at all when it is off. */
+static s32 nm_check_arcade_walk_start(PLW* wk) {
+    if (ArcadeBalance_IsEnabled()) {
+        return check_arcade_walk_start(wk);
+    }
+
+    return 0;
+}
+
+/* The gauge checks take a second argument, always zero at these call sites; the
+ * super-arts and before-leap checks report narrower types. */
+static s32 nm_check_full_gauge_attack(PLW* wk) {
+    return check_full_gauge_attack(wk, 0);
+}
+
+static s32 nm_check_full_gauge_attack2(PLW* wk) {
+    return check_full_gauge_attack2(wk, 0);
+}
+
+static s32 nm_check_super_arts_attack(PLW* wk) {
+    return check_super_arts_attack(wk);
+}
+
+static s32 nm_check_before_leap(PLW* wk) {
+    return run_attack_checks_before_leap(wk);
+}
+
+/* The remaining check-list entries that are not a plain call.
+ *
+ * nm_02000 and nm_08000 each divert to a pattern state when the animation
+ * reports 64; nm_27000 and nm_29000 each run a pair of checks only while the
+ * lever is not held down. Each returns what its own arm returned from. */
+static s32 nm_divert_to_36000_on_cg_64(PLW* wk) {
+    if (wk->wu.cg_type == 64) {
+        TO_nm_36000(&wk->wu);
+        return 1;
+    }
+
+    return 0;
+}
+
+static s32 nm_divert_to_37000_on_cg_64(PLW* wk) {
+    if (wk->wu.cg_type == 64) {
+        TO_nm_37000(&wk->wu);
+        return 1;
+    }
+
+    return 0;
+}
+
+static s32 nm_check_arcade_walk_start_and(PLW* wk) {
+    return ArcadeBalance_IsEnabled() && check_arcade_walk_start(wk);
+}
+
+/* Both turn states run a pair of checks only while the lever is not held down. */
+static s32 nm_check_unless_lever_down(PLW* wk, const NmStateCheck* checks) {
+    if (wk->cp->lever_dir != 2) {
+        return run_nm_state_checks(wk, checks);
+    }
+
+    return 0;
+}
+
+static s32 nm_check_bend_or_walk_unless_down(PLW* wk) {
+    static const NmStateCheck checks[] = { check_bend_myself, nm_check_f_r_walk, NULL };
+
+    return nm_check_unless_lever_down(wk, checks);
+}
+
+static s32 nm_check_stand_or_walk_unless_down(PLW* wk) {
+    static const NmStateCheck checks[] = { check_stand_up, nm_check_arcade_walk_start_and, NULL };
+
+    return nm_check_unless_lever_down(wk, checks);
+}
+
+static s32 nm_cg_type_check_27(PLW* wk) {
+    nm_27_cg_type_check(wk);
+
+    return 0;
+}
+
+void nm_01000(PLW* wk) { // 🟡
+    static const NmStateCheck checks[] = { setup_kuzureochi,    nm_check_common_attacks, check_bend_myself,
+                                           check_defense_lever, nm_check_f_r_walk,       NULL };
+
+    run_nm_state_checks(wk, checks);
+}
+
 static bool run_gauge_attack_checks(PLW* wk) {
-    if (check_full_gauge_attack(wk, 0)) {
-        return true;
-    }
+    static const NmStateCheck checks[] = {
+        nm_check_full_gauge_attack, nm_check_full_gauge_attack2, nm_check_super_arts_attack, NULL
+    };
 
-    if (check_full_gauge_attack2(wk, 0)) {
-        return true;
-    }
-
-    if (check_super_arts_attack(wk)) {
-        return true;
-    }
-
-    return false;
+    return run_nm_state_checks(wk, checks);
 }
 
 /* The six attacks every path tries first, in this order: both full-gauge
@@ -169,28 +266,15 @@ static bool run_common_nm_attack_checks_no_turn(PLW* wk) {
 }
 
 void nm_02000(PLW* wk) { // 🟡
-    if (animation_ended_to_nm_01000(wk)) {
-        return;
-    }
+    static const NmStateCheck checks[] = { animation_ended_to_nm_01000,
+                                           nm_divert_to_36000_on_cg_64,
+                                           nm_check_common_attacks_no_turn,
+                                           check_bend_myself,
+                                           check_defense_lever,
+                                           nm_check_f_r_walk,
+                                           NULL };
 
-    if (wk->wu.cg_type == 64) {
-        TO_nm_36000(&wk->wu);
-        return;
-    }
-
-    if (run_common_nm_attack_checks_no_turn(wk)) {
-        return;
-    }
-
-    if (check_bend_myself(wk)) {
-        return;
-    }
-
-    if (check_defense_lever(wk)) {
-        return;
-    }
-
-    check_F_R_walk(wk);
+    run_nm_state_checks(wk, checks);
 }
 
 void nm_03000(PLW* wk) { // 🟡
@@ -218,86 +302,37 @@ void nm_05000(PLW* wk) { // 🟢
 }
 
 void nm_07000(PLW* wk) { // 🟡
-    if (animation_ended_to_nm_01000(wk)) {
-        return;
-    }
+    static const NmStateCheck checks[] = { animation_ended_to_nm_01000, nm_check_common_attacks, check_defense_lever,
+                                           nm_check_f_r_walk,           check_bend_myself,       NULL };
 
-    if (run_common_nm_attack_checks(wk)) {
-        return;
-    }
-
-    if (check_defense_lever(wk)) {
-        return;
-    }
-
-    if (check_F_R_walk(wk)) {
-        return;
-    }
-
-    check_bend_myself(wk);
+    run_nm_state_checks(wk, checks);
 }
 
 void nm_08000(PLW* wk) { // 🟡
-    if (animation_ended_to_nm_09000(wk)) {
-        return;
-    }
+    static const NmStateCheck checks[] = { animation_ended_to_nm_09000,
+                                           nm_divert_to_37000_on_cg_64,
+                                           nm_check_common_attacks,
+                                           check_defense_lever,
+                                           nm_check_arcade_walk_start_and,
+                                           check_stand_up,
+                                           NULL };
 
-    if (wk->wu.cg_type == 64) {
-        TO_nm_37000(&wk->wu);
-        return;
-    }
-
-    if (run_common_nm_attack_checks(wk)) {
-        return;
-    }
-
-    if (check_defense_lever(wk)) {
-        return;
-    }
-
-    if (ArcadeBalance_IsEnabled() && check_arcade_walk_start(wk)) {
-        return;
-    }
-
-    check_stand_up(wk);
+    run_nm_state_checks(wk, checks);
 }
 
 void nm_09000(PLW* wk) { // 🟡
-    if (setup_kuzureochi(wk)) {
-        return;
-    }
+    static const NmStateCheck checks[] = { setup_kuzureochi,    nm_check_common_attacks,    check_stand_up,
+                                           check_defense_lever, nm_check_arcade_walk_start, NULL };
 
-    if (run_common_nm_attack_checks(wk)) {
-        return;
-    }
-
-    if (check_stand_up(wk)) {
-        return;
-    }
-
-    if (check_defense_lever(wk)) {
-        return;
-    }
-
-    if (ArcadeBalance_IsEnabled()) {
-        check_arcade_walk_start(wk);
-    }
+    run_nm_state_checks(wk, checks);
 }
 
 void nm_10000(PLW* wk) { // 🟡
-    if (animation_ended_to_nm_09000(wk)) {
-        return;
-    }
+    static const NmStateCheck checks[] = {
+        animation_ended_to_nm_09000, nm_check_common_attacks_no_turn, check_defense_lever, check_stand_up, NULL
+    };
 
-    if (run_common_nm_attack_checks_no_turn(wk)) {
-        return;
-    }
-
-    if (check_defense_lever(wk)) {
-        return;
-    }
-
-    check_stand_up(wk);
+    run_nm_state_checks(wk, checks);
 }
 
 void nm_11000(PLW* wk) { // 🔵
@@ -312,24 +347,30 @@ void nm_13000(PLW* wk) { // 🔵
 
 /* Which of the three landing states this jump goes to, taken from the
  * direction the lever settled on. */
-static void enter_jump_from_16000(PLW* wk) {
+/* Both jump entries pick a routine from the direction check the same way; only
+ * the three routine numbers the arms name differ. */
+static void enter_jump_routine(PLW* wk, s16 forward, s16 backward, s16 neutral) {
     check_jump_rl_dir(wk);
 
     switch (wk->jpdir) {
     case JUMP_DIR_FORWARD:
-        wk->wu.routine_no[2] = 21;
+        wk->wu.routine_no[2] = forward;
         break;
 
     case JUMP_DIR_BACKWARD:
-        wk->wu.routine_no[2] = 23;
+        wk->wu.routine_no[2] = backward;
         break;
 
     default:
-        wk->wu.routine_no[2] = 22;
+        wk->wu.routine_no[2] = neutral;
         break;
     }
 
     wk->wu.routine_no[3] = 0;
+}
+
+static void enter_jump_from_16000(PLW* wk) {
+    enter_jump_routine(wk, 21, 23, 22);
 }
 
 void nm_16000(PLW* wk) { // 🟢
@@ -365,23 +406,7 @@ void nm_16000(PLW* wk) { // 🟢
 
 /* The same choice from 17000, which lands in its own three states. */
 static void enter_jump_from_17000(PLW* wk) {
-    check_jump_rl_dir(wk);
-
-    switch (wk->jpdir) {
-    case JUMP_DIR_FORWARD:
-        wk->wu.routine_no[2] = 24;
-        break;
-
-    case JUMP_DIR_BACKWARD:
-        wk->wu.routine_no[2] = 26;
-        break;
-
-    default:
-        wk->wu.routine_no[2] = 25;
-        break;
-    }
-
-    wk->wu.routine_no[3] = 0;
+    enter_jump_routine(wk, 24, 26, 25);
 }
 
 void nm_17000(PLW* wk) { // 🟢 The only difference is DIP switch handling
@@ -426,19 +451,9 @@ void set_new_jpdir(PLW* wk) { // 🟢
 }
 
 static bool run_jump_attack_checks(PLW* wk) {
-    if (run_attack_checks_before_leap(wk)) {
-        return true;
-    }
+    static const NmStateCheck checks[] = { nm_check_before_leap, check_nm_attack, check_cg_cancel_data, NULL };
 
-    if (check_nm_attack(wk)) {
-        return true;
-    }
-
-    if (check_cg_cancel_data(wk)) {
-        return true;
-    }
-
-    return false;
+    return run_nm_state_checks(wk, checks);
 }
 
 void nm_18000(PLW* wk) { // 🟢
@@ -468,19 +483,9 @@ static void reset_guard_for_new_state(PLW* wk) {
 }
 
 static bool run_early_attack_checks(PLW* wk) {
-    if (run_attack_checks_before_leap(wk)) {
-        return true;
-    }
+    static const NmStateCheck checks[] = { nm_check_before_leap, check_leap_attack, check_nm_attack, NULL };
 
-    if (check_leap_attack(wk)) {
-        return true;
-    }
-
-    if (check_nm_attack(wk)) {
-        return true;
-    }
-
-    return false;
+    return run_nm_state_checks(wk, checks);
 }
 
 static void handle_jump_attack_state(PLW* wk) {
@@ -519,7 +524,6 @@ static void enter_jump_defense_state(PLW* wk) {
     reset_guard_for_new_state(wk);
     handle_jump_defense_state(wk);
 }
-
 
 static bool run_forward_jump_checks(PLW* wk) {
     if (run_early_attack_checks(wk)) {
@@ -684,25 +688,13 @@ static bool run_common_nm_attack_checks(PLW* wk) {
 }
 
 void nm_27000(PLW* wk) { // 🟡
-    if (animation_ended_to_nm_01000(wk)) {
-        return;
-    }
+    static const NmStateCheck checks[] = { animation_ended_to_nm_01000,
+                                           nm_check_common_attacks,
+                                           nm_check_bend_or_walk_unless_down,
+                                           nm_cg_type_check_27,
+                                           NULL };
 
-    if (run_common_nm_attack_checks(wk)) {
-        return;
-    }
-
-    if (wk->cp->lever_dir != 2) {
-        if (check_bend_myself(wk)) {
-            return;
-        }
-
-        if (check_F_R_walk(wk)) {
-            return;
-        }
-    }
-
-    nm_27_cg_type_check(wk);
+    run_nm_state_checks(wk, checks);
 }
 
 /* cg_type 2 of the nm_27 state: if the opponent is not attacking and the player
@@ -753,25 +745,13 @@ void nm_27_cg_type_check(PLW* wk) { // 🟢
 }
 
 void nm_29000(PLW* wk) { // 🟡
-    if (animation_ended_to_nm_09000(wk)) {
-        return;
-    }
+    static const NmStateCheck checks[] = { animation_ended_to_nm_09000,
+                                           nm_check_common_attacks,
+                                           nm_check_stand_or_walk_unless_down,
+                                           nm_cg_type_check_27,
+                                           NULL };
 
-    if (run_common_nm_attack_checks(wk)) {
-        return;
-    }
-
-    if (wk->cp->lever_dir != 2) {
-        if (check_stand_up(wk)) {
-            return;
-        }
-
-        if (ArcadeBalance_IsEnabled() && check_arcade_walk_start(wk)) {
-            return;
-        }
-    }
-
-    nm_27_cg_type_check(wk);
+    run_nm_state_checks(wk, checks);
 }
 
 static void dispatch_by_pat_status(PLW* wk, void (*on_low_pat_status)(WORK*), void (*on_high_pat_status)(WORK*)) {
@@ -839,15 +819,21 @@ void nm_34000(PLW* wk) { // 🟢
     }
 }
 
+/* Both the 36000 and 39000 cancels go back to routine 1; the sub-routine they
+ * resume at depends on whether this is the first character's first koc. */
+static void return_to_routine_1(PLW* wk) {
+    if (wk->wu.now_koc == 0 && wk->wu.char_index == 0) {
+        wk->wu.routine_no[2] = 1;
+        wk->wu.routine_no[3] = 1;
+    } else {
+        wk->wu.routine_no[2] = 1;
+        wk->wu.routine_no[3] = 0;
+    }
+}
+
 void nm_36000(PLW* wk) { // 🟢
     if (wk->wu.cg_type == 0xFF) {
-        if (wk->wu.now_koc == 0 && wk->wu.char_index == 0) {
-            wk->wu.routine_no[2] = 1;
-            wk->wu.routine_no[3] = 1;
-        } else {
-            wk->wu.routine_no[2] = 1;
-            wk->wu.routine_no[3] = 0;
-        }
+        return_to_routine_1(wk);
     } else if (is_elena_special_36(wk)) {
         exset_char_move_init(&wk->wu, 0, 0);
         wk->wu.routine_no[2] = 1;
@@ -906,13 +892,7 @@ void nm_38000(PLW* wk) { // 🟡
 
 void nm_39000(PLW* wk) { // 🟢
     if (wk->wu.cg_type == 0xFF) {
-        if (wk->wu.now_koc == 0 && wk->wu.char_index == 0) {
-            wk->wu.routine_no[2] = 1;
-            wk->wu.routine_no[3] = 1;
-        } else {
-            wk->wu.routine_no[2] = 1;
-            wk->wu.routine_no[3] = 0;
-        }
+        return_to_routine_1(wk);
     }
 
     nm_01000(wk);
@@ -997,4 +977,3 @@ void nm_57000(PLW* wk) { // 🟢
         jumping_cg_type_check(wk);
     }
 }
-

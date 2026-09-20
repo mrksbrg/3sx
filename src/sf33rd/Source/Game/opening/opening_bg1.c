@@ -4,7 +4,6 @@
  * The second and third opening background layers.
  */
 
-#include "sf33rd/Source/Game/opening/opening.h"
 #include "common.h"
 #include "sf33rd/AcrSDK/ps2/foundaps2.h"
 #include "sf33rd/Source/Common/MemMan.h"
@@ -19,6 +18,7 @@
 #include "sf33rd/Source/Game/engine/workuser.h"
 #include "sf33rd/Source/Game/io/gd3rd.h"
 #include "sf33rd/Source/Game/opening/op_sub.h"
+#include "sf33rd/Source/Game/opening/opening.h"
 #include "sf33rd/Source/Game/rendering/aboutspr.h"
 #include "sf33rd/Source/Game/rendering/color3rd.h"
 #include "sf33rd/Source/Game/rendering/dc_ghost.h"
@@ -33,7 +33,6 @@
 #include "sf33rd/Source/Game/system/sys_sub2.h"
 #include "sf33rd/Source/Game/system/work_sys.h"
 #include "sf33rd/Source/Game/ui/sc_sub.h"
-
 
 void op_bg1_move(s16 r_index) {
     opw_ptr = &op_w.bgw[1];
@@ -86,13 +85,13 @@ void op_bg1_0001(s16 r_index) {
 
         switch (r_index) {
         case 0x37:
-            oh_bg_blk_w(&op_w.bgw[1], &(Op_Bg_Blk_Args){1, 1, 0, 0});
-            oh_bg_blk_w(&op_w.bgw[1], &(Op_Bg_Blk_Args){2, 2, 0, 0});
+            oh_bg_blk_w(&op_w.bgw[1], &(Op_Bg_Blk_Args) { 1, 1, 0, 0 });
+            oh_bg_blk_w(&op_w.bgw[1], &(Op_Bg_Blk_Args) { 2, 2, 0, 0 });
             break;
 
         case 0x38:
-            oh_bg_blk_w(&op_w.bgw[1], &(Op_Bg_Blk_Args){3, 1, 0, 0});
-            oh_bg_blk_w(&op_w.bgw[1], &(Op_Bg_Blk_Args){4, 2, 0, 0});
+            oh_bg_blk_w(&op_w.bgw[1], &(Op_Bg_Blk_Args) { 3, 1, 0, 0 });
+            oh_bg_blk_w(&op_w.bgw[1], &(Op_Bg_Blk_Args) { 4, 2, 0, 0 });
             break;
         }
 
@@ -113,9 +112,9 @@ void op_bg1_0002(s16 r_index) {
         case 0x3C:
             bgw_ptr->wxy[0].cal = 0x01000000;
             bgw_ptr->xy[1].cal = 0;
-            oh_bg_blk_w(&op_w.bgw[1], &(Op_Bg_Blk_Args){7, 0, 0, 0});
-            oh_bg_blk_w(&op_w.bgw[1], &(Op_Bg_Blk_Args){8, 1, 0, 0});
-            oh_bg_blk_w(&op_w.bgw[1], &(Op_Bg_Blk_Args){9, 2, 0, 0});
+            oh_bg_blk_w(&op_w.bgw[1], &(Op_Bg_Blk_Args) { 7, 0, 0, 0 });
+            oh_bg_blk_w(&op_w.bgw[1], &(Op_Bg_Blk_Args) { 8, 1, 0, 0 });
+            oh_bg_blk_w(&op_w.bgw[1], &(Op_Bg_Blk_Args) { 9, 2, 0, 0 });
             op_bg_mvxy[bgw_ptr->fam_no].a[0].sp = 0xC0000;
             op_bg_mvxy[bgw_ptr->fam_no].d[0].sp = 0;
             bgw_ptr->r_limit = 0x1E0;
@@ -152,8 +151,8 @@ void op_bg1_0003(s16 r_index) {
         case 83:
             bgw_ptr->wxy[0].cal = 0x2200000;
             bgw_ptr->xy[1].cal = 0;
-            oh_bg_blk_w(op_w.bgw, &(Op_Bg_Blk_Args){0x10, 1, 0, 0});
-            oh_bg_blk_w(op_w.bgw, &(Op_Bg_Blk_Args){0x11, 2, 0, 0});
+            oh_bg_blk_w(op_w.bgw, &(Op_Bg_Blk_Args) { 0x10, 1, 0, 0 });
+            oh_bg_blk_w(op_w.bgw, &(Op_Bg_Blk_Args) { 0x11, 2, 0, 0 });
             op_bg_mvxy[bgw_ptr->fam_no].a[0].sp = 0x80000;
             op_bg_mvxy[bgw_ptr->fam_no].d[0].sp = -0x8000;
             bgw_ptr->r_limit = 0x200;
@@ -162,9 +161,9 @@ void op_bg1_0003(s16 r_index) {
         case 62:
             bgw_ptr->wxy[0].cal = 0x1E00000; // low = 0, pos = 480
             bgw_ptr->xy[1].cal = 0;
-            oh_bg_blk_w(&op_w.bgw[1], &(Op_Bg_Blk_Args){0xA, 0, 0, 0});
-            oh_bg_blk_w(&op_w.bgw[1], &(Op_Bg_Blk_Args){0xB, 1, 0, 0});
-            oh_bg_blk_w(&op_w.bgw[1], &(Op_Bg_Blk_Args){0xC, 2, 0, 0});
+            oh_bg_blk_w(&op_w.bgw[1], &(Op_Bg_Blk_Args) { 0xA, 0, 0, 0 });
+            oh_bg_blk_w(&op_w.bgw[1], &(Op_Bg_Blk_Args) { 0xB, 1, 0, 0 });
+            oh_bg_blk_w(&op_w.bgw[1], &(Op_Bg_Blk_Args) { 0xC, 2, 0, 0 });
             op_bg_mvxy[bgw_ptr->fam_no].a[0].sp = 0xFFF80000;
             op_bg_mvxy[bgw_ptr->fam_no].d[0].sp = 0;
             break;
@@ -214,21 +213,42 @@ void op_bg2_move(s16 r_index) {
     op_scrn_pos_set2(2);
 }
 
-void op_bg2_0000() {
+/* What each op_bg2 scene does on its second step. */
+static void op_bg2_0000_scroll(void) {
+    bgw_ptr->wxy[0].cal -= (0x8000 + 0x8000);
+}
+
+static void op_bg2_0002_scroll(void) {
+    bgw_ptr->xy[1].cal += 0x10000;
+}
+
+static void op_bg2_0003_scroll(void) {
+    bgw_ptr->wxy[0].cal += 0x10000;
+}
+
+/* op_bg2_0000, op_bg2_0002 and op_bg2_0003 are the same three-step scene: place
+ * the background, scroll it once, then hold. They disagree on where the
+ * background goes and on which way it scrolls, so the position is a parameter
+ * and the scroll is an action. */
+static void run_op_bg2_scene(s32 x, void (*scroll)(void)) {
     switch (opw_ptr->r_no_0) {
     case 0:
         opw_ptr->r_no_0 += 1;
-        bgw_ptr->wxy[0].disp.pos = 512;
+        bgw_ptr->wxy[0].disp.pos = x;
         bgw_ptr->xy[1].disp.pos = 0;
         break;
 
     case 1:
-        bgw_ptr->wxy[0].cal -= (0x8000 + 0x8000);
+        scroll();
         break;
 
     case 2:
         break;
     }
+}
+
+void op_bg2_0000() {
+    run_op_bg2_scene(512, op_bg2_0000_scroll);
 }
 
 void op_bg2_0001() {
@@ -245,35 +265,9 @@ void op_bg2_0001() {
 }
 
 void op_bg2_0002() {
-    switch (opw_ptr->r_no_0) {
-    case 0:
-        opw_ptr->r_no_0 += 1;
-        bgw_ptr->wxy[0].disp.pos = 0x200;
-        bgw_ptr->xy[1].disp.pos = 0;
-        break;
-
-    case 1:
-        bgw_ptr->xy[1].cal += 0x10000;
-        break;
-
-    case 2:
-        break;
-    }
+    run_op_bg2_scene(0x200, op_bg2_0002_scroll);
 }
 
 void op_bg2_0003() {
-    switch (opw_ptr->r_no_0) {
-    case 0:
-        opw_ptr->r_no_0 += 1;
-        bgw_ptr->wxy[0].disp.pos = 0x200;
-        bgw_ptr->xy[1].disp.pos = 0;
-        break;
-
-    case 1:
-        bgw_ptr->wxy[0].cal += 0x10000;
-        break;
-
-    case 2:
-        break;
-    }
+    run_op_bg2_scene(0x200, op_bg2_0003_scroll);
 }

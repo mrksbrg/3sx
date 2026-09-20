@@ -601,11 +601,9 @@ static void handle_disconnection() {
     session_state = NETPLAY_SESSION_EXITING;
 }
 
-static void process_session() {
-    frames_behind = -gekko_frames_ahead(session);
-
-    gekko_network_poll(session);
-
+/* This frame's local inputs: the stress harness drives both sides, a real
+ * session drives only ours. */
+static void add_local_inputs() {
     if (Stress_IsRunning()) {
         for (int i = 0; i < PLAYER_COUNT; i++) {
             u16 stress_inputs = Stress_NextInput(i);
@@ -615,6 +613,77 @@ static void process_session() {
         u16 local_inputs = get_inputs();
         gekko_add_local_input(session, player_handle, &local_inputs);
     }
+}
+
+/* The events that report rather than change the session, reached from
+ * handle_session_event's new default. Every case label is the original one and
+ * between them the two switches still name every GekkoSessionEvent type. */
+static void handle_session_report(const GekkoSessionEvent* event) {
+    switch (event->type) {
+    case GekkoDesyncDetected:
+        const int frame = event->data.desynced.frame;
+        SDL_Log(
+            "⚠️ desync detected at frame %d (0x%X vs 0x%X)",
+            frame,
+            event->data.desynced.local_checksum,
+            event->data.desynced.remote_checksum
+        );
+
+#if DEBUG
+        if (Stress_IsRunning()) {
+            Stress_OnDesync(frame);
+        } else {
+            dump_saved_state(frame);
+        }
+#endif
+        break;
+
+    case GekkoEmptySessionEvent:
+    case GekkoSpectatorPaused:
+    case GekkoSpectatorUnpaused:
+    case GekkoReplayFinished:
+        // Do nothing
+        break;
+
+    default:
+        break;
+    }
+}
+
+/* One session event from Gekko. */
+static void handle_session_event(const GekkoSessionEvent* event) {
+    switch (event->type) {
+    case GekkoPlayerSyncing:
+        SDL_Log("🔴 player syncing");
+        // FIXME: Show status to the player
+        break;
+
+    case GekkoPlayerConnected:
+        SDL_Log("🔴 player connected");
+        break;
+
+    case GekkoPlayerDisconnected:
+        SDL_Log("🔴 player disconnected");
+        handle_disconnection();
+        break;
+
+    case GekkoSessionStarted:
+        SDL_Log("🔴 session started");
+        session_state = NETPLAY_SESSION_RUNNING;
+        break;
+
+    default:
+        handle_session_report(event);
+        break;
+    }
+}
+
+static void process_session() {
+    frames_behind = -gekko_frames_ahead(session);
+
+    gekko_network_poll(session);
+
+    add_local_inputs();
 
     int session_event_count = 0;
     GekkoSessionEvent** session_events = gekko_session_events(session, &session_event_count);
@@ -622,52 +691,27 @@ static void process_session() {
     for (int i = 0; i < session_event_count; i++) {
         const GekkoSessionEvent* event = session_events[i];
 
-        switch (event->type) {
-        case GekkoPlayerSyncing:
-            SDL_Log("🔴 player syncing");
-            // FIXME: Show status to the player
-            break;
-
-        case GekkoPlayerConnected:
-            SDL_Log("🔴 player connected");
-            break;
-
-        case GekkoPlayerDisconnected:
-            SDL_Log("🔴 player disconnected");
-            handle_disconnection();
-            break;
-
-        case GekkoSessionStarted:
-            SDL_Log("🔴 session started");
-            session_state = NETPLAY_SESSION_RUNNING;
-            break;
-
-        case GekkoDesyncDetected:
-            const int frame = event->data.desynced.frame;
-            SDL_Log(
-                "⚠️ desync detected at frame %d (0x%X vs 0x%X)",
-                frame,
-                event->data.desynced.local_checksum,
-                event->data.desynced.remote_checksum
-            );
-
-#if DEBUG
-            if (Stress_IsRunning()) {
-                Stress_OnDesync(frame);
-            } else {
-                dump_saved_state(frame);
-            }
-#endif
-            break;
-
-        case GekkoEmptySessionEvent:
-        case GekkoSpectatorPaused:
-        case GekkoSpectatorUnpaused:
-        case GekkoReplayFinished:
-            // Do nothing
-            break;
-        }
+        handle_session_event(event);
     }
+}
+
+/* One advance event: the frame runs, and drawing is suppressed while the
+ * session is rolling back. Returns 1 for a rolled-back frame, which is what
+ * the arm added to the caller's counter - nothing between the two reads that
+ * counter, so returning it rather than adding it in place is the same
+ * program. */
+static int advance_game_event(const GekkoGameEvent* event, bool drawing_allowed) {
+    const bool rolling_back = event->data.adv.rolling_back;
+    advance_game(event, drawing_allowed && !rolling_back);
+
+    if (Stress_IsRunning() && !rolling_back) {
+#if DEBUG
+        record_stress_state(event->data.adv.frame);
+#endif
+        Stress_OnFrameAdvanced();
+    }
+
+    return rolling_back ? 1 : 0;
 }
 
 static void process_events(bool drawing_allowed) {
@@ -684,16 +728,7 @@ static void process_events(bool drawing_allowed) {
             break;
 
         case GekkoAdvanceEvent:
-            const bool rolling_back = event->data.adv.rolling_back;
-            advance_game(event, drawing_allowed && !rolling_back);
-            frames_rolled_back += rolling_back ? 1 : 0;
-
-            if (Stress_IsRunning() && !rolling_back) {
-#if DEBUG
-                record_stress_state(event->data.adv.frame);
-#endif
-                Stress_OnFrameAdvanced();
-            }
+            frames_rolled_back += advance_game_event(event, drawing_allowed);
             break;
 
         case GekkoSaveEvent:
@@ -882,21 +917,43 @@ void Netplay_CancelMatchmaking() {
     matchmaking_pending = false;
 }
 
+/* Holding the game at character select until it is ready, then handing over to
+ * Gekko; and the teardown that returns the session to idle. */
+static void step_netplay_transition() {
+    if (game_ready_to_run_character_select()) {
+        transition_ready_frames += 1;
+    } else {
+        transition_ready_frames = 0;
+        clean_input_buffers();
+        step_game(true);
+    }
+
+    if (transition_ready_frames >= 2) {
+        configure_gekko();
+        session_state = NETPLAY_SESSION_CONNECTING;
+    }
+}
+
+static void end_netplay_session() {
+    if (session != NULL) {
+        gekko_destroy(&session);
+        SDLNetAdapter_Destroy();
+    }
+
+    if (p2p_sock != NULL) {
+        NET_DestroyDatagramSocket(p2p_sock);
+        p2p_sock = NULL;
+        NET_Quit();
+    }
+
+    Netplay_CancelMatchmaking();
+    session_state = NETPLAY_SESSION_IDLE;
+}
+
 void Netplay_Run() {
     switch (session_state) {
     case NETPLAY_SESSION_TRANSITIONING:
-        if (game_ready_to_run_character_select()) {
-            transition_ready_frames += 1;
-        } else {
-            transition_ready_frames = 0;
-            clean_input_buffers();
-            step_game(true);
-        }
-
-        if (transition_ready_frames >= 2) {
-            configure_gekko();
-            session_state = NETPLAY_SESSION_CONNECTING;
-        }
+        step_netplay_transition();
 
         break;
 
@@ -906,19 +963,7 @@ void Netplay_Run() {
         break;
 
     case NETPLAY_SESSION_EXITING:
-        if (session != NULL) {
-            gekko_destroy(&session);
-            SDLNetAdapter_Destroy();
-        }
-
-        if (p2p_sock != NULL) {
-            NET_DestroyDatagramSocket(p2p_sock);
-            p2p_sock = NULL;
-            NET_Quit();
-        }
-
-        Netplay_CancelMatchmaking();
-        session_state = NETPLAY_SESSION_IDLE;
+        end_netplay_session();
         break;
 
     case NETPLAY_SESSION_IDLE:

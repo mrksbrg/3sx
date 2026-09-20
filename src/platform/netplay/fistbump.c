@@ -169,47 +169,57 @@ void Fistbump_Start(const char* server_ip, int tcp_port, int udp_port, const cha
     connect_state = FISTBUMP_CONN_RESOLVING_DNS;
 }
 
+/* The two waits Fistbump_Connect sits in: the name lookup, and then the TCP
+ * connect it starts. Each writes only the module's own state. */
+static void fistbump_advance_dns() {
+    switch (NET_GetAddressStatus(server_addr)) {
+    case NET_SUCCESS:
+        tcp_sock = NET_CreateClient(server_addr, (Uint16)saved_tcp_port);
+        if (tcp_sock == NULL) {
+            SDL_Log("Fistbump: failed to create TCP client: %s\n", SDL_GetError());
+            connect_state = FISTBUMP_CONN_ERROR;
+        } else {
+            connect_state = FISTBUMP_CONN_CONNECTING_TCP;
+        }
+        break;
+
+    case NET_FAILURE:
+        SDL_Log("Fistbump: DNS resolution failed: %s\n", SDL_GetError());
+        state = FISTBUMP_ERROR;
+        break;
+
+    case NET_WAITING:
+        break;
+    }
+}
+
+static void fistbump_advance_tcp() {
+    switch (NET_GetConnectionStatus(tcp_sock)) {
+    case NET_SUCCESS:
+        connect_state = FISTBUMP_CONN_CONNECTED;
+        break;
+
+    case NET_FAILURE:
+        SDL_Log("Fistbump: TCP connection failed: %s\n", SDL_GetError());
+        connect_state = FISTBUMP_CONN_ERROR;
+        break;
+
+    case NET_WAITING:
+        break;
+    }
+}
+
 void Fistbump_Connect() {
     switch (connect_state) {
     case FISTBUMP_CONN_IDLE:
         break;
 
     case FISTBUMP_CONN_RESOLVING_DNS:
-        switch (NET_GetAddressStatus(server_addr)) {
-        case NET_SUCCESS:
-            tcp_sock = NET_CreateClient(server_addr, (Uint16)saved_tcp_port);
-            if (tcp_sock == NULL) {
-                SDL_Log("Fistbump: failed to create TCP client: %s\n", SDL_GetError());
-                connect_state = FISTBUMP_CONN_ERROR;
-            } else {
-                connect_state = FISTBUMP_CONN_CONNECTING_TCP;
-            }
-            break;
-
-        case NET_FAILURE:
-            SDL_Log("Fistbump: DNS resolution failed: %s\n", SDL_GetError());
-            state = FISTBUMP_ERROR;
-            break;
-
-        case NET_WAITING:
-            break;
-        }
+        fistbump_advance_dns();
         break;
 
     case FISTBUMP_CONN_CONNECTING_TCP:
-        switch (NET_GetConnectionStatus(tcp_sock)) {
-        case NET_SUCCESS:
-            connect_state = FISTBUMP_CONN_CONNECTED;
-            break;
-
-        case NET_FAILURE:
-            SDL_Log("Fistbump: TCP connection failed: %s\n", SDL_GetError());
-            connect_state = FISTBUMP_CONN_ERROR;
-            break;
-
-        case NET_WAITING:
-            break;
-        }
+        fistbump_advance_tcp();
         break;
 
     case FISTBUMP_CONN_CONNECTED:
@@ -362,6 +372,20 @@ void Fistbump_HandleSTART(const char* line) {
     state = FISTBUMP_GAME_START;
 }
 
+/* The second half of the command chain, reached when none of the first four
+ * prefixes matched. */
+static void Fistbump_ParseMatchCommand(const char* line) {
+    if (strncmp(line, "PROFILE ", 8) == 0) {
+        Fistbump_HandlePROFILE(line);
+    } else if (strncmp(line, "MATCH ", 6) == 0) {
+        Fistbump_HandleMATCH(line);
+    } else if (strncmp(line, "CANCEL ", 7) == 0) {
+        Fistbump_HandleCANCEL(line);
+    } else if (strncmp(line, "START ", 6) == 0) {
+        Fistbump_HandleSTART(line);
+    }
+}
+
 void Fistbump_ParseCommand(const char* line) {
     if (strncmp(line, "SESSION ", 8) == 0) {
         Fistbump_HandleSESSION(line);
@@ -371,14 +395,41 @@ void Fistbump_ParseCommand(const char* line) {
         Fistbump_HandleUDP(line);
     } else if (strncmp(line, "TOKEN ", 6) == 0) {
         Fistbump_HandleTOKEN(line);
-    } else if (strncmp(line, "PROFILE ", 8) == 0) {
-        Fistbump_HandlePROFILE(line);
-    } else if (strncmp(line, "MATCH ", 6) == 0) {
-        Fistbump_HandleMATCH(line);
-    } else if (strncmp(line, "CANCEL ", 7) == 0) {
-        Fistbump_HandleCANCEL(line);
-    } else if (strncmp(line, "START ", 6) == 0) {
-        Fistbump_HandleSTART(line);
+    } else {
+        Fistbump_ParseMatchCommand(line);
+    }
+}
+
+/* The last states: the UDP handshake, and the two that do nothing. */
+static void fistbump_step_final_state() {
+    switch (state) {
+    case FISTBUMP_SENDING_UDP:
+        Fistbump_SendUDP();
+        break;
+
+    case FISTBUMP_GAME_START:
+    case FISTBUMP_ERROR:
+        break;
+
+    default:
+        break;
+    }
+}
+
+/* The states after the login handshake, reached from Fistbump_Run's new
+ * default. Every label is the original one and Fistbump_Run had no default of
+ * its own, so a state matching nothing still does nothing. */
+static void fistbump_step_late_state() {
+    switch (state) {
+    case FISTBUMP_LOGGING_IN:
+    case FISTBUMP_AWAITING_LOGIN:
+    case FISTBUMP_AWAITING_MATCH:
+    case FISTBUMP_MATCHED:
+        break;
+
+    default:
+        fistbump_step_final_state();
+        break;
     }
 }
 
@@ -401,18 +452,8 @@ void Fistbump_Run() {
         Fistbump_Login();
         break;
 
-    case FISTBUMP_LOGGING_IN:
-    case FISTBUMP_AWAITING_LOGIN:
-    case FISTBUMP_AWAITING_MATCH:
-    case FISTBUMP_MATCHED:
-        break;
-
-    case FISTBUMP_SENDING_UDP:
-        Fistbump_SendUDP();
-        break;
-
-    case FISTBUMP_GAME_START:
-    case FISTBUMP_ERROR:
+    default:
+        fistbump_step_late_state();
         break;
     }
 }

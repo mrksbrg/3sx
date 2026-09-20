@@ -44,7 +44,6 @@ static s32 can_update_effect(void) {
     return !EXE_flag && !Game_pause && !EXE_obroll;
 }
 
-
 void effect_24_move(WORK_Other* ewk) {
     switch (ewk->wu.routine_no[0]) {
     case 0:
@@ -55,7 +54,7 @@ void effect_24_move(WORK_Other* ewk) {
         break;
 
     case 1:
-if (can_update_effect()) {
+        if (can_update_effect()) {
             eff24_quake_sub(ewk);
         }
 
@@ -185,7 +184,7 @@ void dog24_data_set(WORK_Other* ewk) {
         work = ewk->wu.xyz[0].disp.pos - dog24_x_data[ewk->wu.old_rno[1]];
     }
 
-    cal_all_speed_data(&ewk->wu, ewk->wu.old_rno[5], work, ewk->wu.xyz[1].disp.pos, 2, 0);
+    cal_all_speed_data(&ewk->wu, &(Motion_Target) { ewk->wu.old_rno[5], work, ewk->wu.xyz[1].disp.pos, 2, 0 });
 }
 
 static void eff24_bounce_speed(WORK_Other* ewk) {

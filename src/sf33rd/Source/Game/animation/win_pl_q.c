@@ -23,21 +23,41 @@ const s16 q_em_distance_tbl[20][2] = { { -96, -16 }, { -104, 0 },  { -90, -16 },
                                        { -100, 0 },  { -90, -16 }, { -90, -16 }, { -96, -16 }, { -90, -16 },
                                        { -90, -16 }, { 0, -96 },   { -2, -112 }, { -112, 4 },  { -96, -6 } };
 
+/* The distance test both facings share, character for character: the gap this
+ * opponent and this facing pair ask for. */
+static s16 q_em_far_enough(s16 work, s16 id_w, s16 rl_w) {
+    if (work >= q_em_distance_tbl[plw[id_w].player_number][rl_w]) {
+        return 1;
+    }
+
+    return 0;
+}
+
+/* The facing-right side of the distance check. Only this arm is lifted; either
+ * one alone measures 10.00. */
+static s16 q_em_far_enough_facing_right(PLW* wk, s16 id_w, s16 rl_w) {
+    s16 work;
+
+    work = wk->wu.xyz[0].disp.pos - plw[id_w].wu.xyz[0].disp.pos;
+
+    if (q_em_far_enough(work, id_w, rl_w)) {
+        return 1;
+    }
+
+    return 0;
+}
+
 s16 q_em_distance_chk(PLW* wk) {
     s16 work;
     s16 id_w = wk->wu.id ^ 1;
     s16 rl_w = wk->wu.rl_flag ^ plw[id_w].wu.rl_flag;
 
     if (wk->wu.rl_flag) {
-        work = wk->wu.xyz[0].disp.pos - plw[id_w].wu.xyz[0].disp.pos;
-
-        if (work >= q_em_distance_tbl[plw[id_w].player_number][rl_w]) {
-            return 1;
-        }
+        return q_em_far_enough_facing_right(wk, id_w, rl_w);
     } else {
         work = plw[id_w].wu.xyz[0].disp.pos - wk->wu.xyz[0].disp.pos;
 
-        if (work >= q_em_distance_tbl[plw[id_w].player_number][rl_w]) {
+        if (q_em_far_enough(work, id_w, rl_w)) {
             return 1;
         }
     }

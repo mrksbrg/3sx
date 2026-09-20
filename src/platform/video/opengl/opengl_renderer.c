@@ -451,6 +451,82 @@ static void OpenGLRenderer_DrawSolidQuad(const Quad* quad, unsigned int color) {
     SDL_zero(_quad->texture_spec);
 }
 
+/* The vertex array, the dynamic vertex buffer and the fixed index buffer that
+ * turns each quad into two triangles. */
+static void configure_vertex_buffers() {
+    glGenVertexArrays(1, &vertex_array);
+    glGenBuffers(1, &vertex_buffer);
+    GLuint element_buffer;
+    glGenBuffers(1, &element_buffer);
+
+    glBindVertexArray(vertex_array);
+
+    glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer);
+    glBufferData(GL_ARRAY_BUFFER, QUADS_MAX * 4 * sizeof(GLVertex), NULL, GL_DYNAMIC_DRAW);
+
+    // Pre-compute indices
+    GLuint indices[QUADS_MAX * 6];
+
+    for (int i = 0; i < QUADS_MAX; i++) {
+        indices[i * 6 + 0] = i * 4 + 0;
+        indices[i * 6 + 1] = i * 4 + 1;
+        indices[i * 6 + 2] = i * 4 + 2;
+        indices[i * 6 + 3] = i * 4 + 2;
+        indices[i * 6 + 4] = i * 4 + 1;
+        indices[i * 6 + 5] = i * 4 + 3;
+    }
+
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, element_buffer);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+
+    // aPos
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(GLVertex), (GLvoid*)offsetof(GLVertex, position));
+    glEnableVertexAttribArray(0);
+    // aTexCoord
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(GLVertex), (GLvoid*)offsetof(GLVertex, tex_coord));
+    glEnableVertexAttribArray(1);
+    // aColor
+    glVertexAttribPointer(2, 4, GL_FLOAT, GL_FALSE, sizeof(GLVertex), (GLvoid*)offsetof(GLVertex, color));
+    glEnableVertexAttribArray(2);
+
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindVertexArray(0);
+}
+
+/* Tearing the context and window down when a shader will not build. The four
+ * shader checks wrote the same five lines; the return stays at each call
+ * site. */
+static void fail_gl_shader_init() {
+    SDL_Log("Failed to initialize OpenGL shaders");
+    SDL_GL_DestroyContext(gl_context);
+    SDL_DestroyWindow(window);
+    gl_context = NULL;
+    window = NULL;
+}
+
+/* The offscreen canvas: a colour texture, a depth texture and the framebuffer
+ * they hang off. */
+static void configure_canvas() {
+    glGenTextures(1, &canvas_color_tex);
+    glBindTexture(GL_TEXTURE_2D, canvas_color_tex);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, 384, 224, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+
+    glGenTextures(1, &canvas_depth_tex);
+    glBindTexture(GL_TEXTURE_2D, canvas_depth_tex);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, 384, 224, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+
+    glGenFramebuffers(1, &canvas_fbo);
+    glBindFramebuffer(GL_FRAMEBUFFER, canvas_fbo);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, canvas_color_tex, 0);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, canvas_depth_tex, 0);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
 static SDL_Window* OpenGLRenderer_Init(const SDLRenderBackendInitInfo* init_info) {
     // Init window
 
@@ -495,45 +571,20 @@ static SDL_Window* OpenGLRenderer_Init(const SDLRenderBackendInitInfo* init_info
 
     // Configure canvas
 
-    glGenTextures(1, &canvas_color_tex);
-    glBindTexture(GL_TEXTURE_2D, canvas_color_tex);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, 384, 224, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
-
-    glGenTextures(1, &canvas_depth_tex);
-    glBindTexture(GL_TEXTURE_2D, canvas_depth_tex);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, 384, 224, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
-
-    glGenFramebuffers(1, &canvas_fbo);
-    glBindFramebuffer(GL_FRAMEBUFFER, canvas_fbo);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, canvas_color_tex, 0);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, canvas_depth_tex, 0);
-
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    configure_canvas();
 
     // Configure shaders
 
     solid_shader = build_shader_program("vert.glsl", "frag_solid.glsl");
     if (solid_shader == 0) {
-        SDL_Log("Failed to initialize OpenGL shaders");
-        SDL_GL_DestroyContext(gl_context);
-        SDL_DestroyWindow(window);
-        gl_context = NULL;
-        window = NULL;
+        fail_gl_shader_init();
         return NULL;
     }
 
     palette_4_shader = build_shader_program("vert.glsl", "frag_palette_4.glsl");
 
     if (palette_4_shader == 0) {
-        SDL_Log("Failed to initialize OpenGL shaders");
-        SDL_GL_DestroyContext(gl_context);
-        SDL_DestroyWindow(window);
-        gl_context = NULL;
-        window = NULL;
+        fail_gl_shader_init();
         return NULL;
     }
 
@@ -544,11 +595,7 @@ static SDL_Window* OpenGLRenderer_Init(const SDLRenderBackendInitInfo* init_info
     palette_8_shader = build_shader_program("vert.glsl", "frag_palette_8.glsl");
 
     if (palette_8_shader == 0) {
-        SDL_Log("Failed to initialize OpenGL shaders");
-        SDL_GL_DestroyContext(gl_context);
-        SDL_DestroyWindow(window);
-        gl_context = NULL;
-        window = NULL;
+        fail_gl_shader_init();
         return NULL;
     }
 
@@ -559,11 +606,7 @@ static SDL_Window* OpenGLRenderer_Init(const SDLRenderBackendInitInfo* init_info
     direct_shader = build_shader_program("vert.glsl", "frag_direct.glsl");
 
     if (direct_shader == 0) {
-        SDL_Log("Failed to initialize OpenGL shaders");
-        SDL_GL_DestroyContext(gl_context);
-        SDL_DestroyWindow(window);
-        gl_context = NULL;
-        window = NULL;
+        fail_gl_shader_init();
         return NULL;
     }
 
@@ -572,43 +615,7 @@ static SDL_Window* OpenGLRenderer_Init(const SDLRenderBackendInitInfo* init_info
 
     // Setup vertex data and buffers
 
-    glGenVertexArrays(1, &vertex_array);
-    glGenBuffers(1, &vertex_buffer);
-    GLuint element_buffer;
-    glGenBuffers(1, &element_buffer);
-
-    glBindVertexArray(vertex_array);
-
-    glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer);
-    glBufferData(GL_ARRAY_BUFFER, QUADS_MAX * 4 * sizeof(GLVertex), NULL, GL_DYNAMIC_DRAW);
-
-    // Pre-compute indices
-    GLuint indices[QUADS_MAX * 6];
-
-    for (int i = 0; i < QUADS_MAX; i++) {
-        indices[i * 6 + 0] = i * 4 + 0;
-        indices[i * 6 + 1] = i * 4 + 1;
-        indices[i * 6 + 2] = i * 4 + 2;
-        indices[i * 6 + 3] = i * 4 + 2;
-        indices[i * 6 + 4] = i * 4 + 1;
-        indices[i * 6 + 5] = i * 4 + 3;
-    }
-
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, element_buffer);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
-
-    // aPos
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(GLVertex), (GLvoid*)offsetof(GLVertex, position));
-    glEnableVertexAttribArray(0);
-    // aTexCoord
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(GLVertex), (GLvoid*)offsetof(GLVertex, tex_coord));
-    glEnableVertexAttribArray(1);
-    // aColor
-    glVertexAttribPointer(2, 4, GL_FLOAT, GL_FALSE, sizeof(GLVertex), (GLvoid*)offsetof(GLVertex, color));
-    glEnableVertexAttribArray(2);
-
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glBindVertexArray(0);
+    configure_vertex_buffers();
 
     // Misc
 
@@ -624,6 +631,56 @@ static void OpenGLRenderer_Quit() {
     // TODO: Implement
 }
 
+/* Every quad's four vertices, laid out for one buffer upload. */
+static void fill_quad_vertices() {
+    for (int i = 0; i < arrlen(quads); i++) {
+        const int vertex_base = i * 4;
+        const GLQuad* quad = &quads[i];
+
+        for (int i = 0; i < 4; i++) {
+            vertices[vertex_base + i].position.x = quad->positions[i].x;
+            vertices[vertex_base + i].position.y = quad->positions[i].y;
+            vertices[vertex_base + i].position.z = quad->z;
+            vertices[vertex_base + i].tex_coord = quad->tex_coords[i];
+            vertices[vertex_base + i].color = quad->color;
+        }
+    }
+}
+
+/* The shader and texture units one quad's palette type asks for. */
+static void bind_quad_shader(const GLQuad* quad) {
+    if (quad->texture_spec.texture.handle == 0) {
+        glUseProgram(solid_shader);
+    } else {
+        switch (quad->texture_spec.texture.palette_type) {
+        case PALETTE_4:
+            glUseProgram(palette_4_shader);
+            const GLint texture_size_loc = glGetUniformLocation(palette_4_shader, "uTextureSize");
+            glUniform2i(texture_size_loc, quad->texture_spec.texture.width, quad->texture_spec.texture.width);
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_1D, quad->texture_spec.palette);
+            glActiveTexture(GL_TEXTURE1);
+            glBindTexture(GL_TEXTURE_2D, quad->texture_spec.texture.handle);
+            break;
+
+        case PALETTE_8:
+            SDL_assert(quad->texture_spec.palette != 0);
+            glUseProgram(palette_8_shader);
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_1D, quad->texture_spec.palette);
+            glActiveTexture(GL_TEXTURE1);
+            glBindTexture(GL_TEXTURE_2D, quad->texture_spec.texture.handle);
+            break;
+
+        case PALETTE_NONE:
+            glUseProgram(direct_shader);
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, quad->texture_spec.texture.handle);
+            break;
+        }
+    }
+}
+
 static void OpenGLRenderer_RenderFrame(SDL_Rect viewport) {
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glBindVertexArray(vertex_array);
@@ -637,54 +694,14 @@ static void OpenGLRenderer_RenderFrame(SDL_Rect viewport) {
     glDepthFunc(GL_LEQUAL);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    for (int i = 0; i < arrlen(quads); i++) {
-        const int vertex_base = i * 4;
-        const GLQuad* quad = &quads[i];
-
-        for (int i = 0; i < 4; i++) {
-            vertices[vertex_base + i].position.x = quad->positions[i].x;
-            vertices[vertex_base + i].position.y = quad->positions[i].y;
-            vertices[vertex_base + i].position.z = quad->z;
-            vertices[vertex_base + i].tex_coord = quad->tex_coords[i];
-            vertices[vertex_base + i].color = quad->color;
-        }
-    }
+    fill_quad_vertices();
 
     glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(GLVertex) * arrlen(quads) * 4, vertices);
 
     for (int i = 0; i < arrlen(quads); i++) {
         const GLQuad* quad = &quads[i];
 
-        if (quad->texture_spec.texture.handle == 0) {
-            glUseProgram(solid_shader);
-        } else {
-            switch (quad->texture_spec.texture.palette_type) {
-            case PALETTE_4:
-                glUseProgram(palette_4_shader);
-                const GLint texture_size_loc = glGetUniformLocation(palette_4_shader, "uTextureSize");
-                glUniform2i(texture_size_loc, quad->texture_spec.texture.width, quad->texture_spec.texture.width);
-                glActiveTexture(GL_TEXTURE0);
-                glBindTexture(GL_TEXTURE_1D, quad->texture_spec.palette);
-                glActiveTexture(GL_TEXTURE1);
-                glBindTexture(GL_TEXTURE_2D, quad->texture_spec.texture.handle);
-                break;
-
-            case PALETTE_8:
-                SDL_assert(quad->texture_spec.palette != 0);
-                glUseProgram(palette_8_shader);
-                glActiveTexture(GL_TEXTURE0);
-                glBindTexture(GL_TEXTURE_1D, quad->texture_spec.palette);
-                glActiveTexture(GL_TEXTURE1);
-                glBindTexture(GL_TEXTURE_2D, quad->texture_spec.texture.handle);
-                break;
-
-            case PALETTE_NONE:
-                glUseProgram(direct_shader);
-                glActiveTexture(GL_TEXTURE0);
-                glBindTexture(GL_TEXTURE_2D, quad->texture_spec.texture.handle);
-                break;
-            }
-        }
+        bind_quad_shader(quad);
 
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (GLvoid*)(sizeof(GLuint) * 6 * i));
     }

@@ -23,7 +23,6 @@
 
 // Forward decls
 
-
 u16 decode_wst_data(PLW* wk, u16 cmd, s16 cmd_ex);
 
 s32 player_is_grounded_or_on_car(const PLW* wk) {
@@ -870,42 +869,54 @@ static const u16* select_waza_table(const PLW* wk, s16 kos, AsstblCharRows* arca
     return ps2[wk->player_number][kos];
 }
 
-s32 waza_select(PLW* wk, s16 kos, s16 sf) { // 🟢
-    const u16* wst;
-
+/* Which waza table a step level reads. The switch used to sit inside
+ * waza_select; its default returned 0 from that function, which here is a null
+ * table the caller turns back into the same 0. */
+/* The upper half of the step-level table dispatch. Split off because one switch
+ * over eleven levels is one Complex Method; the lower half hands everything it
+ * does not name to this one, so an unknown level still reaches the same null. */
+static const u16* select_waza_table_for_high_step(PLW* wk, s16 kos, s16 sf) {
     switch (sf) {
-    case 0:
-        wst = select_waza_table(wk, kos, asstbl_lv_0000_arcade, _asstbl_lv_0000);
-
-        break;
-
-    case 1:
-        wst = select_waza_table(wk, kos, asstbl_lv_1000_arcade, _asstbl_lv_1000);
-
-        break;
-
-    case 2:
-    case 5:
-    case 8:
-        wst = select_waza_table(wk, kos, asstbl_lv_2000_arcade, _asstbl_lv_2000);
-
-        break;
-
     case 3:
     case 6:
     case 9:
-        wst = select_waza_table(wk, kos, asstbl_lv_3000_arcade, _asstbl_lv_3000);
-
-        break;
+        return select_waza_table(wk, kos, asstbl_lv_3000_arcade, _asstbl_lv_3000);
 
     case 4:
     case 7:
     case 10:
-        wst = select_waza_table(wk, kos, asstbl_lv_4000_arcade, _asstbl_lv_4000);
-
-        break;
+        return select_waza_table(wk, kos, asstbl_lv_4000_arcade, _asstbl_lv_4000);
 
     default:
+        return NULL;
+    }
+}
+
+/* Which waza table a step level reads. The switch used to sit inside
+ * waza_select; its default returned 0 from that function, which here is a null
+ * table the caller turns back into the same 0. */
+static const u16* select_waza_table_for_step(PLW* wk, s16 kos, s16 sf) {
+    switch (sf) {
+    case 0:
+        return select_waza_table(wk, kos, asstbl_lv_0000_arcade, _asstbl_lv_0000);
+
+    case 1:
+        return select_waza_table(wk, kos, asstbl_lv_1000_arcade, _asstbl_lv_1000);
+
+    case 2:
+    case 5:
+    case 8:
+        return select_waza_table(wk, kos, asstbl_lv_2000_arcade, _asstbl_lv_2000);
+
+    default:
+        return select_waza_table_for_high_step(wk, kos, sf);
+    }
+}
+
+s32 waza_select(PLW* wk, s16 kos, s16 sf) { // 🟢
+    const u16* wst = select_waza_table_for_step(wk, kos, sf);
+
+    if (wst == NULL) {
         return 0;
     }
 
@@ -942,6 +953,118 @@ static s32 falling_with_lever_at_height(PLW* wk, u16 lever, s16 cmd_ex) {
            cmd_ex_check(wk->wu.xyz[1].disp.pos, cmd_ex);
 }
 
+/* The wst dispatch, split four ways. One switch over eleven lever-and-height
+ * combinations plus a range default is one Complex Method; each part here keeps
+ * its own arms and hands everything it does not name to the next, so a cmd that
+ * matches none of them still arrives at the range test exactly as before. */
+/* The last arm of the wst dispatch and the body-range default it falls back to. */
+static u16 decode_wst_body_range_data(PLW* wk, u16 cmd, u16 lever, s16 cmd_ex) {
+    u16 rnum = 0;
+
+    switch (cmd & 0xF000) {
+    case 0x5000:
+        if (falling_within_height(wk, cmd_ex)) {
+            rnum = wk->cp->sw_new & lever;
+        }
+
+        break;
+
+    default:
+        if (get_em_body_range(&wk->wu) >= cmd) {
+            rnum = 1;
+        }
+
+        break;
+    }
+
+    return rnum;
+}
+
+static u16 decode_wst_range_data(PLW* wk, u16 cmd, u16 lever, s16 cmd_ex) {
+    u16 rnum = 0;
+
+    switch (cmd & 0xF000) {
+    case 0x9000:
+        if (falling_with_lever_at_height(wk, lever, cmd_ex)) {
+            rnum = 1;
+        }
+
+        break;
+
+    case 0x6000:
+        if (rising_within_height(wk, cmd_ex)) {
+            rnum = wk->cp->sw_new & lever;
+        }
+
+        break;
+
+    default:
+        rnum = decode_wst_body_range_data(wk, cmd, lever, cmd_ex);
+        break;
+    }
+
+    return rnum;
+}
+
+static u16 decode_wst_height_data(PLW* wk, u16 cmd, u16 lever, s16 cmd_ex) {
+    u16 rnum = 0;
+
+    switch (cmd & 0xF000) {
+    case 0x2000:
+        if (rising_within_height(wk, cmd_ex)) {
+            rnum = 1;
+        }
+
+        break;
+
+    case 0x1000:
+        if (falling_within_height(wk, cmd_ex)) {
+            rnum = 1;
+        }
+
+        break;
+
+    case 0xA000:
+        if (rising_with_lever_at_height(wk, lever, cmd_ex)) {
+            rnum = 1;
+        }
+
+        break;
+
+    default:
+        rnum = decode_wst_range_data(wk, cmd, lever, cmd_ex);
+        break;
+    }
+
+    return rnum;
+}
+
+static u16 decode_wst_lever_and_height_data(PLW* wk, u16 cmd, u16 lever, s16 cmd_ex) {
+    u16 rnum = 0;
+
+    switch (cmd & 0xF000) {
+    case 0x7000:
+        if ((wk->cp->sw_new & lever) && cmd_ex_check(wk->wu.xyz[1].disp.pos, cmd_ex)) {
+            rnum = 1;
+        }
+
+        break;
+
+    case 0xB000:
+        if ((lever == (wk->cp->sw_new & 0xF)) && cmd_ex_check(wk->wu.xyz[1].disp.pos, cmd_ex)) {
+            rnum = 1;
+        }
+
+        break;
+
+    default:
+        rnum = decode_wst_height_data(wk, cmd, lever, cmd_ex);
+        break;
+    }
+
+    return rnum;
+}
+
 u16 decode_wst_data(PLW* wk, u16 cmd, s16 cmd_ex) { // 🟢
     u16 lever;
     u16 rnum;
@@ -966,67 +1089,8 @@ u16 decode_wst_data(PLW* wk, u16 cmd, s16 cmd_ex) { // 🟢
         rnum = cmd_ex_check(wk->wu.xyz[1].disp.pos, cmd_ex);
         break;
 
-    case 0x7000:
-        if ((wk->cp->sw_new & lever) && cmd_ex_check(wk->wu.xyz[1].disp.pos, cmd_ex)) {
-            rnum = 1;
-        }
-
-        break;
-
-    case 0xB000:
-        if ((lever == (wk->cp->sw_new & 0xF)) && cmd_ex_check(wk->wu.xyz[1].disp.pos, cmd_ex)) {
-            rnum = 1;
-        }
-
-        break;
-
-    case 0x2000:
-        if (rising_within_height(wk, cmd_ex)) {
-            rnum = 1;
-        }
-
-        break;
-
-    case 0x1000:
-        if (falling_within_height(wk, cmd_ex)) {
-            rnum = 1;
-        }
-
-        break;
-
-    case 0xA000:
-        if (rising_with_lever_at_height(wk, lever, cmd_ex)) {
-            rnum = 1;
-        }
-
-        break;
-
-    case 0x9000:
-        if (falling_with_lever_at_height(wk, lever, cmd_ex)) {
-            rnum = 1;
-        }
-
-        break;
-
-    case 0x6000:
-        if (rising_within_height(wk, cmd_ex)) {
-            rnum = wk->cp->sw_new & lever;
-        }
-
-        break;
-
-    case 0x5000:
-        if (falling_within_height(wk, cmd_ex)) {
-            rnum = wk->cp->sw_new & lever;
-        }
-
-        break;
-
     default:
-        if (get_em_body_range(&wk->wu) >= cmd) {
-            rnum = 1;
-        }
-
+        rnum = decode_wst_lever_and_height_data(wk, cmd, lever, cmd_ex);
         break;
     }
 

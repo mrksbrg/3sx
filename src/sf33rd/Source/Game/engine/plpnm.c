@@ -3,6 +3,7 @@
  * Player Normal Move and State Controller
  */
 
+#include "arcade/arcade_balance.h"
 #include "common.h"
 #include "sf33rd/Source/Game/animation/appear.h"
 #include "sf33rd/Source/Game/animation/lose_pl.h"
@@ -18,7 +19,6 @@
 #include "sf33rd/Source/Game/engine/pls02.h"
 #include "sf33rd/Source/Game/engine/workuser.h"
 #include "sf33rd/Source/Game/io/pulpul.h"
-#include "arcade/arcade_balance.h"
 
 void Player_normal(PLW* wk);
 void setup_normal_process_flags(PLW* wk);
@@ -209,6 +209,26 @@ void Normal_02000(PLW* wk) { // 🟢
     run_facing_normal_state(wk, 1);
 }
 
+/* The moving normal states: start the pattern, load a movement row and apply
+ * it, then cal/add/move every frame after. Three states differ in two values,
+ * the pattern index and the movement row, both written out at the call site. */
+static void run_moving_normal_state(PLW* wk, s16 index, s16 mvxy_row) {
+    switch (wk->wu.routine_no[3]) {
+    case 0:
+        wk->wu.routine_no[3]++;
+        set_char_move_init(&wk->wu, 0, index);
+        setup_mvxy_data(&wk->wu, mvxy_row);
+        add_mvxy_speed(&wk->wu);
+        break;
+
+    case 1:
+        cal_mvxy_speed(&wk->wu);
+        add_mvxy_speed(&wk->wu);
+        char_move(&wk->wu);
+        break;
+    }
+}
+
 void Normal_03000(PLW* wk) { // 🟢
     lower_z_when_mirrored(wk);
 
@@ -233,20 +253,7 @@ void Normal_03000(PLW* wk) { // 🟢
 void Normal_04000(PLW* wk) { // 🟢
     raise_z_when_mirrored(wk);
 
-    switch (wk->wu.routine_no[3]) {
-    case 0:
-        wk->wu.routine_no[3]++;
-        set_char_move_init(&wk->wu, 0, 3);
-        setup_mvxy_data(&wk->wu, 1);
-        add_mvxy_speed(&wk->wu);
-        break;
-
-    case 1:
-        cal_mvxy_speed(&wk->wu);
-        add_mvxy_speed(&wk->wu);
-        char_move(&wk->wu);
-        break;
-    }
+    run_moving_normal_state(wk, 3, 1);
 }
 
 void Normal_05000(PLW* wk) { // 🟢
@@ -258,13 +265,15 @@ void Normal_05000(PLW* wk) { // 🟢
     jumping_guard_type_check(wk);
 }
 
-void nm_05_0000(PLW* wk) { // 🟢
+/* The state nm_05_0000 and nm_06_0100 share: one skeleton, byte for byte apart
+ * from the pattern index and the movement row. */
+static void run_nm_dash_state(PLW* wk, s16 index, s16 mvxy_row) {
     switch (wk->wu.routine_no[3]) {
     case 0:
         wk->wu.routine_no[3]++;
         wk->wu.rl_flag = wk->wu.rl_waza;
-        set_char_move_init(&wk->wu, 0, 4);
-        setup_mvxy_data(&wk->wu, 2);
+        set_char_move_init(&wk->wu, 0, index);
+        setup_mvxy_data(&wk->wu, mvxy_row);
         /* fallthrough */
 
     case 1:
@@ -287,13 +296,19 @@ void nm_05_0000(PLW* wk) { // 🟢
     }
 }
 
-void nm_05_0100(PLW* wk) { // 🟢
+void nm_05_0000(PLW* wk) { // 🟢
+    run_nm_dash_state(wk, 4, 2);
+}
+
+/* The state nm_05_0100 and nm_06_0200 share: one skeleton, byte for byte apart
+ * from the pattern index and the movement row. */
+static void run_nm_dash_cancel_state(PLW* wk, s16 index, s16 mvxy_row) {
     switch (wk->wu.routine_no[3]) {
     case 0:
         wk->wu.routine_no[3]++;
         wk->wu.rl_flag = wk->wu.rl_waza;
-        set_char_move_init(&wk->wu, 0, 4);
-        setup_mvxy_data(&wk->wu, 2);
+        set_char_move_init(&wk->wu, 0, index);
+        setup_mvxy_data(&wk->wu, mvxy_row);
 
         if (wk->wu.cg_type == 1) {
             add_mvxy_speed(&wk->wu);
@@ -331,6 +346,10 @@ void nm_05_0100(PLW* wk) { // 🟢
         char_move(&wk->wu);
         break;
     }
+}
+
+void nm_05_0100(PLW* wk) { // 🟢
+    run_nm_dash_cancel_state(wk, 4, 2);
 }
 
 void Normal_06000(PLW* wk) { // 🟢
@@ -347,78 +366,11 @@ void nm_06_0000(PLW* wk) { // 🟢
 }
 
 void nm_06_0100(PLW* wk) { // 🟢
-    switch (wk->wu.routine_no[3]) {
-    case 0:
-        wk->wu.routine_no[3]++;
-        wk->wu.rl_flag = wk->wu.rl_waza;
-        set_char_move_init(&wk->wu, 0, 5);
-        setup_mvxy_data(&wk->wu, 3);
-        /* fallthrough */
-
-    case 1:
-        if (wk->wu.cg_type == 1) {
-            add_mvxy_speed(&wk->wu);
-            wk->wu.routine_no[3]++;
-            break;
-        }
-
-        char_move(&wk->wu);
-        break;
-
-    case 2:
-        jumping_union_process(&wk->wu, 3);
-        break;
-
-    case 3:
-        char_move(&wk->wu);
-        break;
-    }
+    run_nm_dash_state(wk, 5, 3);
 }
 
 void nm_06_0200(PLW* wk) { // 🟢
-    switch (wk->wu.routine_no[3]) {
-    case 0:
-        wk->wu.routine_no[3]++;
-        wk->wu.rl_flag = wk->wu.rl_waza;
-        set_char_move_init(&wk->wu, 0, 5);
-        setup_mvxy_data(&wk->wu, 3);
-
-        if (wk->wu.cg_type == 1) {
-            add_mvxy_speed(&wk->wu);
-            wk->wu.routine_no[3]++;
-            wk->wu.cg_type = 0;
-        }
-
-        break;
-
-    case 1:
-        char_move(&wk->wu);
-
-        if (wk->wu.cg_type == 1) {
-            add_mvxy_speed(&wk->wu);
-            wk->wu.routine_no[3]++;
-            wk->wu.cg_type = 0;
-        }
-
-        break;
-
-    case 2:
-        char_move(&wk->wu);
-
-        if (wk->wu.cg_type == 1) {
-            wk->wu.routine_no[3]++;
-            wk->wu.cg_type = 0;
-            break;
-        }
-
-        cal_mvxy_speed(&wk->wu);
-        add_mvxy_speed(&wk->wu);
-        break;
-
-    case 3:
-        char_move(&wk->wu);
-        break;
-    }
+    run_nm_dash_cancel_state(wk, 5, 3);
 }
 
 void Normal_07000(PLW* wk) { // 🟢
@@ -448,39 +400,13 @@ void Normal_10000(PLW* wk) { // 🟢
 void Normal_11000(PLW* wk) { // 🔵
     lower_z_when_mirrored(wk);
 
-    switch (wk->wu.routine_no[3]) {
-    case 0:
-        wk->wu.routine_no[3]++;
-        set_char_move_init(&wk->wu, 0, 9);
-        setup_mvxy_data(&wk->wu, 4);
-        add_mvxy_speed(&wk->wu);
-        break;
-
-    case 1:
-        cal_mvxy_speed(&wk->wu);
-        add_mvxy_speed(&wk->wu);
-        char_move(&wk->wu);
-        break;
-    }
+    run_moving_normal_state(wk, 9, 4);
 }
 
 void Normal_12000(PLW* wk) { // 🔵
     raise_z_when_mirrored(wk);
 
-    switch (wk->wu.routine_no[3]) {
-    case 0:
-        wk->wu.routine_no[3]++;
-        set_char_move_init(&wk->wu, 0, 10);
-        setup_mvxy_data(&wk->wu, 5);
-        add_mvxy_speed(&wk->wu);
-        break;
-
-    case 1:
-        cal_mvxy_speed(&wk->wu);
-        add_mvxy_speed(&wk->wu);
-        char_move(&wk->wu);
-        break;
-    }
+    run_moving_normal_state(wk, 10, 5);
 }
 
 void Normal_13000(PLW* wk) { // 🔵
@@ -489,7 +415,10 @@ void Normal_13000(PLW* wk) { // 🔵
     run_simple_normal_state(wk, 50);
 }
 
-void Normal_16000(PLW* wk) { // 🟢
+/* The two air-guard states: put the player in front, take the guard flag, clear
+ * the extra jump and run the pattern. They differ in one value, the pattern
+ * index. */
+static void run_guard_extra_jump_state(PLW* wk, s16 index) {
     raise_z_when_mirrored(wk);
 
     wk->guard_flag = 3;
@@ -498,7 +427,7 @@ void Normal_16000(PLW* wk) { // 🟢
     case 0:
         wk->wu.routine_no[3]++;
         wk->extra_jump = 0;
-        set_char_move_init(&wk->wu, 0, 12);
+        set_char_move_init(&wk->wu, 0, index);
         break;
 
     case 1:
@@ -507,22 +436,12 @@ void Normal_16000(PLW* wk) { // 🟢
     }
 }
 
+void Normal_16000(PLW* wk) { // 🟢
+    run_guard_extra_jump_state(wk, 12);
+}
+
 void Normal_17000(PLW* wk) { // 🟢
-    raise_z_when_mirrored(wk);
-
-    wk->guard_flag = 3;
-
-    switch (wk->wu.routine_no[3]) {
-    case 0:
-        wk->wu.routine_no[3]++;
-        wk->extra_jump = 0;
-        set_char_move_init(&wk->wu, 0, 13);
-        break;
-
-    case 1:
-        char_move(&wk->wu);
-        break;
-    }
+    run_guard_extra_jump_state(wk, 13);
 }
 
 void Normal_18000(PLW* wk) { // 🟢
@@ -716,14 +635,24 @@ void Normal_39000(PLW* wk) { // 🟢
     set_char_move_init(&wk->wu, 0, 23);
 }
 
-void Normal_40000(PLW* wk) { // 🟡
-    wk->wu.next_z = 38;
+/* 40000's own version of the test 41000 spells alive_and_not_in_first_pattern. */
+static s32 not_in_first_pattern(const PLW* wk) {
+    return wk->wu.now_koc != 0 || (wk->wu.char_index != 0);
+}
 
-    // Port training modes intentionally bypass CPS3's win sequence.
+/* The round-end state Normal_40000 and Normal_41000 share. Outside training
+ * they hand straight to the win or the loss sequence; inside it they take the
+ * port's bypass, which resets the pattern when the fighter is not already at the
+ * start of one and parks the routine at 9.
+ *
+ * Port training modes intentionally bypass CPS3's win and loss sequences. */
+static void run_nm_round_end_state(PLW* wk, s16 next_z, s32 (*needs_reset)(const PLW* wk), void (*round_end)(PLW* wk)) {
+    wk->wu.next_z = next_z;
+
     if ((Mode_Type == MODE_NORMAL_TRAINING) || (Mode_Type == MODE_PARRY_TRAINING)) {
         switch (wk->wu.routine_no[3]) {
         case 0:
-            if (wk->wu.now_koc != 0 || (wk->wu.char_index != 0)) {
+            if (needs_reset(wk)) {
                 set_char_move_init(&wk->wu, 0, 0);
             }
 
@@ -735,29 +664,15 @@ void Normal_40000(PLW* wk) { // 🟡
         return;
     }
 
-    win_player(wk);
+    round_end(wk);
+}
+
+void Normal_40000(PLW* wk) { // 🟡
+    run_nm_round_end_state(wk, 38, not_in_first_pattern, win_player);
 }
 
 void Normal_41000(PLW* wk) { // 🟡
-    wk->wu.next_z = 34;
-
-    // Port training modes intentionally bypass CPS3's loss sequence.
-    if ((Mode_Type == MODE_NORMAL_TRAINING) || (Mode_Type == MODE_PARRY_TRAINING)) {
-        switch (wk->wu.routine_no[3]) {
-        case 0:
-            if (alive_and_not_in_first_pattern(wk)) {
-                set_char_move_init(&wk->wu, 0, 0);
-            }
-
-            wk->wu.routine_no[3] = 9;
-            break;
-        }
-
-        char_move(&wk->wu);
-        return;
-    }
-
-    lose_player(wk);
+    run_nm_round_end_state(wk, 34, alive_and_not_in_first_pattern, lose_player);
 }
 
 /* Both parry states put the player in front unless the opponent's pattern
@@ -823,40 +738,6 @@ static void escape_launch_on_marker_1(PLW* wk, const s16* datix) {
     }
 }
 
-void Normal_42000(PLW* wk) { // 🟢
-    const s16* dadr = nmPB_data[wk->wu.routine_no[2] - 42];
-
-    set_parry_depth_and_hosei(wk);
-
-    switch (wk->wu.routine_no[3]) {
-    case 0:
-        begin_parry_state(wk, dadr);
-        break;
-
-    case 1:
-        if (1) {
-            wk->wu.routine_no[3]++;
-            char_move_wca(&wk->wu);
-        } else {
-            /* fallthrough */
-
-        case 2:
-            char_move(&wk->wu);
-        }
-
-        parry_launch_on_marker_1(wk, dadr);
-        break;
-
-    case 3:
-        jumping_union_process(&wk->wu, 4);
-        break;
-
-    case 4:
-        char_move(&wk->wu);
-        break;
-    }
-}
-
 /* The throw escape's first frame: the facing, the pattern and movement data
  * its row names, a fixed hit stop, and the gauge and grade it earns. */
 static void begin_throw_escape_state(PLW* wk, const s16* datix) {
@@ -876,14 +757,18 @@ static void begin_throw_escape_state(PLW* wk, const s16* datix) {
     grade_add_grap_def(wk->wu.id);
 }
 
-void Normal_47000(PLW* wk) { // 🟢
-    const s16* datix = nmCE_data[wk->wu.routine_no[2] - 47];
-
+/* Normal_42000 and Normal_47000 are the same state machine: the same parry
+ * depth and hosei, the same fallthrough into case 2, the same jump and move
+ * arms. Only the data table and the two actions the arms call differ, so they
+ * come in as function pointers. */
+static void run_parry_like_state(
+    PLW* wk, const s16* data, void (*begin)(PLW*, const s16*), void (*launch_on_marker_1)(PLW*, const s16*)
+) {
     set_parry_depth_and_hosei(wk);
 
     switch (wk->wu.routine_no[3]) {
     case 0:
-        begin_throw_escape_state(wk, datix);
+        begin(wk, data);
         break;
 
     case 1:
@@ -897,7 +782,7 @@ void Normal_47000(PLW* wk) { // 🟢
             char_move(&wk->wu);
         }
 
-        escape_launch_on_marker_1(wk, datix);
+        launch_on_marker_1(wk, data);
         break;
 
     case 3:
@@ -908,6 +793,14 @@ void Normal_47000(PLW* wk) { // 🟢
         char_move(&wk->wu);
         break;
     }
+}
+
+void Normal_42000(PLW* wk) { // 🟢
+    run_parry_like_state(wk, nmPB_data[wk->wu.routine_no[2] - 42], begin_parry_state, parry_launch_on_marker_1);
+}
+
+void Normal_47000(PLW* wk) { // 🟢
+    run_parry_like_state(wk, nmCE_data[wk->wu.routine_no[2] - 47], begin_throw_escape_state, escape_launch_on_marker_1);
 }
 
 void Normal_48000(PLW* wk) { // 🟢
@@ -1099,19 +992,47 @@ void Normal_54000(PLW* wk) { // 🟢
     }
 }
 
-void Normal_55000(PLW* wk) { // 🟢
+/* What each extra-jump state does before its switch, and what it does on the
+ * first frame. 58000 clears nothing before, which is what the empty function
+ * says; a flag would have put a branch in the helper that none of the three
+ * has. */
+static void clear_bs2_on_car(PLW* wk) {
+    wk->bs2_on_car = 0;
+}
+
+static void keep_bs2_on_car(PLW* wk) {}
+
+static void begin_nm_55000(PLW* wk) {
+    wk->extra_jump = 1;
+    set_char_move_init(&wk->wu, 0, 18);
+    setup_mvxy_data(&wk->wu, 7);
+    make_nm55_init_sp(wk);
+    add_mvxy_speed(&wk->wu);
+}
+
+static void begin_nm_56000(PLW* wk) {
+    nm56_char_select(wk);
+    add_mvxy_speed(&wk->wu);
+    wk->bs2_on_car = 0;
+}
+
+static void begin_nm_58000(PLW* wk) {
+    set_char_move_init(&wk->wu, 0, 18);
+    setup_mvxy_data(&wk->wu, 7);
+}
+
+/* The extra-jump state Normal_55000, Normal_56000 and Normal_58000 share: raise
+ * the z while mirrored, step the routine through its own opening, then the jump
+ * union and the move. */
+static void run_nm_extra_jump_state(PLW* wk, void (*prepare)(PLW* wk), void (*begin)(PLW* wk)) {
     raise_z_when_mirrored(wk);
 
-    wk->bs2_on_car = 0;
+    prepare(wk);
 
     switch (wk->wu.routine_no[3]) {
     case 0:
         wk->wu.routine_no[3]++;
-        wk->extra_jump = 1;
-        set_char_move_init(&wk->wu, 0, 18);
-        setup_mvxy_data(&wk->wu, 7);
-        make_nm55_init_sp(wk);
-        add_mvxy_speed(&wk->wu);
+        begin(wk);
         break;
 
     case 1:
@@ -1122,6 +1043,10 @@ void Normal_55000(PLW* wk) { // 🟢
         char_move(&wk->wu);
         break;
     }
+}
+
+void Normal_55000(PLW* wk) { // 🟢
+    run_nm_extra_jump_state(wk, clear_bs2_on_car, begin_nm_55000);
 }
 
 void make_nm55_init_sp(PLW* wk) { // 🟢
@@ -1155,26 +1080,7 @@ void make_nm55_init_sp(PLW* wk) { // 🟢
 }
 
 void Normal_56000(PLW* wk) { // 🟢
-    raise_z_when_mirrored(wk);
-
-    wk->bs2_on_car = 0;
-
-    switch (wk->wu.routine_no[3]) {
-    case 0:
-        wk->wu.routine_no[3]++;
-        nm56_char_select(wk);
-        add_mvxy_speed(&wk->wu);
-        wk->bs2_on_car = 0;
-        break;
-
-    case 1:
-        jumping_union_process(&wk->wu, 2);
-        break;
-
-    case 2:
-        char_move(&wk->wu);
-        break;
-    }
+    run_nm_extra_jump_state(wk, clear_bs2_on_car, begin_nm_56000);
 }
 
 void nm56_char_select(PLW* wk) { // 🟢
@@ -1254,23 +1160,7 @@ void nm57_dir_select(PLW* wk) { // 🟢
 }
 
 void Normal_58000(PLW* wk) { // 🟢
-    raise_z_when_mirrored(wk);
-
-    switch (wk->wu.routine_no[3]) {
-    case 0:
-        wk->wu.routine_no[3]++;
-        set_char_move_init(&wk->wu, 0, 18);
-        setup_mvxy_data(&wk->wu, 7);
-        break;
-
-    case 1:
-        jumping_union_process(&wk->wu, 2);
-        break;
-
-    case 2:
-        char_move(&wk->wu);
-        break;
-    }
+    run_nm_extra_jump_state(wk, keep_bs2_on_car, begin_nm_58000);
 }
 
 const s16 nmPB_data[5][3] = { { 38, 23, 1 }, { 39, 23, 1 }, { 40, 24, 1 }, { 41, 25, 0 }, { 42, 25, 0 } };
