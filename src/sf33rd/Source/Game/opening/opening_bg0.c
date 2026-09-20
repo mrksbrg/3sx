@@ -515,15 +515,21 @@ static void scroll_bg0_until_past(XY* scroll, s32 step, s16 limit) {
     }
 }
 
+/* Step 0 of the scene that sweeps in from the left: the layer starts well off
+ * the left edge with a single block above the pair of rows. */
+static void open_bg0_0006(void) {
+    opw_ptr->r_no_0 += 1;
+    bgw_ptr->free = 0;
+    Bg_On_W(1);
+    set_bg0_scroll(0xC00000, 0);
+    oh_bg_blk_w(op_w.bgw, &(Op_Bg_Blk_Args){0xD, 0, 0, 0});
+    oh_bg_blk_w_rows(0xE, 0xF, 0, 0);
+}
+
 void op_bg0_0006(s16 /* unused */) {
     switch (opw_ptr->r_no_0) {
     case 0:
-        opw_ptr->r_no_0 += 1;
-        bgw_ptr->free = 0;
-        Bg_On_W(1);
-        set_bg0_scroll(0xC00000, 0);
-        oh_bg_blk_w(op_w.bgw, &(Op_Bg_Blk_Args){0xD, 0, 0, 0});
-        oh_bg_blk_w_rows(0xE, 0xF, 0, 0);
+        open_bg0_0006();
         break;
 
     case 1:
