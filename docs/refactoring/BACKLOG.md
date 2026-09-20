@@ -289,6 +289,56 @@ sequence, the menus and the endings. **Targeted playtesting is worth pointing at
 `netplay_menu.c`'s confirm path, `pulpul.c`'s vibration state machine and `end_14.c` /
 `end_18.c`.
 
+## Where the opening_bg0 lever applies next - 2026-09-20
+
+`opening_bg0.c` went 8.12 -> 10.00 by pricing **Overall Code Complexity** first and
+re-pricing everything else afterwards; see *Price the file's cheapest finding before
+inheriting a plateau* in the playbook. `tools/mean_probe.py` does the pricing - it inserts
+`k` throwaway one-line functions, binary-searches the smallest `k` that closes the finding,
+and restores the file - so "is this file the same shape?" is now a command rather than a
+guess.
+
+Run over all 109 files below 10.00, the finding is still open on **thirteen**. Four are
+worth taking and were probed:
+
+| File | Now | On the mean alone | Functions needed | Then what is left |
+| --- | --- | --- | --- | --- |
+| `Game/engine/cmd_main_checks.c` | 9.16 | **9.76** | **1** | Bumpy Road x3 - and each one lifted feeds the mean again |
+| `Game/animation/appear_late.c` | 9.38 | **10.00** | 4 | nothing; the mean is the only finding |
+| `Game/demo/demo00.c` | 9.38 | **10.00** | 4 | nothing; the mean is the only finding |
+| `Game/stage/bg_zoom.c` | 8.54 | **9.09** | 3 | Code Duplication x5 - then re-price the zoom-switch splits this file already rejected at 8.54 -> 8.28 |
+
+`bg_zoom.c` is the closest match to `opening_bg0.c`: the same two findings, and a plateau
+note recording the same kind of refusal ("one split pays, and the full set of six measures
+8.54 -> 8.28, because the split halves are themselves twins"). Its rejected splits each
+*add a function*, so they pay into the mean they were never measured against.
+
+The remaining nine are the `Game/com/patterns` skeleton files at 7.55-7.78, and there the
+probe argues for leaving them: `com_patterns_4step_3.c` needs 6 functions and
+`com_patterns_3step.c` needs 7, both reaching only **8.03**, because Code Duplication x14 to
+x44 is what actually holds them down. That is the intrinsic-idiom finding already recorded
+for the folder, now with a number on the other half of it.
+
+### The other half of the lever: 59 files where duplication is all that is left
+
+Clearing Code Duplication on any of them means 10.00. Thirty-six are the machine-folded
+`Game/com` script folders and belong to the `gfold`/`xfold` workflow. The other **23** were
+refactored by hand, and **thirteen of those are a single two-function pair at 9.38**:
+
+`core/renderer.c`, `platform/input/sdl/sdl_pad.c`, `Game/effect/eff09_late.c`,
+`Game/effect/eff93.c`, `Game/ending/end_10.c`, `Game/ending/end_20.c`,
+`Game/engine/plcnt_setup.c`, `Game/menu/replay_menu.c`, `Game/rendering/mtrans_pool.c`,
+`Game/system/ramcnt.c`, `Game/ui/sc_sub_logo.c`, and two more at the same score.
+
+A pair is the shape `opening_bg0.c` finished on. Where the two differ only in literals, the
+2026-09-20 two-instance licence folds them. Where they are a true mirror - `<` against `>`,
+`+=` against `-=` - nothing folds them, and the move is to lift a block out of **one** side
+only: the asymmetry drops that side below the similarity threshold and both functions leave
+the finding. Doing it to both sides puts the pair straight back. Worth **+0.62** each.
+
+`Game/opening/opening_bg1.c` (9.38, four functions) is the sibling of the file this all came
+from and has not been retried.
+
 ## Folder campaigns
 
 Work that is not a numbered task, because none of these files were in the Red band.
@@ -329,7 +379,7 @@ point. **Campaign start** preserves the original 2026-09-01 sweep.
 | R09 | 2.74 | 2.74 | **10.00** | Done. Split into `pls00_normal_states.c` (now **8.03**) and `pls00_damage_states.c` (10.00); the original is at 10.00. The normal-states file plateaus on a Code Duplication web between the `nm_*` state machines themselves, which no shared run reaches. |
 | R10 | 3.09 | 3.09 | **10.00** | Done for the original; the folder was reworked on 2026-09-19. `opening.c` **10.00**, `opening_scenes.c` 7.42 -> **9.09**, `opening_scenes_late.c` 6.77 -> **9.09**, `opening_bg0.c` 7.54 -> **10.00** (8.12 on 2026-09-19, then nine more commits on 2026-09-20 - see the plateau note it overturned), `opening_bg1.c` **8.28**. The earlier note - that chaining one scene pays and chaining the next costs - was true of the scenes *as they were*: every scene step was eight lines of cue-test, advance and background move. Folding those onto `opening_cue_step` and its two variants (fifty steps across the two files) made the arms one line each, and only then did chaining the long switches pay. What was thought to stop the two bg files is the sibling state machines reading as copies of one another, with different statements in the same shape - Recipe D's forbidden case. That is true of the fold, and it is not the only way to break a pair: lifting a block out of **one** side of a mirrored pair drops it below the similarity threshold, and that is how `opening_bg0.c`'s last two groups went. `opening_bg1.c` has not been retried. |
 | R11 | 3.49 | 3.49 | **9.31** | Plateau. Split five ways: `PPGFile_quads.c` (**10.00**), `PPGFile_chunks.c` (**10.00**), `PPGFile_palettes.c` (**10.00**) and `PPGFile_context.c` (**10.00**); group mean 9.86. The 2026-09-19 pass took the chunk file from 6.99 by extracting every loop and lookup out of the six setup functions and then splitting the palette side off, which cleared Overall Code Complexity on both halves. What stops `PPGFile.c` is the palette/texture twin pair - `ppgRelease*Handle` and `ppgGetUsing*Handle` differ in their type and in three callees each, which is Recipe D's forbidden case. |
-| R12 | 3.56 | 3.56 | **9.38** | Plateau. Split into `appear_late.c`, now also 9.38. Overall Code Complexity is the only finding left in either. |
+| R12 | 3.56 | 3.56 | **10.00** | Split into `appear_late.c`, which is at 9.38 with Overall Code Complexity as its only finding - `tools/mean_probe.py` prices that at **four** functions for 10.00. The original reached 10.00 and this row had not caught up. |
 | R13 | 3.56 | 3.56 | **10.00** | Done. |
 | R14 | 3.62 | 3.62 | **9.09** | Plateau. Split into `bg_textures.c` (10.00); the whole stage folder went with it. |
 | R15 | 3.68 | 3.68 | **10.00** | Done. `plpdm.c`, `plpdm_states.c` and `plpdm_states_late.c` are all at 10.00. The last two were the campaign's most stubborn plateau until the runs the damage states share were taken instead of their arms - see *Against a twin family, share what they agree on* in `PLAYBOOK.md`. |
