@@ -1464,7 +1464,7 @@ Recipe X both refuse to merge.
 | `sys_sub_ranking.c` | 9.38 | *was 8.54.* Recipe V on the insert three of the four ranking tables share. `Check_Sort_Score` is left out: its table starts at zero and is written without a `+ 0` to parameterise |
 | `Lz77Dec.c` | 8.79 | *was 8.33.* Recipe E cannot touch `decLZ77withSizeCheck` at all - every block in it advances `src`, `dst` and `size` at once, and a cursor struct is the out-parameter object Recipe E forbids inventing. Recipe D reaches the four families inside it that each produce one value; the three literal-copy loops that would come next advance **two** pointers and stay |
 | `pulpul.c` | 8.73 | *was 8.22.* `run_pulpul_device` keeps three findings and cannot lose them: its state machine falls through on every arm, so Recipe X cannot cut it, and it contains a **backward** `goto` that Recipe R does not reach either |
-| `opening_bg0.c` | 8.12 | a family plateau, measured twice. The file already holds six `op_bg0_lay_blocks_*` helpers, and both remaining moves - extracting `op_bg0_0003`'s inner switch, and splitting `op_bg0_lay_blocks_6` - make a seventh member and measure **8.12 -> 8.03**. *Weigh each arm against the twin family it would join* |
+| `opening_bg0.c` | **10.00** | *was 8.12, and was recorded here as "a family plateau, measured twice".* Overturned - see *Price the file's cheapest finding before inheriting a plateau*. Both moves the old note rejected are in the file now and both were worth taking; what it had not priced is that Overall Code Complexity clears on **two** more low-complexity functions, after which the twin they make is paid for |
 | `sdl_gpu_renderer.c` | **10.00** | *was 6.82.* Recipe E eight times and two parameter objects, in that order: the frame's phases, the per-quad pipeline choice, the six set-up sections, `create_shader` and `create_pipeline`'s argument lists, the three remaining set-up blocks, the screen pass's bindings |
 | `flps2etc.c` | 9.84 | *was 6.94.* Recipes E, G and P over the four image loaders. What remains is the two PIC row decoders at two bumps each: the third arm of each run-length form advances **both** the source and the destination inside its loop, so lifting it is a block writing two outer locals, which Recipe E refuses |
 | `pltim2.c` | 9.38 | *was 7.21.* Recipe P on the header checks, Recipe D on the pixel-format blocks the two context setters share, Recipe E and Recipe X on the rest. The four format helpers are one Code Duplication group, and folding them onto one parameter object measures **8.77 -> 8.77** - it clears the duplication and brings Overall Code Complexity straight back, because three of the functions it removes are cc 1. See *A fold that removes simple functions can push the file mean over its threshold*, measured again |
@@ -3365,6 +3365,64 @@ cc 7: **7.50 -> 7.77**, on the first thing tried.
 So before inheriting a plateau, list the file's flagged functions and check them
 against the ones the note discusses. A note is a record of what somebody looked
 at, not a proof about what they did not.
+
+### Price the file's cheapest finding before inheriting a plateau
+
+*Added 2026-09-20, measured on `opening_bg0.c`: a plateau recorded at 8.12
+"measured twice", taken to **10.00** in nine commits without relaxing anything.*
+
+*A plateau note covers the functions it names* is about a note that missed a
+function. This is about a note that looked at the right functions, measured them
+correctly, and still reached the wrong conclusion about the file, because it
+priced each move against the findings that happened to be open at the time.
+
+`opening_bg0.c` had three findings: **Overall Code Complexity**, **Complex
+Method** on two functions, and **Code Duplication** on six. The note priced the
+two available moves - lifting `op_bg0_0003`'s inner switch, and splitting
+`op_bg0_lay_blocks_6` - and found each clears one of the two Complex Methods
+while making a seventh member of the block-laying family: **8.12 -> 8.03** each.
+Both true. Both reverted.
+
+What was never priced is the cheapest finding in the file. **Overall Code
+Complexity is the file's mean cyclomatic complexity against a flat threshold of
+4, and every helper this catalogue creates moves it by the same amount**,
+`(mean - 1) / (n + 1)`, whatever the helper contains. That is not a
+coincidence: a function's complexity is one plus its branches, so lifting `b`
+branches into a helper takes `b` off the parent and gives the helper `1 + b` -
+the file's total rises by exactly one and its count by exactly one, for an
+extraction of any size and for a straight-line deduplication alike. It is the
+one finding that every legal move pays into, including the ones that do nothing
+else. So measure it first:
+
+1. **Probe it.** Add `k` throwaway one-line `static` functions to the file,
+   measure, delete them. Binary-search `k`. It costs three or four score calls
+   and it turns "the mean is too high" into a number - here, *two*.
+2. **Spend the extractions the file already wants** until that number is met.
+   Each one measures flat on its own, which is the trap: rule 2 would revert
+   every one of them individually and the finding would never clear. Commit them
+   as a declared set, each message naming the one that will carry them. The
+   `game_round.c` row in the table above already did this for a single pair -
+   "a probe said **two** more low-complexity functions would clear it, so the
+   first of the two measures flat and says in its message that the second
+   carries it" - and the technique generalises: probe first, then spend.
+3. **Then re-price everything that was rejected.** With the mean cleared and
+   Complex Method the only category the rejected moves touch, the same lift that
+   cost 0.09 measures flat, and it is now worth taking because it removes a
+   *category* rather than one of two entries in one.
+
+The order matters more than the moves. In sequence: 8.12 flat, flat, flat, then
+8.28 on the chain rebalance, flat on the re-tried lift, flat, **8.81** when the
+mean cleared, 9.09, 9.38, **10.00**. Four of the nine commits measured flat and
+not one of them was gold-plating.
+
+The last two are worth naming separately, because they are the answer to the
+`Recipe D's forbidden case` note that had been written across both `opening_bg`
+files. A mirrored pair - `<` against `>`, `+=` against `-=` - can never be
+folded. It can still be **broken**, by lifting a block out of *one* side: the
+asymmetry drops that side below CodeScene's similarity threshold and both
+functions leave the finding. Doing it to both sides puts the pair straight back,
+which is why the backlog's `effd1.c` and `effe9.c` rows record 10.00 for one arm
+and 9.38 for both.
 
 ### Retry a rejected extraction - including one refused on duplication
 

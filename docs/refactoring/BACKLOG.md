@@ -192,9 +192,13 @@ pinned at roughly the step count. Recipe X would divide it, and `bg_zoom.c` alre
 that: one split pays, and the full set of six measures 8.54 -> 8.28, because the split
 halves are themselves twins.
 
-The twenty-sixth file is `opening_bg0.c` at 8.12, and it is a genuine measured refusal:
-lifting `op_bg0_0003`'s inner block clears one Complex Method and creates a duplicate pair
-with the existing `op_bg0_lay_blocks` chain, 8.12 -> 8.03. Reverted.
+The twenty-sixth file was `opening_bg0.c` at 8.12, recorded here as a genuine measured
+refusal: lifting `op_bg0_0003`'s inner block clears one Complex Method and creates a
+duplicate pair with the existing `op_bg0_lay_blocks` chain, 8.12 -> 8.03. Reverted.
+
+**Overturned 2026-09-20: the file is at 10.00.** The measurement above was right about
+that move in isolation and wrong about the file. See *Price the file's cheapest finding
+before inheriting a plateau* in the playbook, and the nine commits on this branch.
 
 ## The platform, SDK and shim sweep - 2026-09-20
 
@@ -258,7 +262,7 @@ instance count, which was settled rather than relaxed - see the playbook.
 | `Lz77Dec.c` | the decode loop flattened with `continue` | 8.81 -> 8.81, cc +1 |
 | `port/config/keymap.c` | `get_button_name` split three ways | 8.92 -> 8.54; every split of a name switch reproduces its own shape as a duplicate |
 | `Game/stage/bg_zoom.c` | the inner zoom switches lifted | 8.54 -> 8.28 |
-| `Game/opening/opening_bg0.c` | scene 3's block switch lifted | 8.12 -> 8.03 |
+| `Game/opening/opening_bg0.c` | scene 3's block switch lifted | 8.12 -> 8.03 — **superseded 2026-09-20**: the same lift measures flat once Complex Method is the only category it touches, and the file went on to 10.00 |
 | `AcrSDK/common/memmgr.c` | *both* gap scans lifted | 8.88 -> 8.15 |
 | `Game/ending/end_01.c` | the two identical wait arms deduplicated | 9.60 -> 9.07; the file mean was under 4 and a cc-2 helper pushed it over |
 | `Game/ending/end_01.c` | the fade arms split off | 9.60 -> 9.09 |
@@ -323,7 +327,7 @@ point. **Campaign start** preserves the original 2026-09-01 sweep.
 | R07 | 2.58 | 2.58 | **8.54** | Plateau, re-tested 2026-09-19. Code Duplication is the only finding, and it is five groups of exactly **two**. Four are near-misses the catalogue refuses: `eff09_0000`/`eff09_8000` and the two `advance_*` functions differ in their conditions and their callees, and `initialize_eff09_4000`/`_11000` differ in the *operators* of their mirrored branch. The fifth, `adjust_sean_ball_left`/`_right`, differs in nothing but literals - a mask, a counter index, two limits and a column - and is blocked only by Recipe V's three-instance rule. It is the same open question `Game/ending` left: no third instance exists anywhere in the tree (`grep` finds the skeleton four times, all in this file). |
 | R08 | 2.64 | 2.64 | **10.00** | Done. |
 | R09 | 2.74 | 2.74 | **10.00** | Done. Split into `pls00_normal_states.c` (now **8.03**) and `pls00_damage_states.c` (10.00); the original is at 10.00. The normal-states file plateaus on a Code Duplication web between the `nm_*` state machines themselves, which no shared run reaches. |
-| R10 | 3.09 | 3.09 | **10.00** | Done for the original; the folder was reworked on 2026-09-19. `opening.c` **10.00**, `opening_scenes.c` 7.42 -> **9.09**, `opening_scenes_late.c` 6.77 -> **9.09**, `opening_bg0.c` 7.54 -> **8.12**, `opening_bg1.c` **8.28**. The earlier note - that chaining one scene pays and chaining the next costs - was true of the scenes *as they were*: every scene step was eight lines of cue-test, advance and background move. Folding those onto `opening_cue_step` and its two variants (fifty steps across the two files) made the arms one line each, and only then did chaining the long switches pay. What stops the two bg files is the sibling state machines reading as copies of one another, with different statements in the same shape - Recipe D's forbidden case. |
+| R10 | 3.09 | 3.09 | **10.00** | Done for the original; the folder was reworked on 2026-09-19. `opening.c` **10.00**, `opening_scenes.c` 7.42 -> **9.09**, `opening_scenes_late.c` 6.77 -> **9.09**, `opening_bg0.c` 7.54 -> **10.00** (8.12 on 2026-09-19, then nine more commits on 2026-09-20 - see the plateau note it overturned), `opening_bg1.c` **8.28**. The earlier note - that chaining one scene pays and chaining the next costs - was true of the scenes *as they were*: every scene step was eight lines of cue-test, advance and background move. Folding those onto `opening_cue_step` and its two variants (fifty steps across the two files) made the arms one line each, and only then did chaining the long switches pay. What was thought to stop the two bg files is the sibling state machines reading as copies of one another, with different statements in the same shape - Recipe D's forbidden case. That is true of the fold, and it is not the only way to break a pair: lifting a block out of **one** side of a mirrored pair drops it below the similarity threshold, and that is how `opening_bg0.c`'s last two groups went. `opening_bg1.c` has not been retried. |
 | R11 | 3.49 | 3.49 | **9.31** | Plateau. Split five ways: `PPGFile_quads.c` (**10.00**), `PPGFile_chunks.c` (**10.00**), `PPGFile_palettes.c` (**10.00**) and `PPGFile_context.c` (**10.00**); group mean 9.86. The 2026-09-19 pass took the chunk file from 6.99 by extracting every loop and lookup out of the six setup functions and then splitting the palette side off, which cleared Overall Code Complexity on both halves. What stops `PPGFile.c` is the palette/texture twin pair - `ppgRelease*Handle` and `ppgGetUsing*Handle` differ in their type and in three callees each, which is Recipe D's forbidden case. |
 | R12 | 3.56 | 3.56 | **9.38** | Plateau. Split into `appear_late.c`, now also 9.38. Overall Code Complexity is the only finding left in either. |
 | R13 | 3.56 | 3.56 | **10.00** | Done. |
