@@ -30,6 +30,94 @@ s32 Play_Demo() {
     return Next_Demo;
 }
 
+/* The attract demo from its fourth step on, and from its sixth, each reached
+ * from the previous group's default. The case labels are the original ones and
+ * every switch is on the same expression; the last group carries the original
+ * `default`. */
+static void demo00_from_step_5() {
+    switch (D_No[1]) {
+    case 5:
+        Game02();
+
+        if (--D_Timer == 0) {
+            D_No[1] += 1;
+            Switch_Screen_Init(0);
+            SsBgmFadeOut(0x800);
+            return;
+        }
+
+        break;
+
+    case 6:
+        Game02();
+
+        if (Switch_Screen(0) != 0) {
+            D_No[1] += 1;
+            Demo_Flag = 0;
+            Present_Mode = 0;
+            Cover_Timer = 23;
+            BGM_Stop();
+
+            if (++Select_Demo_Index > 3) {
+                Select_Demo_Index = 0;
+                return;
+            }
+        }
+
+        break;
+
+    default:
+        Switch_Screen(1);
+        Next_Demo = 1;
+        break;
+    }
+}
+
+static void demo00_from_step_3() {
+    switch (D_No[1]) {
+    case 3:
+        Game02();
+
+#if DEBUG
+        if (debug_config.time_stop == 9) {
+            D_Timer = 60;
+        }
+#endif
+
+        if (--D_Timer == 1) {
+            D_No[1] += 1;
+            Stop_Combo = 1;
+            return;
+        }
+
+        if (Conclusion_Flag) {
+            D_No[1] += 1;
+            Stop_Combo = 1;
+            D_Timer = 90;
+            return;
+        }
+
+        break;
+
+    case 4:
+        Game02();
+
+        if (--D_Timer == 0) {
+            D_No[1] += 1;
+            Game_pause = 1;
+            Disappear_LOGO = 1;
+            D_Timer = 16;
+            return;
+        }
+
+        break;
+
+    default:
+        demo00_from_step_5();
+        break;
+    }
+}
+
 void Demo00() {
     Play_Game = 1;
 
@@ -72,43 +160,17 @@ void Demo00() {
 
         break;
 
-    case 3:
-        Game02();
-
-#if DEBUG
-        if (debug_config.time_stop == 9) {
-            D_Timer = 60;
-        }
-#endif
-
-        if (--D_Timer == 1) {
-            D_No[1] += 1;
-            Stop_Combo = 1;
-            return;
-        }
-
-        if (Conclusion_Flag) {
-            D_No[1] += 1;
-            Stop_Combo = 1;
-            D_Timer = 90;
-            return;
-        }
-
+    default:
+        demo00_from_step_3();
         break;
+    }
+}
 
-    case 4:
-        Game02();
-
-        if (--D_Timer == 0) {
-            D_No[1] += 1;
-            Game_pause = 1;
-            Disappear_LOGO = 1;
-            D_Timer = 16;
-            return;
-        }
-
-        break;
-
+/* The attract demo's second scene from its fourth step on, and from its sixth,
+ * each reached from the previous group's default. Same expression, original
+ * labels, and only the last group carries a `default`. */
+static void demo01_from_step_5() {
+    switch (D_No[1]) {
     case 5:
         Game02();
 
@@ -126,22 +188,54 @@ void Demo00() {
 
         if (Switch_Screen(0) != 0) {
             D_No[1] += 1;
-            Demo_Flag = 0;
-            Present_Mode = 0;
             Cover_Timer = 23;
             BGM_Stop();
-
-            if (++Select_Demo_Index > 3) {
-                Select_Demo_Index = 0;
-                return;
-            }
+            return;
         }
 
         break;
 
     default:
-        Switch_Screen(1);
         Next_Demo = 1;
+        break;
+    }
+}
+
+static void demo01_from_step_3() {
+    switch (D_No[1]) {
+    case 3:
+        Game02();
+
+        if (Switch_Screen_Revival(0) != 0) {
+            D_No[1] += 1;
+            D_Timer = 1200;
+            Stop_SG = 0;
+            return;
+        }
+
+        break;
+
+    case 4:
+        Game02();
+
+        if (--D_Timer == 1) {
+            Stop_Combo = 1;
+            Disappear_LOGO = 1;
+            return;
+        }
+
+        if (!D_Timer) {
+            D_No[1] += 1;
+            D_Timer = 16;
+            Demo_Time_Stop = 1;
+            Game_pause = 1;
+            return;
+        }
+
+        break;
+
+    default:
+        demo01_from_step_5();
         break;
     }
 }
@@ -193,63 +287,8 @@ void Demo01() {
 
         break;
 
-    case 3:
-        Game02();
-
-        if (Switch_Screen_Revival(0) != 0) {
-            D_No[1] += 1;
-            D_Timer = 1200;
-            Stop_SG = 0;
-            return;
-        }
-
-        break;
-
-    case 4:
-        Game02();
-
-        if (--D_Timer == 1) {
-            Stop_Combo = 1;
-            Disappear_LOGO = 1;
-            return;
-        }
-
-        if (!D_Timer) {
-            D_No[1] += 1;
-            D_Timer = 16;
-            Demo_Time_Stop = 1;
-            Game_pause = 1;
-            return;
-        }
-
-        break;
-
-    case 5:
-        Game02();
-
-        if (--D_Timer == 0) {
-            D_No[1] += 1;
-            Switch_Screen_Init(0);
-            SsBgmFadeOut(0x800);
-            return;
-        }
-
-        break;
-
-    case 6:
-        Game02();
-
-        if (Switch_Screen(0) != 0) {
-            D_No[1] += 1;
-            Cover_Timer = 23;
-            BGM_Stop();
-            return;
-        }
-
-        break;
-
     default:
-        Next_Demo = 1;
+        demo01_from_step_3();
         break;
     }
 }

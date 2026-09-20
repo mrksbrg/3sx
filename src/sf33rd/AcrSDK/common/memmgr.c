@@ -9,17 +9,17 @@ static u32 plmemPullHandle(MEM_MGR* memmgr);
 static void plmemAppendBlockList(MEM_MGR* memmgr, u32 han);
 static void plmemDeleteBlockList(MEM_MGR* memmgr, u32 han);
 
-void plmemInit(MEM_MGR* memmgr, MEM_BLOCK* block, s32 count, void* mem_ptr, s32 memsize, s32 memalign, s32 direction) {
-    memmgr->cnt = count;
-    memmgr->block = block;
-    memmgr->memsize = memsize;
-    memmgr->direction = direction;
-    memmgr->memalign = memalign;
+void plmemInit(MEM_MGR* memmgr, const MemInitArgs* a) {
+    memmgr->cnt = a->count;
+    memmgr->block = a->block;
+    memmgr->memsize = a->memsize;
+    memmgr->direction = a->direction;
+    memmgr->memalign = a->memalign;
 
-    if (direction != 0) {
-        memmgr->memptr = (u8*)(~(memalign - 1) & ((uintptr_t)mem_ptr + memalign - 1));
+    if (a->direction != 0) {
+        memmgr->memptr = (u8*)(~(a->memalign - 1) & ((uintptr_t)a->mem_ptr + a->memalign - 1));
     } else {
-        memmgr->memptr = (u8*)(~(memalign - 1) & ((uintptr_t)mem_ptr + memsize));
+        memmgr->memptr = (u8*)(~(a->memalign - 1) & ((uintptr_t)a->mem_ptr + a->memsize));
     }
 
     memmgr->memnow = memmgr->memptr;
@@ -27,7 +27,7 @@ void plmemInit(MEM_MGR* memmgr, MEM_BLOCK* block, s32 count, void* mem_ptr, s32 
     memmgr->tmemsize = 0;
     memmgr->blocklist = MEM_NULL_HANDLE;
 
-    plMemset(block, 0, count * sizeof(MEM_BLOCK));
+    plMemset(a->block, 0, a->count * sizeof(MEM_BLOCK));
 }
 
 u32 plmemRegister(MEM_MGR* memmgr, s32 len) {
@@ -71,6 +71,19 @@ u32 plmemRegisterAlign(MEM_MGR* memmgr, s32 len, s32 align) {
     return han + 1;
 }
 
+/* Claim a pulled handle for a block at `ptr` and hand it back as the caller's
+ * return value. The four places plmemRegisterS finds room differ only in the
+ * address they found. */
+static u32 plmem_claim_block(MEM_MGR* memmgr, u32 han, s32 len, u8* ptr) {
+    memmgr->block[han].id = 0;
+    memmgr->block[han].len = len;
+    memmgr->block[han].align = memmgr->memalign;
+    memmgr->block[han].ptr = ptr;
+    memmgr->used_size += len;
+    plmemAppendBlockList(memmgr, han);
+    return han + 1;
+}
+
 u32 plmemRegisterS(MEM_MGR* memmgr, s32 len) {
     u32 han;
     size_t len2;
@@ -99,13 +112,7 @@ u32 plmemRegisterS(MEM_MGR* memmgr, s32 len) {
             len2 = next_block->ptr - data_ptr;
 
             if (size <= len2) {
-                memmgr->block[han].id = 0;
-                memmgr->block[han].len = len;
-                memmgr->block[han].align = memmgr->memalign;
-                memmgr->block[han].ptr = data_ptr;
-                memmgr->used_size += len;
-                plmemAppendBlockList(memmgr, han);
-                return han + 1;
+                return plmem_claim_block(memmgr, han, len, data_ptr);
             }
 
             now_block = next_block;
@@ -115,13 +122,7 @@ u32 plmemRegisterS(MEM_MGR* memmgr, s32 len) {
         len2 = memmgr->memnow - data_ptr;
 
         if (size <= len2) {
-            memmgr->block[han].id = 0;
-            memmgr->block[han].len = len;
-            memmgr->block[han].align = memmgr->memalign;
-            memmgr->block[han].ptr = data_ptr;
-            memmgr->used_size += len;
-            plmemAppendBlockList(memmgr, han);
-            return han + 1;
+            return plmem_claim_block(memmgr, han, len, data_ptr);
         }
     } else {
         while (now_block->next != MEM_NULL_HANDLE) {
@@ -130,13 +131,7 @@ u32 plmemRegisterS(MEM_MGR* memmgr, s32 len) {
             len2 = now_block->ptr - data_ptr;
 
             if (size <= len2) {
-                memmgr->block[han].id = 0;
-                memmgr->block[han].len = len;
-                memmgr->block[han].align = memmgr->memalign;
-                memmgr->block[han].ptr = now_block->ptr - size;
-                memmgr->used_size += len;
-                plmemAppendBlockList(memmgr, han);
-                return han + 1;
+                return plmem_claim_block(memmgr, han, len, now_block->ptr - size);
             }
 
             now_block = next_block;
@@ -145,13 +140,7 @@ u32 plmemRegisterS(MEM_MGR* memmgr, s32 len) {
         len2 = now_block->ptr - memmgr->memnow;
 
         if (size <= len2) {
-            memmgr->block[han].id = 0;
-            memmgr->block[han].len = len;
-            memmgr->block[han].align = memmgr->memalign;
-            memmgr->block[han].ptr = now_block->ptr - size;
-            memmgr->used_size += len;
-            plmemAppendBlockList(memmgr, han);
-            return han + 1;
+            return plmem_claim_block(memmgr, han, len, now_block->ptr - size);
         }
     }
 
@@ -209,6 +198,15 @@ s32 plmemRelease(MEM_MGR* memmgr, u32 handle) {
     return 1;
 }
 
+/* Move a block to the address the compaction wants it at, if it is not there
+ * already. The four places plmemCompact does this differ only in which block. */
+static void plmem_move_block(MEM_BLOCK* block, u8* data_ptr) {
+    if (data_ptr != block->ptr) {
+        plMemmove(data_ptr, block->ptr, block->len);
+        block->ptr = data_ptr;
+    }
+}
+
 void* plmemCompact(MEM_MGR* memmgr) {
     MEM_BLOCK* now_block;
     MEM_BLOCK* next_block;
@@ -224,19 +222,13 @@ void* plmemCompact(MEM_MGR* memmgr) {
     if (memmgr->direction != 0) {
         data_ptr = (u8*)ALIGN(memmgr->memptr, 0, memmgr->memalign);
 
-        if (data_ptr != now_block->ptr) {
-            plMemmove(data_ptr, now_block->ptr, now_block->len);
-            now_block->ptr = data_ptr;
-        }
+        plmem_move_block(now_block, data_ptr);
 
         while (now_block->next != MEM_NULL_HANDLE) {
             next_block = memmgr->block + now_block->next;
             data_ptr = (u8*)ALIGN(now_block->ptr, now_block->len, memmgr->memalign);
 
-            if (data_ptr != next_block->ptr) {
-                plMemmove(data_ptr, next_block->ptr, next_block->len);
-                next_block->ptr = data_ptr;
-            }
+            plmem_move_block(next_block, data_ptr);
 
             now_block = next_block;
         }
@@ -245,19 +237,13 @@ void* plmemCompact(MEM_MGR* memmgr) {
     } else {
         data_ptr = (u8*)ALIGN_DOWN(memmgr->memptr, now_block->len, memmgr->memalign);
 
-        if (data_ptr != now_block->ptr) {
-            plMemmove(data_ptr, now_block->ptr, now_block->len);
-            now_block->ptr = data_ptr;
-        }
+        plmem_move_block(now_block, data_ptr);
 
         while (now_block->next != MEM_NULL_HANDLE) {
             next_block = memmgr->block + now_block->next;
             data_ptr = (u8*)ALIGN_DOWN(now_block->ptr, next_block->len, memmgr->memalign);
 
-            if (data_ptr != next_block->ptr) {
-                plMemmove(data_ptr, next_block->ptr, next_block->len);
-                next_block->ptr = data_ptr;
-            }
+            plmem_move_block(next_block, data_ptr);
 
             now_block = next_block;
         }

@@ -158,9 +158,97 @@ void ps2PADWorkClear() {
     SDL_zero(ps2pad_clear);
 }
 
-static s32 PADRead_for_PS2(s32 i) {
+/* The analog reading for one button, gated on the stick group the pad reports.
+ * The three arms of the switch below differ only in which group they test. */
+static void apply_analog_button(s32 i, s32 j, u8* kan, s32 anstate_mask) {
+    if (tarpad_root[i].anstate & anstate_mask) {
+        if (kan[ps2pad_an_rm_map[j]] < ps2pad_config[i].abut_on) {
+            tarpad_root[i].anshot.pow[j] = 0;
+        } else {
+            tarpad_root[i].anshot.pow[j] = kan[ps2pad_an_rm_map[j]];
+        }
+    }
+}
+
+/* The button word and the analog pressure for every button, and then the two
+ * sticks. Both are exactly the blocks that stood in the pad-kind arm below. */
+static u32 read_ps2_buttons(s32 i, u8* kan) {
     s32 j;
     u32 io;
+
+    io = 0;
+
+    for (j = 0; j < 16; j++) {
+        if (ps2pad_state[i].ix.sw & ps2pad_hard_to_soft[i][j][0]) {
+            io |= flpad_io_map[j];
+            tarpad_root[i].anshot.pow[j] = 0x7F;
+        }
+
+        switch (ps2pad_hard_to_soft[i][j][1]) {
+        case 1:
+            apply_analog_button(i, j, kan, 0x10);
+
+            break;
+
+        case 2:
+            apply_analog_button(i, j, kan, 1);
+
+            break;
+
+        case 3:
+            apply_analog_button(i, j, kan, 2);
+
+            break;
+        }
+    }
+    return io;
+}
+
+/* The lower clamp both sticks apply to both axes. The four copies differ only
+ * in which axis they clamp. */
+static void clamp_stick_axis(s16* axis) {
+    if (*axis < -0x7F) {
+        *axis = -0x7F;
+    }
+}
+
+static void read_ps2_sticks(s32 i) {
+    if (tarpad_root[i].anstate & 0x20) {
+        tarpad_root[i].stick[0].x = ps2pad_state[i].pad_buffer[6] - 0x80;
+        tarpad_root[i].stick[0].y = ps2pad_state[i].pad_buffer[7] - 0x80;
+
+        clamp_stick_axis(&tarpad_root[i].stick[0].x);
+        clamp_stick_axis(&tarpad_root[i].stick[0].y);
+    }
+
+    if (tarpad_root[i].anstate & 0x40) {
+        tarpad_root[i].stick[1].x = ps2pad_state[i].pad_buffer[4] - 0x80;
+        tarpad_root[i].stick[1].y = ps2pad_state[i].pad_buffer[5] - 0x80;
+
+        clamp_stick_axis(&tarpad_root[i].stick[1].x);
+        clamp_stick_axis(&tarpad_root[i].stick[1].y);
+    }
+}
+
+/* The two things every read starts with: last frame's pressures cleared, and
+ * this frame's depths halved into the working copy the button scan reads. */
+static void clear_button_pressures(s32 i) {
+    s32 j;
+
+    for (j = 0; j < 16; j++) {
+        tarpad_root[i].anshot.pow[j] = 0;
+    }
+}
+
+static void halve_button_depths(s32 i, u8* kan) {
+    s32 j;
+
+    for (j = 0; j < 12; j++) {
+        kan[j] = ps2pad_state[i].ix.depth[j] / 2;
+    }
+}
+
+static s32 PADRead_for_PS2(s32 i) {
     u8 kan[12];
 
     if (ps2slot[i].state == 0) {
@@ -173,13 +261,9 @@ static s32 PADRead_for_PS2(s32 i) {
         tarpad_root[i].kind = 0x8000;
     }
 
-    for (j = 0; j < 16; j++) {
-        tarpad_root[i].anshot.pow[j] = 0;
-    }
+    clear_button_pressures(i);
 
-    for (j = 0; j < 12; j++) {
-        kan[j] = ps2pad_state[i].ix.depth[j] / 2;
-    }
+    halve_button_depths(i, kan);
 
     ps2pad_state[i].ix.sw = ~ps2pad_state[i].ix.sw;
 
@@ -190,77 +274,9 @@ static s32 PADRead_for_PS2(s32 i) {
     case 8:
     case 16:
     case 32:
-        io = 0;
+        tarpad_root[i].sw = read_ps2_buttons(i, kan);
 
-        for (j = 0; j < 16; j++) {
-            if (ps2pad_state[i].ix.sw & ps2pad_hard_to_soft[i][j][0]) {
-                io |= flpad_io_map[j];
-                tarpad_root[i].anshot.pow[j] = 0x7F;
-            }
-
-            switch (ps2pad_hard_to_soft[i][j][1]) {
-            case 1:
-                if (tarpad_root[i].anstate & 0x10) {
-                    if (kan[ps2pad_an_rm_map[j]] < ps2pad_config[i].abut_on) {
-                        tarpad_root[i].anshot.pow[j] = 0;
-                    } else {
-                        tarpad_root[i].anshot.pow[j] = kan[ps2pad_an_rm_map[j]];
-                    }
-                }
-
-                break;
-
-            case 2:
-                if (tarpad_root[i].anstate & 1) {
-                    if (kan[ps2pad_an_rm_map[j]] < ps2pad_config[i].abut_on) {
-                        tarpad_root[i].anshot.pow[j] = 0;
-                    } else {
-                        tarpad_root[i].anshot.pow[j] = kan[ps2pad_an_rm_map[j]];
-                    }
-                }
-
-                break;
-
-            case 3:
-                if (tarpad_root[i].anstate & 2) {
-                    if (kan[ps2pad_an_rm_map[j]] < ps2pad_config[i].abut_on) {
-                        tarpad_root[i].anshot.pow[j] = 0;
-                    } else {
-                        tarpad_root[i].anshot.pow[j] = kan[ps2pad_an_rm_map[j]];
-                    }
-                }
-
-                break;
-            }
-        }
-
-        tarpad_root[i].sw = io;
-
-        if (tarpad_root[i].anstate & 0x20) {
-            tarpad_root[i].stick[0].x = ps2pad_state[i].pad_buffer[6] - 0x80;
-            tarpad_root[i].stick[0].y = ps2pad_state[i].pad_buffer[7] - 0x80;
-
-            if (tarpad_root[i].stick[0].x < -0x7F) {
-                tarpad_root[i].stick[0].x = -0x7F;
-            }
-
-            if (tarpad_root[i].stick[0].y < -0x7F) {
-                tarpad_root[i].stick[0].y = -0x7F;
-            }
-        }
-
-        if (tarpad_root[i].anstate & 0x40) {
-            tarpad_root[i].stick[1].x = ps2pad_state[i].pad_buffer[4] - 0x80;
-            tarpad_root[i].stick[1].y = ps2pad_state[i].pad_buffer[5] - 0x80;
-
-            if (tarpad_root[i].stick[1].x < -0x7F) {
-                tarpad_root[i].stick[1].x = -0x7F;
-            }
-
-            if (tarpad_root[i].stick[1].y < -0x7F) {
-                tarpad_root[i].stick[1].y = -0x7F;
-            }
-        }
+        read_ps2_sticks(i);
 
         ps2pad_backup[i] = ps2pad_state[i];
         ps2pad_backup[i].ix.sw = ~ps2pad_backup[i].ix.sw;
@@ -327,13 +343,171 @@ void PADPortOpen(s32 port, s32 slot, PS2Slot* adrs) {
     adrs->slot = slot;
 }
 
-void PADReadSub(s32 i) {
+/* Everything the two unusable pad states put back to nothing. They differ only
+ * in the slot state they leave behind. */
+static void clear_pad_slot(s32 i, s32 new_state) {
+    ps2slot[i].state = new_state;
+    ps2slot[i].phase = 0;
+    ps2slot[i].kind = 0;
+    ps2slot[i].vib = 0;
+    ps2slot[i].bprofile = 0;
+    ps2slot[i].vprofile = 0;
+    ps2pad_state[i] = ps2pad_clear;
+    tarpad_root[i].kind = 0;
+    tarpad_root[i].anstate = 0;
+    tarpad_root[i].state = ps2slot[i].state;
+}
+
+/* Every later pass: the button report, the sticks and pressures for the kinds
+ * that have them, and the vibration timer. Returns 0 where the block returned
+ * from PADReadSub. */
+static s32 read_pad_report(s32 i) {
+    s32 len;
+    u8 rdata[32];
+
+    if ((len = scePad2Read(ps2slot[i].socket_id, (scePad2ButtonState*)rdata)) < 0) {
+        return 0;
+    }
+
+    ps2slot[i].state = 1;
+    ps2pad_state[i].pad_buffer[0] = 0;
+    ps2pad_state[i].pad_buffer[1] = 0;
+    ps2pad_state[i].ix.sw = rdata[0] << 8 | rdata[1];
+
+    switch (ps2slot[i].pad_id) {
+    case 0:
+        break;
+
+    case 1:
+        ps2pad_state[i].ix.pos.stick.r_ax = ((scePad2ButtonState*)rdata)->rJoyH;
+        ps2pad_state[i].ix.pos.stick.r_ay = ((scePad2ButtonState*)rdata)->rJoyV;
+        ps2pad_state[i].ix.pos.stick.l_ax = ((scePad2ButtonState*)rdata)->lJoyH;
+        ps2pad_state[i].ix.pos.stick.l_ay = ((scePad2ButtonState*)rdata)->lJoyV;
+        break;
+
+    case 2:
+        ps2pad_state[i].ix.pos.stick.r_ax = ((scePad2ButtonState*)rdata)->rJoyH;
+        ps2pad_state[i].ix.pos.stick.r_ay = ((scePad2ButtonState*)rdata)->rJoyV;
+        ps2pad_state[i].ix.pos.stick.l_ax = ((scePad2ButtonState*)rdata)->lJoyH;
+        ps2pad_state[i].ix.pos.stick.l_ay = ((scePad2ButtonState*)rdata)->lJoyV;
+        ps2pad_state[i].ix.depth[0] = ((scePad2ButtonState*)rdata)->rightP;
+        ps2pad_state[i].ix.depth[1] = ((scePad2ButtonState*)rdata)->leftP;
+        ps2pad_state[i].ix.depth[2] = ((scePad2ButtonState*)rdata)->upP;
+        ps2pad_state[i].ix.depth[3] = ((scePad2ButtonState*)rdata)->downP;
+        ps2pad_state[i].ix.depth[4] = ((scePad2ButtonState*)rdata)->triangleP;
+        ps2pad_state[i].ix.depth[5] = ((scePad2ButtonState*)rdata)->circleP;
+        ps2pad_state[i].ix.depth[6] = ((scePad2ButtonState*)rdata)->crossP;
+        ps2pad_state[i].ix.depth[7] = ((scePad2ButtonState*)rdata)->squareP;
+        ps2pad_state[i].ix.depth[8] = ((scePad2ButtonState*)rdata)->l1P;
+        ps2pad_state[i].ix.depth[9] = ((scePad2ButtonState*)rdata)->r1P;
+        ps2pad_state[i].ix.depth[10] = ((scePad2ButtonState*)rdata)->l2P;
+        ps2pad_state[i].ix.depth[11] = ((scePad2ButtonState*)rdata)->r2P;
+        break;
+
+    default:
+        ps2pad_state[i] = ps2pad_clear;
+        break;
+    }
+
+    if (ps2slot[i].vib_timer != 0) {
+        if (--ps2slot[i].vib_timer == 0) {
+            flPADShockSet(i, 0, 0);
+        }
+    }
+
+    return 1;
+}
+
+/* The hardware-to-soft button map for a pad kind. The three arms below differ
+ * only in which map they copy from. */
+static void copy_hard_to_soft_map(s32 i, PadButtonMapRow* map) {
     s32 lp0;
-    s32 pstate;
+
+    for (lp0 = 0; lp0 < 16; lp0++) {
+        ps2pad_hard_to_soft[i][lp0][0] = map[lp0][0];
+        ps2pad_hard_to_soft[i][lp0][1] = map[lp0][1];
+    }
+}
+
+/* Which of the three pad kinds this is, from the button profile it reported,
+ * and then the kind's own settings and button map. */
+static void set_pad_id_from_profile(s32 i) {
+    if (ps2slot[i].bprofile & 0xFFFF0000) {
+        if (ps2slot[i].bprofile & 0xFFF00000) {
+            ps2slot[i].pad_id = 2;
+        } else {
+            ps2slot[i].pad_id = 1;
+        }
+    } else {
+        ps2slot[i].pad_id = 0;
+    }
+}
+
+static void set_pad_kind(s32 i) {
+    switch (ps2slot[i].pad_id) {
+    case 0:
+        tarpad_root[i].kind = 1;
+        tarpad_root[i].anstate = 0;
+
+        copy_hard_to_soft_map(i, ps2pad_hard_to_soft_dg);
+
+        break;
+
+    case 1:
+        tarpad_root[i].kind = 1;
+        tarpad_root[i].anstate = 0x60;
+
+        copy_hard_to_soft_map(i, ps2pad_hard_to_soft_ds2);
+
+        break;
+
+    case 2:
+        tarpad_root[i].kind = 1;
+        tarpad_root[i].anstate = 0x73;
+
+        copy_hard_to_soft_map(i, ps2pad_hard_to_soft_ds2);
+
+        break;
+    }
+}
+
+/* The first pass over a newly connected pad: its button and vibration
+ * profiles, its kind, and whether it can rumble. Returns 0 where the block
+ * returned from PADReadSub. */
+static s32 identify_pad(s32 i) {
     s32 len;
     u8 bprofile[4];
     u8 vprofile[4];
-    u8 rdata[32];
+
+    len = scePad2GetButtonProfile(ps2slot[i].socket_id, bprofile);
+
+    if (len < 0) {
+        return 0;
+    }
+
+    ps2slot[i].bprofile = (bprofile[3] << 24) | (bprofile[2] << 16) | (bprofile[1] << 8) | bprofile[0];
+
+    if (sceVibGetProfile(ps2slot[i].socket_id, vprofile) >= 0) {
+        ps2slot[i].vprofile = vprofile[0];
+    }
+
+    set_pad_id_from_profile(i);
+
+    set_pad_kind(i);
+
+    if (!(ps2slot[i].vprofile & 3)) {
+        ps2slot[i].vib = 0;
+    } else {
+        ps2slot[i].vib = 1;
+    }
+
+    ps2slot[i].phase += 1;
+
+    return 1;
+}
+
+void PADReadSub(s32 i) {
+    s32 pstate;
 
     ps2pad_state[i] = ps2pad_backup[i];
     pstate = scePad2GetState(ps2slot[i].socket_id);
@@ -344,148 +518,23 @@ void PADReadSub(s32 i) {
         break;
 
     case scePad2StateNoLink:
-        ps2slot[i].state = 1;
-        ps2slot[i].phase = 0;
-        ps2slot[i].kind = 0;
-        ps2slot[i].vib = 0;
-        ps2slot[i].bprofile = 0;
-        ps2slot[i].vprofile = 0;
-        ps2pad_state[i] = ps2pad_clear;
-        tarpad_root[i].kind = 0;
-        tarpad_root[i].anstate = 0;
-        tarpad_root[i].state = ps2slot[i].state;
+        clear_pad_slot(i, 1);
         return;
 
     case scePad2StateExecCmd:
     case scePad2StateError:
     default:
-        ps2slot[i].state = 2;
-        ps2slot[i].phase = 0;
-        ps2slot[i].kind = 0;
-        ps2slot[i].vib = 0;
-        ps2slot[i].bprofile = 0;
-        ps2slot[i].vprofile = 0;
-        ps2pad_state[i] = ps2pad_clear;
-        tarpad_root[i].kind = 0;
-        tarpad_root[i].anstate = 0;
-        tarpad_root[i].state = ps2slot[i].state;
+        clear_pad_slot(i, 2);
         return;
     }
 
     if (ps2slot[i].phase == 0) {
-        len = scePad2GetButtonProfile(ps2slot[i].socket_id, bprofile);
-
-        if (len < 0) {
+        if (identify_pad(i) == 0) {
             return;
         }
-
-        ps2slot[i].bprofile = (bprofile[3] << 24) | (bprofile[2] << 16) | (bprofile[1] << 8) | bprofile[0];
-
-        if (sceVibGetProfile(ps2slot[i].socket_id, vprofile) >= 0) {
-            ps2slot[i].vprofile = vprofile[0];
-        }
-
-        if (ps2slot[i].bprofile & 0xFFFF0000) {
-            if (ps2slot[i].bprofile & 0xFFF00000) {
-                ps2slot[i].pad_id = 2;
-            } else {
-                ps2slot[i].pad_id = 1;
-            }
-        } else {
-            ps2slot[i].pad_id = 0;
-        }
-
-        switch (ps2slot[i].pad_id) {
-        case 0:
-            tarpad_root[i].kind = 1;
-            tarpad_root[i].anstate = 0;
-
-            for (lp0 = 0; lp0 < 16; lp0++) {
-                ps2pad_hard_to_soft[i][lp0][0] = ps2pad_hard_to_soft_dg[lp0][0];
-                ps2pad_hard_to_soft[i][lp0][1] = ps2pad_hard_to_soft_dg[lp0][1];
-            }
-
-            break;
-
-        case 1:
-            tarpad_root[i].kind = 1;
-            tarpad_root[i].anstate = 0x60;
-
-            for (lp0 = 0; lp0 < 16; lp0++) {
-                ps2pad_hard_to_soft[i][lp0][0] = ps2pad_hard_to_soft_ds2[lp0][0];
-                ps2pad_hard_to_soft[i][lp0][1] = ps2pad_hard_to_soft_ds2[lp0][1];
-            }
-
-            break;
-
-        case 2:
-            tarpad_root[i].kind = 1;
-            tarpad_root[i].anstate = 0x73;
-
-            for (lp0 = 0; lp0 < 16; lp0++) {
-                ps2pad_hard_to_soft[i][lp0][0] = ps2pad_hard_to_soft_ds2[lp0][0];
-                ps2pad_hard_to_soft[i][lp0][1] = ps2pad_hard_to_soft_ds2[lp0][1];
-            }
-
-            break;
-        }
-
-        if (!(ps2slot[i].vprofile & 3)) {
-            ps2slot[i].vib = 0;
-        } else {
-            ps2slot[i].vib = 1;
-        }
-
-        ps2slot[i].phase += 1;
     } else {
-        if ((len = scePad2Read(ps2slot[i].socket_id, (scePad2ButtonState*)rdata)) < 0) {
+        if (read_pad_report(i) == 0) {
             return;
-        }
-
-        ps2slot[i].state = 1;
-        ps2pad_state[i].pad_buffer[0] = 0;
-        ps2pad_state[i].pad_buffer[1] = 0;
-        ps2pad_state[i].ix.sw = rdata[0] << 8 | rdata[1];
-
-        switch (ps2slot[i].pad_id) {
-        case 0:
-            break;
-
-        case 1:
-            ps2pad_state[i].ix.pos.stick.r_ax = ((scePad2ButtonState*)rdata)->rJoyH;
-            ps2pad_state[i].ix.pos.stick.r_ay = ((scePad2ButtonState*)rdata)->rJoyV;
-            ps2pad_state[i].ix.pos.stick.l_ax = ((scePad2ButtonState*)rdata)->lJoyH;
-            ps2pad_state[i].ix.pos.stick.l_ay = ((scePad2ButtonState*)rdata)->lJoyV;
-            break;
-
-        case 2:
-            ps2pad_state[i].ix.pos.stick.r_ax = ((scePad2ButtonState*)rdata)->rJoyH;
-            ps2pad_state[i].ix.pos.stick.r_ay = ((scePad2ButtonState*)rdata)->rJoyV;
-            ps2pad_state[i].ix.pos.stick.l_ax = ((scePad2ButtonState*)rdata)->lJoyH;
-            ps2pad_state[i].ix.pos.stick.l_ay = ((scePad2ButtonState*)rdata)->lJoyV;
-            ps2pad_state[i].ix.depth[0] = ((scePad2ButtonState*)rdata)->rightP;
-            ps2pad_state[i].ix.depth[1] = ((scePad2ButtonState*)rdata)->leftP;
-            ps2pad_state[i].ix.depth[2] = ((scePad2ButtonState*)rdata)->upP;
-            ps2pad_state[i].ix.depth[3] = ((scePad2ButtonState*)rdata)->downP;
-            ps2pad_state[i].ix.depth[4] = ((scePad2ButtonState*)rdata)->triangleP;
-            ps2pad_state[i].ix.depth[5] = ((scePad2ButtonState*)rdata)->circleP;
-            ps2pad_state[i].ix.depth[6] = ((scePad2ButtonState*)rdata)->crossP;
-            ps2pad_state[i].ix.depth[7] = ((scePad2ButtonState*)rdata)->squareP;
-            ps2pad_state[i].ix.depth[8] = ((scePad2ButtonState*)rdata)->l1P;
-            ps2pad_state[i].ix.depth[9] = ((scePad2ButtonState*)rdata)->r1P;
-            ps2pad_state[i].ix.depth[10] = ((scePad2ButtonState*)rdata)->l2P;
-            ps2pad_state[i].ix.depth[11] = ((scePad2ButtonState*)rdata)->r2P;
-            break;
-
-        default:
-            ps2pad_state[i] = ps2pad_clear;
-            break;
-        }
-
-        if (ps2slot[i].vib_timer != 0) {
-            if (--ps2slot[i].vib_timer == 0) {
-                flPADShockSet(i, 0, 0);
-            }
         }
     }
 

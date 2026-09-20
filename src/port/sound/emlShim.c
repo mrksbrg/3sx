@@ -82,6 +82,13 @@ static void UpdateVolPanPitch(struct VWork* voice);
 static int gcVoices();
 
 // Note to pitch from ps2sdk
+/* The note offset has fallen below the table's first entry, or sits exactly on
+ * it with a negative fine offset. Copied character for character from the test
+ * it stood in. */
+static s32 noteOffsetUnderflows(s32 offset1, s32 offset2) {
+    return (offset1 < 0) || ((offset1 == 0) && (offset2 < 0));
+}
+
 static u16 sceSdNote2Pitch(u16 center_note, u16 center_fine, u16 note, short fine) {
     s32 _fine;
     s32 _fine2;
@@ -118,7 +125,7 @@ static u16 sceSdNote2Pitch(u16 center_note, u16 center_fine, u16 note, short fin
     val = val2 - 2;
     offset1 = _note - (val2 * 12);
 
-    if ((offset1 < 0) || ((offset1 == 0) && (offset2 < 0))) {
+    if (noteOffsetUnderflows(offset1, offset2)) {
         offset1 = offset1 + 12;
         val = val2 - 3;
     }
@@ -252,6 +259,28 @@ static struct VWork* allocVoice() {
     return voice;
 }
 
+/* The four identity bits of the condition mask. Split out of makeConditions so
+ * neither half carries the whole flag ladder. */
+static u32 addIdConditions(u32 flags, u32 cond) {
+    if (flags & 0x20) {
+        cond |= MATCH_ID1;
+    }
+
+    if (flags & 0x40) {
+        cond |= MATCH_ID2;
+    }
+
+    if (flags & 0x80) {
+        cond |= MATCH_GUID;
+    }
+
+    if (flags & 4) {
+        cond |= MATCH_BANK;
+    }
+
+    return cond;
+}
+
 static u32 makeConditions(CSE_REQP* rq) {
     u32 flags = rq->flags;
     u32 cond = 0;
@@ -270,23 +299,7 @@ static u32 makeConditions(CSE_REQP* rq) {
         cond |= MATCH_NOTE;
     }
 
-    if (flags & 0x20) {
-        cond |= MATCH_ID1;
-    }
-
-    if (flags & 0x40) {
-        cond |= MATCH_ID2;
-    }
-
-    if (flags & 0x80) {
-        cond |= MATCH_GUID;
-    }
-
-    if (flags & 4) {
-        cond |= MATCH_BANK;
-    }
-
-    return cond;
+    return addIdConditions(flags, cond);
 }
 
 static int checkConditions(struct VId* id, CSE_REQP* match, u32 cond) {
@@ -379,6 +392,12 @@ static int getCategoryVoiceNum(CSE_REQP* reqp) {
     return count;
 }
 
+/* Same priority, and the one already chosen was started first. Copied
+ * character for character from the test it stood in. */
+static int samePrioAndOlder(struct VWork* i, struct VWork* lowest) {
+    return i->id.prio == lowest->id.prio && lowest->tick < i->tick;
+}
+
 static struct VWork* getLowestPrioWk(CSE_REQP* reqp) {
     u32 cond = makeConditions(reqp);
     struct VWork* lowest = NULL;
@@ -396,7 +415,7 @@ static struct VWork* getLowestPrioWk(CSE_REQP* reqp) {
                 continue;
             }
 
-            if (i->id.prio == lowest->id.prio && lowest->tick < i->tick) {
+            if (samePrioAndOlder(i, lowest)) {
                 lowest = i;
                 continue;
             }
@@ -406,38 +425,61 @@ static struct VWork* getLowestPrioWk(CSE_REQP* reqp) {
     return lowest;
 }
 
-static int doSeDrop(CSE_REQP* reqp) {
-    int count = getCategoryVoiceNum(reqp);
-    u32 cond = makeConditions(reqp);
+/* Over the category limit: stop the lowest-priority voices until there is
+ * room, unless one of them outranks the request. */
+static int dropLowestPriorityVoices(CSE_REQP* reqp, int count) {
     struct VWork* v;
     int ret = 1;
 
+    if (count < reqp->limit) {
+        return ret;
+    }
+
+    for (int i = 0; i < count + 1 - reqp->limit; i++) {
+        v = getLowestPrioWk(reqp);
+        if (v) {
+            if ((reqp->flags & 1) && reqp->prio < v->id.prio) {
+                ret = 0;
+                break;
+            }
+
+            SPU_VoiceStop(v->voice_num);
+            ret = 1;
+        }
+    }
+
+    return ret;
+}
+
+/* No limit, but the request asks to displace: key off every matching voice
+ * the request outranks. */
+static int keyOffMatchingVoices(CSE_REQP* reqp, u32 cond) {
+    struct VWork* v;
+    int ret = 1;
+
+    list_for_each (v, &active_voices, list) {
+        if (checkConditions(&v->id, reqp, cond)) {
+            if (reqp->prio < v->id.prio) {
+                ret = 0;
+                continue;
+            }
+
+            SPU_VoiceKeyOff(v->voice_num);
+        }
+    }
+
+    return ret;
+}
+
+static int doSeDrop(CSE_REQP* reqp) {
+    int count = getCategoryVoiceNum(reqp);
+    u32 cond = makeConditions(reqp);
+    int ret = 1;
+
     if (reqp->limit) {
-        if (count >= reqp->limit) {
-            for (int i = 0; i < count + 1 - reqp->limit; i++) {
-                v = getLowestPrioWk(reqp);
-                if (v) {
-                    if ((reqp->flags & 1) && reqp->prio < v->id.prio) {
-                        ret = 0;
-                        break;
-                    }
-
-                    SPU_VoiceStop(v->voice_num);
-                    ret = 1;
-                }
-            }
-        }
+        ret = dropLowestPriorityVoices(reqp, count);
     } else if (reqp->flags & 1) {
-        list_for_each (v, &active_voices, list) {
-            if (checkConditions(&v->id, reqp, cond)) {
-                if (reqp->prio < v->id.prio) {
-                    ret = 0;
-                    continue;
-                }
-
-                SPU_VoiceKeyOff(v->voice_num);
-            }
-        }
+        ret = keyOffMatchingVoices(reqp, cond);
     } else {
         ret = 1;
     }

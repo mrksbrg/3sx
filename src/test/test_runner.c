@@ -79,73 +79,67 @@ static void finish() {
     exit(0);
 }
 
-static Uint16 read_input_buff(SDL_IOStream* io, int player) {
-    const Sint64 sw_lvbt_offset = (player == 0) ? WCP_OFFSET : WCP_OFFSET + 0x406;
-    const Uint16 sw_lvbt_buff = read_u16(io, sw_lvbt_offset);
-    Uint16 buff = 0;
-
-    if (sw_lvbt_buff & (1 << 0)) {
-        buff |= SWK_UP;
-    }
-
-    if (sw_lvbt_buff & (1 << 1)) {
-        buff |= SWK_DOWN;
-    }
-
-    if (sw_lvbt_buff & (1 << 2)) {
-        buff |= SWK_LEFT;
-    }
-
-    if (sw_lvbt_buff & (1 << 3)) {
-        buff |= SWK_RIGHT;
-    }
-
-    if (sw_lvbt_buff & (1 << 4)) {
-        buff |= SWK_WEST;
-    }
-
-    if (sw_lvbt_buff & (1 << 5)) {
-        buff |= SWK_NORTH;
-    }
-
-    if (sw_lvbt_buff & (1 << 6)) {
-        buff |= SWK_RIGHT_SHOULDER;
-    }
-
-    if (sw_lvbt_buff & (1 << 8)) {
-        buff |= SWK_SOUTH;
-    }
-
-    if (sw_lvbt_buff & (1 << 9)) {
-        buff |= SWK_EAST;
-    }
-
-    if (sw_lvbt_buff & (1 << 10)) {
-        buff |= SWK_RIGHT_TRIGGER;
+/* One bit of the recorded lever/button word mapped onto its SWK flag. The ten
+ * copies differ in the mask and the flag, and each writes both out in full at
+ * its own call site; the helper does the one `&` and the one `|=` that stood
+ * there. */
+static Uint16 add_flag_if_set(Uint16 sw_lvbt_buff, Uint16 mask, Uint16 flag, Uint16 buff) {
+    if (sw_lvbt_buff & mask) {
+        buff |= flag;
     }
 
     return buff;
 }
 
+static Uint16 read_input_buff(SDL_IOStream* io, int player) {
+    const Sint64 sw_lvbt_offset = (player == 0) ? WCP_OFFSET : WCP_OFFSET + 0x406;
+    const Uint16 sw_lvbt_buff = read_u16(io, sw_lvbt_offset);
+    Uint16 buff = 0;
+
+    buff = add_flag_if_set(sw_lvbt_buff, (1 << 0), SWK_UP, buff);
+    buff = add_flag_if_set(sw_lvbt_buff, (1 << 1), SWK_DOWN, buff);
+    buff = add_flag_if_set(sw_lvbt_buff, (1 << 2), SWK_LEFT, buff);
+    buff = add_flag_if_set(sw_lvbt_buff, (1 << 3), SWK_RIGHT, buff);
+    buff = add_flag_if_set(sw_lvbt_buff, (1 << 4), SWK_WEST, buff);
+    buff = add_flag_if_set(sw_lvbt_buff, (1 << 5), SWK_NORTH, buff);
+    buff = add_flag_if_set(sw_lvbt_buff, (1 << 6), SWK_RIGHT_SHOULDER, buff);
+    buff = add_flag_if_set(sw_lvbt_buff, (1 << 8), SWK_SOUTH, buff);
+    buff = add_flag_if_set(sw_lvbt_buff, (1 << 9), SWK_EAST, buff);
+    buff = add_flag_if_set(sw_lvbt_buff, (1 << 10), SWK_RIGHT_TRIGGER, buff);
+
+    return buff;
+}
+
+/* One button and one trigger of the pad state, from the recorded input word.
+ * The sixteen copies differ in the field and the flag, and each writes both out
+ * in full at its own call site. */
+static void set_button(bool* out, Uint16 input, Uint16 flag) {
+    *out = (input & flag) ? true : false;
+}
+
+static void set_trigger(Sint16* out, Uint16 input, Uint16 flag) {
+    *out = (input & flag) ? SDL_MAX_SINT16 : 0;
+}
+
 static void apply_input_buffer(int id, Uint16 input) {
     Input_ButtonState state = { 0 };
 
-    state.south = (input & SWK_SOUTH) ? true : false;
-    state.east = (input & SWK_EAST) ? true : false;
-    state.west = (input & SWK_WEST) ? true : false;
-    state.north = (input & SWK_NORTH) ? true : false;
-    state.back = (input & SWK_BACK) ? true : false;
-    state.start = (input & SWK_START) ? true : false;
-    state.left_stick = (input & SWK_LEFT_STICK) ? true : false;
-    state.right_stick = (input & SWK_RIGHT_STICK) ? true : false;
-    state.left_shoulder = (input & SWK_LEFT_SHOULDER) ? true : false;
-    state.right_shoulder = (input & SWK_RIGHT_SHOULDER) ? true : false;
-    state.left_trigger = (input & SWK_LEFT_TRIGGER) ? SDL_MAX_SINT16 : 0;
-    state.right_trigger = (input & SWK_RIGHT_TRIGGER) ? SDL_MAX_SINT16 : 0;
-    state.dpad_up = (input & SWK_UP) ? true : false;
-    state.dpad_down = (input & SWK_DOWN) ? true : false;
-    state.dpad_left = (input & SWK_LEFT) ? true : false;
-    state.dpad_right = (input & SWK_RIGHT) ? true : false;
+    set_button(&state.south, input, SWK_SOUTH);
+    set_button(&state.east, input, SWK_EAST);
+    set_button(&state.west, input, SWK_WEST);
+    set_button(&state.north, input, SWK_NORTH);
+    set_button(&state.back, input, SWK_BACK);
+    set_button(&state.start, input, SWK_START);
+    set_button(&state.left_stick, input, SWK_LEFT_STICK);
+    set_button(&state.right_stick, input, SWK_RIGHT_STICK);
+    set_button(&state.left_shoulder, input, SWK_LEFT_SHOULDER);
+    set_button(&state.right_shoulder, input, SWK_RIGHT_SHOULDER);
+    set_trigger(&state.left_trigger, input, SWK_LEFT_TRIGGER);
+    set_trigger(&state.right_trigger, input, SWK_RIGHT_TRIGGER);
+    set_button(&state.dpad_up, input, SWK_UP);
+    set_button(&state.dpad_down, input, SWK_DOWN);
+    set_button(&state.dpad_left, input, SWK_LEFT);
+    set_button(&state.dpad_right, input, SWK_RIGHT);
 
     StatcheckInput_SetButtonState(id, &state);
 }
@@ -176,90 +170,71 @@ void TestRunner_Destroy() {
     ReplayGame_Destroy(&game);
 }
 
-void TestRunner_Prologue() {
-    SDL_zeroa(input_buffers);
-
-    switch (phase) {
-    case PHASE_TITLE:
-        const struct _TASK* menu_task = &task[TASK_MENU];
-
-        if (menu_task->r_no[0] == 0 && menu_task->r_no[1] == 1 && menu_task->r_no[2] == 3) {
-            phase = PHASE_MENU;
-            break;
-        }
-
-        mash_button(SWK_START, 0);
+/* The character select, which is a phase machine of its own: put the cursors
+ * where the recorded match had them, take the colours, then the stage. */
+static void run_character_select() {
+    switch (char_select_phase) {
+    case 0:
+        set_cursor(game.characters[0], 0);
+        set_cursor(game.characters[1], 1);
+        tap_button(SWK_START, 1);
+        wait_timer = 20;
+        char_select_phase = 1;
         break;
 
-    case PHASE_MENU:
-        if (G_No[1] == 1 && G_No[2] == 2) {
-            // Even though we move cursor manually later, setting Last_My_char2 is required
-            // for Last_Super_Arts to take effect
-            Last_My_char2[0] = game.characters[0];
-            Last_My_char2[1] = game.characters[1];
-            Last_Super_Arts[0] = game.supers[0];
-            Last_Super_Arts[1] = game.supers[1];
-            phase = PHASE_CHARACTER_SELECT_TRANSITION;
-            wait_timer = 60;
-            break;
-        }
-
-        mash_button(SWK_SOUTH, 0);
-        break;
-
-    case PHASE_CHARACTER_SELECT_TRANSITION:
+    case 1:
         wait_timer -= 1;
 
         if (wait_timer <= 0) {
-            phase = PHASE_CHARACTER_SELECT;
+            // We must set New_Challenger manually so that the game selects the correct stage.
+            // If we set this var earlier it would be overwritten
+            New_Challenger = game.new_challenger;
+            Champion = New_Challenger ^ 1;
+            char_select_phase = 2;
         }
 
         break;
 
-    case PHASE_CHARACTER_SELECT:
-        switch (char_select_phase) {
-        case 0:
-            set_cursor(game.characters[0], 0);
-            set_cursor(game.characters[1], 1);
-            tap_button(SWK_START, 1);
-            wait_timer = 20;
-            char_select_phase = 1;
-            break;
+    case 2:
+        tap_button(color_to_keys[game.colors[0]], 0);
+        tap_button(color_to_keys[game.colors[1]], 1);
+        wait_timer = 45;
+        char_select_phase = 3;
+        break;
 
-        case 1:
-            wait_timer -= 1;
+    case 3:
+        wait_timer -= 1;
 
-            if (wait_timer <= 0) {
-                // We must set New_Challenger manually so that the game selects the correct stage.
-                // If we set this var earlier it would be overwritten
-                New_Challenger = game.new_challenger;
-                Champion = New_Challenger ^ 1;
-                char_select_phase = 2;
-            }
-
-            break;
-
-        case 2:
-            tap_button(color_to_keys[game.colors[0]], 0);
-            tap_button(color_to_keys[game.colors[1]], 1);
-            wait_timer = 45;
-            char_select_phase = 3;
-            break;
-
-        case 3:
-            wait_timer -= 1;
-
-            if (wait_timer <= 0) {
-                // Stage selection happens before per-frame synchronization begins.
-                VS_Stage = game.stage;
-                tap_button(SWK_SOUTH, 0);
-                tap_button(SWK_SOUTH, 1);
-                phase = PHASE_GAME_TRANSITION;
-            }
-
-            break;
+        if (wait_timer <= 0) {
+            // Stage selection happens before per-frame synchronization begins.
+            VS_Stage = game.stage;
+            tap_button(SWK_SOUTH, 0);
+            tap_button(SWK_SOUTH, 1);
+            phase = PHASE_GAME_TRANSITION;
         }
 
+        break;
+    }
+}
+
+/* The two front-end states the runner waits for, each copied character for
+ * character from the test it stood in. */
+static bool menu_is_ready(const struct _TASK* menu_task) {
+    return menu_task->r_no[0] == 0 && menu_task->r_no[1] == 1 && menu_task->r_no[2] == 3;
+}
+
+static bool character_select_reached() {
+    return G_No[1] == 1 && G_No[2] == 2;
+}
+
+/* The runner's later phases, reached from the earlier ones' default. The case
+ * labels are the original ones and the switch is on the same expression; the
+ * fallthrough from PHASE_GAME_TRANSITION into PHASE_GAME is inside the group,
+ * which is why the cut is here and not one arm later. */
+static void run_later_phases() {
+    switch (phase) {
+    case PHASE_CHARACTER_SELECT:
+        run_character_select();
         break;
 
     case PHASE_GAME_TRANSITION:
@@ -290,6 +265,52 @@ void TestRunner_Prologue() {
             tap_button(SWK_ATTACKS, 1);
         }
 
+        break;
+    }
+}
+
+void TestRunner_Prologue() {
+    SDL_zeroa(input_buffers);
+
+    switch (phase) {
+    case PHASE_TITLE:
+        const struct _TASK* menu_task = &task[TASK_MENU];
+
+        if (menu_is_ready(menu_task)) {
+            phase = PHASE_MENU;
+            break;
+        }
+
+        mash_button(SWK_START, 0);
+        break;
+
+    case PHASE_MENU:
+        if (character_select_reached()) {
+            // Even though we move cursor manually later, setting Last_My_char2 is required
+            // for Last_Super_Arts to take effect
+            Last_My_char2[0] = game.characters[0];
+            Last_My_char2[1] = game.characters[1];
+            Last_Super_Arts[0] = game.supers[0];
+            Last_Super_Arts[1] = game.supers[1];
+            phase = PHASE_CHARACTER_SELECT_TRANSITION;
+            wait_timer = 60;
+            break;
+        }
+
+        mash_button(SWK_SOUTH, 0);
+        break;
+
+    case PHASE_CHARACTER_SELECT_TRANSITION:
+        wait_timer -= 1;
+
+        if (wait_timer <= 0) {
+            phase = PHASE_CHARACTER_SELECT;
+        }
+
+        break;
+
+    default:
+        run_later_phases();
         break;
     }
 

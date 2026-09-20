@@ -218,37 +218,16 @@ u32 flCreateTextureFromApx(const char* apx_file, u32 flag) {
     return flCreateTextureFromApx_mem(file_ptr, flag);
 }
 
-u32 flCreateTextureFromApx_mem(void* mem, u32 flag) {
-    u8* dst;
+/* The mipmap chain of an APX image, one level per pass, each half the size of
+ * the one above it. The destination and the starting dimensions are read from
+ * the texture the caller has already set up. */
+static void copy_apx_mipmaps(void* mem, const plContext* context, s32 mip_num, const FLTexture* lpflTexture) {
+    u8* dst = flPS2GetSystemBuffAdrs(lpflTexture->mem_handle);
+    s32 dw = lpflTexture->width;
+    s32 dh = lpflTexture->height;
     u8* src;
-    plContext context[7];
-    plContext pal_context;
-    plContext tmp_context;
-    u32 th;
-    u32 ph;
-    FLTexture* lpflTexture;
-    FLTexture* lpflPalette;
-    s32 mip_num;
     s32 lp0;
-    s32 dw;
-    s32 dh;
     s32 tex_size;
-
-    th = 0;
-    ph = 0;
-    th = flPS2GetTextureHandle();
-    lpflTexture = &flTexture[LO_16_BITS(th) - 1];
-    mip_num = plAPXGetMipmapTextureNum(mem) - 1;
-
-    if (plAPXSetContextFromImage(&context[0], mem) == 0) {
-        return 0;
-    }
-
-    flPS2GetTextureInfoFromContext(&context[0], mip_num + 1, th, flag);
-    lpflTexture->mem_handle = flPS2GetSystemMemoryHandle(lpflTexture->size, 2);
-    dst = flPS2GetSystemBuffAdrs(lpflTexture->mem_handle);
-    dw = lpflTexture->width;
-    dh = lpflTexture->height;
 
     for (lp0 = 0; lp0 <= mip_num; lp0++) {
         switch (context[lp0].bitdepth) {
@@ -288,32 +267,68 @@ u32 flCreateTextureFromApx_mem(void* mem, u32 flag) {
         dh >>= 1;
         dst = &dst[tex_size];
     }
+}
+
+/* The palette an APX image carries, for the two formats that have one. Returns
+ * the palette handle, which is the one value the block left behind. */
+static u32 create_apx_palette(void* mem, const FLTexture* lpflTexture, u32 flag) {
+    plContext pal_context;
+    plContext tmp_context;
+    FLTexture* lpflPalette;
+    u8* dst;
+    u8* src;
+    u32 ph;
+
+    ph = flPS2GetPaletteHandle();
+    lpflPalette = &flPalette[HI_16_BITS(ph) - 1];
+    plAPXSetPaletteContextFromImage(&pal_context, mem);
+    flPS2GetPaletteInfoFromContext(&pal_context, ph, flag);
+    lpflPalette->mem_handle = flPS2GetSystemMemoryHandle(lpflPalette->size, 2);
+    dst = flPS2GetSystemBuffAdrs(lpflPalette->mem_handle);
+    src = plAPXGetPaletteAddressFromImage(mem, 0);
+
+    if (lpflTexture->format == 0x13) {
+        tmp_context = pal_context;
+        pal_context.ptr = src;
+        tmp_context.ptr = dst;
+        flPS2ConvertContext(&pal_context, &tmp_context, 0, 1);
+    } else {
+        flMemcpy(dst, src, lpflPalette->size);
+
+        if (pal_context.bitdepth == 4) {
+            flPS2ConvertAlpha(dst, lpflPalette->width, lpflPalette->height);
+        }
+    }
+
+    flPS2CreatePaletteHandle(ph, flag);
+    return ph;
+}
+
+u32 flCreateTextureFromApx_mem(void* mem, u32 flag) {
+    plContext context[7];
+    u32 th;
+    u32 ph;
+    FLTexture* lpflTexture;
+    s32 mip_num;
+
+    th = 0;
+    ph = 0;
+    th = flPS2GetTextureHandle();
+    lpflTexture = &flTexture[LO_16_BITS(th) - 1];
+    mip_num = plAPXGetMipmapTextureNum(mem) - 1;
+
+    if (plAPXSetContextFromImage(&context[0], mem) == 0) {
+        return 0;
+    }
+
+    flPS2GetTextureInfoFromContext(&context[0], mip_num + 1, th, flag);
+    lpflTexture->mem_handle = flPS2GetSystemMemoryHandle(lpflTexture->size, 2);
+    copy_apx_mipmaps(mem, context, mip_num, lpflTexture);
 
     flPS2CreateTextureHandle(th, flag);
 
     if ((lpflTexture->format == 0x14) || (lpflTexture->format == 0x13)) {
-        ph = flPS2GetPaletteHandle();
-        lpflPalette = &flPalette[HI_16_BITS(ph) - 1];
-        plAPXSetPaletteContextFromImage(&pal_context, mem);
-        flPS2GetPaletteInfoFromContext(&pal_context, ph, flag);
-        lpflPalette->mem_handle = flPS2GetSystemMemoryHandle(lpflPalette->size, 2);
-        dst = flPS2GetSystemBuffAdrs(lpflPalette->mem_handle);
-        src = plAPXGetPaletteAddressFromImage(mem, 0);
-
-        if (lpflTexture->format == 0x13) {
-            tmp_context = pal_context;
-            pal_context.ptr = src;
-            tmp_context.ptr = dst;
-            flPS2ConvertContext(&pal_context, &tmp_context, 0, 1);
-        } else {
-            flMemcpy(dst, src, lpflPalette->size);
-
-            if (pal_context.bitdepth == 4) {
-                flPS2ConvertAlpha(dst, lpflPalette->width, lpflPalette->height);
-            }
-        }
-
-        flPS2CreatePaletteHandle(ph, flag);
+        ph = create_apx_palette(mem, lpflTexture, flag);
     }
 
     return th | ph;
@@ -330,34 +345,17 @@ u32 flCreateTextureFromTim2(const char* tim2_file, u32 flag) {
     return flCreateTextureFromTim2_mem(file_ptr, flag);
 }
 
-u32 flCreateTextureFromTim2_mem(void* mem, u32 flag) {
-    u8* dst;
+/* The mipmap chain of a TIM2 image. The same shape as the APX chain above, but
+ * not the same text: it reads a different pixel address and advances the
+ * destination with `+=` rather than a subscript, which is two differences and
+ * so not one family. */
+static void copy_tim2_mipmaps(void* mem, const plContext* context, s32 mip_num, const FLTexture* lpflTexture) {
+    u8* dst = flPS2GetSystemBuffAdrs(lpflTexture->mem_handle);
+    s32 dw = lpflTexture->width;
+    s32 dh = lpflTexture->height;
     u8* src;
-    plContext context[7];
-    plContext pal_context;
-    u32 th = 0;
-    u32 ph = 0;
-    FLTexture* lpflTexture;
-    FLTexture* lpflPalette;
-    s32 mip_num;
     s32 lp0;
-    s32 dw;
-    s32 dh;
     s32 tex_size;
-
-    th = flPS2GetTextureHandle();
-    lpflTexture = &flTexture[LO_16_BITS(th) - 1];
-    mip_num = plTIM2GetMipmapTextureNum(mem);
-
-    if (plTIM2SetContextFromImage(context, mem) == 0) {
-        return 0;
-    }
-
-    flPS2GetTextureInfoFromContext(context, mip_num + 1, th, flag);
-    lpflTexture->mem_handle = flPS2GetSystemMemoryHandle(lpflTexture->size, 2);
-    dst = flPS2GetSystemBuffAdrs(lpflTexture->mem_handle);
-    dw = lpflTexture->width;
-    dh = lpflTexture->height;
 
     for (lp0 = 0; lp0 <= mip_num; lp0++) {
         switch (context[lp0].bitdepth) {
@@ -399,6 +397,30 @@ u32 flCreateTextureFromTim2_mem(void* mem, u32 flag) {
         dh >>= 1;
         dst += tex_size;
     }
+}
+
+u32 flCreateTextureFromTim2_mem(void* mem, u32 flag) {
+    u8* dst;
+    u8* src;
+    plContext context[7];
+    plContext pal_context;
+    u32 th = 0;
+    u32 ph = 0;
+    FLTexture* lpflTexture;
+    FLTexture* lpflPalette;
+    s32 mip_num;
+
+    th = flPS2GetTextureHandle();
+    lpflTexture = &flTexture[LO_16_BITS(th) - 1];
+    mip_num = plTIM2GetMipmapTextureNum(mem);
+
+    if (plTIM2SetContextFromImage(context, mem) == 0) {
+        return 0;
+    }
+
+    flPS2GetTextureInfoFromContext(context, mip_num + 1, th, flag);
+    lpflTexture->mem_handle = flPS2GetSystemMemoryHandle(lpflTexture->size, 2);
+    copy_tim2_mipmaps(mem, context, mip_num, lpflTexture);
 
     flPS2CreateTextureHandle(th, flag);
 
@@ -422,27 +444,30 @@ u32 flCreateTextureFromTim2_mem(void* mem, u32 flag) {
     return th | ph;
 }
 
+/* The PS2's alpha range is half the PC one: opaque is 128, and a value that
+ * halves to nothing is held at 1 rather than becoming transparent. */
+static u8 ps2_alpha_of(u8 alpha) {
+    if (alpha == 255) {
+        alpha = 128;
+    } else if (alpha != 0) {
+        alpha >>= 1;
+
+        if (alpha == 0) {
+            alpha = 1;
+        }
+    }
+
+    return alpha;
+}
+
 void flPS2ConvertAlpha(void* lpPtr, s32 width, s32 height) {
     s32 x;
     s32 y;
     u8* ptr = lpPtr;
-    u8 alpha;
 
     for (y = 0; y < height; y++) {
         for (x = 0; x < width; x++) {
-            alpha = ptr[3];
-
-            if (alpha == 255) {
-                alpha = 128;
-            } else if (alpha != 0) {
-                alpha >>= 1;
-
-                if (alpha == 0) {
-                    alpha = 1;
-                }
-            }
-
-            ptr[3] = alpha;
+            ptr[3] = ps2_alpha_of(ptr[3]);
             ptr += 4;
         }
     }
@@ -457,6 +482,33 @@ u32 flCreateTextureFromBMP(const char* bmp_file, u32 flag) {
     }
 
     return flCreateTextureFromBMP_mem(file_ptr, flag);
+}
+
+/* Neither of the two bit depths the direct-colour loaders accept. The test is
+ * the one that stood at the call site, copied rather than inverted. */
+static bool is_unsupported_bitdepth(const plContext* context) {
+    return context->bitdepth != 3 && context->bitdepth != 4;
+}
+
+static void copy_bmp_24bpp(u8* dst, const u8* keep, const plContext* context) {
+    s32 x;
+    s32 y;
+    const u8* src;
+    u8 r;
+    u8 g;
+    u8 b;
+
+    for (y = 0; y < context->height; y++) {
+        for (x = 0; x < context->width; x++) {
+            src = keep + x * context->bitdepth + (context->height - 1 - y) * context->pitch;
+            b = *src++;
+            g = *src++;
+            r = *src++;
+            *dst++ = r;
+            *dst++ = g;
+            *dst++ = b;
+        }
+    }
 }
 
 u32 flCreateTextureFromBMP_mem(void* mem, u32 flag) {
@@ -480,7 +532,7 @@ u32 flCreateTextureFromBMP_mem(void* mem, u32 flag) {
         return 0;
     }
 
-    if (context.bitdepth != 3 && context.bitdepth != 4) {
+    if (is_unsupported_bitdepth(&context)) {
         return 0;
     }
 
@@ -491,17 +543,7 @@ u32 flCreateTextureFromBMP_mem(void* mem, u32 flag) {
 
     switch (context.bitdepth) {
     case 3:
-        for (y = 0; y < context.height; y++) {
-            for (x = 0; x < context.width; x++) {
-                src = keep + x * context.bitdepth + (context.height - 1 - y) * context.pitch;
-                b = *src++;
-                g = *src++;
-                r = *src++;
-                *dst++ = r;
-                *dst++ = g;
-                *dst++ = b;
-            }
-        }
+        copy_bmp_24bpp(dst, keep, &context);
 
         break;
 
@@ -541,10 +583,110 @@ u32 flCreateTextureFromPIC(const char* pic_file, u32 flag) {
     return flCreateTextureFromPIC_mem(file_ptr, flag);
 }
 
+/* One row of the PIC run-length stream, decoded into the destination it is
+ * given. Each returns the source pointer where it stopped, which is the one
+ * value the block carried back out of its braces. */
+static u8* decode_pic_rgb_row(u8* lpdst, u8* lpsrc, const plContext* context) {
+    s32 cx;
+    s32 ax;
+
+    s32 x = 0;
+
+    while (x < context->width) {
+        ax = *lpsrc++;
+
+        if (ax == 0x80) {
+            cx = (lpsrc[0] << 8) | lpsrc[1];
+            lpsrc += 2;
+            x += cx;
+
+            while (cx-- != 0) {
+                lpdst[0] = lpsrc[0];
+                lpdst[1] = lpsrc[1];
+                lpdst[2] = lpsrc[2];
+                lpdst += context->bitdepth;
+            }
+
+            lpsrc += 3;
+        } else if (ax > 0x80) {
+            cx = ax - 0x7F;
+            x += cx;
+
+            while (cx-- != 0) {
+                lpdst[0] = lpsrc[0];
+                lpdst[1] = lpsrc[1];
+                lpdst[2] = lpsrc[2];
+                lpdst += context->bitdepth;
+            }
+
+            lpsrc += 3;
+        } else {
+            cx = ax + 1;
+            x += cx;
+
+            while (cx-- != 0) {
+                lpdst[0] = lpsrc[0];
+                lpdst[1] = lpsrc[1];
+                lpdst[2] = lpsrc[2];
+                lpdst += context->bitdepth;
+                lpsrc += 3;
+            }
+        }
+    }
+
+    return lpsrc;
+}
+
+static u8* decode_pic_alpha_row(u8* lpdst, u8* lpsrc, const plContext* context) {
+    s32 cx;
+    s32 ax;
+
+    if (context->bitdepth == 3) {
+        return lpsrc;
+    }
+
+    s32 x = 0;
+
+    while (x < context->width) {
+        ax = *lpsrc++;
+
+        if (ax == 0x80) {
+            cx = (lpsrc[0] << 8) | lpsrc[1];
+            lpsrc += 2;
+            x += cx;
+
+            while (cx-- != 0) {
+                lpdst[0] = lpsrc[0];
+                lpdst += 4;
+            }
+
+            lpsrc += 1;
+        } else if (ax > 0x80) {
+            cx = ax - 0x7F;
+            x += cx;
+
+            while (cx-- != 0) {
+                lpdst[0] = lpsrc[0];
+                lpdst += 4;
+            }
+
+            lpsrc += 1;
+        } else {
+            cx = ax + 1;
+            x += cx;
+
+            while (cx-- != 0) {
+                *lpdst = *lpsrc++;
+                lpdst += 4;
+            }
+        }
+    }
+
+    return lpsrc;
+}
+
 u32 flCreateTextureFromPIC_mem(void* mem, u32 flag) {
-    s32 x;
     s32 y;
-    u8* lpdst;
     u8* dst;
     u8* lpsrc;
     plContext context;
@@ -565,100 +707,8 @@ u32 flCreateTextureFromPIC_mem(void* mem, u32 flag) {
     lpsrc = plPICGetPixelAddressFromImage(mem);
 
     for (y = 0; y < context.height; y++) {
-        {
-            s32 cx;
-            s32 ax;
-
-            lpdst = dst + (y * context.pitch);
-            x = 0;
-
-            while (x < context.width) {
-                ax = *lpsrc++;
-
-                if (ax == 0x80) {
-                    cx = (lpsrc[0] << 8) | lpsrc[1];
-                    lpsrc += 2;
-                    x += cx;
-
-                    while (cx-- != 0) {
-                        lpdst[0] = lpsrc[0];
-                        lpdst[1] = lpsrc[1];
-                        lpdst[2] = lpsrc[2];
-                        lpdst += context.bitdepth;
-                    }
-
-                    lpsrc += 3;
-                } else if (ax > 0x80) {
-                    cx = ax - 0x7F;
-                    x += cx;
-
-                    while (cx-- != 0) {
-                        lpdst[0] = lpsrc[0];
-                        lpdst[1] = lpsrc[1];
-                        lpdst[2] = lpsrc[2];
-                        lpdst += context.bitdepth;
-                    }
-
-                    lpsrc += 3;
-                } else {
-                    cx = ax + 1;
-                    x += cx;
-
-                    while (cx-- != 0) {
-                        lpdst[0] = lpsrc[0];
-                        lpdst[1] = lpsrc[1];
-                        lpdst[2] = lpsrc[2];
-                        lpdst += context.bitdepth;
-                        lpsrc += 3;
-                    }
-                }
-            }
-        }
-
-        {
-            s32 cx;
-            s32 ax;
-
-            if (context.bitdepth != 3) {
-                lpdst = dst + (y * context.pitch) + 3;
-                x = 0;
-
-                while (x < context.width) {
-                    ax = *lpsrc++;
-
-                    if (ax == 0x80) {
-                        cx = (lpsrc[0] << 8) | lpsrc[1];
-                        lpsrc += 2;
-                        x += cx;
-
-                        while (cx-- != 0) {
-                            lpdst[0] = lpsrc[0];
-                            lpdst += 4;
-                        }
-
-                        lpsrc += 1;
-                    } else if (ax > 0x80) {
-                        cx = ax - 0x7F;
-                        x += cx;
-
-                        while (cx-- != 0) {
-                            lpdst[0] = lpsrc[0];
-                            lpdst += 4;
-                        }
-
-                        lpsrc += 1;
-                    } else {
-                        cx = ax + 1;
-                        x += cx;
-
-                        while (cx-- != 0) {
-                            *lpdst = *lpsrc++;
-                            lpdst += 4;
-                        }
-                    }
-                }
-            }
-        }
+        lpsrc = decode_pic_rgb_row(dst + (y * context.pitch), lpsrc, &context);
+        lpsrc = decode_pic_alpha_row(dst + (y * context.pitch) + 3, lpsrc, &context);
     }
 
     if (context.bitdepth == 4) {

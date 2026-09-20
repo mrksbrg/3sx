@@ -109,12 +109,10 @@ static Uint16 remap_cg_number(Uint16 value, Character character) {
     return adjusted;
 }
 
-static const void* read_char_table(SDL_IOStream* rom, Location location, Character character) {
-    void* result = SDL_malloc(location.size);
-    SDL_memset(result, 0, location.size);
-
-    // Read script offsets
-    Uint32* offsets = result;
+/* The table of script offsets at the head of a character's data, rebased onto
+ * the buffer. Returns how many there were, which is the one value the block
+ * produced. */
+static int read_script_offsets(SDL_IOStream* rom, Location location, Uint32* offsets) {
     int offset_count = 0;
     SDL_SeekIO(rom, location.offset, SDL_IO_SEEK_SET);
 
@@ -129,6 +127,126 @@ static const void* read_char_table(SDL_IOStream* rom, Location location, Charact
 
         offsets[offset_count] = value - BASE_OFFSET - location.offset;
     }
+    return offset_count;
+}
+
+/* One script: its header, then every entry until the next script's data begins.
+ * The entry layout grows with the script's cgd_type. */
+/* The extra fields a cgd_type 4 or 6 entry carries, and the ones only a
+ * cgd_type 6 entry carries. Each returns the write pointer where it stopped. */
+static Uint8* read_cg_hit_fields(SDL_IOStream* rom, Uint8* p) {
+    Sint16 cg_att_ix = 0;
+    Uint16 cg_hit_ix = 0;
+    SDL_ReadS16BE(rom, &cg_att_ix);
+    SDL_ReadU16BE(rom, &cg_hit_ix);
+
+    *(Uint16*)p = cg_hit_ix;
+    p += 2;
+    *(Sint16*)p = cg_att_ix;
+    p += 2;
+
+    for (int i = 0; i < 4; i++) {
+        SDL_ReadU8(rom, p); // cg_extdat ... cg_eftype
+        p += 1;
+    }
+    return p;
+}
+
+static Uint8* read_cg_zoom_fields(SDL_IOStream* rom, Uint8* p) {
+    for (int i = 0; i < 3; i++) {
+        SDL_ReadU16BE(rom, p); // cg_zoom ... cg_add_xy
+        p += 2;
+    }
+
+    for (int i = 0; i < 2; i++) {
+        SDL_ReadU8(rom, p); // cg_next_ix ... cg_status
+        p += 1;
+    }
+    return p;
+}
+
+/* A command entry: the code, its three arguments, and whatever padding the
+ * script's cgd_type puts after them. Returns the write pointer where it
+ * stopped. */
+static Uint8* read_command_entry(SDL_IOStream* rom, Uint8* p, Uint16 code, Sint16 cgd_type) {
+    *(Uint16*)p = code;
+    p += 2;
+
+    for (int i = 0; i < 3; i++) {
+        SDL_ReadS16BE(rom, p); // koc ... pat
+        p += 2;
+    }
+
+    const int left_to_move = SDL_max(cgd_type * 4 - 8, 0);
+    p += left_to_move;
+    SDL_SeekIO(rom, left_to_move, SDL_IO_SEEK_CUR);
+
+    return p;
+}
+
+/* A CG entry's fixed head: the counter and type the code packs together, the
+ * sound and outline indices, and the CG number remapped for this character.
+ * Returns the write pointer where it stopped. */
+static Uint8* read_cg_header(SDL_IOStream* rom, Uint8* p, Uint16 code, Character character) {
+    const Uint8 cg_ctr = code >> 8;
+    const Uint8 cg_type = code & 0xFF;
+    *p++ = cg_type;
+    *p++ = cg_ctr;
+
+    for (int i = 0; i < 2; i++) {
+        SDL_ReadU16BE(rom, p); // cg_se ... cg_olc_ix
+        p += 2;
+    }
+
+    Uint16 cg_number = 0;
+    SDL_ReadU16BE(rom, &cg_number);
+    cg_number = remap_cg_number(cg_number, character);
+    *(Uint16*)p = cg_number;
+    p += 2;
+
+    return p;
+}
+
+static void read_script(SDL_IOStream* rom, Uint8* p, const Uint8* end, Character character) {
+    // Read script header
+    Sint16 cgd_type = 0;
+    SDL_ReadS16BE(rom, &cgd_type);
+    SDL_assert(cgd_type == 1 || cgd_type == 2 || cgd_type == 4 || cgd_type == 6);
+    *(Sint16*)p = cgd_type;
+    p += 2;
+
+    for (int i = 0; i < 6; i++) {
+        SDL_ReadU8(rom, p); // pat_status ... sp_tech_id
+        p += 1;
+    }
+
+    while (p < end) {
+        Uint16 code = 0;
+        SDL_ReadU16BE(rom, &code);
+
+        if (code < 0x100) {
+            p = read_command_entry(rom, p, code, cgd_type);
+        } else {
+            p = read_cg_header(rom, p, code, character);
+
+            if (cgd_type >= 4) {
+                p = read_cg_hit_fields(rom, p);
+            }
+
+            if (cgd_type == 6) {
+                p = read_cg_zoom_fields(rom, p);
+            }
+        }
+    }
+}
+
+static const void* read_char_table(SDL_IOStream* rom, Location location, Character character) {
+    void* result = SDL_malloc(location.size);
+    SDL_memset(result, 0, location.size);
+
+    // Read script offsets
+    Uint32* offsets = result;
+    const int offset_count = read_script_offsets(rom, location, offsets);
 
     // Calculate script sizes
     const size_t script_offsets_size = offset_count * sizeof(Uint32);
@@ -143,83 +261,7 @@ static const void* read_char_table(SDL_IOStream* rom, Location location, Charact
         const Uint32 end_offset = (i == (offset_count - 1)) ? location.size : script_offsets[i + 1] - 8;
 
         SDL_SeekIO(rom, location.offset + start_offset, SDL_IO_SEEK_SET);
-        Uint8* p = (Uint8*)result + start_offset;
-
-        // Read script header
-        Sint16 cgd_type = 0;
-        SDL_ReadS16BE(rom, &cgd_type);
-        SDL_assert(cgd_type == 1 || cgd_type == 2 || cgd_type == 4 || cgd_type == 6);
-        *(Sint16*)p = cgd_type;
-        p += 2;
-
-        for (int i = 0; i < 6; i++) {
-            SDL_ReadU8(rom, p); // pat_status ... sp_tech_id
-            p += 1;
-        }
-
-        while (p < (Uint8*)result + end_offset) {
-            Uint16 code = 0;
-            SDL_ReadU16BE(rom, &code);
-
-            if (code < 0x100) {
-                *(Uint16*)p = code;
-                p += 2;
-
-                for (int i = 0; i < 3; i++) {
-                    SDL_ReadS16BE(rom, p); // koc ... pat
-                    p += 2;
-                }
-
-                const int left_to_move = SDL_max(cgd_type * 4 - 8, 0);
-                p += left_to_move;
-                SDL_SeekIO(rom, left_to_move, SDL_IO_SEEK_CUR);
-            } else {
-                const Uint8 cg_ctr = code >> 8;
-                const Uint8 cg_type = code & 0xFF;
-                *p++ = cg_type;
-                *p++ = cg_ctr;
-
-                for (int i = 0; i < 2; i++) {
-                    SDL_ReadU16BE(rom, p); // cg_se ... cg_olc_ix
-                    p += 2;
-                }
-
-                Uint16 cg_number = 0;
-                SDL_ReadU16BE(rom, &cg_number);
-                cg_number = remap_cg_number(cg_number, character);
-                *(Uint16*)p = cg_number;
-                p += 2;
-
-                if (cgd_type >= 4) {
-                    Sint16 cg_att_ix = 0;
-                    Uint16 cg_hit_ix = 0;
-                    SDL_ReadS16BE(rom, &cg_att_ix);
-                    SDL_ReadU16BE(rom, &cg_hit_ix);
-
-                    *(Uint16*)p = cg_hit_ix;
-                    p += 2;
-                    *(Sint16*)p = cg_att_ix;
-                    p += 2;
-
-                    for (int i = 0; i < 4; i++) {
-                        SDL_ReadU8(rom, p); // cg_extdat ... cg_eftype
-                        p += 1;
-                    }
-                }
-
-                if (cgd_type == 6) {
-                    for (int i = 0; i < 3; i++) {
-                        SDL_ReadU16BE(rom, p); // cg_zoom ... cg_add_xy
-                        p += 2;
-                    }
-
-                    for (int i = 0; i < 2; i++) {
-                        SDL_ReadU8(rom, p); // cg_next_ix ... cg_status
-                        p += 1;
-                    }
-                }
-            }
-        }
+        read_script(rom, (Uint8*)result + start_offset, (Uint8*)result + end_offset, character);
     }
 
     // Cleanup
@@ -261,14 +303,10 @@ static const void* read_u16_array(SDL_IOStream* rom, Location location) {
     return result;
 }
 
-static void coalesce_adjacent_sections(CharDataImage* image, const LocationData* locations) {
-    const Location* section_locations = (const Location*)locations;
-    CharDataSection sections[CHAR_DATA_SECTION_COUNT];
-
-    for (int i = 0; i < CHAR_DATA_SECTION_COUNT; i++) {
-        sections[i] = i;
-    }
-
+/* The two passes that make a coalesced image: order the sections by where
+ * they sit in the ROM, then give every run of adjacent ones a single
+ * allocation. */
+static void sort_sections_by_offset(CharDataSection* sections, const Location* section_locations) {
     for (int i = 1; i < CHAR_DATA_SECTION_COUNT; i++) {
         const CharDataSection section = sections[i];
         int j = i;
@@ -279,8 +317,10 @@ static void coalesce_adjacent_sections(CharDataImage* image, const LocationData*
         }
 
         sections[j] = section;
-    }
+}
+}
 
+static void merge_adjacent_runs(CharDataImage* image, CharDataSection* sections, const Location* section_locations) {
     for (int run_start = 0; run_start < CHAR_DATA_SECTION_COUNT;) {
         int run_end = run_start;
 
@@ -311,7 +351,20 @@ static void coalesce_adjacent_sections(CharDataImage* image, const LocationData*
         }
 
         run_start = run_end + 1;
+}
+}
+
+static void coalesce_adjacent_sections(CharDataImage* image, const LocationData* locations) {
+    const Location* section_locations = (const Location*)locations;
+    CharDataSection sections[CHAR_DATA_SECTION_COUNT];
+
+    for (int i = 0; i < CHAR_DATA_SECTION_COUNT; i++) {
+        sections[i] = i;
     }
+
+    sort_sections_by_offset(sections, section_locations);
+
+    merge_adjacent_runs(image, sections, section_locations);
 }
 
 static void update_table_pointers(CharDataImage* image) {

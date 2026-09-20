@@ -114,12 +114,39 @@ static void SPU_VoiceCacheADSR(struct SPU_Voice* v) {
     }
 }
 
+/* The two compound tests the ADSR step makes, each copied character for
+ * character from the condition it stood in. */
+static bool adsr_is_slowing_rise(const struct AdsrParamCache* pc, const struct SPU_Voice* v) {
+    return pc->exp && !pc->decr && v->envx >= 0x6000;
+}
+
+static bool adsr_target_reached(const struct AdsrParamCache* pc, const struct SPU_Voice* v) {
+    return (!pc->decr && v->envx >= pc->target) || ((pc->decr && v->envx <= pc->target));
+}
+
+/* Move the envelope on when it has passed its target, and stop the voice when
+ * it runs off the end. Sustain holds where it is. */
+static void adsr_advance_phase(const struct AdsrParamCache* pc, struct SPU_Voice* v) {
+    if (v->adsr_phase == ADSR_PHASE_SUSTAIN) {
+        return;
+    }
+
+    if (adsr_target_reached(pc, v)) {
+        v->adsr_phase++;
+        SPU_VoiceCacheADSR(v);
+    }
+
+    if (v->adsr_phase > ADSR_PHASE_RELEASE) {
+        v->run = false;
+    }
+}
+
 static void SPU_VoiceRunADSR(struct SPU_Voice* v) {
     struct AdsrParamCache* pc = &v->adsr_param;
     u32 counter_inc = 0x8000 >> max(0, pc->shift - 11);
     s32 level_inc = pc->step << max(0, 11 - pc->shift);
 
-    if (pc->exp && !pc->decr && v->envx >= 0x6000) {
+    if (adsr_is_slowing_rise(pc, v)) {
         if (pc->shift < 10) {
             level_inc >>= 2;
         } else if (pc->shift >= 11) {
@@ -142,18 +169,31 @@ static void SPU_VoiceRunADSR(struct SPU_Voice* v) {
         v->envx = clamp(v->envx + level_inc, 0, INT16_MAX);
     }
 
-    if (v->adsr_phase == ADSR_PHASE_SUSTAIN) {
-        return;
+    adsr_advance_phase(pc, v);
+}
+
+/* At a block boundary: follow the loop point if the block says to, stop the
+ * voice if it says that too, and remember a new loop start. */
+static void spu_advance_block(struct SPU_Voice* v, u16 header) {
+    if (header & 0x100) {
+        v->nax = v->lsa;
+        v->endx = true;
+
+        if ((header & 0x200) == 0) {
+            if (!v->noise) {
+                v->envx = 0;
+                v->adsr_phase = ADSR_PHASE_STOPPED;
+                v->run = false;
+            }
+        }
     }
 
-    if ((!pc->decr && v->envx >= pc->target) || ((pc->decr && v->envx <= pc->target))) {
-        v->adsr_phase++;
-        SPU_VoiceCacheADSR(v);
+    header = ram[v->nax & ~0x7];
+    if (header & 0x400) {
+        v->lsa = v->nax;
     }
 
-    if (v->adsr_phase > ADSR_PHASE_RELEASE) {
-        v->run = false;
-    }
+    v->nax = (v->nax + 1) & 0xfffff;
 }
 
 static void SPU_VoiceDecode(struct SPU_Voice* v) {
@@ -195,25 +235,7 @@ static void SPU_VoiceDecode(struct SPU_Voice* v) {
     v->nax = (v->nax + 1) & 0xfffff;
 
     if ((v->nax & 0x7) == 0) {
-        if (header & 0x100) {
-            v->nax = v->lsa;
-            v->endx = true;
-
-            if ((header & 0x200) == 0) {
-                if (!v->noise) {
-                    v->envx = 0;
-                    v->adsr_phase = ADSR_PHASE_STOPPED;
-                    v->run = false;
-                }
-            }
-        }
-
-        header = ram[v->nax & ~0x7];
-        if (header & 0x400) {
-            v->lsa = v->nax;
-        }
-
-        v->nax = (v->nax + 1) & 0xfffff;
+        spu_advance_block(v, header);
     }
 }
 

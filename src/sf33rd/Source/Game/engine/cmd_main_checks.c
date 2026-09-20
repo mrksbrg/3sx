@@ -169,6 +169,20 @@ static void charge_until_tame_flag_set(void) {
     }
 }
 
+/* The charged form: the lever must match exactly, and the charge only counts
+ * once the timer has run past zero. */
+static void charge_on_exact_lever() {
+    if (sw_work == chk_pl->sw_lever) {
+        waza_ptr->free2--;
+
+        if (!waza_ptr->uni0.tame.flag && waza_ptr->free2 < 0) {
+            waza_ptr->uni0.tame.flag = 1;
+        }
+    } else {
+        resolve_tame_flag_or_reset_timer();
+    }
+}
+
 void check_1() { // 🟢
     if (dead_lvr_check()) {
         return;
@@ -177,15 +191,7 @@ void check_1() { // 🟢
     sw_work = waza_ptr->w_lvr & 0xF;
 
     if (waza_ptr->w_lvr & 0x8000) {
-        if (sw_work == chk_pl->sw_lever) {
-            waza_ptr->free2--;
-
-            if (!waza_ptr->uni0.tame.flag && waza_ptr->free2 < 0) {
-                waza_ptr->uni0.tame.flag = 1;
-            }
-        } else {
-            resolve_tame_flag_or_reset_timer();
-        }
+        charge_on_exact_lever();
     } else {
         if (sw_work & chk_pl->sw_lever) {
             charge_until_tame_flag_set();
@@ -634,36 +640,12 @@ static void clear_lower_priority_waza_flags() {
  * has to happen in, the release itself, and the timeout. check_10 and check_12
  * had these three states written out byte for byte identically. Case labels
  * are the originals. */
-static void run_dash_release_states() {
+/* The dash-release states from 3 on, reached from state 2's default. The case
+ * labels are the original ones and the switch is on the same expression, so a
+ * shot_ok that used to match here still matches here and one that matches
+ * nothing still does nothing. */
+static void run_dash_release_states_from_3() {
     switch (waza_ptr->shot_ok) {
-    case 2:
-        waza_ptr->w_int--;
-        waza_ptr->free3--;
-
-        if (waza_ptr->w_int > 0) {
-            if (chk_pl->sw_lever == 0) {
-                waza_ptr->shot_ok++;
-                break;
-            }
-
-            if (chk_pl->sw_lever & 8) {
-                close_waza_window();
-                waza_ptr->shot_ok++;
-                break;
-            }
-
-            if (chk_pl->sw_lever != waza_ptr->w_lvr) {
-                close_waza_window();
-                waza_ptr->shot_ok++;
-                break;
-            }
-        } else {
-            close_waza_window();
-            waza_ptr->shot_ok++;
-        }
-
-        break;
-
     case 3:
         waza_ptr->free3--;
 
@@ -695,6 +677,60 @@ static void run_dash_release_states() {
     }
 }
 
+static void run_dash_release_states() {
+    switch (waza_ptr->shot_ok) {
+    case 2:
+        waza_ptr->w_int--;
+        waza_ptr->free3--;
+
+        if (waza_ptr->w_int > 0) {
+            if (chk_pl->sw_lever == 0) {
+                waza_ptr->shot_ok++;
+                break;
+            }
+
+            if (chk_pl->sw_lever & 8) {
+                close_waza_window();
+                waza_ptr->shot_ok++;
+                break;
+            }
+
+            if (chk_pl->sw_lever != waza_ptr->w_lvr) {
+                close_waza_window();
+                waza_ptr->shot_ok++;
+                break;
+            }
+        } else {
+            close_waza_window();
+            waza_ptr->shot_ok++;
+        }
+
+        break;
+
+    default:
+        run_dash_release_states_from_3();
+        break;
+    }
+}
+
+/* check_10's arming step. The one `break` inside it ended the arm, and nothing
+ * runs after the switch, so it is a `return` here. */
+static void arm_check_10_window() {
+    if (lever_held_and_move_allowed()) {
+        if (chk_pl->sw_lever == waza_ptr->w_lvr) {
+            waza_ptr->shot_ok++;
+            open_waza_window();
+            waza_ptr->free3 = wcp[cmd_id].reset[waza_type[cmd_id]] + 10;
+            waza_ptr->w_int = 6;
+
+            clear_lower_priority_waza_flags();
+        } else {
+            waza_ptr->shot_ok = 0;
+            return;
+        }
+    }
+}
+
 void check_10() { // 🟢
     switch (waza_ptr->shot_ok) {
     case 0:
@@ -704,19 +740,7 @@ void check_10() { // 🟢
         break;
 
     case 1:
-        if (lever_held_and_move_allowed()) {
-            if (chk_pl->sw_lever == waza_ptr->w_lvr) {
-                waza_ptr->shot_ok++;
-                open_waza_window();
-                waza_ptr->free3 = wcp[cmd_id].reset[waza_type[cmd_id]] + 10;
-                waza_ptr->w_int = 6;
-
-                clear_lower_priority_waza_flags();
-            } else {
-                waza_ptr->shot_ok = 0;
-                break;
-            }
-        }
+        arm_check_10_window();
 
         break;
 
@@ -983,22 +1007,10 @@ void check_16() { // 🟢
     }
 }
 
-void check_18() { // 🟢
-    u16 sw_lever;
-
-    waza_ptr->w_int--;
-
-    if (waza_ptr->w_int < 0) {
-        waza_ptr->w_type = 0;
-        return;
-    }
-
-    sw_lever = chk_pl->sw_lever & 0xF;
-
-    if (dead_lvr_check()) {
-        return;
-    }
-
+/* The three lever forms check_18 accepts - a charged lever matching its
+ * direction on a change, a neutral lever, or a lever sharing a bit with the
+ * wanted one - each of which restarts the window. */
+static void open_charged_lever_window(u16 sw_lever) {
     if (waza_ptr->w_lvr & 0x8000) {
         if ((chk_pl->old_lvbt & 0xF) != (chk_pl->new_lvbt & 0xF)) {
             sw_work = waza_ptr->w_lvr & 0xF;
@@ -1019,13 +1031,14 @@ void check_18() { // 🟢
     }
 }
 
-void check_19() { // 🟢
+void check_18() { // 🟢
     u16 sw_lever;
 
     waza_ptr->w_int--;
 
     if (waza_ptr->w_int < 0) {
         waza_ptr->w_type = 0;
+        return;
     }
 
     sw_lever = chk_pl->sw_lever & 0xF;
@@ -1034,6 +1047,12 @@ void check_19() { // 🟢
         return;
     }
 
+    open_charged_lever_window(sw_lever);
+}
+
+/* The same three lever forms for check_19, which opens the window and moves
+ * to the next command rather than restarting the interval. */
+static void advance_on_lever_match(u16 sw_lever) {
     if (waza_ptr->w_lvr & 0x8000) {
         if (chk_pl->now_lvbt & 0xF) {
             sw_work = waza_ptr->w_lvr & 0xF;
@@ -1051,6 +1070,24 @@ void check_19() { // 🟢
         open_waza_window();
         check_next();
     }
+}
+
+void check_19() { // 🟢
+    u16 sw_lever;
+
+    waza_ptr->w_int--;
+
+    if (waza_ptr->w_int < 0) {
+        waza_ptr->w_type = 0;
+    }
+
+    sw_lever = chk_pl->sw_lever & 0xF;
+
+    if (dead_lvr_check()) {
+        return;
+    }
+
+    advance_on_lever_match(sw_lever);
 }
 
 void check_20() { // 🟢

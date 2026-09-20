@@ -241,6 +241,34 @@ not already do.
   `Setup_PL_Color`, `id_0 == id_1` compares two `s8` locals. If the operand calls a
   function, reads volatile state, or could trap, leave the family alone.
 
+**Amended 2026-09-20: a named constant is a varying literal, and a computed mask
+travels whole.** Measured on `test_runner.c`, whose two input mappers are bit
+tables written as code - ten copies of `if (w & (1 << 0)) buff |= SWK_UP;` and
+sixteen of `state.south = (input & SWK_SOUTH) ? true : false;`.
+
+Two readings, both deliberate, and both narrower than they look:
+
+- **`SWK_UP` is a literal with a name.** Recipe V says "only literals vary", and
+  the rule's purpose is that a varying *expression* could be evaluated
+  differently at the call site than it was inline. A named constant cannot: it is
+  written out verbatim at its own call site and the helper does nothing with it
+  but the operation that was there. What stays excluded is what always was - an
+  expression that reads state, calls something, or could trap.
+- **Pass the mask, not the bit.** `add_flag_if_set(w, (1 << 0), SWK_UP, buff)`
+  keeps `(1 << 0)` exactly as it stood, so the helper performs the single `&` the
+  block performed and computes nothing from a parameter. Passing `0` and shifting
+  inside measures identically and needs Recipe N's narrow licence instead;
+  prefer the form that does not.
+
+**A varying struct field travels as its address**, for the same reason: C has no
+way to pass a member name, `&state.south` is written out in full at its own call
+site, and the helper does the one assignment that stood there. Two different
+field *types* are two skeletons and need two helpers - `bool*` and `Sint16*`
+cannot share one without a type change.
+
+`apply_input_buffer` went cc 17 to 1 and `read_input_buff` cc 12 to 2; the file
+went **7.92 -> 10.00** across the session.
+
 **Where the skeleton ends inside control flow**, the helper returns `0` or `1` and each
 caller branches on it, exactly as Recipe C prescribes. Return nothing else - a verdict
 wider than a yes/no is the helper deciding something, which this recipe does not allow.
@@ -1196,6 +1224,29 @@ Recipe X both refuse to merge.
 | `pls03.c` | 8.92 | *was 8.08.* Recipe T twice, Recipe E on the leap and catch tests, then two shared runs for the mean. `decode_wst_data`'s twelve encodings and `waza_select`'s eleven case labels are what remain, and neither loses a branch without renumbering states |
 | `cmd_main_checks.c` | 7.50 | The hardest file left. Its mean is 4.34 over 64 functions and needs **thirteen** more, which is far more than the duplicate web can absorb - every arm lifted joins one of three families. Sharing the runs was tried too (`load_waza_command_header`, `command_terminator_reached`) and measured flat, because the findings here are five Bumpy Roads and three Complex Methods rather than the mean alone |
 | `pls00_normal_states.c` | 8.03 | *was 7.55.* Five shared runs - the two end-of-animation markers, the entry-frame guard, and the two jump hand-overs - cleared Overall Code Complexity. What is left is a Code Duplication web between the state machines themselves, which no run reaches: sharing the two arms `jumping_cg_type_low_pat` and `jumping_cg_type_high_pat` agree on (Recipe X's variant) measured flat, and the gate chains differ in their members and their order |
+| `game_state.c`, `game_state_load.c` | **10.00** each | *both were 7.26.* 569 `GS_SAVE`/`GS_LOAD` lines in one function apiece, split thirteen ways on the module comments the tail already carried and on changes of subject in the head. The cuts are positional and the commit says so. Verified past the usual three: the member sequence extracted as a list is identical in order on both sides and between them, and `replay_verify.sh` ran 16 seeds x 2400 frames identical - the stress harness saves and restores this state every frame, so it exercises these two functions directly |
+| `game_round.c` | **10.00** | *was 7.23.* Ten commits of Recipes E and X over the post-match and game-over flow. The last two are a deliberate pair: with Overall Code Complexity the only finding left and the file mean just over 4, a probe said **two** more low-complexity functions would clear it, so the first of the two measures flat and says in its message that the second carries it |
+| `test_runner.c` | **10.00** | *was 7.92.* Recipe E, Recipe P, then Recipe V twice on the two input bit maps - see the Recipe V amendment above - and Recipe X on the phase dispatch, cut where it is because `PHASE_GAME_TRANSITION` falls through into `PHASE_GAME` |
+| `arcade_char_data.c` | 9.53 | *was 7.37.* Recipe E over the ROM parser. `read_script` cannot leave Complex Method: three of its ten branches are the `||`s inside an `SDL_assert`, and Recipe P cannot reach them - see *Recipe P cannot name a condition inside an assertion* |
+| `cmd_main_checks.c` | 9.16 | *was 7.50, and was recorded as a plateau.* Overturned twice over - see *A plateau note covers the functions it names* and *Retry a rejected extraction - including one refused on duplication*. What remains is the `check_10`/`check_12` near-twin pair, re-priced and still costing 0.73 to break |
+| `flps2vram.c` | 8.54 | *was 7.36.* Recipe C on the three pixel layouts, then Recipe D on the context set-ups that fold made visible. What remains is four mirrored texture/palette pairs differing in two to four values each, and the three layout helpers, whose fold costs |
+| `emlShim.c` | 8.94 | *was 7.46.* `checkConditions` is the last finding at cc 17, and Recipe X does not reach it at any chain depth: splitting its eight-arm ladder measures 8.87 at four arms a level, 8.92 at three and 8.81 at two, all below the 8.94 it starts from, because the halves stay over the threshold until the chain is deep enough to be a duplication group |
+| `memmgr.c` | 8.64 | *was 7.58.* Recipe D twice and Recipe A once. `plmemAppendBlockList` is what remains: its two direction branches are twins differing in `<` against `>`, and each writes **three** outer locals - `now_han`, `next_han` and `now_block` - so Recipe E refuses them and there is no single result to return |
+| `prilay.c` | **10.00** | *was 7.60.* Recipe E on both pixel paths, Recipe P on the bounds test, then Recipe E on the two 4-bit cases. The last step is the one worth copying: both halves of a mirrored pair were extracted and it measured **+0.76 with no twin penalty**, because a writer that composes a byte and a reader that selects a nibble are not similar enough to pair |
+| `args.c`, `spu.c`, `savesub.c` | **10.00** each | *were 8.74, 8.41 and 8.36.* `args.c` is Recipe P six times then Recipe E three times; `spu.c` is Recipe P on the two envelope tests then Recipe E twice; `savesub.c`'s `SAVE_STATE_WORKING` arm turned out to be entirely self-contained, so its helper takes **no parameters at all** |
+| `ioconv.c` | 9.92 | *was 8.68.* Recipe N on the three switch-table scans, Recipe D on the two analog merges, Recipe P three times, Recipe E once. What is left is two bumps in `keyConvert` that do not move: lifting the repeat-rate block measures flat and was reverted |
+| `demo00.c`, `demo02.c` | 9.38 each | *were 8.38 and 8.42.* Recipe A, Recipe X and Recipe X chained twice. `demo02.c`'s last bump is `demo00_from_step_5`, and lifting its demo-finish block costs **0.50** - the helper twins with something. `demo00.c`'s mean is far enough over 4 that six probe functions do not clear it |
+| `sc_sub_combo.c` | 9.38 | *was 8.56.* Both player-side pairs split - and player one's side alone measured **worse than doing nothing**, 8.56 -> 8.18, because the helper carries that side's whole complexity out of a function that stays flagged anyway. Both is what pays |
+| `sys_sub_ranking.c` | 9.38 | *was 8.54.* Recipe V on the insert three of the four ranking tables share. `Check_Sort_Score` is left out: its table starts at zero and is written without a `+ 0` to parameterise |
+| `Lz77Dec.c` | 8.79 | *was 8.33.* Recipe E cannot touch `decLZ77withSizeCheck` at all - every block in it advances `src`, `dst` and `size` at once, and a cursor struct is the out-parameter object Recipe E forbids inventing. Recipe D reaches the four families inside it that each produce one value; the three literal-copy loops that would come next advance **two** pointers and stay |
+| `pulpul.c` | 8.73 | *was 8.22.* `run_pulpul_device` keeps three findings and cannot lose them: its state machine falls through on every arm, so Recipe X cannot cut it, and it contains a **backward** `goto` that Recipe R does not reach either |
+| `opening_bg0.c` | 8.12 | a family plateau, measured twice. The file already holds six `op_bg0_lay_blocks_*` helpers, and both remaining moves - extracting `op_bg0_0003`'s inner switch, and splitting `op_bg0_lay_blocks_6` - make a seventh member and measure **8.12 -> 8.03**. *Weigh each arm against the twin family it would join* |
+| `sdl_gpu_renderer.c` | **10.00** | *was 6.82.* Recipe E eight times and two parameter objects, in that order: the frame's phases, the per-quad pipeline choice, the six set-up sections, `create_shader` and `create_pipeline`'s argument lists, the three remaining set-up blocks, the screen pass's bindings |
+| `flps2etc.c` | 9.84 | *was 6.94.* Recipes E, G and P over the four image loaders. What remains is the two PIC row decoders at two bumps each: the third arm of each run-length form advances **both** the source and the destination inside its loop, so lifting it is a block writing two outer locals, which Recipe E refuses |
+| `pltim2.c` | 9.38 | *was 7.21.* Recipe P on the header checks, Recipe D on the pixel-format blocks the two context setters share, Recipe E and Recipe X on the rest. The four format helpers are one Code Duplication group, and folding them onto one parameter object measures **8.77 -> 8.77** - it clears the duplication and brings Overall Code Complexity straight back, because three of the functions it removes are cc 1. See *A fold that removes simple functions can push the file mean over its threshold*, measured again |
+| `ps2PAD.c` | 9.29 | *was 7.01.* Recipes D and E over the read path. `PADRead_for_PS2` cannot leave Complex Method: seven of its eleven branches are the six grouped `case` labels of the pad-kind switch plus its `default`, all running one arm, and collapsing them is renumbering. `flPADShockSet`'s two arms each write three locals - `profile`, `vib_data_size` and `vib_data` - so Recipe E refuses them too |
+| `Game/com/shell` | **10.00** x10 | *was 8.28-8.81.* The third COM script folder, never folded. `xfold` put 32 scripts onto skeletons earlier folds had already made, and `gfold --min-members 2` took the other 84 onto nine new ones. See *A third script folder, and the fold that reaches an existing skeleton* |
+| `Game/com/patterns` | 8.02 mean | the shared skeleton module, 14 files. Two findings, both intrinsic to the idiom and both priced mechanically - see *Where `Game/com/patterns` stops, against the published thresholds* |
 | `plpnm.c` | 7.52 | what is left of the 28-function group are state machines differing in two or more values; the two parry states keep Duff-style `case` arms that cannot be split |
 | `pls03_super_arts.c` | 9.92 | *was 7.61.* Recipe C on the full-gauge guards and the EX strength launch, Recipe D on the super-art launch tail, Recipe F on the EX strength scan, and the airborne EX guard chain the table had previously recorded at -0.23. `try_grounded_dc_strengths`' Bumpy Road is what remains, and the direct-cancel side is a grounded/airborne mirror **at every level**: lifting its match body makes three twin pairs at once - the two `fire_*_dc`, the two `try_*_dc_strengths` and the two `try_*_dc` - and measures 9.92 -> 9.09. Breaking the outermost pair first with Recipe P on the button-group test does not change that |
 | `manage.c` | 9.92 | `Game_Manage_7_3`'s two identical test arms; clearing the bump means deleting the dead condition, which the catalogue forbids |
@@ -2877,3 +2928,369 @@ said it would, because the extracted helper twins with the airborne one.
 seconds - then read the note for *which functions* it names and diff those yourself. A
 note that names a mechanism ("every seam runs through X") is a claim to check, not a
 finding to inherit.
+
+### A third script folder, and the fold that reaches an existing skeleton
+
+*Added 2026-09-20, measured on `Game/com/shell`.*
+
+`Game/com/shell` is the third folder of COM pattern scripts and had been missed by every
+earlier pass. A shell script is spelled `Shell00_0001` behind a dispatcher called
+`Shell00`, and its body is the same switch on `CP_Index[wk->wu.id][0]` with one engine
+call per step that `passive` and `active` are made of - so `passive_fold.py` reaches it
+with nothing but a new `FAMILY` entry, and its skeletons belong in the same shared module.
+
+Ten files, 117 scripts, **8.28-8.81 before, all ten at 10.00 after**, in two commits.
+
+The first of those needed a new command, and it is the transferable part. **`gfold` only
+ever groups the scripts it is handed against each other**, so a script that is one of a
+kind in its own folder stays inline even when the body it holds is, character for
+character, a skeleton some other folder's fold already produced. `xfold` is that case: it
+matches a script against the *existing* shared skeletons and rewrites it as one call.
+
+The test is the one `generalise` already applies between two skeletons - the script and
+the skeleton reduce to the same shape with every call argument blanked, every slot the
+skeleton did not parameterise holds the same value in both, and each parameter is given
+one value - so the safety argument is Recipe V's, unchanged, and no skeleton is created,
+renamed or edited. It reached **32 of 117** on the first pass.
+
+The lesson generalises past this folder: after any folder-wide fold, the residue is worth
+re-testing against the skeletons *other* folders have since contributed. The 442 skeletons
+that existed when the shell folder was first looked at were built by the passive and
+active passes, and a quarter of the shell folder was already sitting in them.
+
+### Where `Game/com/patterns` stops, against the published thresholds
+
+*Added 2026-09-20. The first plateau in this campaign priced against CodeScene's own
+numbers rather than against a series of experiments.*
+
+`rules_config_list_thresholds` for C is worth calling before arguing about a file mean.
+The two that decide this folder:
+
+    file_mean_cyclomatic_complexity_warning        4
+    function_duplication_min_lines_of_code_for_check   10
+    function_duplication_min_similarity_percentage     75
+
+The shared skeleton module is 14 files and 503 generated skeletons, at a mean of 8.02.
+Every file carries **Code Duplication**, and the nine holding skeletons of three steps or
+more also carry **Overall Code Complexity**. Both were priced:
+
+- **Overall Code Complexity.** A skeleton's cyclomatic complexity is its switch arms plus
+  one, so a file of three-step skeletons sits at exactly 5 and must reach 4. The only
+  legal way to take a branch out is Recipe X's shared-tail variant, and the skeletons are
+  full of them: 128 agree, character for character, on every arm from some step onwards.
+  `passive_fold.py tailsplit` applies it - 22 shared tails, 105 skeletons split - and it
+  is a real reduction, folder mean cyclomatic complexity **4.69 -> 4.40**. It is still
+  above 4, and **every one of the 14 scores is unchanged**, so it reverts under rule 2.
+  The arithmetic says why no variation of it can work: the folder's *own* mean is above
+  the threshold, so no arrangement of these functions into files puts them all under it.
+- **Code Duplication.** Recipe F, run over all 14 files, folds 57 skeletons onto 25 shared
+  ones and moves the mean **8.02 -> 8.02**. That is the passive folder's refusal
+  re-measured where it should have been measured - on the skeleton files themselves rather
+  than on a character file before the folder-wide work - and it now rests on a measurement
+  rather than on a risk judgement.
+
+**Two things that would move the number and are refused.** Both are worth writing down,
+because each is a way of making CodeScene stop *looking* rather than making the code
+better, and rule 2's "splitting finer removes nothing" is the same objection:
+
+- **Re-bucketing the files to balance the mean.** The by-step-count grouping is recorded
+  above as "the one grouping that can put any file under the file mean threshold at all".
+  That is not right, and the correction matters: grouping by step count puts the *low*-step
+  files under the threshold and guarantees the high-step files sit at the maximum their
+  contents allow. A balanced mixture would lower several means at once. It also changes not
+  one line of code, and the duplicate pairs it separates are duplicates still.
+- **Reformatting an arm onto one line.** A one-step skeleton is eleven lines and a
+  duplication check begins at ten. Written `case 0: Foo(wk, p); break;` - which is the
+  spelling Recipe X's own example uses - it falls under the threshold and is no longer
+  compared against anything. The duplication is not gone; it is unmeasured.
+
+So the folder is recorded at **8.02** with its two findings intact, and the reason is the
+first line of this catalogue: what remains is the shape of the idiom, and the idiom is
+already the smallest form of what it does.
+
+### Price each cut on its own, not one against both
+
+*Added 2026-09-20, measured on `flps2etc.c`.*
+
+*Between two twin arms, extract from one of them only* gives the rule as
+"extract both only if that clears the parent's findings; otherwise extract one".
+Two files this pass satisfied that condition and still measured negative, which
+means the condition is not the whole test.
+
+`flCreateTextureFromTim2_mem` is the APX loader's twin - a mipmap chain, then a
+palette. Doing to it what the previous commit did to APX clears **every** finding
+on it, Complex Method, Large Method and Bumpy Road, and measures 8.45 -> **8.34**.
+Taken apart:
+
+| What was extracted | Score |
+| --- | --- |
+| nothing | 8.45 |
+| the mipmap chain only | **8.88** |
+| the mipmap chain and the palette | 8.34 |
+
+Only one of the two cuts makes a twin. `copy_tim2_mipmaps` is free, because it
+and `copy_apx_mipmaps` differ in the pixel address they read *and* in how they
+advance the destination - `dst += tex_size` against `dst = &dst[tex_size]` - and
+two differences is enough to keep them under the 75% similarity threshold. The
+palettes are near-identical and pair immediately.
+
+`flCreateTextureFromBMP_mem` says the same thing from the other side: its two
+arms measure 8.95 either way alone and 8.67 together, and there the both-arms
+version is *strictly better structurally* - it is the only one that takes the
+parent under cc 9 - and still loses.
+
+So the question is not how many cuts clear the parent. It is **which cut makes
+the twin**, and the only way to know is to apply them one at a time and measure.
+Three runs of `tools/ch.py --review` cost seconds; guessing costs a revert.
+
+### What the equivalence checker cannot see, and what to do instead
+
+*Added 2026-09-20, after `tools/inline_equiv.py` reported DIFFERS six times in
+one session and was right once.*
+
+`inline_equiv.py` is the only check in this campaign that catches a
+transposition, so a DIFFERS has to be read rather than obeyed. Four shapes make
+it report a difference that is not one, and one of them is a real trap:
+
+- **A parameter named after a field the helper writes.** `clear_pad_slot(s32 i,
+  s32 state)` writing `ps2slot[i].state = state` re-expands to
+  `ps2slot[i].1 = 1`, because the substitution is textual. This is the trap:
+  the tool is not merely noisy here, it is **blind** - it would miss a genuine
+  transposition in the same function. Rename the parameter (`new_state`) and the
+  check works. **Never give a helper parameter the name of a field it writes.**
+- **A value-returning helper used inside an `if`.** The tool substitutes a body
+  for a call statement, which cannot be done for `if (helper(i) == 0)`. This is
+  every Recipe C 0/1 helper. Check it by enumerating the block's exits instead:
+  every `return` in the original maps to one value, falling off the end maps to
+  the other, and the caller branches. That enumeration *is* the proof.
+- **A declaration that moved.** An extraction that takes `s32 lp0` or
+  `u8 rdata[32]` with it leaves the tool comparing bodies that differ by a
+  declaration. Re-inline by hand with the declaration put back.
+- **A by-address parameter.** Substituting `s16* axis` with `&stick[0].x` yields
+  `*&stick[0].x`, the same lvalue and not the same text. Cancel the pair.
+
+The hand re-inlining is fifteen lines of Python each time and it is worth
+writing: a `difflib` opcode dump over the whitespace-normalised bodies says
+*identical* or names the difference, which is the answer the tool was asked for.
+
+### Two ways refactor_guard can pass on code that is wrong
+
+*Added 2026-09-20; both hit in one session.*
+
+- **An unexpanded glob.** `G="src/.../*.c"; refactor_guard.py --combined $G`
+  passes the literal pattern, no file matches, and the tool reports
+  `OK combined group (0 literals unchanged)` and exits 0. A clean result on an
+  empty group looks exactly like a clean result on the real one. If the output
+  does not name the files, it did not read them.
+- **Syntax.** Halfway through `create_pipeline`'s parameter object the file had
+  a correct literal fingerprint, a correct call fingerprint, and four
+  assignments missing their `=`. Both guards said PASS. They answer one question
+  each and neither is "does this compile", which is why the build comes first in
+  the verification sequence rather than last.
+
+### A Recipe T header and its `.c` are checked separately
+
+*Added 2026-09-20, measured on `ps2PAD.c`.*
+
+Recipe T says to name a table's row type in a header so the `.c` gains no
+literal. Run the guard on the pair with `--combined` and that careful separation
+is undone: the header's added `2` lands in the same multiset as the copies the
+`.c` removed, and the tool reports **FAIL - a constant was substituted**.
+
+The two diffs are meant to be different shapes. The `.c` is a deduplication
+WARN - counts only dropped, every value still present. The header is the legal
+"literals added, none removed". Check them one file at a time; `--combined` is
+for a Recipe S split, where whole functions move between files in the group.
+
+### Recipe G may invert a condition. Recipe P may not
+
+*Added 2026-09-20, measured on `flps2etc.c` and `pltim2.c`.*
+
+Two recipes move a condition and only one of them may turn it round, which is
+easy to get backwards because the nicer name usually lies on the inverted side.
+
+Recipe P copies the expression character for character, so a guard written
+`bitdepth != 3 && bitdepth != 4` becomes `is_unsupported_bitdepth`, not
+`!is_direct_colour_bitdepth`. De Morgan gives the same answer and both operands
+there are pure reads, so the inversion would have been safe - and it is still
+not what the recipe permits. The rule is worth more than the name, because its
+value is that the safety argument never depends on the agent's reasoning.
+
+Recipe G is the opposite: inverting the outermost condition and returning early
+*is* the recipe. `decode_pic_alpha_row`'s whole body sat inside
+`if (context->bitdepth != 3)`, and `if (context->bitdepth == 3) return lpsrc;`
+reproduces the fall-through exactly. **9.24 -> 9.84** on its own.
+
+### A plateau note covers the functions it names
+
+*Added 2026-09-20, measured on `cmd_main_checks.c`.*
+
+*Three ways a recorded plateau can be wrong* lists three. Here is a fourth, and
+it is the cheapest one to check.
+
+`cmd_main_checks.c` was recorded at 7.50 as "the hardest file left", with the
+reason spelled out: the mean needs thirteen more functions, sharing the runs was
+tried on `load_waza_command_header` and `command_terminator_reached`, and "every
+arm lifted joins one of three families". All of that is true **of the `check_*`
+dispatchers the note names**.
+
+The file's worst function was `run_dash_release_states`, at cc 13, and the note
+does not mention it. Its three states split at the default with both halves at
+cc 7: **7.50 -> 7.77**, on the first thing tried.
+
+So before inheriting a plateau, list the file's flagged functions and check them
+against the ones the note discusses. A note is a record of what somebody looked
+at, not a proof about what they did not.
+
+### Retry a rejected extraction - including one refused on duplication
+
+*Added 2026-09-20, measured on `cmd_main_checks.c` and `ps2PAD.c`.*
+
+*Retry a rejected extraction once the file has improved* is written about
+complexity: a helper that arrived carrying findings of its own may stop doing so
+once those have been lifted out separately. `ps2PAD.c`'s `identify_pad` is that
+case exactly - refused at 8.13 against 8.37, taken four commits later at 9.19 to
+9.24 once its three bumps had gone.
+
+The same rule applies to an extraction refused on a **duplication** measurement,
+and that is less obvious, because nothing about the two helpers changes.
+`check_19`'s lever chain was priced alongside `check_18`'s and measured **8.22
+against 8.74** - the pair they made cost more than the complexity they removed.
+Re-priced after `check_1` and `check_10` had been through, the identical cut
+measures **8.88 -> 9.16** and clears Complex Method from the file.
+
+The helpers are the same. The file is not. **CodeScene's duplication findings are
+relative to the rest of the file**, so a pair that costs half a point next to
+four other flagged functions costs nothing next to one. Re-price a duplication
+refusal whenever the file's finding count drops, not only when the targeted
+function changes.
+
+### Recipe P cannot name a condition inside an assertion
+
+*Added 2026-09-20, measured on `arcade_char_data.c`.*
+
+CodeScene counts the branches of a condition the compiler discards. `read_script`
+sits at cc 10 with three of those branches inside
+
+    SDL_assert(cgd_type == 1 || cgd_type == 2 || cgd_type == 4 || cgd_type == 6);
+
+and naming that condition measures **9.53 -> 9.84**. It also does not build. In
+this configuration `SDL_assert` expands to nothing, so the predicate is never
+referenced and clang rejects it under
+`-Werror=-Wunneeded-internal-declaration` - in Debug and Release alike.
+
+There is no legal way out: the branches are real to the metric and unreachable to
+the catalogue. Where a function's residual complexity is an assertion, say so and
+stop.
+
+### Which side of the mean the file starts on decides whether a fold pays
+
+*Added 2026-09-20, from the same fold measured twice.*
+
+*A fold that removes simple functions can push the file mean over its threshold*
+was measured on `pltim2.c`: collapsing four pixel-layout helpers onto one
+parameter object cleared Code Duplication and brought Overall Code Complexity
+straight back, 8.77 to 8.77.
+
+`flps2vram.c` has the same three layouts, eighteen copies of them, and folding
+them there measures **7.36 -> 7.78** with no such trade. The difference is not
+the code, it is the starting point: `pltim2.c` was **under** the file-mean
+threshold of 4 and removing three cc-1 functions pushed it over, while
+`flps2vram.c` was already over it and three cc-1 functions pulled it down.
+
+So the rule has a sign. Before folding simple helpers away, ask which side of the
+mean the file is on; before extracting simple helpers, ask the same. It is the
+one transformation whose effect on Overall Code Complexity reverses depending on
+where the file already stands.
+
+### A lifted block keeps the indentation of the construct it sat in
+
+*Added 2026-09-20, after shipping it wrong.*
+
+A scripted Recipe E that dedents by four is right for a block that sat inside one
+`if`, and wrong for a block that sat inside a `switch` arm, a nested brace, or
+nothing at all. Two helpers in `arcade_char_data.c` went in with their entire
+bodies at column zero and had to be fixed in a follow-up commit.
+
+The reason it survived the gate is worth the note: **the build, `refactor_guard.py`
+and `inline_equiv.py` all normalise whitespace**, so none of the three can see
+it. Print the function you just made and read it.
+
+### Build every configuration the file has code for
+
+*Added 2026-09-20, measured on `args.c` and `ioconv.c`.*
+
+Three separate things this session hit the same wall:
+
+- A predicate named out of an `SDL_assert` is unreferenced once the assert
+  compiles out (`arcade_char_data.c`).
+- Three helpers placed just above their caller but **outside** the
+  `#if NETPLAY_ENABLED` the caller sits in: the Debug build, which defines it,
+  compiled clean, and the default build failed with fourteen errors
+  (`args.c`).
+- A predicate for a condition inside `#if DEBUG` would be unreferenced in every
+  build that does not define `DEBUG` (`ioconv.c`, avoided).
+
+The common rule is short: **a helper lifted out of conditionally-compiled code
+belongs inside the same guard as its caller**, and a file with any such code has
+to be built both ways. In this repository that is `build` and `build-dbg` - the
+Debug one is the only configuration that defines `NETPLAY_ENABLED`, and it is
+the one `replay_verify.sh` uses, so building only what the replay gate builds is
+not enough.
+
+`-Werror=-Wunneeded-internal-declaration` turns every one of these into a build
+failure rather than a warning, which is the good news: the gate catches it, as
+long as the gate is run on both configurations.
+
+### Three gates, and what each one is blind to
+
+*Added 2026-09-20, after each of the three passed on something broken.*
+
+The verification sequence is build, `refactor_guard.py`, CodeScene. It is worth
+knowing precisely what each one cannot see, because this session got a clean
+result from every one of them on code that was wrong:
+
+| Gate | Blind to |
+| --- | --- |
+| `refactor_guard.py` | **Syntax.** A parameter-object rewrite with four assignments missing their `=` reported OK on literals *and* calls. A slice that left a stray `}` behind reported OK. It answers one question and neither is "does this compile" |
+| `refactor_guard.py` | **An empty group.** An unexpanded glob makes it report `OK combined group (0 literals unchanged)` and exit 0 |
+| `inline_equiv.py` | **A parameter named after a field it writes** - it substitutes textually and produces `ps2slot[i].1 = 1`, so it would also miss a real transposition there |
+| `inline_equiv.py` | **Whitespace**, like the other two - two helpers shipped with their whole bodies at column zero and no gate noticed |
+| the build | **Everything about behaviour.** It is the only one that sees syntax, and the only one that sees the other configuration |
+| all three | **Indentation, and a duplicated guard** - the second is caught by `refactor_guard.py` only because the copied condition brings its literals with it |
+
+None of this is an argument for fewer gates. It is an argument for reading the
+function you just wrote, which is the only check that covers all six rows.
+
+### The guard is a per-commit tool, not a per-session one
+
+*Added 2026-09-20, after running it across a hundred commits and getting eleven
+FAILs on work that was clean.*
+
+`refactor_guard.py --base <session start> --all` looks like a good final check.
+It is not one, and it reported **FAIL - a constant was substituted** on eleven
+files at the end of a session in which every individual commit had passed.
+
+Two separate reasons, both worth knowing:
+
+- **It aggregates recipes whose fingerprints move in opposite directions.**
+  `pltim2.c` had five commits: Recipe D removed duplicate copies of literals,
+  Recipe X added a `switch` subscript. Each is legal and each passed on its own -
+  one as "counts only dropped", the other as "literals added, none removed".
+  Summed, some counts fell while others rose, which is exactly the shape the tool
+  is built to call a substitution. Checked properly - every literal *value*
+  present before the session against every value present after - `pltim2.c` lost
+  nothing and gained nothing.
+- **It is a per-file view of a change that crossed files.** The ten `shell*.c`
+  files genuinely lost `num 3`, `num 9` and `num 32704`, because those values
+  moved into the skeletons in `Game/com/patterns` when the folder was folded.
+  Over the two folders as one group the multiset is intact: no value present
+  before is absent after, and the counts drop only where duplicate copies were
+  collapsed.
+
+So: run the guard **per commit**, and over the group the commit touches. If you
+want a session-wide sanity check, compare the *set* of literal values rather
+than their counts - `set(literals(old)) - set(literals(new))` over every changed
+file, with files that share moved code taken together. That is a dozen lines and
+it answers the question the FAIL only pretends to.
+

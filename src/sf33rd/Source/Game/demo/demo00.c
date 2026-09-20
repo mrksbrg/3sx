@@ -37,6 +37,45 @@ static const f32* caplogo[2] = { caplogo00, caplogo01 };
 s16 picon_no;
 f32 picon_level;
 
+/* The warning screen from its third step on, reached from the earlier ones'
+ * default. The case labels are the original ones and the switch is on the same
+ * expression; the group carries the original `default`, so a step matching none
+ * of the labels still reaches it. `Next_Demo` is set here and returned by the
+ * caller, exactly as before. */
+static void warning_from_step_7() {
+    switch (D_No[1]) {
+    case 7:
+        if (((p1sw_0 & 0x4FF0) | (p2sw_0 & 0x4FF0)) != 0) {
+            D_Timer = 1;
+        }
+
+        if (!--D_Timer) {
+            D_No[1] += 1;
+            FadeInit();
+        }
+
+        Put_Warning(1);
+        Next_Demo = 0;
+        break;
+
+    case 8:
+        Put_Warning(1);
+        Next_Demo = 0;
+
+        if (FadeOut(1, 8, 8) != 0) {
+            D_No[1] += 1;
+        }
+
+        break;
+
+    default:
+        D_No[1] = 0;
+        TexRelease(590);
+        Next_Demo = 1;
+        break;
+    }
+}
+
 s32 Warning() {
     Next_Demo = 0;
 
@@ -77,38 +116,72 @@ s32 Warning() {
 
         break;
 
-    case 7:
-        if (((p1sw_0 & 0x4FF0) | (p2sw_0 & 0x4FF0)) != 0) {
-            D_Timer = 1;
-        }
+    default:
+        warning_from_step_7();
+        break;
+    }
 
-        if (!--D_Timer) {
+    return Next_Demo;
+}
+
+/* The Capcom logo from its fifth step on, and from its seventh, each reached
+ * from the previous group's default. The case labels are the original ones and
+ * every switch is on the same expression; the last group carries the original
+ * `default`. `Next_Demo` is set in these arms and returned by the caller. */
+static void capcom_logo_from_step_6() {
+    switch (D_No[1]) {
+    case 6:
+        CAPLOGO_Move(1);
+
+        if (--D_Timer == 0) {
             D_No[1] += 1;
             FadeInit();
         }
 
-        Put_Warning(1);
-        Next_Demo = 0;
         break;
 
-    case 8:
-        Put_Warning(1);
-        Next_Demo = 0;
+    case 7:
+        CAPLOGO_Move(1);
 
-        if (FadeOut(1, 8, 8) != 0) {
+        if (FadeOut(1, 6, 8) != 0) {
             D_No[1] += 1;
         }
 
         break;
 
     default:
-        D_No[1] = 0;
-        TexRelease(590);
+        TexRelease(600);
         Next_Demo = 1;
         break;
     }
+}
 
-    return Next_Demo;
+static void capcom_logo_from_step_4() {
+    switch (D_No[1]) {
+    case 4:
+        if (!CAPLOGO_Move(0)) {
+            D_No[1] += 1;
+            Push_LDREQ_Queue_Direct(23, LDREQ_ID_SHARED);
+            FadeInit();
+        }
+
+        break;
+
+    case 5:
+        CAPLOGO_Move(1);
+
+        if (FadeIn(1, 6, 8) != 0) {
+            D_No[1] += 1;
+            D_Timer = 256;
+            Push_LDREQ_Queue_Direct(24, LDREQ_ID_SHARED);
+        }
+
+        break;
+
+    default:
+        capcom_logo_from_step_6();
+        break;
+    }
 }
 
 s32 CAPCOM_Logo() {
@@ -147,48 +220,8 @@ s32 CAPCOM_Logo() {
 
         break;
 
-    case 4:
-        if (!CAPLOGO_Move(0)) {
-            D_No[1] += 1;
-            Push_LDREQ_Queue_Direct(23, LDREQ_ID_SHARED);
-            FadeInit();
-        }
-
-        break;
-
-    case 5:
-        CAPLOGO_Move(1);
-
-        if (FadeIn(1, 6, 8) != 0) {
-            D_No[1] += 1;
-            D_Timer = 256;
-            Push_LDREQ_Queue_Direct(24, LDREQ_ID_SHARED);
-        }
-
-        break;
-
-    case 6:
-        CAPLOGO_Move(1);
-
-        if (--D_Timer == 0) {
-            D_No[1] += 1;
-            FadeInit();
-        }
-
-        break;
-
-    case 7:
-        CAPLOGO_Move(1);
-
-        if (FadeOut(1, 6, 8) != 0) {
-            D_No[1] += 1;
-        }
-
-        break;
-
     default:
-        TexRelease(600);
-        Next_Demo = 1;
+        capcom_logo_from_step_4();
         break;
     }
 
@@ -229,19 +262,22 @@ s16 CAPLOGO_Move(u16 type) {
             rnum = 1;
         }
 
-        Put_char(caplogo[type], 600, 9, -16, 80, 1.0f, 1.0f);
+        Put_char(&(PutCharArgs){ caplogo[type], 600, 9, -16, 80, 1.0f, 1.0f });
         break;
 
     default:
         njSetPaletteBankNumG(600, 0x1F);
-        Put_char(caplogo[type], 600, 9, 48, 88, 1.0f, 1.0f);
+        Put_char(&(PutCharArgs){ caplogo[type], 600, 9, 48, 88, 1.0f, 1.0f });
         break;
     }
 
     return rnum;
 }
 
-void Put_char(const f32* ptr, u32 indexG, u16 prio, s16 x, s16 y, f32 zx, f32 zy) {
+void Put_char(const PutCharArgs* a) {
+    /* The original took this by value and walked it to the terminator; the copy
+     * keeps that local, which is what a by-value parameter was. */
+    const f32* ptr = a->ptr;
     ColoredVertex tex[4];
     s16 off_x;
     s16 off_y;
@@ -251,7 +287,7 @@ void Put_char(const f32* ptr, u32 indexG, u16 prio, s16 x, s16 y, f32 zx, f32 zy
     }
 
     tex[0].col = tex[1].col = tex[2].col = tex[3].col = 0xFFFFFFFF;
-    tex[0].z = tex[1].z = tex[2].z = tex[3].z = PrioBase[prio];
+    tex[0].z = tex[1].z = tex[2].z = tex[3].z = PrioBase[a->prio];
 
     while (*ptr != -1.0f) {
         tex[0].u = tex[1].u = *ptr++;
@@ -260,11 +296,11 @@ void Put_char(const f32* ptr, u32 indexG, u16 prio, s16 x, s16 y, f32 zx, f32 zy
         tex[1].v = tex[3].v = *ptr++;
         off_x = *ptr++;
         off_y = *ptr++;
-        tex[0].x = tex[1].x = (x + off_x * zx);
-        tex[0].y = tex[2].y = (y + off_y * zy);
-        tex[2].x = tex[3].x = (x + (off_x * zx) + ((u32)*ptr++ * zx));
-        tex[1].y = tex[3].y = (y + (off_y * zy) + ((u32)*ptr++ * zy));
-        njDrawTexture(tex, 4, indexG, 1);
+        tex[0].x = tex[1].x = (a->x + off_x * a->zx);
+        tex[0].y = tex[2].y = (a->y + off_y * a->zy);
+        tex[2].x = tex[3].x = (a->x + (off_x * a->zx) + ((u32)*ptr++ * a->zx));
+        tex[1].y = tex[3].y = (a->y + (off_y * a->zy) + ((u32)*ptr++ * a->zy));
+        njDrawTexture(tex, 4, a->indexG, 1);
     }
 }
 

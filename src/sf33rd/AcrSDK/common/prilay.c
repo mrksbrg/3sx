@@ -46,8 +46,14 @@ void plMemmove(void* dst, void* src, s32 size) {
     }
 }
 
+/* Outside the surface on any of the four edges. The test is the one that stood
+ * in plCalcAddress, copied rather than inverted. */
+static s32 is_outside_surface(s32 x, s32 y, plContext* lpcontext) {
+    return (x < 0) || (y < 0) || (x >= lpcontext->width) || (y >= lpcontext->height);
+}
+
 void* plCalcAddress(s32 x, s32 y, plContext* lpcontext) {
-    if ((x < 0) || (y < 0) || (x >= lpcontext->width) || (y >= lpcontext->height)) {
+    if (is_outside_surface(x, y, lpcontext)) {
         return NULL;
     }
 
@@ -62,15 +68,99 @@ void* plCalcAddress(s32 x, s32 y, plContext* lpcontext) {
     return (s8*)lpcontext->ptr + (lpcontext->pitch * y) + (x * lpcontext->bitdepth);
 }
 
-s32 plDrawPixel(plContext* dst, Pixel* ptr) {
-    u8* lp;
+/* A pixel into a paletted or direct-index surface: one index per bit depth,
+ * and for the 4-bit case the half-byte the x coordinate selects. */
+/* The 4-bit case: the x coordinate picks which half of the byte the index
+ * goes in, unless the surface is flagged as whole-byte. */
+static void write_4bit_index(plContext* dst, Pixel* ptr, u8* lp) {
+    s32 r;
+    u32 color;
+
+    s32 unused_s3;
+
+    if (dst->desc & 0x40) {
+        lp[0] = ptr->c;
+    } else {
+        color = ptr->c;
+        r = lp[0];
+
+        if (dst->desc & 0x10) {
+            unused_s3 = 1;
+        } else {
+            unused_s3 = 0;
+        }
+
+        if (((ptr->x & 1) ^ unused_s3) != 0) {
+            color &= 0xF;
+            r &= 0xF0;
+        } else {
+            color = (color & 0xF) * 0x10;
+            r &= 0xF;
+        }
+
+        lp[0] = r | color;
+    }
+}
+
+static void write_indexed_pixel(plContext* dst, Pixel* ptr, u8* lp) {
+    switch (dst->bitdepth) {
+    case 4:
+        ((u32*)lp)[0] = ptr->c;
+        break;
+
+    case 2:
+        ((u16*)lp)[0] = ptr->c;
+        break;
+
+    case 1:
+        lp[0] = ptr->c;
+        break;
+
+    case 0:
+        write_4bit_index(dst, ptr, lp);
+
+        break;
+    }
+}
+
+/* A pixel into a packed-colour surface: the four channels scaled and shifted
+ * into the destination format, then written at its width. */
+static void write_packed_pixel(plContext* dst, Pixel* ptr, u8* lp) {
     s32 r;
     s32 g;
     s32 b;
     s32 a;
     u32 color;
 
-    s32 unused_s3;
+    a = (ptr->c >> 24) & 0xFF;
+    r = (ptr->c >> 16) & 0xFF;
+    g = (ptr->c >> 8) & 0xFF;
+    b = ptr->c & 0xFF;
+
+    color = (r * dst->pixelformat.rm / 255 << dst->pixelformat.rs) |
+            (g * dst->pixelformat.gm / 255 << dst->pixelformat.gs) |
+            (b * dst->pixelformat.bm / 255 << dst->pixelformat.bs) |
+            (a * dst->pixelformat.am / 255 << dst->pixelformat.as);
+
+    switch (dst->bitdepth) {
+    case 2:
+        ((u16*)lp)[0] = color;
+        break;
+
+    case 3:
+        lp[0] = color & 0xFF;
+        lp[1] = (color >> 8) & 0xFF;
+        lp[2] = (color >> 16) & 0xFF;
+        break;
+
+    case 4:
+        ((u32*)lp)[0] = color;
+        break;
+    }
+}
+
+s32 plDrawPixel(plContext* dst, Pixel* ptr) {
+    u8* lp;
 
     lp = plCalcAddress(ptr->x, ptr->y, dst);
 
@@ -79,71 +169,9 @@ s32 plDrawPixel(plContext* dst, Pixel* ptr) {
     }
 
     if (dst->desc & 4) {
-        switch (dst->bitdepth) {
-        case 4:
-            ((u32*)lp)[0] = ptr->c;
-            break;
-
-        case 2:
-            ((u16*)lp)[0] = ptr->c;
-            break;
-
-        case 1:
-            lp[0] = ptr->c;
-            break;
-
-        case 0:
-            if (dst->desc & 0x40) {
-                lp[0] = ptr->c;
-            } else {
-                color = ptr->c;
-                r = lp[0];
-
-                if (dst->desc & 0x10) {
-                    unused_s3 = 1;
-                } else {
-                    unused_s3 = 0;
-                }
-
-                if (((ptr->x & 1) ^ unused_s3) != 0) {
-                    color &= 0xF;
-                    r &= 0xF0;
-                } else {
-                    color = (color & 0xF) * 0x10;
-                    r &= 0xF;
-                }
-
-                lp[0] = r | color;
-            }
-
-            break;
-        }
+        write_indexed_pixel(dst, ptr, lp);
     } else {
-        a = (ptr->c >> 24) & 0xFF;
-        r = (ptr->c >> 16) & 0xFF;
-        g = (ptr->c >> 8) & 0xFF;
-        b = ptr->c & 0xFF;
-
-        color = (r * dst->pixelformat.rm / 255 << dst->pixelformat.rs) |
-                (g * dst->pixelformat.gm / 255 << dst->pixelformat.gs) |
-                (b * dst->pixelformat.bm / 255 << dst->pixelformat.bs) |
-                (a * dst->pixelformat.am / 255 << dst->pixelformat.as);
-
-        switch (dst->bitdepth) {
-        case 2:
-            ((u16*)lp)[0] = color;
-            break;
-
-        case 3:
-            lp[0] = color & 0xFF;
-            lp[1] = (color >> 8) & 0xFF;
-            lp[2] = (color >> 16) & 0xFF;
-            break;
-
-        case 4:
-            ((u32*)lp)[0] = color;
-            break;
-        }
+        write_packed_pixel(dst, ptr, lp);
     }
 
     return 1;
@@ -157,13 +185,106 @@ s32 plDrawPixel_3(plContext* dst, s32 x, s32 y, u32 color) {
     return plDrawPixel(dst, &pixel);
 }
 
-u32 plGetColor(s32 x, s32 y, plContext* lpcontext) {
-    u8* lp;
+/* The stored index at this address: one width per bit depth, and for the
+ * 4-bit case the half-byte the x coordinate selects. */
+/* The 4-bit case: the x coordinate picks which half of the byte the index
+ * comes from, unless the surface is flagged as whole-byte. */
+static u32 read_4bit_index(plContext* lpcontext, u8* lp, s32 x) {
+    u32 color;
+
+    if (lpcontext->desc & 0x40) {
+        color = lp[0];
+    } else {
+        color = lp[0];
+
+        if (((x & 1) ^ ((lpcontext->desc & 0x10) != 0 ? 1 : 0)) != 0) {
+            color &= 0xF;
+        } else {
+            color = (color >> 4) & 0xF;
+        }
+    }
+
+    return color;
+}
+
+static u32 read_indexed_color(plContext* lpcontext, u8* lp, s32 x) {
+    u32 color;
+
+    switch (lpcontext->bitdepth) {
+    case 0:
+        color = read_4bit_index(lpcontext, lp, x);
+
+        break;
+
+    case 1:
+        color = lp[0];
+        break;
+
+    case 2:
+        color = ((u16*)lp)[0];
+        break;
+
+    case 4:
+        color = ((u32*)lp)[0];
+        break;
+    }
+
+
+    return color;
+}
+
+/* The packed colour at this address, unpacked to 8 bits a channel through
+ * the surface's own masks and shifts. */
+static u32 read_packed_color(plContext* lpcontext, u8* lp) {
     u32 color;
     s32 r;
     s32 g;
     s32 b;
     s32 a;
+
+switch (lpcontext->bitdepth) {
+case 2:
+    color = ((u16*)lp)[0];
+    break;
+
+case 3:
+    color = (lp[2] << 0x10) | (lp[1] << 8) | lp[0];
+    break;
+
+case 4:
+    color = ((u32*)lp)[0];
+    break;
+}
+
+if (lpcontext->pixelformat.al != 0) {
+    a = ((lpcontext->pixelformat.am & (color >> lpcontext->pixelformat.as)) * 0xFF) / lpcontext->pixelformat.am;
+} else {
+    a = 0xFF;
+}
+
+if (lpcontext->pixelformat.rl != 0) {
+    r = ((lpcontext->pixelformat.rm & (color >> lpcontext->pixelformat.rs)) * 0xFF) / lpcontext->pixelformat.rm;
+} else {
+    r = 0;
+}
+
+if (lpcontext->pixelformat.gl != 0) {
+    g = ((lpcontext->pixelformat.gm & (color >> lpcontext->pixelformat.gs)) * 0xFF) / lpcontext->pixelformat.gm;
+} else {
+    g = 0;
+}
+
+if (lpcontext->pixelformat.bl != 0) {
+    b = ((lpcontext->pixelformat.bm & (color >> lpcontext->pixelformat.bs)) * 0xFF) / lpcontext->pixelformat.bm;
+} else {
+    b = 0;
+}
+
+return a << 24 | r << 16 | g << 8 | b;
+}
+
+u32 plGetColor(s32 x, s32 y, plContext* lpcontext) {
+    u8* lp;
 
     lp = plCalcAddress(x, y, lpcontext);
 
@@ -172,77 +293,10 @@ u32 plGetColor(s32 x, s32 y, plContext* lpcontext) {
     }
 
     if (lpcontext->desc & 4) {
-        switch (lpcontext->bitdepth) {
-        case 0:
-            if (lpcontext->desc & 0x40) {
-                color = lp[0];
-            } else {
-                color = lp[0];
-
-                if (((x & 1) ^ ((lpcontext->desc & 0x10) != 0 ? 1 : 0)) != 0) {
-                    color &= 0xF;
-                } else {
-                    color = (color >> 4) & 0xF;
-                }
-            }
-
-            break;
-
-        case 1:
-            color = lp[0];
-            break;
-
-        case 2:
-            color = ((u16*)lp)[0];
-            break;
-
-        case 4:
-            color = ((u32*)lp)[0];
-            break;
-        }
-
-        return color;
+        return read_indexed_color(lpcontext, lp, x);
     }
 
-    switch (lpcontext->bitdepth) {
-    case 2:
-        color = ((u16*)lp)[0];
-        break;
-
-    case 3:
-        color = (lp[2] << 0x10) | (lp[1] << 8) | lp[0];
-        break;
-
-    case 4:
-        color = ((u32*)lp)[0];
-        break;
-    }
-
-    if (lpcontext->pixelformat.al != 0) {
-        a = ((lpcontext->pixelformat.am & (color >> lpcontext->pixelformat.as)) * 0xFF) / lpcontext->pixelformat.am;
-    } else {
-        a = 0xFF;
-    }
-
-    if (lpcontext->pixelformat.rl != 0) {
-        r = ((lpcontext->pixelformat.rm & (color >> lpcontext->pixelformat.rs)) * 0xFF) / lpcontext->pixelformat.rm;
-    } else {
-        r = 0;
-    }
-
-    if (lpcontext->pixelformat.gl != 0) {
-        g = ((lpcontext->pixelformat.gm & (color >> lpcontext->pixelformat.gs)) * 0xFF) / lpcontext->pixelformat.gm;
-    } else {
-        g = 0;
-    }
-
-    if (lpcontext->pixelformat.bl != 0) {
-        b = ((lpcontext->pixelformat.bm & (color >> lpcontext->pixelformat.bs)) * 0xFF) / lpcontext->pixelformat.bm;
-    } else {
-        b = 0;
-    }
-
-    return a << 24 | r << 16 | g << 8 | b;
+    return read_packed_color(lpcontext, lp);
 }
 
 s32 plConvertContext(plContext* dst, plContext* src) {
