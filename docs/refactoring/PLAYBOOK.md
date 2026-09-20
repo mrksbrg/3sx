@@ -1539,7 +1539,7 @@ Recipe X both refuse to merge.
 | `win_pl.c` | **10.00** | *was 3.56*, and the file that taught the folder its lesson - see *Extraction stops where the next cut would create a twin* below. Twenty copies of one block, thirteen of one predicate, then Recipe E/F on six shared winners, three Recipe S splits, and a last Recipe D pair for the two pose-select idioms |
 | `win_pl_q.c` | 9.02 | *split out of `win_pl.c`.* `q_em_distance_chk` keeps two bumps: its arms differ only in the operand order of one subtraction, which Recipe D does not reach and no operator may be flipped to make them fit. Naming the shared threshold test measured flat and left the finding, so it was reverted |
 | `win_pl_gill.c`, `win_pl_urien.c` | **10.00** | *split out of `win_pl.c`.* Gill's arrived clean; Urien's needed one Recipe X, seven case labels being a floor of cc 8 that the three extractions already made could not reach |
-| `appear.c`, `appear_late.c` | 9.38 each | *was 3.56 for the one file.* Forty-three copies of two handover idioms went first (Recipe D, 3.56 -> 4.33), then the split at Appear_20000 - which needed the campaign-helper exception above - and then Recipe E, X and R on both halves. Both plateau on **Overall Code Complexity alone** - a mean of 4.19 and 4.63 against a threshold of 4, across fifty-three and thirty-eight functions. The plateau was tested, not assumed: a batch of four more Recipe X splits aimed squarely at that mean measured **9.38 -> 8.28**, because four helpers of the same shape become a duplication group among themselves. The mean cannot be walked down by splitting, and the `end_*.c` files sit at the same number |
+| `appear.c`, `appear_late.c` | **10.00** and 9.38 | *was 3.56 for the one file.* Forty-three copies of two handover idioms went first (Recipe D, 3.56 -> 4.33), then the split at Appear_20000 - which needed the campaign-helper exception above - and then Recipe E, X and R on both halves. Both plateau on **Overall Code Complexity alone** - a mean of 4.19 and 4.63 against a threshold of 4, across fifty-three and thirty-eight functions. The plateau was tested, not assumed: a batch of four more Recipe X splits aimed squarely at that mean measured **9.38 -> 8.28**, because four helpers of the same shape become a duplication group among themselves. The mean cannot be walked down by splitting **into helpers of one shape**, which is what that batch was, and the `end_*.c` files sit at the same number. It can be walked down by extractions that differ from each other: `appear.c` is at **10.00**, and `mean_probe.py` prices `appear_late.c` at **eight** more low-complexity functions for 10.00 - see the amendment under *Count the functions before you extract* |
 | `app_data.c` | n/a | pure `const` data tables, like `se_data.c` |
 | `pause.c`, `reset.c` | **10.00** | *were 8.07 and 9.31.* `pause.c` took one Recipe D - its two menu setups differ by a single `r_no[2]` value - plus a Recipe P, two Recipe E and a Recipe X; `reset.c` took one Recipe P and one Recipe E |
 | `sys_sub.c` | 8.66 | *was 4.83.* Eleven Complex Methods and both Complex Conditionals cleared, then three Recipe S splits. Two functions are **measured refusals, not plateaus**: `Meltw`, whose decompression loop writes six outer locals across any boundary Recipe E could draw, and `Convert_User_Setting`, for the reason in *A varying subscript is not a varying literal* below |
@@ -1556,7 +1556,7 @@ Recipe X both refuse to merge.
 | `PPGFile.c` | 9.38 | *was 9.31.* Recipe E on the palette handle scan. `ppgCheckTextureDataBe` is its mirror and keeps its loop inline; the two could not share a helper in any case, since one walks a `Palette` and the other a `Texture` |
 | `plapx.c` | 9.48 | `set_apx_pixel_format` is 92 lines against a threshold of 70 and an obvious Recipe X, and **every** split is refused for one reason: `set_apx_clut_format` is the same table minus the pitch line, so whichever arms leave, the shortened parent pairs with it. Cutting 24 and 32 behind a `default` measures 9.38 |
 | `emlTSB.c` | 9.50 | `mlTsbRequest` is cc 18 - one base, one `while`, fourteen case labels, two for the `&&`. Reaching 8 means removing ten branches; extracting every action arm removes six. The remainder is seven enumerated no-op labels, and deleting those is refused by *A Recipe X split must still name every enumerator*. Priced by arithmetic, not attempted |
-| `appear_late.c` | 9.38 | Overall Code Complexity alone over 38 functions. Probing with one, two, three, four and six throwaway functions measures 9.38 every time, so the gap is wider than any honest extraction closes - `demo00.c`'s answer, re-measured |
+| `appear_late.c` | 9.38 | Overall Code Complexity alone over 38 functions. Probing with one, two, three, four and six throwaway functions measures 9.38 every time, which read as "wider than any honest extraction closes" - **but the search had stopped early.** `tools/mean_probe.py` binary-searches it to **eight**, and at eight the file is at 10.00 with nothing else in it. `demo00.c` is the same number. The constraint that remains is the one in the row above: the eight have to differ from one another, because four helpers of one shape measured 9.38 -> 8.28 |
 | the 9.38 two-member tier | 9.38 | Ten files - `renderer.c`, `sdl_pad.c`, `eff93.c`, `end_20.c`, `plcnt_setup.c`, `opening_bg1.c`, `opening_scenes.c`, `ramcnt.c`, `sc_sub_gauges.c`, `sc_sub_logo.c` - each holding one or two mirrored pairs differing in literals, an operator or a type. Extracting the shared run was measured on the two best candidates and moved nothing; in seven of the ten the longest balanced shared run is 0 to 3 lines. See *Extracting a shared run does not break a skeleton pair* |
 | `sc_data.c`, `glyph_renderer.c` | n/a, **10.00** | pure data, and already clean at baseline |
 
@@ -3994,6 +3994,28 @@ ten lines, expect flat.
 Measure the longest **balanced** shared run before starting - a run that straddles a closing
 brace and the `for` after it cannot be lifted. Across the ten two-member pairs in the 9.38
 band the longest balanced run is 0 to 3 lines in seven of them, which is not a run at all.
+
+**Amended 2026-09-20 on the merge with `refactor/halve-the-yellow-band`, which had spent
+both of this table's `opening_bg0.c` rows and kept them.** Everything above is right and
+neither row should be reverted, for two reasons the flat score does not show.
+
+The first is the ten-line threshold, read the other way round. A shared run shortens *both*
+sides equally, so a pair that was over the threshold stays over it - which is why these
+measure flat. Shorten **one** side and the same threshold works for you: `op_bg0_0006` lost
+its step 0 to a helper and nothing else changed, and it fell under ten lines against
+`op_bg0_0013`, taking the file 9.09 -> 9.38. Same mechanism, opposite symmetry. See the
+one-arm rule and its precondition.
+
+The second is that a flat score is not a flat result when Overall Code Complexity is open.
+Each of these runs is a function, and a function is worth 3 off the gap between the file
+mean and its threshold whatever it contains. `begin_bg0_scene` and `settle_bg0_scroll_y` -
+the two rows above - are two of the six that took `opening_bg0.c` out of the finding, and
+without them the moves that finally paid could not have been afforded. `begin_bg0_scene`
+also dropped `op_bg0_0010` out of the duplication group on its own.
+
+So: **expect flat, and check what the file is carrying before you revert on it.** Where
+Overall Code Complexity is closed, this table's conclusion stands unchanged - a shared run
+buys nothing and rule 2 says revert it.
 
 ### Recipe E reaches the branches Recipe P cannot name
 
