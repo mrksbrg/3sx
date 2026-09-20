@@ -216,19 +216,18 @@ void push_effect_work(WORK* wkhd) {
     c_addr->myself = qix;
 }
 
-void effect_work_kill(s16 index, s16 kill_id) {
+static void kill_whole_list(s16 aix) {
     WORK* c_addr;
-    s16 aix = head_ix[index];
 
-    if (kill_id == -1) {
-        while (aix != -1) {
-            c_addr = (WORK*)frw[aix];
-            c_addr->dead_f = 1;
-            aix = c_addr->behind;
-        }
-
-        return;
+    while (aix != -1) {
+        c_addr = (WORK*)frw[aix];
+        c_addr->dead_f = 1;
+        aix = c_addr->behind;
     }
+}
+
+static void kill_list_entries_with_id(s16 aix, s16 kill_id) {
+    WORK* c_addr;
 
     while (aix != -1) {
         c_addr = (WORK*)frw[aix];
@@ -239,6 +238,17 @@ void effect_work_kill(s16 index, s16 kill_id) {
 
         aix = c_addr->behind;
     }
+}
+
+void effect_work_kill(s16 index, s16 kill_id) {
+    s16 aix = head_ix[index];
+
+    if (kill_id == -1) {
+        kill_whole_list(aix);
+        return;
+    }
+
+    kill_list_entries_with_id(aix, kill_id);
 }
 
 void write_my_shell_ix(WORK* wk, s16 ix) {
