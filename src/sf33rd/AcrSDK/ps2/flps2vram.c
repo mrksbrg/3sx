@@ -625,14 +625,13 @@ s32 flPS2LockTexture(const FlLockArgs* a) {
 /* Unlocking an entry in one of the two handle tables. Which table, how big it
  * is, and which renderer-side unlock to report to are all that differ.
  *
- * The entry pointer is taken before the bound is checked, which is what both
- * originals did; nothing is read through it until after the check. */
+ * Validate the handle before forming the entry pointer. */
 static s32 unlock_fl_entry(FLTexture* table, u32 th, u32 max, void (*renderer_unlock)(unsigned int th)) {
-    FLTexture* entry = &table[th - 1];
-
-    if (th > max) {
+    if ((th == 0) || (th > max)) {
         return 0;
     }
+
+    FLTexture* entry = &table[th - 1];
 
     if (!entry->be_flag) {
         return 0;
