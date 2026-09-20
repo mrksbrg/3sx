@@ -552,6 +552,17 @@ static void settle_bg0_scroll_y(void) {
     }
 }
 
+/* The layer climbs to the middle of the screen and is then pinned exactly
+ * there, which is what the scene that slides in from the left does with its x
+ * for as long as its step 1 runs. */
+static void climb_bg0_scroll_x_to_centre(void) {
+    if (bgw_ptr->wxy[0].disp.pos < 0x200) {
+        bgw_ptr->wxy[0].cal += 0x7FFF + 0x4001;
+    } else {
+        bgw_ptr->wxy[0].cal = 0x2000000;
+    }
+}
+
 void op_bg0_0007(s16 /* unused */) {
     switch (opw_ptr->r_no_0) {
     case 0:
@@ -562,11 +573,7 @@ void op_bg0_0007(s16 /* unused */) {
         break;
 
     case 1:
-        if (bgw_ptr->wxy[0].disp.pos < 0x200) {
-            bgw_ptr->wxy[0].cal += 0x7FFF + 0x4001;
-        } else {
-            bgw_ptr->wxy[0].cal = 0x2000000;
-        }
+        climb_bg0_scroll_x_to_centre();
 
         settle_bg0_scroll_y();
 
