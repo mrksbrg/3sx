@@ -69,13 +69,20 @@ static void oh_bg_blk_w_rows(s32 first, s32 second, s16 mapy, s32 trans) {
     oh_bg_blk_w(op_w.bgw, &(Op_Bg_Blk_Args){ second, 2, mapy, trans });
 }
 
+/* Every scene's step 0 sets this layer's scroll the same way: the wide x first
+ * and then the y. Fifteen copies of that pair, each keeping its own two values
+ * written out in full at its own call site. */
+static void set_bg0_scroll(s32 wide_x, s32 y) {
+    bgw_ptr->wxy[0].cal = wide_x;
+    bgw_ptr->xy[1].cal = y;
+}
+
 void op_bg0_0000(s16 /* unused */) {
     switch (opw_ptr->r_no_0) {
     case 0:
         opw_ptr->r_no_0 += 1;
         Bg_Off_W(1);
-        bgw_ptr->wxy[0].cal = 0x2000000;
-        bgw_ptr->xy[1].cal = 0;
+        set_bg0_scroll(0x2000000, 0);
         break;
     }
 
@@ -254,8 +261,7 @@ void op_bg0_0001(s16 r_index) {
         bgw_ptr->free = 1;
         bgw_ptr->frame_deff = 0;
         Bg_On_W(1);
-        bgw_ptr->wxy[0].cal = 0x2000000;
-        bgw_ptr->xy[1].cal = 0;
+        set_bg0_scroll(0x2000000, 0);
 
         op_bg0_lay_blocks(r_index);
 
@@ -307,8 +313,7 @@ void op_bg0_0002(s16 r_index) {
             Zoomf_Init();
         }
 
-        bgw_ptr->wxy[0].cal = 0x2000000;
-        bgw_ptr->xy[1].cal = 0;
+        set_bg0_scroll(0x2000000, 0);
 
         draw_bg0_fade_overlay(&beta_poly);
 
@@ -330,8 +335,7 @@ void op_bg0_0003(s16 r_index) {
         bgw_ptr->free = 1;
         bgw_ptr->frame_deff = 0;
         Bg_On_W(1);
-        bgw_ptr->wxy[0].cal = 0x2000000;
-        bgw_ptr->xy[1].cal = 0;
+        set_bg0_scroll(0x2000000, 0);
 
         switch (r_index) {
         case 0x2A:
@@ -406,8 +410,7 @@ void op_bg0_0004(s16 r_index) {
         bgw_ptr->free = 1;
         bgw_ptr->frame_deff = 0;
         Bg_Off_W(1);
-        bgw_ptr->wxy[0].cal = 0x2000000;
-        bgw_ptr->xy[1].cal = 0;
+        set_bg0_scroll(0x2000000, 0);
 
         draw_bg0_fade_overlay(&beta_poly);
         break;
@@ -450,8 +453,7 @@ void op_bg0_0005(s16 /* unused */) {
         bgw_ptr->free = 1;
         bgw_ptr->frame_deff = 0;
         Bg_On_W(1);
-        bgw_ptr->wxy[0].cal = 0x2000000;
-        bgw_ptr->xy[1].cal = 0;
+        set_bg0_scroll(0x2000000, 0);
         oh_bg_blk_w_rows(5, 6, 0, 0);
         Zoom_Value_Set(0x40);
         bgw_ptr->frame_deff = 12;
@@ -496,8 +498,7 @@ void op_bg0_0006(s16 /* unused */) {
         opw_ptr->r_no_0 += 1;
         bgw_ptr->free = 0;
         Bg_On_W(1);
-        bgw_ptr->wxy[0].cal = 0xC00000;
-        bgw_ptr->xy[1].cal = 0;
+        set_bg0_scroll(0xC00000, 0);
         oh_bg_blk_w(op_w.bgw, &(Op_Bg_Blk_Args){0xD, 0, 0, 0});
         oh_bg_blk_w_rows(0xE, 0xF, 0, 0);
         break;
@@ -522,8 +523,7 @@ void op_bg0_0007(s16 /* unused */) {
         bgw_ptr->free = 1;
         bgw_ptr->frame_deff = 0;
         Bg_On_W(1);
-        bgw_ptr->wxy[0].cal = 0x1D00000;
-        bgw_ptr->xy[1].cal = 0xFFF00000;
+        set_bg0_scroll(0x1D00000, 0xFFF00000);
         oh_bg_blk_w_rows(0x16, 0x17, 0, 0);
         break;
 
@@ -553,8 +553,7 @@ void op_bg0_0008(s16 /* unused */) {
         bgw_ptr->free = 1;
         bgw_ptr->frame_deff = 0;
         Bg_On_W(1);
-        bgw_ptr->wxy[0].cal = 0x2300000;
-        bgw_ptr->xy[1].cal = 0xFFF00000;
+        set_bg0_scroll(0x2300000, 0xFFF00000);
         oh_bg_blk_w_rows(0x18, 0x19, 0, 0);
         /* fallthrough */
 
@@ -586,8 +585,7 @@ void op_bg0_0010(s16 /* unused */) {
         Bg_On_W(1);
         Zoomf_Init();
         Zoom_Value_Set(0x40);
-        bgw_ptr->wxy[0].cal = 0x2000000;
-        bgw_ptr->xy[1].cal = 0;
+        set_bg0_scroll(0x2000000, 0);
         oh_bg_blk_w_rows(0x12, 0x13, 0, 0);
         break;
 
@@ -612,8 +610,7 @@ void op_bg0_0011(s16 /* unused */) {
         Bg_On_W(1);
         Zoomf_Init();
         Zoom_Value_Set(0x40);
-        bgw_ptr->wxy[0].cal = 0x2000000;
-        bgw_ptr->xy[1].cal = 0;
+        set_bg0_scroll(0x2000000, 0);
         oh_bg_blk_w_rows(0x14, 0x15, 0, 0);
         break;
 
@@ -649,8 +646,7 @@ void op_bg0_0012(s16 /* unused */) {
         Bg_On_W(1);
         Zoomf_Init();
         Zoom_Value_Set(0x40);
-        bgw_ptr->wxy[0].cal = 0x2000000;
-        bgw_ptr->xy[1].cal = 0x1000000;
+        set_bg0_scroll(0x2000000, 0x1000000);
         oh_bg_blk_w_rows(0x1E, 0x1F, 1, 0);
         oh_bg_blk_w_rows(0x20, 0x21, 0, 0);
         break;
@@ -674,8 +670,7 @@ void op_bg0_0013(s16 /* unused */) {
         opw_ptr->r_no_0 += 1;
         bgw_ptr->free = 1;
         bgw_ptr->frame_deff = 0;
-        bgw_ptr->wxy[0].cal = 0x2000000;
-        bgw_ptr->xy[1].cal = 0x600000;
+        set_bg0_scroll(0x2000000, 0x600000);
         oh_bg_blk_w_rows(0x1A, 0x1B, 1, 0);
         oh_bg_blk_w_rows(0x1C, 0x1D, 0, 0);
         break;
@@ -722,8 +717,7 @@ void op_bg0_0015(s16 r_index) {
         bgw_ptr->free = 1;
         bgw_ptr->l_limit = 0;
         Bg_On_W(1);
-        bgw_ptr->wxy[0].cal = 0x2000000;
-        bgw_ptr->xy[1].cal = 0;
+        set_bg0_scroll(0x2000000, 0);
 
         switch (r_index) {
         case 8:
@@ -759,8 +753,7 @@ void op_bg0_0016(s16 /* unused */) {
     case 0:
         opw_ptr->r_no_0 += 1;
         Bg_On_W(1);
-        bgw_ptr->wxy[0].cal = 0x2000000;
-        bgw_ptr->xy[1].cal = 0;
+        set_bg0_scroll(0x2000000, 0);
         op_scrn_end = 0;
         bgw_ptr->frame_deff = 0x13;
         Frame_Up(0xC0, 0x70, bgw_ptr->frame_deff);
