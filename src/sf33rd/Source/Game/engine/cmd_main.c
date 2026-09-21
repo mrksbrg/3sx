@@ -153,7 +153,6 @@ void cmd_move() { // 🟢
     }
 }
 
-
 void command_ok() { // 🟢
     wcp[cmd_id].waza_flag[waza_type[cmd_id]] = wcp[cmd_id].reset[waza_type[cmd_id]];
 
@@ -204,6 +203,25 @@ static u16 latch_sw_lvbt_bit_0x80(u16 work2, u16 hana2, u16 sw_0) {
     return sw_0;
 }
 
+static u16 latch_sw_lvbt_bit_0x800_from_hana(u16 hana2, u16 sw_0) {
+    switch (hana2) {
+    case 0x700:
+    case 0x300:
+    case 0x500:
+    case 0x600:
+        wcp[cmd_id].sw_lvbt |= 0x800;
+        sw_0 |= 0x800;
+        break;
+
+    default:
+        wcp[cmd_id].sw_lvbt &= 0xF7FF;
+        sw_0 &= 0xF7FF;
+        break;
+    }
+
+    return sw_0;
+}
+
 static u16 latch_sw_lvbt_bit_0x800(u16 work2, u16 hana2, u16 sw_0) {
     switch (work2) {
     case 0x700:
@@ -215,20 +233,8 @@ static u16 latch_sw_lvbt_bit_0x800(u16 work2, u16 hana2, u16 sw_0) {
         break;
 
     default:
-        switch (hana2) {
-        case 0x700:
-        case 0x300:
-        case 0x500:
-        case 0x600:
-            wcp[cmd_id].sw_lvbt |= 0x800;
-            sw_0 |= 0x800;
-            break;
-
-        default:
-            wcp[cmd_id].sw_lvbt &= 0xF7FF;
-            sw_0 &= 0xF7FF;
-            break;
-        }
+        sw_0 = latch_sw_lvbt_bit_0x800_from_hana(hana2, sw_0);
+        break;
     }
 
     return sw_0;

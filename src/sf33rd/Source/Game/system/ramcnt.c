@@ -55,15 +55,18 @@ void Push_ramcnt_key(s16 key) {
     return;
 }
 
+static void reject_non_texcash_key_push(RCKeyWork* rwk) {
+    if ((rwk->type != 8) && (rwk->type != 9)) {
+        flLogOut("TEXCASH KEY PUSH ERROR2\n");
+        ERR_STOP;
+    }
+}
+
 void Push_ramcnt_key_original(s16 key) {
     RCKeyWork* rwk = &rckey_work[key];
 
     if (rwk->use != 0) {
-        if ((rwk->type != 8) && (rwk->type != 9)) {
-            flLogOut("TEXCASH KEY PUSH ERROR2\n");
-            ERR_STOP;
-        }
-
+        reject_non_texcash_key_push(rwk);
         Push_ramcnt_key_original_2(key);
     }
 

@@ -123,9 +123,23 @@ static void release_all_palette_handles(Palette* pch) {
     }
 }
 
-s32 ppgReleasePaletteHandle(Palette* pch, s32 ixNum) {
+/* A negative index means every slot; otherwise the caller's index is turned
+ * into a slot number and released when it names one. */
+static void release_palette_handles(Palette* pch, s32 ixNum) {
     s32 ix;
 
+    if (ixNum < 0) {
+        release_all_palette_handles(pch);
+    } else {
+        ix = ixNum - pch->ixNum1st;
+
+        if ((ix >= 0) && (ix < pch->total)) {
+            release_one_palette_handle(pch, ix);
+        }
+    }
+}
+
+s32 ppgReleasePaletteHandle(Palette* pch, s32 ixNum) {
     if (pch == NULL) {
         pch = ppg_w.cur->pal;
     }
@@ -138,15 +152,7 @@ s32 ppgReleasePaletteHandle(Palette* pch, s32 ixNum) {
         return 0;
     }
 
-    if (ixNum < 0) {
-        release_all_palette_handles(pch);
-    } else {
-        ix = ixNum - pch->ixNum1st;
-
-        if ((ix >= 0) && (ix < pch->total)) {
-            release_one_palette_handle(pch, ix);
-        }
-    }
+    release_palette_handles(pch, ixNum);
 
     return ppgCheckPaletteDataBe(pch);
 }
@@ -352,4 +358,3 @@ s32 ppgCheckTextureNumber(Texture* tex, s32 num) {
 
     return 0;
 }
-

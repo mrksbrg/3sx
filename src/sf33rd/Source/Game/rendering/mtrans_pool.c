@@ -16,6 +16,11 @@
 #include "sf33rd/Source/Game/rendering/texcash.h"
 #include "structs.h"
 
+static void record_used_x16_tile(s16 i, s16 j, s16 k) {
+    tpu_free->x16_used[tpu_free->x16] = (i * 256) + (j * 16) + k;
+    tpu_free->x16 += 1;
+}
+
 static void collect_used_x16_tile_row(s16 i, s16 j, PatternMap* map) {
     s16 k;
 
@@ -28,8 +33,7 @@ static void collect_used_x16_tile_row(s16 i, s16 j, PatternMap* map) {
             continue;
         }
 
-        tpu_free->x16_used[tpu_free->x16] = (i * 256) + (j * 16) + k;
-        tpu_free->x16 += 1;
+        record_used_x16_tile(i, j, k);
     }
 }
 
@@ -109,7 +113,7 @@ void mlt_obj_trans_init(MultiTexture* mt, s32 mode, u8* adrs) {
     }
 
     mt->texList.tex->be = 0;
-    ppgSetupTexChunkSeqs(&mt->tex, &(PPGTexSeqsArgs){&ppg, adrs, mt->mltgidx16, mt->mltnum, mt->attribute});
+    ppgSetupTexChunkSeqs(&mt->tex, &(PPGTexSeqsArgs) { &ppg, adrs, mt->mltgidx16, mt->mltnum, mt->attribute });
 
     if (!(mode & 0x20)) {
         mc = mt->mltcsh16;

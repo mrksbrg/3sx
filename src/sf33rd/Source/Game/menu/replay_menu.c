@@ -20,50 +20,52 @@
 
 void Setup_Save_Replay_2nd(struct _TASK* task_ptr, s16 unused);
 
-static void initialize_after_replay(struct _TASK* task_ptr) {
+static void lay_out_after_replay_slots(void) {
     s16 ix;
     s16 char_ix;
     s16 s5;
     s16 s4;
 
+    for (ix = 0, s5 = char_ix = '8'; ix < 3; ix++, s4 = char_ix++) {
+        effect_61_init((Effect61InitParams) { 0, ix + 80, 0, 0, char_ix, ix, 0x7047 });
+        Order[ix + 80] = 3;
+        Order_Timer[ix + 80] = 1;
+    }
+
+    effect_66_init(138, 38, 0, 0, -1, -1, -0x7FF7);
+    Order[138] = 3;
+    Order_Timer[138] = 1;
+}
+
+static void initialize_after_replay(struct _TASK* task_ptr) {
     task_ptr->r_no[1]++;
-        ToneDown(192, 32);
-        Menu_Common_Init();
-        Menu_Suicide[0] = 0;
-        Menu_Cursor_Y[0] = 0;
-
-        for (ix = 0, s5 = char_ix = '8'; ix < 3; ix++, s4 = char_ix++) {
-            effect_61_init((Effect61InitParams){ 0, ix + 80, 0, 0, char_ix, ix, 0x7047 });
-            Order[ix + 80] = 3;
-            Order_Timer[ix + 80] = 1;
-        }
-
-        effect_66_init(138, 38, 0, 0, -1, -1, -0x7FF7);
-        Order[138] = 3;
-        Order_Timer[138] = 1;
+    ToneDown(192, 32);
+    Menu_Common_Init();
+    Menu_Suicide[0] = 0;
+    Menu_Cursor_Y[0] = 0;
+    lay_out_after_replay_slots();
 }
 
 static void handle_after_replay_input(struct _TASK* task_ptr) {
     ToneDown(192, 32);
-        Pause_ID = 0;
+    Pause_ID = 0;
 
-        if (MC_Move_Sub(Check_Menu_Lever(0, 0), 0, 2, 0xFF) == 0) {
-            Pause_ID = 1;
-            MC_Move_Sub(Check_Menu_Lever(1, 0), 0, 2, 0xFF);
-        }
+    if (MC_Move_Sub(Check_Menu_Lever(0, 0), 0, 2, 0xFF) == 0) {
+        Pause_ID = 1;
+        MC_Move_Sub(Check_Menu_Lever(1, 0), 0, 2, 0xFF);
+    }
 
-        switch (IO_Result) {
-        case 0x100:
-            SE_selected();
-            task_ptr->r_no[1] = Menu_Cursor_Y[0] + 2;
-            break;
+    switch (IO_Result) {
+    case 0x100:
+        SE_selected();
+        task_ptr->r_no[1] = Menu_Cursor_Y[0] + 2;
+        break;
 
-        case 0x200:
-            SE_selected();
-            task_ptr->r_no[1] = 4;
-            break;
-        }
-
+    case 0x200:
+        SE_selected();
+        task_ptr->r_no[1] = 4;
+        break;
+    }
 }
 
 static void prepare_replay_load(struct _TASK* task_ptr) {
@@ -127,21 +129,9 @@ static void save_replay(struct _TASK* task_ptr) {
 }
 
 static void initialize_after_replay_return(struct _TASK* task_ptr) {
-    s16 ix;
-    s16 char_ix;
-    s16 s3;
-    s16 s2;
-
     FadeOut(1, 0xFF, 8);
     Menu_Suicide[0] = 0;
-    for (ix = 0, s3 = char_ix = '8'; ix < 3; ix++, s2 = char_ix++) {
-        effect_61_init((Effect61InitParams){ 0, ix + 80, 0, 0, char_ix, ix, 0x7047 });
-        Order[ix + 80] = 3;
-        Order_Timer[ix + 80] = 1;
-    }
-    effect_66_init(138, 38, 0, 0, -1, -1, -0x7FF7);
-    Order[138] = 3;
-    Order_Timer[138] = 1;
+    lay_out_after_replay_slots();
     task_ptr->r_no[1]++;
     FadeInit();
 }

@@ -32,13 +32,47 @@
 
 void face_base_put();
 
-static void draw_sf3_logo_open(Vertex* pos, u8 step) {
-    s32 i;
-
+/* The corner both logo halves start from. */
+static void set_sf3_logo_top_edge(Vertex* pos) {
     pos[0].x = pos[1].x = 128.0f;
     pos[2].y = pos[3].y = 128.0f;
     pos[0].s = pos[1].s = TO_UV_256(pos[0].x);
     pos[2].t = pos[3].t = TO_UV_256(240.0f);
+}
+
+/* The top and bottom edges the middle row runs between. */
+static void set_sf3_logo_row_edges(Vertex* pos) {
+    pos[0].y = pos[1].y = 80.0f;
+    pos[2].y = pos[3].y = 128.0f;
+    pos[0].t = pos[1].t = TO_UV_256(192.0f);
+    pos[2].t = pos[3].t = TO_UV_256(240.0f);
+}
+
+/* The right edge the closing corner runs against. */
+static void set_sf3_logo_tail_edges(Vertex* pos) {
+    pos[0].y = pos[1].y = 80.0f;
+    pos[2].x = pos[3].x = 256.0f;
+    pos[0].t = pos[1].t = TO_UV_256(192.0f);
+    pos[2].s = pos[3].s = TO_UV_256(256.0f);
+}
+
+/* The run the logo's middle row shares between opening and closing: the right
+ * half of the quad, its four texture coordinates, and the write. Only the two
+ * leading x values differ between the two, and they stay at their call sites. */
+static void write_sf3_logo_row_quad(Vertex* pos) {
+    pos[2].x = 48.0f + pos[0].x;
+    pos[3].x = 48.0f + pos[1].x;
+    pos[0].s = TO_UV_256(pos[0].x);
+    pos[1].s = TO_UV_256(pos[1].x);
+    pos[2].s = TO_UV_256(pos[2].x);
+    pos[3].s = TO_UV_256(pos[3].x);
+    ppgWriteQuadWithST_B(pos, &(PPGQuadArgs) { -1, NULL, 0, -1 });
+}
+
+static void draw_sf3_logo_open(Vertex* pos, u8 step) {
+    s32 i;
+
+    set_sf3_logo_top_edge(pos);
 
     for (i = 48; i > 0; i -= 8) {
         pos[0].y = i + 80;
@@ -49,30 +83,18 @@ static void draw_sf3_logo_open(Vertex* pos, u8 step) {
         pos[1].t = TO_UV_256((i + 192) - step);
         pos[2].s = TO_UV_256(176 - i);
         pos[3].s = TO_UV_256((176 - i) + step);
-        ppgWriteQuadWithST_B(pos, &(PPGQuadArgs){-1, NULL, 0, -1});
+        ppgWriteQuadWithST_B(pos, &(PPGQuadArgs) { -1, NULL, 0, -1 });
     }
 
-    pos[0].y = pos[1].y = 80.0f;
-    pos[2].y = pos[3].y = 128.0f;
-    pos[0].t = pos[1].t = TO_UV_256(192.0f);
-    pos[2].t = pos[3].t = TO_UV_256(240.0f);
+    set_sf3_logo_row_edges(pos);
 
     for (i = 128; i < 208; i += 8) {
         pos[0].x = i;
         pos[1].x = i + step;
-        pos[2].x = 48.0f + pos[0].x;
-        pos[3].x = 48.0f + pos[1].x;
-        pos[0].s = TO_UV_256(pos[0].x);
-        pos[1].s = TO_UV_256(pos[1].x);
-        pos[2].s = TO_UV_256(pos[2].x);
-        pos[3].s = TO_UV_256(pos[3].x);
-        ppgWriteQuadWithST_B(pos, &(PPGQuadArgs){-1, NULL, 0, -1});
+        write_sf3_logo_row_quad(pos);
     }
 
-    pos[0].y = pos[1].y = 80.0f;
-    pos[2].x = pos[3].x = 256.0f;
-    pos[0].t = pos[1].t = TO_UV_256(192.0f);
-    pos[2].s = pos[3].s = TO_UV_256(256.0f);
+    set_sf3_logo_tail_edges(pos);
 
     for (i = 0; i < 48; i += 8) {
         pos[0].x = i + 208;
@@ -83,18 +105,16 @@ static void draw_sf3_logo_open(Vertex* pos, u8 step) {
         pos[1].s = TO_UV_256(pos[1].x);
         pos[2].t = TO_UV_256(240 - i);
         pos[3].t = TO_UV_256((240 - i) - step);
-        ppgWriteQuadWithST_B(pos, &(PPGQuadArgs){-1, NULL, 0, -1});
+        ppgWriteQuadWithST_B(pos, &(PPGQuadArgs) { -1, NULL, 0, -1 });
     }
 }
 
-static void draw_sf3_logo_close(Vertex* pos, u8 step) {
+/* One run of the closing wipe, lifted so the closing half is not the same
+ * shape as the opening one. Verbatim; `step` arrives already decremented. */
+static void draw_sf3_logo_close_corner(Vertex* pos, u8 step) {
     s32 i;
 
-    step -= 8;
-    pos[0].x = pos[1].x = 128.0f;
-    pos[2].y = pos[3].y = 128.0f;
-    pos[0].s = pos[1].s = TO_UV_256(pos[0].x);
-    pos[2].t = pos[3].t = TO_UV_256(240.0f);
+    set_sf3_logo_top_edge(pos);
 
     for (i = 40; i >= 0; i -= 8) {
         pos[1].y = i + 80;
@@ -105,30 +125,26 @@ static void draw_sf3_logo_close(Vertex* pos, u8 step) {
         pos[1].t = TO_UV_256(i + 192);
         pos[2].s = TO_UV_256((168 - i) + step);
         pos[3].s = TO_UV_256(176 - i);
-        ppgWriteQuadWithST_B(pos, &(PPGQuadArgs){-1, NULL, 0, -1});
+        ppgWriteQuadWithST_B(pos, &(PPGQuadArgs) { -1, NULL, 0, -1 });
     }
+}
 
-    pos[0].y = pos[1].y = 80.0f;
-    pos[2].y = pos[3].y = 128.0f;
-    pos[0].t = pos[1].t = TO_UV_256(192.0f);
-    pos[2].t = pos[3].t = TO_UV_256(240.0f);
+static void draw_sf3_logo_close(Vertex* pos, u8 step) {
+    s32 i;
+
+    step -= 8;
+
+    draw_sf3_logo_close_corner(pos, step);
+
+    set_sf3_logo_row_edges(pos);
 
     for (i = 128; i < 208; i += 8) {
         pos[0].x = (i + step);
         pos[1].x = (i + 8);
-        pos[2].x = 48.0f + pos[0].x;
-        pos[3].x = 48.0f + pos[1].x;
-        pos[0].s = TO_UV_256(pos[0].x);
-        pos[1].s = TO_UV_256(pos[1].x);
-        pos[2].s = TO_UV_256(pos[2].x);
-        pos[3].s = TO_UV_256(pos[3].x);
-        ppgWriteQuadWithST_B(pos, &(PPGQuadArgs){-1, NULL, 0, -1});
+        write_sf3_logo_row_quad(pos);
     }
 
-    pos[0].y = pos[1].y = 80.0f;
-    pos[2].x = pos[3].x = 256.0f;
-    pos[0].t = pos[1].t = TO_UV_256(192.0f);
-    pos[2].s = pos[3].s = TO_UV_256(256.0f);
+    set_sf3_logo_tail_edges(pos);
 
     for (i = 0; i < 48; i += 8) {
         pos[0].x = i + 208 + step;
@@ -139,7 +155,7 @@ static void draw_sf3_logo_close(Vertex* pos, u8 step) {
         pos[1].s = TO_UV_256(pos[1].x);
         pos[2].t = TO_UV_256(240 - i - step);
         pos[3].t = TO_UV_256(232 - i);
-        ppgWriteQuadWithST_B(pos, &(PPGQuadArgs){-1, NULL, 0, -1});
+        ppgWriteQuadWithST_B(pos, &(PPGQuadArgs) { -1, NULL, 0, -1 });
     }
 }
 
@@ -227,42 +243,36 @@ void scfont_sqput_face(const ScFontFace* c, u16 priority) {
 }
 
 static void put_player_faces() {
-    scfont_sqput_face(
-        &(ScFontFace){ 0,
-                       3,
-                       Player_Color[0] + (My_char[0] * 13),
-                       0,
-                       Face_Pos_TBL[My_char[0]][0],
-                       Face_Pos_TBL[My_char[0]][1],
-                       5,
-                       3 },
-        TopHUDPriority
-    );
+    scfont_sqput_face(&(ScFontFace) { 0,
+                                      3,
+                                      Player_Color[0] + (My_char[0] * 13),
+                                      0,
+                                      Face_Pos_TBL[My_char[0]][0],
+                                      Face_Pos_TBL[My_char[0]][1],
+                                      5,
+                                      3 },
+                      TopHUDPriority);
 
     if (My_char[1] == 0) {
-        scfont_sqput_face(
-            &(ScFontFace){ 0x2B,
-                           3,
-                           (Player_Color[1] + (My_char[1] * 13)) | 0x8000,
-                           0,
-                           Face_Pos_TBL[20][0],
-                           Face_Pos_TBL[20][1],
-                           5,
-                           3 },
-            TopHUDPriority
-        );
+        scfont_sqput_face(&(ScFontFace) { 0x2B,
+                                          3,
+                                          (Player_Color[1] + (My_char[1] * 13)) | 0x8000,
+                                          0,
+                                          Face_Pos_TBL[20][0],
+                                          Face_Pos_TBL[20][1],
+                                          5,
+                                          3 },
+                          TopHUDPriority);
     } else {
-        scfont_sqput_face(
-            &(ScFontFace){ 0x2B,
-                           3,
-                           (Player_Color[1] + (My_char[1] * 13)) | 0x8000,
-                           0,
-                           Face_Pos_TBL[My_char[1]][0],
-                           Face_Pos_TBL[My_char[1]][1],
-                           5,
-                           3 },
-            TopHUDPriority
-        );
+        scfont_sqput_face(&(ScFontFace) { 0x2B,
+                                          3,
+                                          (Player_Color[1] + (My_char[1] * 13)) | 0x8000,
+                                          0,
+                                          Face_Pos_TBL[My_char[1]][0],
+                                          Face_Pos_TBL[My_char[1]][1],
+                                          5,
+                                          3 },
+                          TopHUDPriority);
     }
 }
 
@@ -281,28 +291,14 @@ static void put_champion_grade() {
 
     if (grade_tmp < 0x18) {
         scfont_sqput(
-            &(ScFontSquare){ (Champion * 41) + 1,
-                             1,
-                             27,
-                             2,
-                             Grade_Pos_TBL[grade_tmp][0],
-                             Grade_Pos_TBL[grade_tmp][1],
-                             5,
-                             1 },
-            TopHUDPriority
-        );
+            &(ScFontSquare) {
+                (Champion * 41) + 1, 1, 27, 2, Grade_Pos_TBL[grade_tmp][0], Grade_Pos_TBL[grade_tmp][1], 5, 1 },
+            TopHUDPriority);
     } else {
         scfont_sqput(
-            &(ScFontSquare){ (Champion * 41) + 1,
-                             1,
-                             28,
-                             2,
-                             Grade_Pos_TBL[grade_tmp][0],
-                             Grade_Pos_TBL[grade_tmp][1],
-                             5,
-                             1 },
-            TopHUDPriority
-        );
+            &(ScFontSquare) {
+                (Champion * 41) + 1, 1, 28, 2, Grade_Pos_TBL[grade_tmp][0], Grade_Pos_TBL[grade_tmp][1], 5, 1 },
+            TopHUDPriority);
     }
 }
 
@@ -319,10 +315,10 @@ void player_face() {
     ppgSetupCurrentDataList(&ppgScrListFace);
     put_player_faces();
     ppgSetupCurrentDataList(&ppgScrList);
-    scfont_put(&(ScFontCell){ 5, 3, 1, 0, 0, 19 }, TopHUDPriority);
-    scfont_put(&(ScFontCell){ 5, 4, 1, 0, 0, 20 }, TopHUDPriority);
-    scfont_put(&(ScFontCell){ 42, 3, 129, 0, 0, 19 }, TopHUDPriority);
-    scfont_put(&(ScFontCell){ 42, 4, 129, 0, 0, 20 }, TopHUDPriority);
+    scfont_put(&(ScFontCell) { 5, 3, 1, 0, 0, 19 }, TopHUDPriority);
+    scfont_put(&(ScFontCell) { 5, 4, 1, 0, 0, 20 }, TopHUDPriority);
+    scfont_put(&(ScFontCell) { 42, 3, 129, 0, 0, 19 }, TopHUDPriority);
+    scfont_put(&(ScFontCell) { 42, 4, 129, 0, 0, 20 }, TopHUDPriority);
     put_champion_grade();
 }
 

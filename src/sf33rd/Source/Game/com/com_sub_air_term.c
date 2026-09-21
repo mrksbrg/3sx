@@ -475,6 +475,14 @@ static void ORO_JA_Term_Descent(PLW* wk, const ORO_Air_Term_Args* a) {
     }
 }
 
+/* The lever merge the airborne arms need: once the climb has started, the
+ * left/right bit is folded back into this frame's lever. */
+static void Carry_Lever_From_Air_Climb(PLW* wk) {
+    if (CP_Index[wk->wu.id][1] >= 3) {
+        Lever_Buff[wk->wu.id] |= Lever_LR[wk->wu.id];
+    }
+}
+
 void ORO_JA_Term(PLW* wk, const ORO_Air_Term_Args* a) {
     switch (CP_Index[wk->wu.id][1]) {
 
@@ -504,9 +512,7 @@ void ORO_JA_Term(PLW* wk, const ORO_Air_Term_Args* a) {
         ORO_JA_Term_Descent(wk, a);
         break;
     }
-    if (CP_Index[wk->wu.id][1] >= 3) {
-        Lever_Buff[wk->wu.id] |= Lever_LR[wk->wu.id];
-    }
+    Carry_Lever_From_Air_Climb(wk);
 }
 
 static void ORO_HJA_Term_Begin(PLW* wk) {

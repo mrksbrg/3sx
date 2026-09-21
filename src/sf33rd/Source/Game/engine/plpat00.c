@@ -33,34 +33,37 @@ void pl00_extra_attack(PLW* wk) {
     pl00_exatt_table[wk->wu.routine_no[2] - 16](wk);
 }
 
-void Att_MOONSALT_KNEE_DROP(PLW* wk) {
+static void launch_moonsalt_knee_drop(PLW* wk) {
     PLW* twk;
     s16 ex;
     s16 ey;
 
+    wk->wu.routine_no[3]++;
+    wk->wu.rl_flag = wk->wu.rl_waza;
+    set_char_move_init(&wk->wu, 5, wk->as->char_ix);
+    setup_mvxy_data(&wk->wu, wk->as->data_ix);
+    twk = (PLW*)wk->wu.target_adrs;
+
+    if (wk->wu.rl_flag) {
+        ex = twk->wu.position_x - mnd_em_tall[twk->player_number][0];
+    } else {
+        ex = twk->wu.position_x + mnd_em_tall[twk->player_number][0];
+    }
+
+    ey = mnd_em_tall[twk->player_number][1];
+    wk->wu.mvxy.a[0].sp = 0;
+    cal_delta_speed(&wk->wu, &(Motion_Target) { wk->as->r_no, ex, ey, 2, 2 });
+
+    if (wk->wu.rl_flag == 0) {
+        wk->wu.mvxy.a[0].sp = -wk->wu.mvxy.a[0].sp;
+        wk->wu.mvxy.d[0].sp = -wk->wu.mvxy.d[0].sp;
+    }
+}
+
+void Att_MOONSALT_KNEE_DROP(PLW* wk) {
     switch (wk->wu.routine_no[3]) {
     case 0:
-        wk->wu.routine_no[3]++;
-        wk->wu.rl_flag = wk->wu.rl_waza;
-        set_char_move_init(&wk->wu, 5, wk->as->char_ix);
-        setup_mvxy_data(&wk->wu, wk->as->data_ix);
-        twk = (PLW*)wk->wu.target_adrs;
-
-        if (wk->wu.rl_flag) {
-            ex = twk->wu.position_x - mnd_em_tall[twk->player_number][0];
-        } else {
-            ex = twk->wu.position_x + mnd_em_tall[twk->player_number][0];
-        }
-
-        ey = mnd_em_tall[twk->player_number][1];
-        wk->wu.mvxy.a[0].sp = 0;
-        cal_delta_speed(&wk->wu, &(Motion_Target) { wk->as->r_no, ex, ey, 2, 2 });
-
-        if (wk->wu.rl_flag == 0) {
-            wk->wu.mvxy.a[0].sp = -wk->wu.mvxy.a[0].sp;
-            wk->wu.mvxy.d[0].sp = -wk->wu.mvxy.d[0].sp;
-        }
-
+        launch_moonsalt_knee_drop(wk);
         break;
 
     case 1:
@@ -84,17 +87,34 @@ void Att_MOONSALT_KNEE_DROP(PLW* wk) {
     }
 }
 
+static void finish_resurrection_refill(PLW* wk) {
+    wk->wu.vital_new = wk->wu.vitality;
+    wk->wu.mvxy.d[1].sp = -0x8000;
+    wk->wu.direction = 0;
+    wk->wu.routine_no[3]++;
+
+    if (wk->wu.vital_new < 0) {
+        wk->wu.vital_new = 0;
+    }
+
+    char_move_cmja(&wk->wu);
+}
+
+static void launch_resurrection(PLW* wk) {
+    wk->wu.routine_no[3]++;
+    wk->wu.direction = 0;
+    reset_mvxy_data(&wk->wu);
+    set_char_move_init(&wk->wu, 5, wk->as->char_ix);
+    round_slow_flag = false;
+    wk->resurrection_resv = 0;
+}
+
 void Att_RESURRECTION(PLW* wk) {
     wk->scr_pos_set_flag = 0;
 
     switch (wk->wu.routine_no[3]) {
     case 0:
-        wk->wu.routine_no[3]++;
-        wk->wu.direction = 0;
-        reset_mvxy_data(&wk->wu);
-        set_char_move_init(&wk->wu, 5, wk->as->char_ix);
-        round_slow_flag = false;
-        wk->resurrection_resv = 0;
+        launch_resurrection(wk);
         break;
 
     case 1:
@@ -108,16 +128,7 @@ void Att_RESURRECTION(PLW* wk) {
         wk->wu.vital_new += wk->wu.direction;
 
         if (wk->wu.vital_new >= wk->wu.vitality) {
-            wk->wu.vital_new = wk->wu.vitality;
-            wk->wu.mvxy.d[1].sp = -0x8000;
-            wk->wu.direction = 0;
-            wk->wu.routine_no[3]++;
-
-            if (wk->wu.vital_new < 0) {
-                wk->wu.vital_new = 0;
-            }
-
-            char_move_cmja(&wk->wu);
+            finish_resurrection_refill(wk);
         }
 
         break;
@@ -143,6 +154,27 @@ s16 get_life_add_point(u8 num, s16 ori_add) {
     return add_pts;
 }
 
+static void score_tokushu_personal_action(PLW* wk) {
+    wk->wu.routine_no[3]++;
+    wk->tk_dageki += 16;
+    wk->tk_nage += 8;
+    wk->tk_kizetsu += 2;
+
+    if (wk->tk_dageki > 16) {
+        wk->tk_dageki = 16;
+    }
+
+    if (wk->tk_nage > 8) {
+        wk->tk_nage = 8;
+    }
+
+    if (wk->tk_kizetsu > 2) {
+        wk->tk_kizetsu = 2;
+    }
+
+    grade_add_personal_action(wk->wu.id);
+}
+
 void Att_PL00_TOKUSHUKOUDOU(PLW* wk) {
     wk->scr_pos_set_flag = 0;
 
@@ -163,24 +195,7 @@ void Att_PL00_TOKUSHUKOUDOU(PLW* wk) {
         }
 
         if (wk->wu.cg_type == 64) {
-            wk->wu.routine_no[3]++;
-            wk->tk_dageki += 16;
-            wk->tk_nage += 8;
-            wk->tk_kizetsu += 2;
-
-            if (wk->tk_dageki > 16) {
-                wk->tk_dageki = 16;
-            }
-
-            if (wk->tk_nage > 8) {
-                wk->tk_nage = 8;
-            }
-
-            if (wk->tk_kizetsu > 2) {
-                wk->tk_kizetsu = 2;
-            }
-
-            grade_add_personal_action(wk->wu.id);
+            score_tokushu_personal_action(wk);
         }
 
         break;
@@ -191,39 +206,17 @@ void Att_PL00_TOKUSHUKOUDOU(PLW* wk) {
     }
 }
 
-void Att_JYOUKA(PLW* wk) {
+static void launch_jyouka(PLW* wk) {
     s16 x1;
     s16 y1;
 
-    wk->wu.swallow_no_effect = 1;
-
-    switch (wk->wu.routine_no[3]) {
-    case 0:
-        if (Bonus_Game_Flag == 20) {
-            wk->wu.routine_no[3] = 10;
-            wk->wu.rl_flag = wk->wu.rl_waza;
-            set_char_move_init(&wk->wu, 5, wk->as->char_ix);
-            x1 = bg_w.bgw[1].wxy[0].disp.pos;
-            y1 = 80;
-            cal_all_speed_data(&wk->wu, &(Motion_Target) { 20, x1, y1, 1, 2 });
-
-            if (wk->wu.rl_flag == 0) {
-                wk->wu.mvxy.a[0].sp = -wk->wu.mvxy.a[0].sp;
-                wk->wu.mvxy.d[0].sp = -wk->wu.mvxy.d[0].sp;
-            }
-
-            effect_I3_init(&wk->wu, 3);
-            wk->sfwing_pos = 88;
-            Bg_Y_Sitei(1, wk->sfwing_pos);
-            break;
-        }
-
-        wk->wu.routine_no[3]++;
+    if (Bonus_Game_Flag == 20) {
+        wk->wu.routine_no[3] = 10;
         wk->wu.rl_flag = wk->wu.rl_waza;
-        set_char_move_init(&wk->wu, 5, (wk->as->char_ix));
+        set_char_move_init(&wk->wu, 5, wk->as->char_ix);
         x1 = bg_w.bgw[1].wxy[0].disp.pos;
-        y1 = 40;
-        cal_all_speed_data(&wk->wu, &(Motion_Target) { 20, x1, y1, 1, 1 });
+        y1 = 80;
+        cal_all_speed_data(&wk->wu, &(Motion_Target) { 20, x1, y1, 1, 2 });
 
         if (wk->wu.rl_flag == 0) {
             wk->wu.mvxy.a[0].sp = -wk->wu.mvxy.a[0].sp;
@@ -231,57 +224,51 @@ void Att_JYOUKA(PLW* wk) {
         }
 
         effect_I3_init(&wk->wu, 3);
+        wk->sfwing_pos = 88;
+        Bg_Y_Sitei(1, wk->sfwing_pos);
+        return;
+    }
 
-        break;
+    wk->wu.routine_no[3]++;
+    wk->wu.rl_flag = wk->wu.rl_waza;
+    set_char_move_init(&wk->wu, 5, (wk->as->char_ix));
+    x1 = bg_w.bgw[1].wxy[0].disp.pos;
+    y1 = 40;
+    cal_all_speed_data(&wk->wu, &(Motion_Target) { 20, x1, y1, 1, 1 });
 
-    case 1:
-    case 10:
-        if ((setup_kuzureochi(wk) == 0) && (char_move(&wk->wu), wk->wu.cg_type == 20)) {
-            wk->wu.routine_no[3]++;
-            wk->wu.cg_type = 0;
-        }
+    if (wk->wu.rl_flag == 0) {
+        wk->wu.mvxy.a[0].sp = -wk->wu.mvxy.a[0].sp;
+        wk->wu.mvxy.d[0].sp = -wk->wu.mvxy.d[0].sp;
+    }
 
-        break;
+    effect_I3_init(&wk->wu, 3);
+}
 
-    case 2:
-        if (wk->resurrection_resv) {
-            set_char_move_init2(&wk->wu, 5, 60, 8, 1);
-            reset_mvxy_data(&wk->wu);
-            wk->wu.routine_no[3] = 3;
-            break;
-        }
-        char_move(&wk->wu);
-        add_mvxy_speed(&wk->wu);
-        cal_mvxy_speed(&wk->wu);
+static bool jyouka_collapse_finished(PLW* wk) {
+    return (setup_kuzureochi(wk) == 0) && (char_move(&wk->wu), wk->wu.cg_type == 20);
+}
 
-        if (wk->wu.cg_type == 30) {
-            wk->wu.routine_no[3]++;
-            wk->wu.cg_type = 0;
-            reset_mvxy_data(&wk->wu);
-        }
+static void advance_jyouka_rise(PLW* wk) {
+    if (wk->resurrection_resv) {
+        set_char_move_init2(&wk->wu, 5, 60, 8, 1);
+        reset_mvxy_data(&wk->wu);
+        wk->wu.routine_no[3] = 3;
+        return;
+    }
+    char_move(&wk->wu);
+    add_mvxy_speed(&wk->wu);
+    cal_mvxy_speed(&wk->wu);
 
-        break;
+    if (wk->wu.cg_type == 30) {
+        wk->wu.routine_no[3]++;
+        wk->wu.cg_type = 0;
+        reset_mvxy_data(&wk->wu);
+    }
+}
 
-    case 3:
-        char_move(&wk->wu);
-
-        if (wk->wu.cg_type == 20) {
-            wk->wu.routine_no[3]++;
-            wk->wu.cg_type = 0;
-            wk->wu.mvxy.d[1].sp = 0xFFFFA000;
-            add_mvxy_speed(&wk->wu);
-        }
-
-        break;
-
-    case 4:
-        jumping_union_process(&wk->wu, 5);
-        break;
-
-    case 5:
-        char_move(&wk->wu);
-        break;
-
+/* The bonus-game descent. The case labels are the original ones. */
+static void advance_jyouka_bonus_descent(PLW* wk) {
+    switch (wk->wu.routine_no[3]) {
     case 11:
         wk->sfwing_pos += 2;
         char_move(&wk->wu);
@@ -307,6 +294,62 @@ void Att_JYOUKA(PLW* wk) {
             add_mvxy_speed(&wk->wu);
         }
 
+        break;
+    }
+}
+
+/* Everything from the descent onwards. The case labels are the original ones. */
+static void advance_jyouka_descent(PLW* wk) {
+    switch (wk->wu.routine_no[3]) {
+    case 3:
+        char_move(&wk->wu);
+
+        if (wk->wu.cg_type == 20) {
+            wk->wu.routine_no[3]++;
+            wk->wu.cg_type = 0;
+            wk->wu.mvxy.d[1].sp = 0xFFFFA000;
+            add_mvxy_speed(&wk->wu);
+        }
+
+        break;
+
+    case 4:
+        jumping_union_process(&wk->wu, 5);
+        break;
+
+    case 5:
+        char_move(&wk->wu);
+        break;
+
+    default:
+        advance_jyouka_bonus_descent(wk);
+        break;
+    }
+}
+
+void Att_JYOUKA(PLW* wk) {
+    wk->wu.swallow_no_effect = 1;
+
+    switch (wk->wu.routine_no[3]) {
+    case 0:
+        launch_jyouka(wk);
+        break;
+
+    case 1:
+    case 10:
+        if (jyouka_collapse_finished(wk)) {
+            wk->wu.routine_no[3]++;
+            wk->wu.cg_type = 0;
+        }
+
+        break;
+
+    case 2:
+        advance_jyouka_rise(wk);
+        break;
+
+    default:
+        advance_jyouka_descent(wk);
         break;
     }
 }

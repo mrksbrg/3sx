@@ -117,6 +117,12 @@ static void initialize_eff09_23000(WORK_Other* ewk) {
     set_char_move_init(&ewk->wu, 0, ewk->wu.char_index);
 }
 
+static void advance_eff09_23000_parent_animation(WORK_Other* ewk, const WORK* oya_ptr) {
+    if (eff09_23000_parent_animation_started(oya_ptr)) {
+        ewk->wu.routine_no[1]++;
+    }
+}
+
 static void advance_eff09_23000_launch(WORK_Other* ewk) {
     if (eff09_endgame_updates_enabled()) {
         char_move(&ewk->wu);
@@ -147,7 +153,14 @@ static void advance_eff09_23000_exit(WORK_Other* ewk) {
     }
 }
 
-void eff09_23000(WORK_Other* ewk) {
+typedef struct {
+    void (*initialize)(WORK_Other*);
+    void (*parent_animation)(WORK_Other*, const WORK*);
+    void (*launch)(WORK_Other*);
+    void (*exit)(WORK_Other*);
+} Eff09_Endgame_Phase;
+
+static void eff09_endgame_phase(WORK_Other* ewk, const Eff09_Endgame_Phase* phase) {
     WORK* oya_ptr;
 
     eff09_endgame_abort_on_test(ewk);
@@ -156,24 +169,21 @@ void eff09_23000(WORK_Other* ewk) {
 
     switch (ewk->wu.routine_no[1]) {
     case 0:
-        initialize_eff09_23000(ewk);
+        phase->initialize(ewk);
         break;
 
     case 1:
-        if (eff09_23000_parent_animation_started(oya_ptr)) {
-            ewk->wu.routine_no[1]++;
-        }
-
+        phase->parent_animation(ewk, oya_ptr);
         pl_eff_trans_entry(ewk);
         break;
 
     case 2:
-        advance_eff09_23000_launch(ewk);
+        phase->launch(ewk);
         pl_eff_trans_entry(ewk);
         break;
 
     case 3:
-        advance_eff09_23000_exit(ewk);
+        phase->exit(ewk);
         pl_eff_trans_entry(ewk);
         break;
 
@@ -181,6 +191,14 @@ void eff09_23000(WORK_Other* ewk) {
         push_effect_work(&ewk->wu);
         break;
     }
+}
+
+void eff09_23000(WORK_Other* ewk) {
+    eff09_endgame_phase(ewk,
+                        &(Eff09_Endgame_Phase) { initialize_eff09_23000,
+                                                 advance_eff09_23000_parent_animation,
+                                                 advance_eff09_23000_launch,
+                                                 advance_eff09_23000_exit });
 }
 
 static void initialize_eff09_24000(WORK_Other* ewk) {
@@ -244,36 +262,11 @@ static void advance_eff09_24000_exit(WORK_Other* ewk) {
 }
 
 void eff09_24000(WORK_Other* ewk) {
-    WORK* oya_ptr;
-
-    eff09_endgame_abort_on_test(ewk);
-
-    oya_ptr = (WORK*)ewk->my_master;
-
-    switch (ewk->wu.routine_no[1]) {
-    case 0:
-        initialize_eff09_24000(ewk);
-        return;
-
-    case 1:
-        advance_eff09_24000_parent_animation(ewk, oya_ptr);
-        pl_eff_trans_entry(ewk);
-        return;
-
-    case 2:
-        advance_eff09_24000_launch(ewk);
-        pl_eff_trans_entry(ewk);
-        return;
-
-    case 3:
-        advance_eff09_24000_exit(ewk);
-        pl_eff_trans_entry(ewk);
-        return;
-
-    default:
-        push_effect_work(&ewk->wu);
-        return;
-    }
+    eff09_endgame_phase(ewk,
+                        &(Eff09_Endgame_Phase) { initialize_eff09_24000,
+                                                 advance_eff09_24000_parent_animation,
+                                                 advance_eff09_24000_launch,
+                                                 advance_eff09_24000_exit });
 }
 
 static void initialize_eff09_25000(WORK_Other* ewk) {

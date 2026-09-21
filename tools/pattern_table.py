@@ -42,7 +42,8 @@ COM_SUB_H = REPO / "src/sf33rd/Source/Game/com/com_sub.h"
 
 SWITCH_HEAD = "switch (CP_Index[wk->wu.id][0])"
 RUN_INCLUDE = '#include "sf33rd/Source/Game/com/patterns/com_pattern_run.h"'
-PATTERNS_INCLUDE = '#include "sf33rd/Source/Game/com/patterns/com_patterns.h"' 
+PATTERNS_INCLUDE = '#include "sf33rd/Source/Game/com/patterns/com_patterns.h"'
+MENUS_INCLUDE = '#include "sf33rd/Source/Game/com/patterns/com_branch_menus.h"' 
 
 
 # --------------------------------------------------------------------------
@@ -281,6 +282,26 @@ def call_for(kind: str, callee: str, arg: str, params: list) -> str:
     return "%s(wk, %s);" % (callee, ", ".join("%s->%s" % (arg, n) for _, n in sig))
 
 
+BRANCH_MENUS = PATTERNS / "com_branch_menus.c"
+
+
+def named_constants():
+    """{name: the literal it replaced} for the shared branch menus.
+
+    A Recipe D pass gave the menus that more than one skeleton offers a name.
+    The inverse has to put the literal back, or a converted file stops
+    reproducing the switch source it was converted from and the round-trip
+    proof goes quiet for the wrong reason.
+    """
+    if not BRANCH_MENUS.is_file():
+        return {}
+    text = BRANCH_MENUS.read_text()
+    return {
+        m.group(2): "&(%s) { %s }" % (m.group(1), m.group(3).strip())
+        for m in re.finditer(r"const (\w+) (\w+) = \{([^}]*)\};", text)
+    }
+
+
 def invert_source(src: str) -> str:
     edits = []
     for start, end, name, params, body in split_functions(src):
@@ -314,6 +335,9 @@ def invert_source(src: str) -> str:
         out = out[:start] + text + out[end:]
     if edits:
         out = out.replace(RUN_INCLUDE + "\n", "", 1)
+        out = out.replace(MENUS_INCLUDE + "\n", "", 1)
+        for name, literal in named_constants().items():
+            out = out.replace("&" + name, literal)
     return out
 
 

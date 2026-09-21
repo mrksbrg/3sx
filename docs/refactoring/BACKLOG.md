@@ -17,22 +17,43 @@ for the allowed transformations.
 
 ## Where the whole repository stands
 
-| Band | Score | 2026-09-01 | 2026-09-19 | 2026-09-20 | 2026-09-21 |
-| --- | --- | --- | --- | --- | --- |
-| **Red** - severe debt | 1.0 - 3.9 | 19 | **0** | **0** | **0** |
-| **Yellow** - problematic debt | 4.0 - 8.9 | 207 | 93 | 28 | **2** |
-| Green | 9.0 - 9.9 | 158 | 91 | 79 | 61 |
-| Optimal | 10.0 | 98 | 475 | 553 | **598** |
-| Total scored | | 482 | 659 | 660 | 661 |
+| Band | Score | 2026-09-01 | 2026-09-19 | 2026-09-20 | 2026-09-21 am | 2026-09-21 pm |
+| --- | --- | --- | --- | --- | --- | --- |
+| **Red** - severe debt | 1.0 - 3.9 | 19 | **0** | **0** | **0** | **0** |
+| **Yellow** - problematic debt | 4.0 - 8.9 | 207 | 93 | 28 | 2 | **0** |
+| Green | 9.0 - 9.9 | 158 | 91 | 79 | 61 | 27 |
+| Optimal | 10.0 | 98 | 475 | 553 | 598 | **634** |
+| Total scored | | 482 | 659 | 660 | 661 | 661 |
 
 The file count rises because the campaign splits files. Mean Code Health across every
-scorable first-party file is **9.944**, against 8.52 over the same files at the start.
+scorable first-party file is **9.982**, against 8.52 over the same files at the start.
+**The yellow band is empty**: nothing scores below 9.0, and 634 of the 661 scored files are
+at 10.00.
 
-The 2026-09-21 column is the sweep taken after Recipe J went through the CPU script
+The 2026-09-21 pm column is the sweep taken after the green-band survey: sixty-one files
+diagnosed and probed in parallel, thirty-three lifted, and the last two yellow-band files
+- `com_patterns_5step.c` and `bg_zoom.c` - out of the band. The am column is the sweep taken
+after Recipe J went through the CPU script
 family: 44 files, 998 scripts, `Game/com` from a mean of 9.495 to 9.955 and 128 of its 134
 files at 10.00. Two files are left in the yellow band -
 `Game/com/patterns/com_patterns_5step.c` at 8.03 and `Game/stage/bg_zoom.c` at 8.81 - and
 the first of them is priced under *Where `Game/com/patterns` stopped* below.
+
+Two things to read carefully off that table. The 2026-09-20 column and the
+`codehealth-current.json` committed on that date **disagree by one file**: the JSON says
+yellow 29, green 80, optimal 551, the column says 28 / 79 / 553. Both sum to 660, so one
+of them was taken from a measurement that was not the committed sweep; which is not
+recoverable now. Against the JSON, twenty-seven files left the yellow band, twenty-six of
+them on this branch - eleven in `com/patterns`, ten in `com/passive`, five in `com/active` -
+and the twenty-seventh is `Game/opening/opening_bg0.c`, which reached 10.00 on
+`origin/main` before this branch existed and which that JSON had simply not been refreshed
+for.
+
+The bands count **scored** files. 144 first-party `.c` files are unscorable in both
+sweeps - `com_data.c`, `app_data.c`, the `ac00xx.c` dispatch tables and their kin, which
+hold data and no functions - so the comparison is like for like, but "two files in the
+yellow band" is a statement about the 661 that CodeScene scores, not about every file
+under `src/`.
 
 ## The Red band is empty
 
@@ -375,6 +396,72 @@ single function. The reading to carry forward is that a mean-probe number is onl
 argument about the mean - it says nothing about a finding it cannot move, and it should not
 be quoted as a reason to leave a file alone when the dominant finding is the other one.
 
+### The survey, and the two things it nearly shipped
+
+Sixty-one files were surveyed in parallel: each diagnosed, each proposed change **probed**
+against a scratch copy and scored rather than estimated, and every claimed win re-done
+independently by a second agent. Thirty-five wins were confirmed and thirty-three applied.
+Two were not, and both refusals are worth keeping.
+
+**`eff11.c` - a changed constant, caught by the guard.** The only probe that reached 10.00
+on this file had `ewk->wu.old_rno[5] = 28;` written as `= 29;`. Every literal-clean probe
+of the same file measured 8.57, below its own 9.13 baseline. The step that nearly shipped
+it was mine, not the surveyor's: I picked the best-*scoring* probe out of each directory,
+and the directories contain diagnostics as well as proposals. `refactor_guard.py` reported
+the both-ways FAIL - a value removed while another appeared - which is exactly the
+signature it exists to catch, and the only reason this is a footnote rather than a defect.
+**Select on legality first and on score second.** A score is a preference; the literal
+multiset is a precondition.
+
+**`charset.c` - a real lever, the wrong commit.** `set_char_move_init2` takes five
+parameters, so Recipe A's trigger is genuinely present and the parameter object measures
+9.68 -> 10.00. But the function has **157 call sites in 60 files**, and the probe was never
+compiled - the first variant of it did not build at all. A 157-site API change is its own
+commit series with its own measurement, not a one-file win taken on the back of a survey.
+Deferred rather than refused.
+
+**`com_patterns_6step.c` - refused on catalogue grounds, correctly.** A parameter object
+bundling two engine argument objects per skeleton reaches 10.00 and breaks no hard rule.
+The checker refused it anyway: Recipe A's trigger is *Excess Number of Function Arguments*
+and these functions take three and four, the finding being attacked is Code Duplication,
+and the playbook already priced the struct-per-skeleton form on `Game/com/active` and took
+a third of a point less rather than mint a grab-bag type per skeleton. That precedent
+holds. The file stays at 9.38.
+### `bg_zoom.c`: priced three ways, and it stays at 8.81
+
+The last file in the yellow band. Its two findings are *Overall Code Complexity* and
+*Code Duplication* over four functions - the horizontal and vertical zoom-request chains,
+which are the same shape on different bits.
+
+**Lifting the inner switches: 8.81 -> 8.28.** The file is factored inconsistently - the
+vertical chain holds its `0x0` case as `select_vertical_0_zoom_request` and the horizontal
+chain has the same case inline - so making the two symmetrical is a Recipe E with a reason
+of its own. Lifting all five inner switches measures **8.28**, and lifting only the one
+that removes the asymmetry measures **8.54**, with the duplication group growing from four
+functions to six. Every shortened dispatcher becomes another member of the clique it was
+supposed to leave. This re-derives the 8.54 -> 8.28 already in the table above, from a
+different baseline.
+
+**The mean alone: 9.38, and there is nothing legal to spend.** `mean_probe.py` says three
+more low-complexity functions close *Overall Code Complexity* and leave duplication x4.
+But the file has no third extraction to make: everything except `check_cg_zoom` is already
+one small function, and `check_cg_zoom`'s one cohesive block - the `bg_stop` negotiation
+that gives both fighters the higher zoom level and swaps their look bits - **writes two
+outer locals**, `p1zoom` and `p2zoom`. Recipe E's fourth condition says skip it and do not
+invent an out-parameter struct. So 9.38 is not reachable either.
+
+**Folding the two chains into one: not available, and not because of the case labels.**
+The obvious move is to parameterise the mask, the labels, the request function and the
+axis. It fails on something better than a rule: the two chains are *not the same function*.
+The horizontal `0x4000` arm does nothing and the vertical one requests zero; the horizontal
+`0x200` inner switch sends `0x4000` to P1's position and the vertical `0x100` sends it to
+zero; the vertical has an extra arm throughout. A parameterisation that encoded all of that
+would be longer than the two chains and correct only by construction, in a file whose five
+outputs - `scr_req_x`, `scr_req_y`, `zoom_request_flag`, `zoom_req_flag_old` and
+`zoom_request_level` - are all rollback-saved state (`platform/netplay/game_state.h:392`).
+
+Unlike the CPU scripts, this file *is* covered by replay verification, so a future attempt
+has real evidence available. It would need a recipe the catalogue does not have.
 ### `plpat00.c`: a measured refusal, and a hole in how the mean is priced
 
 `Game/engine/plpat00.c` scores **9.06** with *Bumpy Road Ahead* on two functions,

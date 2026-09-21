@@ -188,19 +188,19 @@ u32 flCreateTextureFromFile(const char* file, u32 flag) {
 
     tmp++;
 
-    if (extension_matches(tmp, &(FlExtension){ 'A', 'a', 'P', 'p', 'X', 'x' })) {
+    if (extension_matches(tmp, &(FlExtension) { 'A', 'a', 'P', 'p', 'X', 'x' })) {
         return flCreateTextureFromApx(file, flag);
     }
 
-    if (extension_matches(tmp, &(FlExtension){ 'T', 't', 'M', 'm', '2', '2' })) {
+    if (extension_matches(tmp, &(FlExtension) { 'T', 't', 'M', 'm', '2', '2' })) {
         return flCreateTextureFromTim2(file, flag);
     }
 
-    if (extension_matches(tmp, &(FlExtension){ 'B', 'b', 'M', 'm', 'P', 'p' })) {
+    if (extension_matches(tmp, &(FlExtension) { 'B', 'b', 'M', 'm', 'P', 'p' })) {
         return flCreateTextureFromBMP(file, flag);
     }
 
-    if (extension_matches(tmp, &(FlExtension){ 'P', 'p', 'I', 'i', 'C', 'c' })) {
+    if (extension_matches(tmp, &(FlExtension) { 'P', 'p', 'I', 'i', 'C', 'c' })) {
         return flCreateTextureFromPIC(file, flag);
     }
 
@@ -583,6 +583,41 @@ u32 flCreateTextureFromPIC(const char* pic_file, u32 flag) {
     return flCreateTextureFromPIC_mem(file_ptr, flag);
 }
 
+/* The run of repeated pixels both counted RGB runs write: `cx` copies of the
+ * three bytes at `lpsrc`, one destination pixel apart. Returns where the
+ * destination stopped, which is the one value the block carried out. */
+static u8* fill_pic_rgb_run(u8* lpdst, const u8* lpsrc, s32 cx, const plContext* context) {
+    while (cx-- != 0) {
+        lpdst[0] = lpsrc[0];
+        lpdst[1] = lpsrc[1];
+        lpdst[2] = lpsrc[2];
+        lpdst += context->bitdepth;
+    }
+
+    return lpdst;
+}
+
+/* The literal alpha run: `cx` distinct bytes, four apart. The source pointer
+ * crosses back through the caller's own pointer, as Lz77Dec's decoders do. */
+static u8* copy_pic_alpha_run(u8* lpdst, u8** lpsrc, s32 cx) {
+    while (cx-- != 0) {
+        *lpdst = *(*lpsrc)++;
+        lpdst += 4;
+    }
+
+    return lpdst;
+}
+
+/* The same run for the alpha plane: `cx` copies of one byte, four apart. */
+static u8* fill_pic_alpha_run(u8* lpdst, const u8* lpsrc, s32 cx) {
+    while (cx-- != 0) {
+        lpdst[0] = lpsrc[0];
+        lpdst += 4;
+    }
+
+    return lpdst;
+}
+
 /* One row of the PIC run-length stream, decoded into the destination it is
  * given. Each returns the source pointer where it stopped, which is the one
  * value the block carried back out of its braces. */
@@ -599,38 +634,28 @@ static u8* decode_pic_rgb_row(u8* lpdst, u8* lpsrc, const plContext* context) {
             cx = (lpsrc[0] << 8) | lpsrc[1];
             lpsrc += 2;
             x += cx;
-
-            while (cx-- != 0) {
-                lpdst[0] = lpsrc[0];
-                lpdst[1] = lpsrc[1];
-                lpdst[2] = lpsrc[2];
-                lpdst += context->bitdepth;
-            }
-
+            lpdst = fill_pic_rgb_run(lpdst, lpsrc, cx, context);
             lpsrc += 3;
-        } else if (ax > 0x80) {
+            continue;
+        }
+
+        if (ax > 0x80) {
             cx = ax - 0x7F;
             x += cx;
-
-            while (cx-- != 0) {
-                lpdst[0] = lpsrc[0];
-                lpdst[1] = lpsrc[1];
-                lpdst[2] = lpsrc[2];
-                lpdst += context->bitdepth;
-            }
-
+            lpdst = fill_pic_rgb_run(lpdst, lpsrc, cx, context);
             lpsrc += 3;
-        } else {
-            cx = ax + 1;
-            x += cx;
+            continue;
+        }
 
-            while (cx-- != 0) {
-                lpdst[0] = lpsrc[0];
-                lpdst[1] = lpsrc[1];
-                lpdst[2] = lpsrc[2];
-                lpdst += context->bitdepth;
-                lpsrc += 3;
-            }
+        cx = ax + 1;
+        x += cx;
+
+        while (cx-- != 0) {
+            lpdst[0] = lpsrc[0];
+            lpdst[1] = lpsrc[1];
+            lpdst[2] = lpsrc[2];
+            lpdst += context->bitdepth;
+            lpsrc += 3;
         }
     }
 
@@ -655,30 +680,21 @@ static u8* decode_pic_alpha_row(u8* lpdst, u8* lpsrc, const plContext* context) 
             lpsrc += 2;
             x += cx;
 
-            while (cx-- != 0) {
-                lpdst[0] = lpsrc[0];
-                lpdst += 4;
-            }
+            lpdst = fill_pic_alpha_run(lpdst, lpsrc, cx);
 
             lpsrc += 1;
         } else if (ax > 0x80) {
             cx = ax - 0x7F;
             x += cx;
 
-            while (cx-- != 0) {
-                lpdst[0] = lpsrc[0];
-                lpdst += 4;
-            }
+            lpdst = fill_pic_alpha_run(lpdst, lpsrc, cx);
 
             lpsrc += 1;
         } else {
             cx = ax + 1;
             x += cx;
 
-            while (cx-- != 0) {
-                *lpdst = *lpsrc++;
-                lpdst += 4;
-            }
+            lpdst = copy_pic_alpha_run(lpdst, &lpsrc, cx);
         }
     }
 

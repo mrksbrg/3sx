@@ -110,8 +110,7 @@ static void renderer_sprite_op(const Sprite* sprite, Uint32 color, void (*op)(co
     op(sprite, color);
 }
 #elif CRS_VIDEO_DRIVER_PSP
-static void renderer_sprite_op(const Sprite* sprite, unsigned int color,
-                               void (*op)(const Sprite*, unsigned int)) {
+static void renderer_sprite_op(const Sprite* sprite, unsigned int color, void (*op)(const Sprite*, unsigned int)) {
     op(sprite, color);
 }
 #endif
@@ -144,13 +143,19 @@ void Renderer_DrawSprite2(const Sprite2* sprite2) {
 #endif
 }
 
-void Renderer_DrawSolidQuad(const Quad* quad, unsigned int color) {
 #if CRS_VIDEO_DRIVER_SDL_GENERIC
+static void draw_solid_quad_unless_skipped(const Quad* quad, unsigned int color) {
     if (skip_rendering()) {
         return;
     }
 
     SDLGenericRenderer_DrawSolidQuad(quad, color);
+}
+#endif
+
+void Renderer_DrawSolidQuad(const Quad* quad, unsigned int color) {
+#if CRS_VIDEO_DRIVER_SDL_GENERIC
+    draw_solid_quad_unless_skipped(quad, color);
 #elif CRS_VIDEO_DRIVER_PSP
     PSPRenderer_DrawSolidQuad(quad, color);
 #endif

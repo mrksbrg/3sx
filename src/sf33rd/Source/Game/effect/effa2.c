@@ -62,10 +62,85 @@ static s32 effect_A2_colour_bars(WORK_Other* ewk) {
     return 1;
 }
 
-void effect_A2_move(WORK_Other* ewk) {
+/* The pause-gated end timer at the head of the mover. */
+static void tick_hnc_end_timer(void) {
     if (!(Game_pause & 0x80)) {
         hnc_end_timer++;
     }
+}
+
+/* The colour-table walk that runs after the switch. */
+static void advance_hnc_colour(void) {
+    if (!(Game_pause & 0x80)) {
+        if (hnc_timer > 1) {
+            hnc_timer--;
+        } else {
+            hnc_col = *hnc_pointer++;
+            hnc_timer = *hnc_pointer++;
+        }
+    }
+}
+
+/* The bars held at the last colour until the end timer runs out. Returns 0
+ * where the arm returned, 1 where it broke out of the switch. */
+static s32 effect_A2_hold_bars(WORK_Other* ewk) {
+    if (Game_pause & 0x80) {
+        hnc_set(ewk->wu.direction, hnc_col);
+        return 0;
+    }
+
+    if (hnc_end_timer > 142) {
+        ewk->wu.routine_no[0]++;
+    }
+
+    hnc_set(ewk->wu.direction, hnc_col);
+    return 1;
+}
+
+/* The wipe's first frame. Returns 0 where the arm returned, 1 where it fell
+ * through to the wipe itself. */
+static s32 effect_A2_begin_wipe(WORK_Other* ewk) {
+    if (Game_pause & 0x80) {
+        hnc_wipeinit(hnc_col);
+        return 0;
+    }
+
+    hnc_wipeinit(hnc_col);
+    ewk->wu.routine_no[0]++;
+    return 1;
+}
+
+/* The hold and the wipe: everything from state 3 onwards, reached from the
+ * mover's default. The case labels are the original ones, and the fallthrough
+ * from 4 into 5 travels with them. Returns 0 where the mover returned. */
+static s32 effect_A2_wipe_states(WORK_Other* ewk) {
+    switch (ewk->wu.routine_no[0]) {
+    case 3:
+        if (!effect_A2_hold_bars(ewk)) {
+            return 0;
+        }
+
+        break;
+
+    case 4:
+        if (!effect_A2_begin_wipe(ewk)) {
+            return 0;
+        }
+
+        /* fallthrough */
+
+    case 5:
+    default:
+        if (hnc_wipeout(hnc_col)) {
+            push_effect_work(&ewk->wu);
+        }
+    }
+
+    return 1;
+}
+
+void effect_A2_move(WORK_Other* ewk) {
+    tick_hnc_end_timer();
 
     switch (ewk->wu.routine_no[0]) {
     case 0:
@@ -83,44 +158,15 @@ void effect_A2_move(WORK_Other* ewk) {
 
         break;
 
-    case 3:
-        if (Game_pause & 0x80) {
-            hnc_set(ewk->wu.direction, hnc_col);
-            return;
-        }
-
-        if (hnc_end_timer > 142) {
-            ewk->wu.routine_no[0]++;
-        }
-
-        hnc_set(ewk->wu.direction, hnc_col);
-        break;
-
-    case 4:
-        if (Game_pause & 0x80) {
-            hnc_wipeinit(hnc_col);
-            return;
-        }
-
-        hnc_wipeinit(hnc_col);
-        ewk->wu.routine_no[0]++;
-        /* fallthrough */
-
-    case 5:
     default:
-        if (hnc_wipeout(hnc_col)) {
-            push_effect_work(&ewk->wu);
+        if (!effect_A2_wipe_states(ewk)) {
+            return;
         }
+
+        break;
     }
 
-    if (!(Game_pause & 0x80)) {
-        if (hnc_timer > 1) {
-            hnc_timer--;
-        } else {
-            hnc_col = *hnc_pointer++;
-            hnc_timer = *hnc_pointer++;
-        }
-    }
+    advance_hnc_colour();
 }
 
 s32 effect_A2_init() {

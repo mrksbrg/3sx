@@ -25,60 +25,57 @@ s32 plTIM2GetMipmapTextureNum(void* lpbas) {
 }
 
 /* The pixel-format layouts the two context setters share, each exactly the
- * run of assignments that stood at both of its call sites. */
+ * run of assignments that stood at both of its call sites. The three direct
+ * layouts are one skeleton - the same fourteen assignments in the same order -
+ * so each one's own fourteen values are written out positionally at its own
+ * call site and nothing else moves. */
+typedef struct {
+    s32 rl;
+    s32 rs;
+    s32 rm;
+    s32 gl;
+    s32 gs;
+    s32 gm;
+    s32 bl;
+    s32 bs;
+    s32 bm;
+    s32 al;
+    s32 as;
+    s32 am;
+    s32 rs_again;
+    s32 bs_again;
+} Tim2Layout;
+
+static void set_tim2_pixelformat(plContext* dst, const Tim2Layout* f) {
+    dst->pixelformat.rl = f->rl;
+    dst->pixelformat.rs = f->rs;
+    dst->pixelformat.rm = f->rm;
+    dst->pixelformat.gl = f->gl;
+    dst->pixelformat.gs = f->gs;
+    dst->pixelformat.gm = f->gm;
+    dst->pixelformat.bl = f->bl;
+    dst->pixelformat.bs = f->bs;
+    dst->pixelformat.bm = f->bm;
+    dst->pixelformat.al = f->al;
+    dst->pixelformat.as = f->as;
+    dst->pixelformat.am = f->am;
+    dst->pixelformat.rs = f->rs_again;
+    dst->pixelformat.bs = f->bs_again;
+}
 
 /* the 16-bit RGBA5551 layout */
 static void set_tim2_pixelformat_16bit(plContext* dst) {
-    dst->pixelformat.rl = 5;
-    dst->pixelformat.rs = 0xA;
-    dst->pixelformat.rm = 0x1F;
-    dst->pixelformat.gl = 5;
-    dst->pixelformat.gs = 5;
-    dst->pixelformat.gm = 0x1F;
-    dst->pixelformat.bl = 5;
-    dst->pixelformat.bs = 0;
-    dst->pixelformat.bm = 0x1F;
-    dst->pixelformat.al = 1;
-    dst->pixelformat.as = 0xF;
-    dst->pixelformat.am = 1;
-    dst->pixelformat.rs = 0;
-    dst->pixelformat.bs = 0xA;
+    set_tim2_pixelformat(dst, &(Tim2Layout) { 5, 0xA, 0x1F, 5, 5, 0x1F, 5, 0, 0x1F, 1, 0xF, 1, 0, 0xA });
 }
 
 /* the 24-bit RGB888 layout */
 static void set_tim2_pixelformat_24bit(plContext* dst) {
-    dst->pixelformat.rl = 8;
-    dst->pixelformat.rs = 0x10;
-    dst->pixelformat.rm = 0xFF;
-    dst->pixelformat.gl = 8;
-    dst->pixelformat.gs = 8;
-    dst->pixelformat.gm = 0xFF;
-    dst->pixelformat.bl = 8;
-    dst->pixelformat.bs = 0;
-    dst->pixelformat.bm = 0xFF;
-    dst->pixelformat.al = 0;
-    dst->pixelformat.as = 0;
-    dst->pixelformat.am = 0;
-    dst->pixelformat.rs = 0;
-    dst->pixelformat.bs = 0x10;
+    set_tim2_pixelformat(dst, &(Tim2Layout) { 8, 0x10, 0xFF, 8, 8, 0xFF, 8, 0, 0xFF, 0, 0, 0, 0, 0x10 });
 }
 
 /* the 32-bit RGBA8888 layout */
 static void set_tim2_pixelformat_32bit(plContext* dst) {
-    dst->pixelformat.rl = 8;
-    dst->pixelformat.rs = 0x10;
-    dst->pixelformat.rm = 0xFF;
-    dst->pixelformat.gl = 8;
-    dst->pixelformat.gs = 8;
-    dst->pixelformat.gm = 0xFF;
-    dst->pixelformat.bl = 8;
-    dst->pixelformat.bs = 0;
-    dst->pixelformat.bm = 0xFF;
-    dst->pixelformat.al = 8;
-    dst->pixelformat.as = 0x18;
-    dst->pixelformat.am = 0xFF;
-    dst->pixelformat.rs = 0;
-    dst->pixelformat.bs = 0x10;
+    set_tim2_pixelformat(dst, &(Tim2Layout) { 8, 0x10, 0xFF, 8, 8, 0xFF, 8, 0, 0xFF, 8, 0x18, 0xFF, 0, 0x10 });
 }
 
 /* every channel zeroed, for the two indexed formats */

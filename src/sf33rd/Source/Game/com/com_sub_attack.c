@@ -148,11 +148,9 @@ static s32 Normal_Attack_Begin(PLW* wk, s16 Reaction, u16 Lever_Data) {
     return 1;
 }
 
-/* Count the combo delay down, and press the attack once it runs out. */
-static void Normal_Attack_Wind_Up(PLW* wk, u16 Lever_Data) {
-    if (Check_Passive(wk) != 0) {
-        return;
-    }
+/* Tick the combo delay, and on the frame it reaches zero step the state on and
+ * press the attack. */
+static void Count_Combo_Delay_Down(PLW* wk, u16 Lever_Data) {
     if (--Combo_Speed[wk->wu.id] == 0) {
         CP_Index[wk->wu.id][1]++;
         Lever_Buff[wk->wu.id] = Lever_Data;
@@ -160,6 +158,14 @@ static void Normal_Attack_Wind_Up(PLW* wk, u16 Lever_Data) {
     } else {
         Lever_Buff[wk->wu.id] |= Lever_LR[wk->wu.id];
     }
+}
+
+/* Count the combo delay down, and press the attack once it runs out. */
+static void Normal_Attack_Wind_Up(PLW* wk, u16 Lever_Data) {
+    if (Check_Passive(wk) != 0) {
+        return;
+    }
+    Count_Combo_Delay_Down(wk, Lever_Data);
 }
 
 void Normal_Attack(PLW* wk, s16 Reaction, u16 Lever_Data) {
@@ -425,6 +431,20 @@ static void Lever_Attack_SP_Wind_Up(PLW* wk, u16 Lever, u16 Lever_Data) {
     CP_Index[wk->wu.id][1]++;
 }
 
+/* The hold and the hand-over: everything from state 2 onwards. The case labels
+ * are the original ones, so the states still read as the same numbers. */
+static void step_lever_attack_sp_late(PLW* wk, const Lever_Attack_SP_Args* p) {
+    switch (CP_Index[wk->wu.id][1]) {
+    case 2:
+        Attack_SP_Hold(wk, p->Lever_Data);
+        break;
+
+    default:
+        Attack_Reaction_Exit(wk, p->Reaction);
+        break;
+    }
+}
+
 void Lever_Attack_SP(PLW* wk, const Lever_Attack_SP_Args* p) {
     switch (CP_Index[wk->wu.id][1]) {
     case 0:
@@ -437,12 +457,8 @@ void Lever_Attack_SP(PLW* wk, const Lever_Attack_SP_Args* p) {
         Lever_Attack_SP_Wind_Up(wk, p->Lever, p->Lever_Data);
         break;
 
-    case 2:
-        Attack_SP_Hold(wk, p->Lever_Data);
-        break;
-
     default:
-        Attack_Reaction_Exit(wk, p->Reaction);
+        step_lever_attack_sp_late(wk, p);
         break;
     }
 }

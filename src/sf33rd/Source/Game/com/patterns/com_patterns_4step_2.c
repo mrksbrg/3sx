@@ -12,6 +12,7 @@
 
 #include "common.h"
 #include "sf33rd/Source/Game/com/com_sub.h"
+#include "sf33rd/Source/Game/com/patterns/com_branch_menus.h"
 #include "sf33rd/Source/Game/com/patterns/com_pattern_run.h"
 #include "sf33rd/Source/Game/com/patterns/com_patterns.h"
 #include "sf33rd/Source/Game/engine/workuser.h"
@@ -33,12 +34,11 @@ void pattern_command_attack_approach_walk_em_term_2(PLW* wk, u16 lever) {
 }
 
 void pattern_command_attack_check_sa_command_attack_2(PLW* wk, const Command_Attack_Args* p) {
-    const Pattern_Step script[4] = {
-        [0] = STEP_WITH(Command_Attack, p),
-        [1] = STEP(Check_SA, 2, 0x34),
-        [2] = STEP(Command_Attack, 8, 0x1E, 8, -1),
-        [3] = STEP(Com_Random_Select, &(Branch_Menu_Args) { 2, 0x31, 0x31, 0x32, 0x33 }, 0)
-    };
+    const Pattern_Step script[4] = { [0] = STEP_WITH(Command_Attack, p),
+                                     [1] = STEP(Check_SA, 2, 0x34),
+                                     [2] = STEP(Command_Attack, 8, 0x1E, 8, -1),
+                                     [3] = STEP(
+                                         Com_Random_Select, &(Branch_Menu_Args) { 2, 0x31, 0x31, 0x32, 0x33 }, 0) };
     Run_Pattern(wk, script, 4);
 }
 
@@ -90,9 +90,8 @@ void pattern_hi_jump_attack_term_normal_attack_3(PLW* wk, const Hi_Jump_Term_Arg
     Run_Pattern(wk, script, 4);
 }
 
-void pattern_hi_jump_attack_term_normal_attack_command_attack(
-    PLW* wk, const Hi_Jump_Term_Args* a, const Command_Attack_Args* p
-) {
+void pattern_hi_jump_attack_term_normal_attack_command_attack(PLW* wk, const Hi_Jump_Term_Args* a,
+                                                              const Command_Attack_Args* p) {
     const Pattern_Step script[4] = { [0] = STEP_WITH(Hi_Jump_Attack_Term, a),
                                      [1] = STEP(Normal_Attack, 9, 0x10),
                                      [2] = STEP(Normal_Attack, 0xB, 0x20),
@@ -100,9 +99,8 @@ void pattern_hi_jump_attack_term_normal_attack_command_attack(
     Run_Pattern(wk, script, 4);
 }
 
-void pattern_hi_jump_attack_term_normal_attack_j_command_attack(
-    PLW* wk, const Hi_Jump_Term_Args* a, const Command_Attack_Args* p
-) {
+void pattern_hi_jump_attack_term_normal_attack_j_command_attack(PLW* wk, const Hi_Jump_Term_Args* a,
+                                                                const Command_Attack_Args* p) {
     const Pattern_Step script[4] = { [0] = STEP_WITH(Hi_Jump_Attack_Term, a),
                                      [1] = STEP(Normal_Attack, 9, 0x10),
                                      [2] = STEP(Normal_Attack, 8, 0x42),
@@ -134,9 +132,8 @@ void pattern_jump_attack_term_normal_attack_command_attack(PLW* wk, const Comman
     Run_Pattern(wk, script, 4);
 }
 
-void pattern_jump_attack_term_normal_attack_command_attack_3(
-    PLW* wk, s16 reaction, s16 reaction_b, const Command_Attack_Args* p
-) {
+void pattern_jump_attack_term_normal_attack_command_attack_3(PLW* wk, s16 reaction, s16 reaction_b,
+                                                             const Command_Attack_Args* p) {
     const Pattern_Step script[4] = { [0] = STEP(Jump_Attack_Term, -0x7FB0, -1, 8, 0x8400, 0, -0x7FA0, -1, 0x40),
                                      [1] = STEP(Normal_Attack, reaction, 0x10),
                                      [2] = STEP(Normal_Attack, reaction_b, 0x40),
@@ -144,9 +141,8 @@ void pattern_jump_attack_term_normal_attack_command_attack_3(
     Run_Pattern(wk, script, 4);
 }
 
-void pattern_jump_attack_term_normal_attack_command_attack_7(
-    PLW* wk, const Jump_Term_Args* a, const Command_Attack_Args* p
-) {
+void pattern_jump_attack_term_normal_attack_command_attack_7(PLW* wk, const Jump_Term_Args* a,
+                                                             const Command_Attack_Args* p) {
     const Pattern_Step script[4] = { [0] = STEP_WITH(Jump_Attack_Term, a),
                                      [1] = STEP(Normal_Attack, 9, 0x202),
                                      [2] = STEP_WITH(Command_Attack, p),
@@ -179,22 +175,19 @@ void pattern_lever_on_em_term_check_store_lever_2(PLW* wk, const Command_Attack_
 }
 
 void pattern_normal_attack_com_random_select_4(PLW* wk, s16 reaction, s16 reaction_b) {
-    const Pattern_Step script[4] = {
-        [0] = STEP(Normal_Attack, reaction, 0x10),
-        [1] = STEP(Normal_Attack, 8, 0x20),
-        [2] = STEP(Normal_Attack, reaction_b, 0x40),
-        [3] = STEP(Com_Random_Select, &(Branch_Menu_Args) { 6, 0x37, 0x37, 0x27, 0x27 }, 0)
-    };
+    const Pattern_Step script[4] = { [0] = STEP(Normal_Attack, reaction, 0x10),
+                                     [1] = STEP(Normal_Attack, 8, 0x20),
+                                     [2] = STEP(Normal_Attack, reaction_b, 0x40),
+                                     [3] = STEP(Com_Random_Select, &Branch_Menu_6_37_37_27_27, 0) };
     Run_Pattern(wk, script, 4);
 }
 
 void pattern_normal_attack_com_random_select_5(PLW* wk, u16 lever_data) {
-    const Pattern_Step script[4] = {
-        [0] = STEP(Normal_Attack, 9, lever_data),
-        [1] = STEP(Normal_Attack, 8, 0x102),
-        [2] = STEP(Normal_Attack, 8, 0x102),
-        [3] = STEP(Com_Random_Select, &(Branch_Menu_Args) { 6, 0xA5, 0xE9, 0xE7, 0xAD }, 4)
-    };
+    const Pattern_Step script[4] = { [0] = STEP(Normal_Attack, 9, lever_data),
+                                     [1] = STEP(Normal_Attack, 8, 0x102),
+                                     [2] = STEP(Normal_Attack, 8, 0x102),
+                                     [3] = STEP(
+                                         Com_Random_Select, &(Branch_Menu_Args) { 6, 0xA5, 0xE9, 0xE7, 0xAD }, 4) };
     Run_Pattern(wk, script, 4);
 }
 
@@ -230,9 +223,8 @@ void pattern_normal_attack_jump_attack_term_sa_term(PLW* wk, const SA_Term_Args*
     Run_Pattern(wk, script, 4);
 }
 
-void pattern_normal_attack_jump_attack_term_sa_term_2(
-    PLW* wk, s16 reaction, const SA_Term_Args* p, const Command_Attack_Args* p_b
-) {
+void pattern_normal_attack_jump_attack_term_sa_term_2(PLW* wk, s16 reaction, const SA_Term_Args* p,
+                                                      const Command_Attack_Args* p_b) {
     const Pattern_Step script[4] = { [0] = STEP(Normal_Attack, reaction, 0x100),
                                      [1] = STEP(Jump_Attack_Term, -0x7FA8, -0x7FC0, 0xB, 0x200, 0, -0x7FB0, -1, 0x40),
                                      [2] = STEP_WITH(SA_Term, p),
@@ -280,9 +272,8 @@ void pattern_pierce_on_command_attack_wait_3(PLW* wk, const Command_Attack_Args*
     Run_Pattern(wk, script, 4);
 }
 
-void pattern_pierce_on_em_term_j_command_attack(
-    PLW* wk, const EM_Term_Params* p, const Command_Attack_Args* p_b, const Command_Attack_Args* p_b_b
-) {
+void pattern_pierce_on_em_term_j_command_attack(PLW* wk, const EM_Term_Params* p, const Command_Attack_Args* p_b,
+                                                const Command_Attack_Args* p_b_b) {
     const Pattern_Step script[4] = { [0] = STEP_NOARG(Pierce_On),
                                      [1] = STEP_WITH(EM_Term, p),
                                      [2] = STEP_WITH(J_Command_Attack, p_b),

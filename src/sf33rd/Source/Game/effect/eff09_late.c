@@ -80,15 +80,7 @@ static void advance_eff09_17000(WORK_Other* ewk, const WORK* oya_ptr) {
     disp_pos_trans_entry_rs(ewk);
 }
 
-void eff09_17000(WORK_Other* ewk) {
-    WORK* oya_ptr;
-
-    if (obr_no_disp_check()) {
-        return;
-    }
-
-    oya_ptr = (WORK*)ewk->my_master;
-
+static void step_eff09_17000(WORK_Other* ewk, const WORK* oya_ptr) {
     switch (ewk->wu.routine_no[1]) {
     case 0:
         initialize_eff09_17000(ewk);
@@ -106,6 +98,17 @@ void eff09_17000(WORK_Other* ewk) {
         push_effect_work(&ewk->wu);
         break;
     }
+}
+
+void eff09_17000(WORK_Other* ewk) {
+    WORK* oya_ptr;
+
+    if (obr_no_disp_check()) {
+        return;
+    }
+
+    oya_ptr = (WORK*)ewk->my_master;
+    step_eff09_17000(ewk, oya_ptr);
 }
 
 static void initialize_eff09_18000(WORK_Other* ewk, const WORK* oya_ptr) {
@@ -127,9 +130,8 @@ static void initialize_eff09_18000(WORK_Other* ewk, const WORK* oya_ptr) {
     ewk->wu.xyz[1].disp.pos = base_y_pos + 160;
     ewk->wu.old_rno[0] = 35;
     ewk->wu.old_rno[1] = oya_ptr->xyz[1].disp.pos + 106 + base_y_pos;
-    cal_all_speed_data(
-        &ewk->wu, &(Motion_Target) { ewk->wu.old_rno[0], oya_ptr->xyz[0].disp.pos, ewk->wu.old_rno[1], 0, 0 }
-    );
+    cal_all_speed_data(&ewk->wu,
+                       &(Motion_Target) { ewk->wu.old_rno[0], oya_ptr->xyz[0].disp.pos, ewk->wu.old_rno[1], 0, 0 });
 }
 
 static void advance_eff09_18000(WORK_Other* ewk) {

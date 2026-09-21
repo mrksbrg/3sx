@@ -605,15 +605,15 @@ static void clear_flags_below(s16 self_ix, WazaFlagPeers peers) {
 static void clear_lower_priority_waza_flags() {
     switch (waza_type[cmd_id]) {
     case 3:
-        clear_flags_below(3, (WazaFlagPeers){ 4, 5, 6, 12 });
+        clear_flags_below(3, (WazaFlagPeers) { 4, 5, 6, 12 });
         break;
 
     case 4:
-        clear_flags_below(4, (WazaFlagPeers){ 3, 5, 6, 12 });
+        clear_flags_below(4, (WazaFlagPeers) { 3, 5, 6, 12 });
         break;
 
     case 5:
-        clear_flags_below(5, (WazaFlagPeers){ 3, 4, 6, 12 });
+        clear_flags_below(5, (WazaFlagPeers) { 3, 4, 6, 12 });
 
         if (waza_work[cmd_id][6].free3 > 0) {
             wcp[cmd_id].waza_flag[5] = 0;
@@ -622,7 +622,7 @@ static void clear_lower_priority_waza_flags() {
         break;
 
     case 6:
-        clear_flags_below(6, (WazaFlagPeers){ 3, 4, 5, 12 });
+        clear_flags_below(6, (WazaFlagPeers) { 3, 4, 5, 12 });
 
         if (waza_work[cmd_id][5].free3 > 0) {
             wcp[cmd_id].waza_flag[6] = 0;
@@ -631,7 +631,7 @@ static void clear_lower_priority_waza_flags() {
         break;
 
     case 12:
-        clear_flags_below(12, (WazaFlagPeers){ 3, 4, 5, 6 });
+        clear_flags_below(12, (WazaFlagPeers) { 3, 4, 5, 6 });
         break;
     }
 }
@@ -783,35 +783,32 @@ void check_11() { // 🟢
 static void clear_lower_priority_waza_flags_no_free3_check() {
     switch (waza_type[cmd_id]) {
     case 3:
-        clear_flags_below(3, (WazaFlagPeers){ 4, 5, 6, 12 });
+        clear_flags_below(3, (WazaFlagPeers) { 4, 5, 6, 12 });
         break;
 
     case 4:
-        clear_flags_below(4, (WazaFlagPeers){ 3, 5, 6, 12 });
+        clear_flags_below(4, (WazaFlagPeers) { 3, 5, 6, 12 });
         break;
 
     case 5:
-        clear_flags_below(5, (WazaFlagPeers){ 3, 4, 6, 12 });
+        clear_flags_below(5, (WazaFlagPeers) { 3, 4, 6, 12 });
         break;
 
     case 6:
-        clear_flags_below(6, (WazaFlagPeers){ 3, 4, 5, 12 });
+        clear_flags_below(6, (WazaFlagPeers) { 3, 4, 5, 12 });
         break;
 
     case 12:
-        clear_flags_below(12, (WazaFlagPeers){ 3, 4, 5, 6 });
+        clear_flags_below(12, (WazaFlagPeers) { 3, 4, 5, 6 });
         break;
     }
 }
 
-void check_12() { // 🟢
+/* Everything check_12 does once the neutral lever has been seen. The case
+ * labels are the original ones, reached through the caller's new `default`,
+ * and the `break` in the arm still ends a switch with nothing after it. */
+static void check_12_later() {
     switch (waza_ptr->shot_ok) {
-    case 0:
-        if (chk_pl->sw_lever == 0) {
-            waza_ptr->shot_ok++;
-        }
-        break;
-
     case 1:
         if (cmd_pl->wu.xyz[1].disp.pos > 0 && (chk_pl->now_lvbt & 0xF) != 0) {
             if (chk_pl->sw_lever == waza_ptr->w_lvr) {
@@ -831,6 +828,20 @@ void check_12() { // 🟢
 
     default:
         run_dash_release_states();
+        break;
+    }
+}
+
+void check_12() { // 🟢
+    switch (waza_ptr->shot_ok) {
+    case 0:
+        if (chk_pl->sw_lever == 0) {
+            waza_ptr->shot_ok++;
+        }
+        break;
+
+    default:
+        check_12_later();
         break;
     }
 }
@@ -946,9 +957,7 @@ void check_15() { // 🟢
         count_shot_when_lever_matches(sw_work);
     } else if (waza_ptr->w_lvr == 0) {
         count_shot_when_lever_matches(0);
-    } else if (
-        lever_changed_and_shot_counted()
-    ) {
+    } else if (lever_changed_and_shot_counted()) {
         if (*waza_ptr->w_ptr == 0x1C) {
             command_ok();
             return;
@@ -1007,19 +1016,25 @@ void check_16() { // 🟢
     }
 }
 
+/* The charged form: on a lever change that matches the wanted direction, the
+ * interval restarts. */
+static void restart_window_on_charged_lever_change(u16 sw_lever) {
+    if ((chk_pl->old_lvbt & 0xF) != (chk_pl->new_lvbt & 0xF)) {
+        sw_work = waza_ptr->w_lvr & 0xF;
+
+        if (sw_lever == sw_work) {
+            waza_ptr->w_int = waza_ptr->free1;
+            open_waza_window();
+        }
+    }
+}
+
 /* The three lever forms check_18 accepts - a charged lever matching its
  * direction on a change, a neutral lever, or a lever sharing a bit with the
  * wanted one - each of which restarts the window. */
 static void open_charged_lever_window(u16 sw_lever) {
     if (waza_ptr->w_lvr & 0x8000) {
-        if ((chk_pl->old_lvbt & 0xF) != (chk_pl->new_lvbt & 0xF)) {
-            sw_work = waza_ptr->w_lvr & 0xF;
-
-            if (sw_lever == sw_work) {
-                waza_ptr->w_int = waza_ptr->free1;
-                open_waza_window();
-            }
-        }
+        restart_window_on_charged_lever_change(sw_lever);
     } else if (waza_ptr->w_lvr == 0) {
         if (chk_pl->sw_lever == 0) {
             waza_ptr->w_int = waza_ptr->free1;
@@ -1050,17 +1065,23 @@ void check_18() { // 🟢
     open_charged_lever_window(sw_lever);
 }
 
+/* The charged form for check_19: the wanted direction held on a live lever
+ * opens the window and moves to the next command. */
+static void advance_on_charged_lever_held(u16 sw_lever) {
+    if (chk_pl->now_lvbt & 0xF) {
+        sw_work = waza_ptr->w_lvr & 0xF;
+        if (sw_lever == sw_work) {
+            open_waza_window();
+            check_next();
+        }
+    }
+}
+
 /* The same three lever forms for check_19, which opens the window and moves
  * to the next command rather than restarting the interval. */
 static void advance_on_lever_match(u16 sw_lever) {
     if (waza_ptr->w_lvr & 0x8000) {
-        if (chk_pl->now_lvbt & 0xF) {
-            sw_work = waza_ptr->w_lvr & 0xF;
-            if (sw_lever == sw_work) {
-                open_waza_window();
-                check_next();
-            }
-        }
+        advance_on_charged_lever_held(sw_lever);
     } else if (waza_ptr->w_lvr == 0) {
         if (chk_pl->sw_lever == 0) {
             open_waza_window();
@@ -1337,4 +1358,3 @@ void check_26() { // 🟢
         }
     }
 }
-

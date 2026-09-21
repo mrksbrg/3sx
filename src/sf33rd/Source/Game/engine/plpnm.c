@@ -710,16 +710,21 @@ static void begin_parry_state(PLW* wk, const s16* dadr) {
     }
 }
 
+/* The tail both launch arms share, character for character: the third column of
+ * the row decides whether the landing effect fires. */
+static void fire_launch_effect_when_row_asks(PLW* wk, const s16* row) {
+    if (row[2]) {
+        effect_G6_init(&wk->wu, wk->wu.weight_level);
+    }
+}
+
 /* Marker 1 launches the parry: step the state, apply the movement, and fire the
  * landing effect when the row asks for it. */
 static void parry_launch_on_marker_1(PLW* wk, const s16* dadr) {
     if (wk->wu.cg_type == 1) {
         wk->wu.routine_no[3]++;
         add_mvxy_speed(&wk->wu);
-
-        if (dadr[2]) {
-            effect_G6_init(&wk->wu, wk->wu.weight_level);
-        }
+        fire_launch_effect_when_row_asks(wk, dadr);
     }
 }
 
@@ -731,10 +736,7 @@ static void escape_launch_on_marker_1(PLW* wk, const s16* datix) {
         wk->wu.cg_type = 0;
         wk->wu.routine_no[3]++;
         add_mvxy_speed(&wk->wu);
-
-        if (datix[2]) {
-            effect_G6_init(&wk->wu, wk->wu.weight_level);
-        }
+        fire_launch_effect_when_row_asks(wk, datix);
     }
 }
 
@@ -761,9 +763,8 @@ static void begin_throw_escape_state(PLW* wk, const s16* datix) {
  * depth and hosei, the same fallthrough into case 2, the same jump and move
  * arms. Only the data table and the two actions the arms call differ, so they
  * come in as function pointers. */
-static void run_parry_like_state(
-    PLW* wk, const s16* data, void (*begin)(PLW*, const s16*), void (*launch_on_marker_1)(PLW*, const s16*)
-) {
+static void run_parry_like_state(PLW* wk, const s16* data, void (*begin)(PLW*, const s16*),
+                                 void (*launch_on_marker_1)(PLW*, const s16*)) {
     set_parry_depth_and_hosei(wk);
 
     switch (wk->wu.routine_no[3]) {
