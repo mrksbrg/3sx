@@ -118,6 +118,17 @@ void Eff93_SLIDE_R(WORK_Other* ewk) {
     }
 }
 
+static void slide_l_out_scroll(WORK_Other* ewk) {
+    bg_w.bgw[1].wxy[0].cal = bg_w.bgw[1].wxy[0].cal + bg_mvxy.a[0].sp;
+    bg_mvxy.a[0].sp += bg_mvxy.d[0].sp;
+
+    if (ewk->wu.hit_quake <= bg_w.bgw[1].wxy[0].disp.pos) {
+        bg_w.bgw[1].wxy[0].disp.pos = ewk->wu.hit_quake;
+        Face_Move = 0;
+        push_effect_work(&ewk->wu);
+    }
+}
+
 void Eff93_SLIDE_L_OUT(WORK_Other* ewk) {
     switch (ewk->wu.routine_no[1]) {
     case 0:
@@ -131,15 +142,7 @@ void Eff93_SLIDE_L_OUT(WORK_Other* ewk) {
         break;
 
     default:
-        bg_w.bgw[1].wxy[0].cal = bg_w.bgw[1].wxy[0].cal + bg_mvxy.a[0].sp;
-        bg_mvxy.a[0].sp += bg_mvxy.d[0].sp;
-
-        if (ewk->wu.hit_quake <= bg_w.bgw[1].wxy[0].disp.pos) {
-            bg_w.bgw[1].wxy[0].disp.pos = ewk->wu.hit_quake;
-            Face_Move = 0;
-            push_effect_work(&ewk->wu);
-        }
-
+        slide_l_out_scroll(ewk);
         break;
     }
 }
