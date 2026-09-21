@@ -17,18 +17,23 @@ for the allowed transformations.
 
 ## Where the whole repository stands
 
-| Band | Score | 2026-09-01 | 2026-09-19 | 2026-09-20 | 2026-09-21 |
-| --- | --- | --- | --- | --- | --- |
-| **Red** - severe debt | 1.0 - 3.9 | 19 | **0** | **0** | **0** |
-| **Yellow** - problematic debt | 4.0 - 8.9 | 207 | 93 | 28 | **2** |
-| Green | 9.0 - 9.9 | 158 | 91 | 79 | 61 |
-| Optimal | 10.0 | 98 | 475 | 553 | **598** |
-| Total scored | | 482 | 659 | 660 | 661 |
+| Band | Score | 2026-09-01 | 2026-09-19 | 2026-09-20 | 2026-09-21 am | 2026-09-21 pm |
+| --- | --- | --- | --- | --- | --- | --- |
+| **Red** - severe debt | 1.0 - 3.9 | 19 | **0** | **0** | **0** | **0** |
+| **Yellow** - problematic debt | 4.0 - 8.9 | 207 | 93 | 28 | 2 | **0** |
+| Green | 9.0 - 9.9 | 158 | 91 | 79 | 61 | 27 |
+| Optimal | 10.0 | 98 | 475 | 553 | 598 | **634** |
+| Total scored | | 482 | 659 | 660 | 661 | 661 |
 
 The file count rises because the campaign splits files. Mean Code Health across every
-scorable first-party file is **9.944**, against 8.52 over the same files at the start.
+scorable first-party file is **9.982**, against 8.52 over the same files at the start.
+**The yellow band is empty**: nothing scores below 9.0, and 634 of the 661 scored files are
+at 10.00.
 
-The 2026-09-21 column is the sweep taken after Recipe J went through the CPU script
+The 2026-09-21 pm column is the sweep taken after the green-band survey: sixty-one files
+diagnosed and probed in parallel, thirty-three lifted, and the last two yellow-band files
+- `com_patterns_5step.c` and `bg_zoom.c` - out of the band. The am column is the sweep taken
+after Recipe J went through the CPU script
 family: 44 files, 998 scripts, `Game/com` from a mean of 9.495 to 9.955 and 128 of its 134
 files at 10.00. Two files are left in the yellow band -
 `Game/com/patterns/com_patterns_5step.c` at 8.03 and `Game/stage/bg_zoom.c` at 8.81 - and
