@@ -405,6 +405,33 @@ small file from that model until someone establishes which.** The number to trus
 one `code_health_review` returns after the change, and on this file it says the extraction
 is not worth having.
 
+**`appear_late.c` refuses it a second way, and this one is understood.** The probe reads
+`9.38 -> 10.00 on 8 more low-complexity functions`, and the table above records "nothing;
+the mean is the only finding". Three extractions in - `Appear_33000`'s drop-in,
+`Appear_34000`'s random entry, and the fourth arm of `choose_appear_29000_entry` - the
+file measures **8.54**, with *Code Duplication* open on three groups that did not exist
+before:
+
+- `drop_appear_29000` against `start_appear_33000`: both are an entry arm that sets a
+  counter and calls `cal_initial_speed` at `pos_x_work` plus or minus 0x58. They were
+  never alike as *arms* of two different switches; lifting them out made them two
+  functions of the same shape.
+- `Appear_33000` against `step_appear_36000_settle` and `step_appear_29000_settle`:
+  shortening `Appear_33000` from 38 lines to 12 did not make it unlike anything - it made
+  it *like* the other short state machines in the file.
+
+That is the general shape of it. `mean_probe.py` prices one finding in isolation and its
+number is an **upper bound that assumes the functions you add are unlike each other and
+unlike what is already there**. In a file whose functions are the arms of a state machine,
+extracted arms are alike by construction, and shortening a function moves it into the size
+band where the duplication check compares it against its neighbours. Read the probe as
+"this many functions would close the mean *if nothing else opens*", and re-review after
+the third extraction rather than after the eighth.
+
+Both files reverted. Neither is a plateau in the catalogue's sense - a recipe that is
+legal and pays is still wanted - but Recipe E over their state-machine arms is priced and
+is not it.
+
 ### The other half of the lever: 59 files where duplication is all that is left
 
 Clearing Code Duplication on any of them means 10.00. Thirty-six are the machine-folded
