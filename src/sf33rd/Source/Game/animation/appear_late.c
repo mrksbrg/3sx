@@ -343,6 +343,15 @@ void Appear_28000(PLW* wk) {
     }
 }
 
+static void roll_appear_29000_effects(PLW* wk, s16 work) {
+    if (work & 1) {
+        effect_09_init2(&wk->wu, 0x19);
+    }
+    if (8 < work) {
+        effect_09_init2(&wk->wu, 0x1b);
+    }
+}
+
 static void start_appear_29000(PLW* wk) {
     s16 work;
 
@@ -357,14 +366,24 @@ static void start_appear_29000(PLW* wk) {
     set_char_move_init(&wk->wu, 9, 0);
     work = random_16();
 
-    if (work & 1) {
-        effect_09_init2(&wk->wu, 0x19);
-    }
-    if (8 < work) {
-        effect_09_init2(&wk->wu, 0x1b);
-    }
+    roll_appear_29000_effects(wk, work);
 
     animal_decide(wk);
+}
+
+static void drop_appear_29000(PLW* wk) {
+    wk->wu.routine_no[3] = 4;
+    set_char_move_init(&wk->wu, 9, 0xb);
+    wk->wu.mvxy.d[0].sp = 0;
+    wk->wu.mvxy.d[1].sp = 0xffff8000;
+    wk->wu.xyz[1].disp.pos = 0xb0;
+    app_counter[wk->wu.id] = 0x20;
+
+    if (wk->wu.id) {
+        cal_initial_speed(&wk->wu, app_counter[wk->wu.id], bg_w.bgw[1].pos_x_work + 0x58, 0);
+    } else {
+        cal_initial_speed(&wk->wu, app_counter[wk->wu.id], bg_w.bgw[1].pos_x_work - 0x58, 0);
+    }
 }
 
 static void choose_appear_29000_entry(PLW* wk) {
@@ -395,18 +414,7 @@ static void choose_appear_29000_entry(PLW* wk) {
         break;
 
     case 3:
-        wk->wu.routine_no[3] = 4;
-        set_char_move_init(&wk->wu, 9, 0xb);
-        wk->wu.mvxy.d[0].sp = 0;
-        wk->wu.mvxy.d[1].sp = 0xffff8000;
-        wk->wu.xyz[1].disp.pos = 0xb0;
-        app_counter[wk->wu.id] = 0x20;
-
-        if (wk->wu.id) {
-            cal_initial_speed(&wk->wu, app_counter[wk->wu.id], bg_w.bgw[1].pos_x_work + 0x58, 0);
-        } else {
-            cal_initial_speed(&wk->wu, app_counter[wk->wu.id], bg_w.bgw[1].pos_x_work - 0x58, 0);
-        }
+        drop_appear_29000(wk);
     }
 }
 
@@ -623,6 +631,20 @@ void Appear_33000(PLW* wk) {
     }
 }
 
+static void place_appear_34000(PLW* wk, s16 work) {
+    switch (work) {
+    case 0:
+    case 2:
+    case 6:
+    case 7:
+        if (wk->wu.id) {
+            wk->wu.xyz[0].disp.pos = bg_w.bgw[1].pos_x_work + 0x71;
+        } else {
+            wk->wu.xyz[0].disp.pos = bg_w.bgw[1].pos_x_work - 0x71;
+        }
+    }
+}
+
 void Appear_34000(PLW* wk) {
     s16 work;
 
@@ -635,17 +657,7 @@ void Appear_34000(PLW* wk) {
         work &= 7;
         set_char_move_init(&wk->wu, 9, work);
 
-        switch (work) {
-        case 0:
-        case 2:
-        case 6:
-        case 7:
-            if (wk->wu.id) {
-                wk->wu.xyz[0].disp.pos = bg_w.bgw[1].pos_x_work + 0x71;
-            } else {
-                wk->wu.xyz[0].disp.pos = bg_w.bgw[1].pos_x_work - 0x71;
-            }
-        }
+        place_appear_34000(wk, work);
         bg_app_stop = 1;
         break;
 
@@ -695,13 +707,11 @@ static void step_appear_36000_slide(PLW* wk, s16 id_w) {
             app_counter[wk->wu.id] = 0x16;
 
             if (wk->wu.id) {
-                cal_all_speed_data(
-                    &wk->wu, &(Motion_Target) { app_counter[wk->wu.id], bg_w.bgw[1].pos_x_work + 0x58, 0, 2, 0 }
-                );
+                cal_all_speed_data(&wk->wu,
+                                   &(Motion_Target) { app_counter[wk->wu.id], bg_w.bgw[1].pos_x_work + 0x58, 0, 2, 0 });
             } else {
-                cal_all_speed_data(
-                    &wk->wu, &(Motion_Target) { app_counter[wk->wu.id], bg_w.bgw[1].pos_x_work - 0x58, 0, 2, 0 }
-                );
+                cal_all_speed_data(&wk->wu,
+                                   &(Motion_Target) { app_counter[wk->wu.id], bg_w.bgw[1].pos_x_work - 0x58, 0, 2, 0 });
             }
         }
 
@@ -711,6 +721,17 @@ static void step_appear_36000_slide(PLW* wk, s16 id_w) {
     default:
         step_appear_36000_settle(wk);
         break;
+    }
+}
+
+static void await_appear_36000_cue(PLW* wk, s16 id_w) {
+    char_move(&wk->wu);
+
+    if (plw[id_w].wu.cmwk[0] == 3) {
+        wk->wu.routine_no[3]++;
+        set_char_move_init(&wk->wu, 9, 0x11);
+        app_counter[wk->wu.id] = 0x10;
+        wk->wu.next_z = plw[id_w].wu.my_priority;
     }
 }
 
@@ -726,14 +747,7 @@ void Appear_36000(PLW* wk) {
         break;
 
     case 1:
-        char_move(&wk->wu);
-
-        if (plw[id_w].wu.cmwk[0] == 3) {
-            wk->wu.routine_no[3]++;
-            set_char_move_init(&wk->wu, 9, 0x11);
-            app_counter[wk->wu.id] = 0x10;
-            wk->wu.next_z = plw[id_w].wu.my_priority;
-        }
+        await_appear_36000_cue(wk, id_w);
 
         break;
 
@@ -754,16 +768,35 @@ static void dismount_appear_37000(PLW* wk) {
     app_counter[wk->wu.id] = 0x2a;
 
     if (wk->wu.id) {
-        cal_all_speed_data(
-            &wk->wu, &(Motion_Target) { app_counter[wk->wu.id], bg_w.bgw[1].pos_x_work + 0x58, 0, 0, 0 }
-        );
+        cal_all_speed_data(&wk->wu,
+                           &(Motion_Target) { app_counter[wk->wu.id], bg_w.bgw[1].pos_x_work + 0x58, 0, 0, 0 });
     } else {
-        cal_all_speed_data(
-            &wk->wu, &(Motion_Target) { app_counter[wk->wu.id], bg_w.bgw[1].pos_x_work - 0x58, 0, 0, 0 }
-        );
+        cal_all_speed_data(&wk->wu,
+                           &(Motion_Target) { app_counter[wk->wu.id], bg_w.bgw[1].pos_x_work - 0x58, 0, 0, 0 });
     }
 
     wk->wu.next_z = wk->wu.my_priority;
+}
+
+static void step_appear_37000_release(PLW* wk, s16 id_w) {
+    char_move(&wk->wu);
+
+    if (wk->wu.cg_type == 0xFF) {
+        dismount_appear_37000(wk);
+    } else {
+        wk->wu.next_z = plw[id_w].wu.my_priority;
+    }
+}
+
+static void step_appear_37000_slide_off(PLW* wk) {
+    char_move(&wk->wu);
+    app_counter[wk->wu.id]--;
+
+    if (app_counter[wk->wu.id] < 1) {
+        mark_appear_finished(wk);
+    } else {
+        add_x_sub(&wk->wu);
+    }
 }
 
 static void step_appear_37000_ride(PLW* wk, s16 id_w) {
@@ -780,25 +813,12 @@ static void step_appear_37000_ride(PLW* wk, s16 id_w) {
         break;
 
     case 5:
-        char_move(&wk->wu);
-
-        if (wk->wu.cg_type == 0xFF) {
-            dismount_appear_37000(wk);
-        } else {
-            wk->wu.next_z = plw[id_w].wu.my_priority;
-        }
+        step_appear_37000_release(wk, id_w);
 
         break;
 
     case 6:
-        char_move(&wk->wu);
-        app_counter[wk->wu.id]--;
-
-        if (app_counter[wk->wu.id] < 1) {
-            mark_appear_finished(wk);
-        } else {
-            add_x_sub(&wk->wu);
-        }
+        step_appear_37000_slide_off(wk);
 
         break;
     }
@@ -885,6 +905,13 @@ void Appear_38000(PLW* wk) {
     }
 }
 
+static void prime_appear_39000_speed(PLW* wk) {
+    setup_mvxy_data(&wk->wu, 0);
+    wk->wu.mvxy.a[0].sp >>= 1;
+    add_mvxy_speed(&wk->wu);
+    wk->wu.mvxy.a[0].sp *= 2;
+}
+
 static void start_appear_39000(PLW* wk) {
     wk->wu.routine_no[3]++;
     wk->wu.disp_flag = 1;
@@ -902,10 +929,7 @@ static void start_appear_39000(PLW* wk) {
         wk->wu.xyz[0].disp.pos = bg_w.bgw[1].pos_x_work + 0x200;
     }
 
-    setup_mvxy_data(&wk->wu, 0);
-    wk->wu.mvxy.a[0].sp >>= 1;
-    add_mvxy_speed(&wk->wu);
-    wk->wu.mvxy.a[0].sp *= 2;
+    prime_appear_39000_speed(wk);
 }
 
 static void arrive_appear_39000(PLW* wk) {
@@ -970,6 +994,13 @@ void Appear_41000(PLW* wk) {
     }
 }
 
+static void start_gouki_appear(PLW* wk) {
+    wk->wu.routine_no[6]++;
+    set_char_move_init(&wk->wu, 1, 0x3C);
+    char_move_z(&wk->wu);
+    wk->wu.xyz[1].disp.pos = -6;
+}
+
 void gouki_appear(PLW* wk) {
     if (!wk->wu.cmwk[0]) {
         char_move(&wk->wu);
@@ -978,10 +1009,7 @@ void gouki_appear(PLW* wk) {
 
     switch (wk->wu.routine_no[6]) {
     case 0:
-        wk->wu.routine_no[6]++;
-        set_char_move_init(&wk->wu, 1, 0x3C);
-        char_move_z(&wk->wu);
-        wk->wu.xyz[1].disp.pos = -6;
+        start_gouki_appear(wk);
         break;
 
     case 1:
