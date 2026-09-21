@@ -17,18 +17,18 @@ for the allowed transformations.
 
 ## Where the whole repository stands
 
-| Band | Score | 2026-09-01 | 2026-09-19 | 2026-09-20 | 2026-09-21 am | 2026-09-21 pm |
-| --- | --- | --- | --- | --- | --- | --- |
-| **Red** - severe debt | 1.0 - 3.9 | 19 | **0** | **0** | **0** | **0** |
-| **Yellow** - problematic debt | 4.0 - 8.9 | 207 | 93 | 28 | 2 | **0** |
-| Green | 9.0 - 9.9 | 158 | 91 | 79 | 61 | 27 |
-| Optimal | 10.0 | 98 | 475 | 553 | 598 | **634** |
-| Total scored | | 482 | 659 | 660 | 661 | 661 |
+| Band | Score | 2026-09-01 | 2026-09-19 | 2026-09-20 | 09-21 am | 09-21 pm | 09-21 late |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| **Red** - severe debt | 1.0 - 3.9 | 19 | **0** | **0** | **0** | **0** | **0** |
+| **Yellow** - problematic debt | 4.0 - 8.9 | 207 | 93 | 28 | 2 | **0** | **0** |
+| Green | 9.0 - 9.9 | 158 | 91 | 79 | 61 | 27 | **11** |
+| Optimal | 10.0 | 98 | 475 | 553 | 598 | 634 | **650** |
+| Total scored | | 482 | 659 | 660 | 661 | 661 | 661 |
 
 The file count rises because the campaign splits files. Mean Code Health across every
-scorable first-party file is **9.982**, against 8.52 over the same files at the start.
-**The yellow band is empty**: nothing scores below 9.0, and 634 of the 661 scored files are
-at 10.00.
+scorable first-party file is **9.991**, against 8.52 over the same files at the start.
+**The yellow band is empty**: nothing scores below 9.0, and 650 of the 661 scored files are
+at 10.00. Eleven are left, and they are listed under *The eleven that are left* below.
 
 The 2026-09-21 pm column is the sweep taken after the green-band survey: sixty-one files
 diagnosed and probed in parallel, thirty-three lifted, and the last two yellow-band files
@@ -395,6 +395,28 @@ Recipe J removes both, because a table of steps is neither complex nor ten lines
 single function. The reading to carry forward is that a mean-probe number is only an
 argument about the mean - it says nothing about a finding it cannot move, and it should not
 be quoted as a reason to leave a file alone when the dominant finding is the other one.
+
+### The eleven that are left
+
+| File | Score | Why |
+| --- | --- | --- |
+| `Game/com/com_sub_command_term.c` | 9.09 | the surveyed change measures 9.09, no gain |
+| `Game/effect/eff11.c` | 9.13 | every legal probe measures **below** its own baseline; the only 10.00 probe changed a constant |
+| `platform/video/psp/psp_renderer.c` | 9.38 | claimed win failed its independent check |
+| `Game/com/patterns/com_patterns_6step.c` | 9.38 | three signatures over the column limit by 6-17 characters; the parameter object that fixes it is outside the catalogue |
+| `Game/effect/eff68.c` | 9.38 | claimed win failed its independent check |
+| `Game/stage/bg_zoom.c` | 9.38 | the mirrored dispatchers, re-priced five ways from the new baseline |
+| `platform/netplay/fistbump.c` | 9.68 | 18 function arguments, 13 of them `char*` - Primitive Obsession, which no recipe reaches |
+| `port/config/config.c` | 9.68 | no recipe in the catalogue reaches the finding |
+| `port/sdk/sdk_libpad2.c` | 9.68 | **a real Recipe A lever**, waiting on a call-site pass |
+| `Game/engine/charset.c` | 9.68 | **a real Recipe A lever**: `set_char_move_init2` takes five parameters, 157 call sites in 60 files |
+| `AcrSDK/ps2/ps2PAD.c` | 9.92 | measured refusal |
+
+Two of the eleven are not refusals. `charset.c` and `sdk_libpad2.c` both have a parameter
+object that measures 10.00 and both probes failed to compile for the same reason - the
+call sites were never updated. Those are API changes with their own blast radius and they
+want their own commit series, measured across every file they touch, not a one-file win
+taken off a survey probe.
 
 ### The survey, and the two things it nearly shipped
 
