@@ -35,7 +35,6 @@
 #include "sf33rd/Source/Game/ui/sc_sub.h"
 #include "sf33rd/Source/Game/opening/opening_internal.h"
 
-
 const s16 op_103_sound[12] = { 0, 1, 2, 3, 4, 5, 7, 8, 9, 11, 12, 13 };
 
 void advance_opening_step(s16 index) {
@@ -340,25 +339,10 @@ static bool op_113_sound_ready() {
     return (gSeqStatus[0] >= op_113_sound[op_w.r_no_2]) && (gSeqStatus[0] != 0x71);
 }
 
-void op_113_move() {
+/* Scene 113's tail, reached through the default arm of the head the way scene
+ * 112's and 114's are; the case labels are the original ones. */
+static void op_113_move_late() {
     switch (op_w.r_no_2) {
-    case 0:
-        op_w.r_no_2 += 1;
-        op_scrn_end = 0;
-        op_work_clear();
-        op_w.index = 79;
-        op_bg_move(79);
-        effect_F6_init(52);
-        effect_F6_init(53);
-        op_obj_disp = 0;
-        effect_48_init(20);
-        break;
-
-    case 1:
-        opening_cue_step_disp(op_113_sound_ready(), 80, 79, 1);
-
-        break;
-
     case 2:
         if (gSeqStatus[0] >= op_113_sound[op_w.r_no_2]) {
             op_w.r_no_2 += 1;
@@ -380,6 +364,31 @@ void op_113_move() {
 
     default:
         op_bg_move(82);
+        break;
+    }
+}
+
+void op_113_move() {
+    switch (op_w.r_no_2) {
+    case 0:
+        op_w.r_no_2 += 1;
+        op_scrn_end = 0;
+        op_work_clear();
+        op_w.index = 79;
+        op_bg_move(79);
+        effect_F6_init(52);
+        effect_F6_init(53);
+        op_obj_disp = 0;
+        effect_48_init(20);
+        break;
+
+    case 1:
+        opening_cue_step_disp(op_113_sound_ready(), 80, 79, 1);
+
+        break;
+
+    default:
+        op_113_move_late();
         break;
     }
 }
@@ -407,6 +416,30 @@ static void start_op_114_zoom_step(void) {
     op_bg_move(86);
 }
 
+/* Scene 114 runs six steps. Its tail is reached through the default arm of the
+ * head, the way scene 112's is; no case label is renumbered. */
+static void op_114_move_late() {
+    switch (op_w.r_no_2) {
+    case 3:
+        opening_cue_step_disp(gSeqStatus[0] >= op_114_sound[op_w.r_no_2], 86, 85, 1);
+
+        break;
+
+    case 4:
+        start_op_114_zoom_step();
+        break;
+
+    case 5:
+        opening_cue_step_disp(gSeqStatus[0] >= op_114_sound[op_w.r_no_2], 88, 87, 1);
+
+        break;
+
+    default:
+        op_bg_move(88);
+        break;
+    }
+}
+
 void op_114_move() {
     switch (op_w.r_no_2) {
     case 0:
@@ -427,22 +460,8 @@ void op_114_move() {
         opening_cue_step_effect(gSeqStatus[0] >= op_114_sound[op_w.r_no_2], 85, 84, 6);
         break;
 
-    case 3:
-        opening_cue_step_disp(gSeqStatus[0] >= op_114_sound[op_w.r_no_2], 86, 85, 1);
-
-        break;
-
-    case 4:
-        start_op_114_zoom_step();
-        break;
-
-    case 5:
-        opening_cue_step_disp(gSeqStatus[0] >= op_114_sound[op_w.r_no_2], 88, 87, 1);
-
-        break;
-
     default:
-        op_bg_move(88);
+        op_114_move_late();
         break;
     }
 }
