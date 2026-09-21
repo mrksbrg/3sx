@@ -34,6 +34,22 @@ files at 10.00. Two files are left in the yellow band -
 `Game/com/patterns/com_patterns_5step.c` at 8.03 and `Game/stage/bg_zoom.c` at 8.81 - and
 the first of them is priced under *Where `Game/com/patterns` stopped* below.
 
+Two things to read carefully off that table. The 2026-09-20 column and the
+`codehealth-current.json` committed on that date **disagree by one file**: the JSON says
+yellow 29, green 80, optimal 551, the column says 28 / 79 / 553. Both sum to 660, so one
+of them was taken from a measurement that was not the committed sweep; which is not
+recoverable now. Against the JSON, twenty-seven files left the yellow band, twenty-six of
+them on this branch - eleven in `com/patterns`, ten in `com/passive`, five in `com/active` -
+and the twenty-seventh is `Game/opening/opening_bg0.c`, which reached 10.00 on
+`origin/main` before this branch existed and which that JSON had simply not been refreshed
+for.
+
+The bands count **scored** files. 144 first-party `.c` files are unscorable in both
+sweeps - `com_data.c`, `app_data.c`, the `ac00xx.c` dispatch tables and their kin, which
+hold data and no functions - so the comparison is like for like, but "two files in the
+yellow band" is a statement about the 661 that CodeScene scores, not about every file
+under `src/`.
+
 ## The Red band is empty
 
 As of 2026-09-19 **no first-party file scores below 4.0**. The last two out were
