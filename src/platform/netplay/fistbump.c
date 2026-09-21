@@ -296,35 +296,57 @@ void Fistbump_DeclineMatch() {
     NET_WriteToStreamSocket(tcp_sock, buf, SDL_strlen(buf));
 }
 
-void Fistbump_HandleSESSION(const char* line) {
-    SDL_sscanf(line, "SESSION %7s", id_buf);
+/* A line from the server, split once: the command word it starts with, and the
+ * text after that word. The handlers parse the payload they are given instead
+ * of each matching the command word again. */
+typedef enum {
+    FISTBUMP_CMD_SESSION,
+    FISTBUMP_CMD_DAG,
+    FISTBUMP_CMD_UDP,
+    FISTBUMP_CMD_TOKEN,
+    FISTBUMP_CMD_PROFILE,
+    FISTBUMP_CMD_MATCH,
+    FISTBUMP_CMD_CANCEL,
+    FISTBUMP_CMD_START,
+    FISTBUMP_CMD_UNKNOWN
+} FistbumpCommand;
+
+typedef struct {
+    FistbumpCommand command;
+    const char* payload;
+} FistbumpMessage;
+
+void Fistbump_HandleSESSION(const FistbumpMessage* msg) {
+    SDL_sscanf(msg->payload, "%7s", id_buf);
     SDL_Log("Fistbump: received ID: %s\n", id_buf);
 
     state = FISTBUMP_SENDING_TOKEN;
 }
 
-void Fistbump_HandleDAG(const char* line) {
-    SDL_sscanf(line, "DAG %8s %127s", dag.code, dag.activate_url);
+void Fistbump_HandleDAG(const FistbumpMessage* msg) {
+    SDL_sscanf(msg->payload, "%8s %127s", dag.code, dag.activate_url);
     SDL_Log("Fistbump: DAG %s, login at %s\n", dag.code, dag.activate_url);
 
     state = FISTBUMP_AWAITING_LOGIN;
 }
 
-void Fistbump_HandleUDP(const char* line) {
+void Fistbump_HandleUDP(const FistbumpMessage* msg) {
     char res[8];
 
-    SDL_sscanf(line, "UDP %7s", res);
+    SDL_sscanf(msg->payload, "%7s", res);
 
     if (strcmp(res, "ok") == 0) {
         SDL_Log("Fistbump: UDP ok!\n");
     }
 }
 
-void Fistbump_HandleTOKEN(const char* line) {
+void Fistbump_HandleTOKEN(const FistbumpMessage* msg) {
     char token[1024];
     int expiry;
 
-    if (sscanf(line, "TOKEN refresh %1023s %d", token, &expiry) == 2) {
+    /* The leading space stands where the command word's space stood: it skips
+     * any run of whitespace before "refresh", as the old format did. */
+    if (sscanf(msg->payload, " refresh %1023s %d", token, &expiry) == 2) {
         SDL_strlcpy(refresh_token.token, token, sizeof(refresh_token.token));
         refresh_token.expiry = expiry;
         SaveToken(&refresh_token);
@@ -332,22 +354,22 @@ void Fistbump_HandleTOKEN(const char* line) {
     }
 }
 
-void Fistbump_HandlePROFILE(const char* line) {
-    SDL_sscanf(line, "PROFILE %7s", profile.username);
+void Fistbump_HandlePROFILE(const FistbumpMessage* msg) {
+    SDL_sscanf(msg->payload, "%7s", profile.username);
     SDL_Log("Fistbump: Logged in as %s\n", profile.username);
 }
 
-void Fistbump_HandleMATCH(const char* line) {
-    SDL_sscanf(line, "MATCH %36s %63s", match_result.match_id, match_result.opponent_name);
+void Fistbump_HandleMATCH(const FistbumpMessage* msg) {
+    SDL_sscanf(msg->payload, "%36s %63s", match_result.match_id, match_result.opponent_name);
     SDL_Log("Fistbump: matched with %s\n", match_result.opponent_name);
 
     state = FISTBUMP_MATCHED;
 }
 
-void Fistbump_HandleCANCEL(const char* line) {
+void Fistbump_HandleCANCEL(const FistbumpMessage* msg) {
     char match_id[37];
 
-    if (SDL_sscanf(line, "CANCEL %36s", match_id) != 1) {
+    if (SDL_sscanf(msg->payload, "%36s", match_id) != 1) {
         SDL_Log("Fistbump: failed to parse CANCEL\n");
         return;
     }
@@ -364,39 +386,52 @@ void Fistbump_HandleCANCEL(const char* line) {
     }
 }
 
-void Fistbump_HandleSTART(const char* line) {
-    SDL_sscanf(line, "START %d %63[^:]:%d", &match_result.player, match_result.ip, &match_result.remote_port);
+void Fistbump_HandleSTART(const FistbumpMessage* msg) {
+    SDL_sscanf(msg->payload, "%d %63[^:]:%d", &match_result.player, match_result.ip, &match_result.remote_port);
     SDL_Log(
         "Fistbump: player %d, opponent IP: %s:%d\n", match_result.player, match_result.ip, match_result.remote_port);
 
     state = FISTBUMP_GAME_START;
 }
 
-/* The second half of the command chain, reached when none of the first four
- * prefixes matched. */
-static void Fistbump_ParseMatchCommand(const char* line) {
-    if (strncmp(line, "PROFILE ", 8) == 0) {
-        Fistbump_HandlePROFILE(line);
-    } else if (strncmp(line, "MATCH ", 6) == 0) {
-        Fistbump_HandleMATCH(line);
-    } else if (strncmp(line, "CANCEL ", 7) == 0) {
-        Fistbump_HandleCANCEL(line);
-    } else if (strncmp(line, "START ", 6) == 0) {
-        Fistbump_HandleSTART(line);
+/* The command words the server sends, each with the space that ends it. */
+static const struct {
+    const char* word;
+    size_t length;
+    FistbumpCommand command;
+} fistbump_command_words[] = {
+    { "SESSION ", 8, FISTBUMP_CMD_SESSION }, { "DAG ", 4, FISTBUMP_CMD_DAG },
+    { "UDP ", 4, FISTBUMP_CMD_UDP },         { "TOKEN ", 6, FISTBUMP_CMD_TOKEN },
+    { "PROFILE ", 8, FISTBUMP_CMD_PROFILE }, { "MATCH ", 6, FISTBUMP_CMD_MATCH },
+    { "CANCEL ", 7, FISTBUMP_CMD_CANCEL },   { "START ", 6, FISTBUMP_CMD_START },
+};
+
+static void (*const fistbump_handlers[FISTBUMP_CMD_UNKNOWN])(const FistbumpMessage* msg) = {
+    [FISTBUMP_CMD_SESSION] = Fistbump_HandleSESSION, [FISTBUMP_CMD_DAG] = Fistbump_HandleDAG,
+    [FISTBUMP_CMD_UDP] = Fistbump_HandleUDP,         [FISTBUMP_CMD_TOKEN] = Fistbump_HandleTOKEN,
+    [FISTBUMP_CMD_PROFILE] = Fistbump_HandlePROFILE, [FISTBUMP_CMD_MATCH] = Fistbump_HandleMATCH,
+    [FISTBUMP_CMD_CANCEL] = Fistbump_HandleCANCEL,   [FISTBUMP_CMD_START] = Fistbump_HandleSTART,
+};
+
+static FistbumpMessage fistbump_split_line(const char* line) {
+    FistbumpMessage msg = { FISTBUMP_CMD_UNKNOWN, line };
+
+    for (size_t i = 0; i < SDL_arraysize(fistbump_command_words); i++) {
+        if (strncmp(line, fistbump_command_words[i].word, fistbump_command_words[i].length) == 0) {
+            msg.command = fistbump_command_words[i].command;
+            msg.payload = line + fistbump_command_words[i].length;
+            return msg;
+        }
     }
+
+    return msg;
 }
 
 void Fistbump_ParseCommand(const char* line) {
-    if (strncmp(line, "SESSION ", 8) == 0) {
-        Fistbump_HandleSESSION(line);
-    } else if (strncmp(line, "DAG ", 4) == 0) {
-        Fistbump_HandleDAG(line);
-    } else if (strncmp(line, "UDP ", 4) == 0) {
-        Fistbump_HandleUDP(line);
-    } else if (strncmp(line, "TOKEN ", 6) == 0) {
-        Fistbump_HandleTOKEN(line);
-    } else {
-        Fistbump_ParseMatchCommand(line);
+    const FistbumpMessage msg = fistbump_split_line(line);
+
+    if (msg.command != FISTBUMP_CMD_UNKNOWN) {
+        fistbump_handlers[msg.command](&msg);
     }
 }
 
