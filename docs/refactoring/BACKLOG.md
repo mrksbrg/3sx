@@ -391,6 +391,41 @@ single function. The reading to carry forward is that a mean-probe number is onl
 argument about the mean - it says nothing about a finding it cannot move, and it should not
 be quoted as a reason to leave a file alone when the dominant finding is the other one.
 
+### `bg_zoom.c`: priced three ways, and it stays at 8.81
+
+The last file in the yellow band. Its two findings are *Overall Code Complexity* and
+*Code Duplication* over four functions - the horizontal and vertical zoom-request chains,
+which are the same shape on different bits.
+
+**Lifting the inner switches: 8.81 -> 8.28.** The file is factored inconsistently - the
+vertical chain holds its `0x0` case as `select_vertical_0_zoom_request` and the horizontal
+chain has the same case inline - so making the two symmetrical is a Recipe E with a reason
+of its own. Lifting all five inner switches measures **8.28**, and lifting only the one
+that removes the asymmetry measures **8.54**, with the duplication group growing from four
+functions to six. Every shortened dispatcher becomes another member of the clique it was
+supposed to leave. This re-derives the 8.54 -> 8.28 already in the table above, from a
+different baseline.
+
+**The mean alone: 9.38, and there is nothing legal to spend.** `mean_probe.py` says three
+more low-complexity functions close *Overall Code Complexity* and leave duplication x4.
+But the file has no third extraction to make: everything except `check_cg_zoom` is already
+one small function, and `check_cg_zoom`'s one cohesive block - the `bg_stop` negotiation
+that gives both fighters the higher zoom level and swaps their look bits - **writes two
+outer locals**, `p1zoom` and `p2zoom`. Recipe E's fourth condition says skip it and do not
+invent an out-parameter struct. So 9.38 is not reachable either.
+
+**Folding the two chains into one: not available, and not because of the case labels.**
+The obvious move is to parameterise the mask, the labels, the request function and the
+axis. It fails on something better than a rule: the two chains are *not the same function*.
+The horizontal `0x4000` arm does nothing and the vertical one requests zero; the horizontal
+`0x200` inner switch sends `0x4000` to P1's position and the vertical `0x100` sends it to
+zero; the vertical has an extra arm throughout. A parameterisation that encoded all of that
+would be longer than the two chains and correct only by construction, in a file whose five
+outputs - `scr_req_x`, `scr_req_y`, `zoom_request_flag`, `zoom_req_flag_old` and
+`zoom_request_level` - are all rollback-saved state (`platform/netplay/game_state.h:392`).
+
+Unlike the CPU scripts, this file *is* covered by replay verification, so a future attempt
+has real evidence available. It would need a recipe the catalogue does not have.
 ### `plpat00.c`: a measured refusal, and a hole in how the mean is priced
 
 `Game/engine/plpat00.c` scores **9.06** with *Bumpy Road Ahead* on two functions,
