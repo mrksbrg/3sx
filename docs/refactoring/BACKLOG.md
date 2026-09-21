@@ -419,6 +419,74 @@ call sites were never updated. Those are API changes with their own blast radius
 want their own commit series, measured across every file they touch, not a one-file win
 taken off a survey probe.
 
+### The seven-function gate, and what it settles
+
+`plpat00.c`'s refusal above says the mean-probe model "can only lower the mean here" while
+CodeScene reported the finding closed at the higher number and open at the lower, and ends
+"Flagged rather than guessed at". It is settled now, measured rather than argued.
+
+**CodeScene does not report *Overall Code Complexity* on a file with fewer than seven
+functions.** Below that the finding is silent whatever the mean is; at seven and above it
+is the plain mean cyclomatic complexity against a strict `< 4`. That is why a six-function
+file at mean 7.8 shows nothing and the same file at mean 6.9 - one extraction later, seven
+functions - shows the finding. Nothing about the metric was odd; the *reporting* has a
+floor.
+
+Established three ways: on `eff11.c` (one added function 8.57 open, eight added 8.57 open,
+nine added 9.13 closed); on a synthetic file of identical cc-10 functions, silent at one to
+six and open at seven; and by pinning a real file's total complexity exactly - cc-3
+throwaway functions open the finding at k=25 and close it at k=26, which fixes the base
+total at 49.
+
+**What it means for pricing.** `mean_probe.py`'s arithmetic was right and its silence was
+the problem: on a file near the floor, an extraction can *open* a finding that was only
+ever hidden. So the first extraction on a small file may cost a point or more for reasons
+that have nothing to do with the extraction, and the answer is to keep going rather than
+revert - `eff11.c` needed **eight** commits, seven of them flat or down, before the ninth
+function and the folds brought the mean back under 4 and the file reached 10.00.
+
+### Primitive Obsession can only be gamed
+
+`psp_renderer.c` was the repository's last *Primitive Obsession* finding. A proposed
+"Domain Typedef" recipe - `typedef unsigned int ARGB;` and the seven parameters that carry
+a packed colour spelled `ARGB` - reaches **10.00**, compiles under `-Werror` against the
+unmodified header, and moves no literal.
+
+It is not in the catalogue and should not be, for a reason found while checking it: a probe
+spelling those parameters `ARGB` **with the typedef declared nowhere at all** also scores
+10.00. The check is **lexical on the type token**. It does not resolve the name, so it
+cannot tell a domain type from a misspelling, and a recipe built on it would be moving a
+number by choosing identifiers.
+
+The gate, measured: the finding opens above **60%** of parameters being built-in types
+(27 of 40 = 60.00% closes it), on modules of **thirty functions or more**, counting
+zero-argument functions in the denominator. Struct fields and locals do not count; only
+parameters.
+
+`Primitive Obsession` is open on exactly one file in the repository, so this was a patch
+rather than a recipe even before the lexical finding. Recorded so nobody re-derives it.
+
+### `config.c` and `fistbump.c`: a recipe that needs the owner's signature
+
+A proposed "Closed Key Set" recipe takes `port/config/config.c` from **9.68 to 10.00** by
+giving the seven configuration keys an enum and changing the three public getters from
+`const char*` to that enum. It measures clean: literals unchanged in both directions across
+all nine touched files, a full Release **and** Debug build of the whole project under the
+project's own `-Wall -Werror`, and a replay-trace comparison of 31,200 saved states, every
+one identical.
+
+**It is not applicable as things stand, because it changes a type.** "Never change a type"
+is on the unqualified hard-prohibition list. Recipe A is the precedent for a signature
+change and it carries an explicit dated owner authorisation; this has none. It is legal as
+a *proposal* and must not be applied until the owner adds it.
+
+Two things to weigh if it is ever considered. It does **not** move `fistbump.c`, which
+stays 9.68 - that file is a line protocol and its strings are strings. And the proposal as
+written drops a guard its own sibling has: `config_key_name` is `return key_names[key];`
+with no bounds check, so `Config_GetBool(42)` compiles silently and reads out of bounds,
+where today an unknown key reaches `SDL_assert(false)`. `port/config/keymap.c`, the same
+folder, already carries this exact shape **with** the bounds check. The guarded form
+measures 10.00 as well, so there is no reason to prefer the unguarded one.
 ### The last nine, priced one at a time
 
 `charset.c` and `sdk_libpad2.c` came off this list on 2026-09-21: both were Recipe A, both
