@@ -38,6 +38,7 @@ EXCLUDE_PREFIXES = (
 
 SCORE_RE = re.compile(r"Code Health score:\s*([0-9.]+)")
 CHUNK_DEFAULT = 16
+RETRY_CHUNK = 4
 
 
 def find_binary() -> str:
@@ -247,6 +248,26 @@ def main() -> int:
     counts = {"red": 0, "yellow": 0, "green": 0, "optimal": 0}
     for value in scores.values():
         counts[band(value)] += 1
+
+    # A file that came back silent is usually a data table, but under load it is
+    # sometimes a request the server dropped. Ask again, in small chunks, before
+    # believing the silence. Two sweeps in a row lost a third of the repository
+    # this way while eight agents were scoring concurrently.
+    if unscorable:
+        retry, unscorable = unscorable, []
+        if not args.quiet:
+            print("re-asking for " + str(len(retry)) + " silent files")
+        for start in range(0, len(retry), RETRY_CHUNK):
+            responses, ids = run_chunk(exe, retry[start:start + RETRY_CHUNK], 900000 + start)
+            for rid, text in responses.items():
+                rel = ids[rid]
+                match = SCORE_RE.search(text or "")
+                if match:
+                    scores[rel] = float(match.group(1))
+                elif looks_like_failure(text):
+                    failed.append((rel, " ".join((text or "").split())[:120]))
+                else:
+                    unscorable.append(rel)
 
     check_the_sweep_is_whole(args.output, scores, unscorable, failed)
 
