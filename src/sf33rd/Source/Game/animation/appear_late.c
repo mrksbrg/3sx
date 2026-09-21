@@ -187,7 +187,7 @@ static void step_appear_26000_rise(PLW* wk) {
 
         if (appear_work[wk->wu.id] < 1) {
             wk->wu.routine_no[3]++;
-            set_char_move_init2(&wk->wu, 9, 0x10, 3, 0);
+            set_char_move_init2(&wk->wu, &(CharMoveInit2){ 9, 0x10, 3, 0 });
             wk->wu.xyz[1].cal = 0;
         } else {
             add_x_sub(&wk->wu);
@@ -294,7 +294,7 @@ static void step_appear_28000_dismount(PLW* wk, s16 id_w) {
 
         if (appear_work[wk->wu.id] < 1) {
             wk->wu.routine_no[3]++;
-            set_char_move_init2(&wk->wu, 9, 17, 15, 0);
+            set_char_move_init2(&wk->wu, &(CharMoveInit2){ 9, 17, 15, 0 });
         }
 
         break;
@@ -323,7 +323,7 @@ void Appear_28000(PLW* wk) {
     case 1:
         if (Appear_car_stop[id_w]) {
             wk->wu.routine_no[3]++;
-            set_char_move_init2(&wk->wu, 9, 17, 2, 0);
+            set_char_move_init2(&wk->wu, &(CharMoveInit2){ 9, 17, 2, 0 });
         }
 
         break;
@@ -448,7 +448,7 @@ static void step_appear_29000_settle(PLW* wk) {
 
         if (app_counter[wk->wu.id] < 1) {
             wk->wu.routine_no[3]++;
-            set_char_move_init2(&wk->wu, 9, 0xb, 5, 0);
+            set_char_move_init2(&wk->wu, &(CharMoveInit2){ 9, 0xb, 5, 0 });
             wk->wu.xyz[1].disp.pos = 0;
         } else {
             add_x_sub(&wk->wu);
@@ -615,7 +615,7 @@ void Appear_33000(PLW* wk) {
 
         if (app_counter[wk->wu.id] <= 0) {
             wk->wu.routine_no[3]++;
-            set_char_move_init2(&wk->wu, 9, 0xC, 2, 0);
+            set_char_move_init2(&wk->wu, &(CharMoveInit2){ 9, 0xC, 2, 0 });
             wk->wu.xyz[1].disp.pos = 0;
             return;
         }
@@ -676,7 +676,7 @@ static void step_appear_36000_settle(PLW* wk) {
 
         if (app_counter[wk->wu.id] <= 0) {
             wk->wu.routine_no[3]++;
-            set_char_move_init2(&wk->wu, 9, 0x11, 0x0A, 0);
+            set_char_move_init2(&wk->wu, &(CharMoveInit2){ 9, 0x11, 0x0A, 0 });
             wk->wu.next_z = wk->wu.my_priority;
         } else {
             add_x_sub(&wk->wu);

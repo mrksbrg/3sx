@@ -54,7 +54,7 @@ static void initialize_slide_in_57(WORK_Other* ewk) {
     ewk->wu.hit_quake = bg_w.bgw[ewk->wu.my_family - 1].wxy[0].disp.pos + 0;
     ewk->wu.mvxy.a[0].sp = 0x100000;
     ewk->wu.mvxy.d[0].sp = 0x8000;
-    set_char_move_init2(&ewk->wu, 0, ewk->wu.char_index, ewk->wu.dir_step + 1, 0);
+    set_char_move_init2(&ewk->wu, &(CharMoveInit2){ 0, ewk->wu.char_index, ewk->wu.dir_step + 1, 0 });
 }
 
 static void finish_slide_in_57(WORK_Other* ewk) {
@@ -102,7 +102,7 @@ void EFF57_CHAR_CHANGE(WORK_Other* ewk) {
         ewk->wu.routine_no[0] = 0;
         Order[ewk->wu.dir_old] = 0;
         ewk->wu.dir_step = Order_Dir[ewk->wu.dir_old];
-        set_char_move_init2(&ewk->wu, 0, ewk->wu.char_index, ewk->wu.dir_step + 1, 0);
+        set_char_move_init2(&ewk->wu, &(CharMoveInit2){ 0, ewk->wu.char_index, ewk->wu.dir_step + 1, 0 });
     }
 }
 
@@ -119,7 +119,7 @@ void EFF57_WALL(WORK_Other* ewk) {
         ewk->wu.xyz[1].disp.pos = bg_w.bgw[ewk->wu.my_family - 1].wxy[1].disp.pos + 16;
         ewk->wu.position_z = 78;
         ewk->wu.dir_step = Order_Dir[ewk->wu.dir_old];
-        set_char_move_init2(&ewk->wu, 0, ewk->wu.char_index, ewk->wu.dir_step + 1, 0);
+        set_char_move_init2(&ewk->wu, &(CharMoveInit2){ 0, ewk->wu.char_index, ewk->wu.dir_step + 1, 0 });
         break;
 
     default:
@@ -146,7 +146,7 @@ void EFF57_SUDDENLY(WORK_Other* ewk) {
         ewk->wu.position_z = 30;
     }
 
-    set_char_move_init2(&ewk->wu, 0, ewk->wu.char_index, ewk->wu.dir_step + 1, 0);
+    set_char_move_init2(&ewk->wu, &(CharMoveInit2){ 0, ewk->wu.char_index, ewk->wu.dir_step + 1, 0 });
 }
 
 void EFF57_KILL(WORK_Other* ewk) {

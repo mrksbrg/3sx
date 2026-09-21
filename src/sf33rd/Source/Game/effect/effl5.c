@@ -66,7 +66,7 @@ static void hukuromoji_shrink(WORK_Other* ewk) {
         ewk->wu.my_mr.size.x = 63;
         ewk->wu.my_mr.size.y = 63;
         ewk->wu.hit_stop = 4;
-        set_char_move_init2(&ewk->wu, 0, 2, 7, 0);
+        set_char_move_init2(&ewk->wu, &(CharMoveInit2){ 0, 2, 7, 0 });
     }
 }
 
@@ -89,7 +89,7 @@ void hukuromoji_move(WORK_Other* ewk) {
         ewk->wu.my_mr_flag = 1;
         ewk->wu.my_mr.size.x = 127;
         ewk->wu.my_mr.size.y = 127;
-        set_char_move_init2(&ewk->wu, 0, 2, 6, 0);
+        set_char_move_init2(&ewk->wu, &(CharMoveInit2){ 0, 2, 6, 0 });
         ewk->wu.hit_stop = 2;
         break;
 

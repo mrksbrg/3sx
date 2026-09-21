@@ -42,6 +42,39 @@ static s32 can_update_effect(void) {
     return !EXE_flag && !Game_pause && !EXE_obroll;
 }
 
+static void quake_end(WORK_Other* ewk) {
+    ewk->wu.routine_no[1] = 2;
+    set_char_move_init(&ewk->wu, 0, ewk->wu.old_rno[6]);
+}
+
+static void quake_advance_bounce_speed(WORK_Other* ewk) {
+    ewk->wu.old_rno[0]++;
+    ewk->wu.old_rno[0] &= 3;
+    ewk->wu.mvxy.a[1].sp = eff11_quake_speed_y_tbl2[ewk->wu.old_rno[3]][ewk->wu.old_rno[0]];
+}
+
+static void quake_start_bounce_rise(WORK_Other* ewk) {
+    ewk->wu.routine_no[2]++;
+    set_char_move_init(&ewk->wu, 0, ewk->wu.old_rno[6] + 1);
+    ewk->wu.mvxy.a[1].sp = eff11_quake_speed_y_tbl[ewk->wu.old_rno[3]][ewk->wu.old_rno[1]];
+}
+
+static void quake_settle_on_floor(WORK_Other* ewk) {
+    ewk->wu.xyz[1].disp.pos = ewk->wu.old_rno[2];
+    ewk->wu.xyz[1].disp.low = 0;
+    set_char_move_init(&ewk->wu, 0, ewk->wu.old_rno[6] + 3);
+}
+
+static void quake_step_xy(WORK_Other* ewk) {
+    char_move(&ewk->wu);
+    add_x_sub(&ewk->wu);
+    add_y_sub(&ewk->wu);
+}
+
+static void quake_step_y(WORK_Other* ewk) {
+    char_move(&ewk->wu);
+    add_y_sub(&ewk->wu);
+}
 
 void effect_11_move(WORK_Other* ewk) {
     if (obr_no_disp_check()) {
@@ -56,7 +89,7 @@ void effect_11_move(WORK_Other* ewk) {
         break;
 
     case 1:
-if (can_update_effect()) {
+        if (can_update_effect()) {
             eff11_quake_sub(ewk);
         }
         disp_pos_trans_entry_r(ewk);
@@ -97,101 +130,138 @@ void eff11_quake_sub(WORK_Other* ewk) {
     }
 }
 
-void quake_level_middle(WORK_Other* ewk) {
+static void quake_level_middle_settle(WORK_Other* ewk) {
     switch (ewk->wu.routine_no[2]) {
-    case 0:
-        ewk->wu.routine_no[2]++;
-        set_char_move_init(&ewk->wu, 0, ewk->wu.old_rno[6] + 1);
-        ewk->wu.mvxy.a[1].sp = eff11_quake_speed_y_tbl[ewk->wu.old_rno[3]][ewk->wu.old_rno[1]];
-        ewk->wu.mvxy.d[1].sp = -0x6000;
-        /* fallthrough */
-
-    case 1:
-    case 3:
-    case 5:
-        char_move(&ewk->wu);
-        add_y_sub(&ewk->wu);
-
-        if (ewk->wu.mvxy.a[1].sp < 0) {
-            ewk->wu.routine_no[2]++;
-            set_char_move_init2(&ewk->wu, 0, ewk->wu.old_rno[6] + 1, 13, 0);
-            ewk->wu.old_rno[0] = 0;
-        }
-
-        break;
-
-    case 2:
-    case 4:
-        char_move(&ewk->wu);
-        add_y_sub(&ewk->wu);
-
-        if (ewk->wu.xyz[1].disp.pos < ewk->wu.old_rno[2]) {
-            ewk->wu.routine_no[2]++;
-            set_char_move_init(&ewk->wu, 0, ewk->wu.old_rno[6] + 1);
-            ewk->wu.mvxy.a[1].sp = eff11_quake_speed_y_tbl[ewk->wu.old_rno[3]][ewk->wu.old_rno[1]];
-            ewk->wu.mvxy.a[1].sp >>= ewk->wu.routine_no[2];
-            ewk->wu.old_rno[0]++;
-            ewk->wu.old_rno[0] &= 3;
-            ewk->wu.mvxy.a[1].sp = eff11_quake_speed_y_tbl2[ewk->wu.old_rno[3]][ewk->wu.old_rno[0]];
-        }
-
-        break;
-
     case 6:
-        char_move(&ewk->wu);
-        add_y_sub(&ewk->wu);
+        quake_step_y(ewk);
 
         if (ewk->wu.xyz[1].disp.pos < ewk->wu.old_rno[2]) {
-            ewk->wu.routine_no[1] = 2;
-            set_char_move_init(&ewk->wu, 0, ewk->wu.old_rno[6]);
+            quake_end(ewk);
         }
 
         break;
     }
 }
 
-void quake_level_large(WORK_Other* ewk) {
-    s16 work;
+static void quake_level_middle_fall(WORK_Other* ewk) {
     switch (ewk->wu.routine_no[2]) {
-    case 0:
-        ewk->wu.routine_no[2]++;
-        set_char_move_init(&ewk->wu, 0, ewk->wu.old_rno[6] + 1);
-        ewk->wu.mvxy.a[1].sp = eff11_quake_speed_y_tbl[ewk->wu.old_rno[3]][ewk->wu.old_rno[1]];
-        ewk->wu.mvxy.d[1].sp = -0x6000;
-        ewk->wu.mvxy.a[0].sp = eff11_quake_speed_x_tbl[ewk->wu.old_rno[3]][ewk->wu.old_rno[1]];
-        work = random_16();
+    case 2:
+    case 4:
+        quake_step_y(ewk);
 
-        if (work & 1) {
-            ewk->wu.mvxy.a[0].sp = -ewk->wu.mvxy.a[0].sp;
-        }
-        /* fallthrough */
-
-    case 1:
-        char_move(&ewk->wu);
-        add_x_sub(&ewk->wu);
-        add_y_sub(&ewk->wu);
-
-        if (ewk->wu.mvxy.a[1].sp < 0) {
-            ewk->wu.routine_no[2]++;
-            set_char_move_init2(&ewk->wu, 0, ewk->wu.old_rno[6] + 1, 13, 0);
-            break;
+        if (ewk->wu.xyz[1].disp.pos < ewk->wu.old_rno[2]) {
+            quake_start_bounce_rise(ewk);
+            ewk->wu.mvxy.a[1].sp >>= ewk->wu.routine_no[2];
+            quake_advance_bounce_speed(ewk);
         }
 
         break;
 
+    default:
+        quake_level_middle_settle(ewk);
+        break;
+    }
+}
+
+void quake_level_middle(WORK_Other* ewk) {
+    switch (ewk->wu.routine_no[2]) {
+    case 0:
+        quake_start_bounce_rise(ewk);
+        ewk->wu.mvxy.d[1].sp = -0x6000;
+        /* fallthrough */
+
+    case 1:
+    case 3:
+    case 5:
+        quake_step_y(ewk);
+
+        if (ewk->wu.mvxy.a[1].sp < 0) {
+            ewk->wu.routine_no[2]++;
+            set_char_move_init2(&ewk->wu, &(CharMoveInit2) { 0, ewk->wu.old_rno[6] + 1, 13, 0 });
+            ewk->wu.old_rno[0] = 0;
+        }
+
+        break;
+
+    default:
+        quake_level_middle_fall(ewk);
+        break;
+    }
+}
+
+static void quake_level_large_settle(WORK_Other* ewk) {
+    switch (ewk->wu.routine_no[2]) {
+    case 6:
+    case 8:
+        quake_step_y(ewk);
+
+        if (ewk->wu.xyz[1].disp.pos < ewk->wu.old_rno[2]) {
+            ewk->wu.routine_no[2]++;
+            quake_settle_on_floor(ewk);
+            quake_advance_bounce_speed(ewk);
+            ewk->wu.mvxy.d[1].sp = -0x6000;
+        }
+
+        break;
+
+    case 10:
+        quake_step_y(ewk);
+
+        if (ewk->wu.xyz[1].disp.pos < ewk->wu.old_rno[2]) {
+            quake_end(ewk);
+        }
+
+        break;
+    }
+}
+
+static void quake_level_large_slide(WORK_Other* ewk) {
+    switch (ewk->wu.routine_no[2]) {
+    case 4:
+        quake_step_xy(ewk);
+        ewk->wu.old_rno[5]--;
+
+        if (ewk->wu.old_rno[5] <= 0) {
+            ewk->wu.routine_no[2]++;
+            ewk->wu.xyz[0].disp.pos = ewk->wu.old_rno[4];
+            ewk->wu.xyz[0].disp.low = 0;
+            quake_settle_on_floor(ewk);
+            ewk->wu.old_rno[0] = 0;
+            ewk->wu.mvxy.a[1].sp = eff11_quake_speed_y_tbl2[ewk->wu.old_rno[3]][ewk->wu.old_rno[0]];
+            ewk->wu.mvxy.d[1].sp = -0x6000;
+        }
+
+        break;
+
+    case 5:
+    case 7:
+    case 9:
+        quake_step_y(ewk);
+
+        if (ewk->wu.mvxy.a[1].sp < 0) {
+            ewk->wu.routine_no[2]++;
+            set_char_move_init2(&ewk->wu, &(CharMoveInit2) { 0, ewk->wu.old_rno[6] + 3, 7, 0 });
+        }
+
+        break;
+
+    default:
+        quake_level_large_settle(ewk);
+        break;
+    }
+}
+
+static void quake_level_large_land(WORK_Other* ewk) {
+    switch (ewk->wu.routine_no[2]) {
     case 2:
-        char_move(&ewk->wu);
-        add_x_sub(&ewk->wu);
-        add_y_sub(&ewk->wu);
+        quake_step_xy(ewk);
 
         if (!(ewk->wu.xyz[1].disp.pos < ewk->wu.old_rno[2])) {
             break;
         }
 
         ewk->wu.routine_no[2]++;
-        ewk->wu.xyz[1].disp.pos = ewk->wu.old_rno[2];
-        ewk->wu.xyz[1].disp.low = 0;
-        set_char_move_init(&ewk->wu, 0, ewk->wu.old_rno[6] + 3);
+        quake_settle_on_floor(ewk);
         ewk->wu.old_rno[5] = 28;
         ewk->wu.mvxy.d[0].sp = 0;
 
@@ -205,78 +275,49 @@ void quake_level_large(WORK_Other* ewk) {
         break;
 
     case 3:
-        char_move(&ewk->wu);
-        add_x_sub(&ewk->wu);
-        add_y_sub(&ewk->wu);
+        quake_step_xy(ewk);
         ewk->wu.old_rno[5]--;
 
         if (ewk->wu.mvxy.a[1].sp < 0) {
             ewk->wu.routine_no[2]++;
-            set_char_move_init2(&ewk->wu, 0, ewk->wu.old_rno[6] + 3, 7, 0);
+            set_char_move_init2(&ewk->wu, &(CharMoveInit2) { 0, ewk->wu.old_rno[6] + 3, 7, 0 });
         }
 
         break;
 
-    case 4:
-        char_move(&ewk->wu);
-        add_x_sub(&ewk->wu);
-        add_y_sub(&ewk->wu);
-        ewk->wu.old_rno[5]--;
-
-        if (ewk->wu.old_rno[5] <= 0) {
-            ewk->wu.routine_no[2]++;
-            ewk->wu.xyz[0].disp.pos = ewk->wu.old_rno[4];
-            ewk->wu.xyz[0].disp.low = 0;
-            ewk->wu.xyz[1].disp.pos = ewk->wu.old_rno[2];
-            ewk->wu.xyz[1].disp.low = 0;
-            set_char_move_init(&ewk->wu, 0, ewk->wu.old_rno[6] + 3);
-            ewk->wu.old_rno[0] = 0;
-            ewk->wu.mvxy.a[1].sp = eff11_quake_speed_y_tbl2[ewk->wu.old_rno[3]][ewk->wu.old_rno[0]];
-            ewk->wu.mvxy.d[1].sp = -0x6000;
-        }
-
+    default:
+        quake_level_large_slide(ewk);
         break;
+    }
+}
 
-    case 5:
-    case 7:
-    case 9:
-        char_move(&ewk->wu);
-        add_y_sub(&ewk->wu);
+void quake_level_large(WORK_Other* ewk) {
+    s16 work;
+    switch (ewk->wu.routine_no[2]) {
+    case 0:
+        quake_start_bounce_rise(ewk);
+        ewk->wu.mvxy.d[1].sp = -0x6000;
+        ewk->wu.mvxy.a[0].sp = eff11_quake_speed_x_tbl[ewk->wu.old_rno[3]][ewk->wu.old_rno[1]];
+        work = random_16();
+
+        if (work & 1) {
+            ewk->wu.mvxy.a[0].sp = -ewk->wu.mvxy.a[0].sp;
+        }
+        /* fallthrough */
+
+    case 1:
+        quake_step_xy(ewk);
 
         if (ewk->wu.mvxy.a[1].sp < 0) {
             ewk->wu.routine_no[2]++;
-            set_char_move_init2(&ewk->wu, 0, ewk->wu.old_rno[6] + 3, 7, 0);
+            set_char_move_init2(&ewk->wu, &(CharMoveInit2) { 0, ewk->wu.old_rno[6] + 1, 13, 0 });
+            break;
         }
 
         break;
 
-    case 6:
-    case 8:
-        char_move(&ewk->wu);
-        add_y_sub(&ewk->wu);
-
-        if (ewk->wu.xyz[1].disp.pos < ewk->wu.old_rno[2]) {
-            ewk->wu.routine_no[2]++;
-            ewk->wu.xyz[1].disp.pos = ewk->wu.old_rno[2];
-            ewk->wu.xyz[1].disp.low = 0;
-            set_char_move_init(&ewk->wu, 0, ewk->wu.old_rno[6] + 3);
-            ewk->wu.old_rno[0]++;
-            ewk->wu.old_rno[0] &= 3;
-            ewk->wu.mvxy.a[1].sp = eff11_quake_speed_y_tbl2[ewk->wu.old_rno[3]][ewk->wu.old_rno[0]];
-            ewk->wu.mvxy.d[1].sp = -0x6000;
-        }
-
-        break;
-
-    case 10:
-        char_move(&ewk->wu);
-        add_y_sub(&ewk->wu);
-
-        if (ewk->wu.xyz[1].disp.pos < ewk->wu.old_rno[2]) {
-            ewk->wu.routine_no[1] = 2;
-            set_char_move_init(&ewk->wu, 0, ewk->wu.old_rno[6]);
-        }
-
+    default:
+        quake_level_large_land(ewk);
         break;
     }
 }

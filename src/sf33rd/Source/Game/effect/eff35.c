@@ -74,7 +74,7 @@ static void begin_timed_effect_35(WORK_Other* ewk, TimedEffectMode35 mode) {
         ewk->wu.my_col_code = 0x49;
     }
 
-    set_char_move_init2(&ewk->wu, 0, ewk->wu.char_index, ewk->wu.old_rno[3], 0);
+    set_char_move_init2(&ewk->wu, &(CharMoveInit2){ 0, ewk->wu.char_index, ewk->wu.old_rno[3], 0 });
 
     if (mode == SPAWN_AUXILIARY_EFFECT_35) {
         effect_58_init(6, 4, 0xA8);
@@ -135,7 +135,7 @@ void eff35_0000(WORK_Other* ewk) {
         if (ewk->wu.old_rno[1] <= 0) {
             ewk->wu.routine_no[1]++;
             ewk->wu.disp_flag = 1;
-            set_char_move_init2(&ewk->wu, 0, ewk->wu.char_index, ewk->wu.old_rno[3], 0);
+            set_char_move_init2(&ewk->wu, &(CharMoveInit2){ 0, ewk->wu.char_index, ewk->wu.old_rno[3], 0 });
         }
 
         break;
@@ -168,7 +168,7 @@ static void begin_screen_wipe_35(WORK_Other* ewk) {
     ewk->wu.my_mr_flag = 1;
     ewk->wu.my_mr.size.x = 127;
     ewk->wu.my_mr.size.y = 63;
-    set_char_move_init2(&ewk->wu, 0, ewk->wu.char_index, ewk->wu.old_rno[3], 0);
+    set_char_move_init2(&ewk->wu, &(CharMoveInit2){ 0, ewk->wu.char_index, ewk->wu.old_rno[3], 0 });
 }
 
 typedef enum {
@@ -284,7 +284,7 @@ static void start_traveling_banner_35(WORK_Other* ewk) {
 
     ewk->wu.routine_no[1]++;
     ewk->wu.disp_flag = 1;
-    set_char_move_init2(&ewk->wu, 0, ewk->wu.char_index, ewk->wu.old_rno[3], 0);
+    set_char_move_init2(&ewk->wu, &(CharMoveInit2){ 0, ewk->wu.char_index, ewk->wu.old_rno[3], 0 });
     set_traveling_banner_start_35(ewk);
 }
 
@@ -352,7 +352,7 @@ static void begin_bonus_message_35(WORK_Other* ewk) {
 
     ewk->wu.routine_no[1]++;
     ewk->wu.disp_flag = 1;
-    set_char_move_init2(&ewk->wu, 0, ewk->wu.char_index, ewk->wu.old_rno[3], 0);
+    set_char_move_init2(&ewk->wu, &(CharMoveInit2){ 0, ewk->wu.char_index, ewk->wu.old_rno[3], 0 });
 }
 
 static void move_bonus_message_if_active_35(WORK_Other* ewk) {

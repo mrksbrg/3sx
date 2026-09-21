@@ -31,7 +31,7 @@ static void effc8_follow_master(WORK_Other* ewk, const PLW* oya_pl) {
     case 2:
         if (oya_pl->wu.cg_ix != ewk->wu.cg_ix) {
             work = oya_pl->wu.cg_ix / oya_pl->wu.cgd_type + 1;
-            set_char_move_init2(&ewk->wu, 0, 12, work + 1, 0);
+            set_char_move_init2(&ewk->wu, &(CharMoveInit2){ 0, 12, work + 1, 0 });
             ewk->wu.cg_ix = oya_pl->wu.cg_ix;
         }
 

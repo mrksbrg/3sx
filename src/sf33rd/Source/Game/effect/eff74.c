@@ -36,9 +36,9 @@ void effect_74_move(WORK_Other* ewk) {
     }
 
     if (Menu_Cursor_Y[0] == ewk->master_id) {
-        set_char_move_init2(&ewk->wu, 0, ewk->wu.char_index, 2, 0);
+        set_char_move_init2(&ewk->wu, &(CharMoveInit2){ 0, ewk->wu.char_index, 2, 0 });
     } else {
-        set_char_move_init2(&ewk->wu, 0, ewk->wu.char_index, 1, 0);
+        set_char_move_init2(&ewk->wu, &(CharMoveInit2){ 0, ewk->wu.char_index, 1, 0 });
     }
 
     sort_push_request4(&ewk->wu);

@@ -91,7 +91,7 @@ void EFF69_SLIDE_IN(WORK_Other* ewk) {
             ewk->wu.mvxy.d[0].sp = 0x8000;
         }
 
-        set_char_move_init2(&ewk->wu, 0, ewk->wu.char_index, ewk->wu.dir_step + 1, 0);
+        set_char_move_init2(&ewk->wu, &(CharMoveInit2){ 0, ewk->wu.char_index, ewk->wu.dir_step + 1, 0 });
         break;
 
     default:
@@ -168,7 +168,7 @@ void EFF69_SUDDENLY(WORK_Other* ewk) {
         ewk->wu.disp_flag = 1;
         ewk->wu.xyz[0].disp.pos = Pos_Data_69[ewk->wu.dir_old][0] + 512;
         ewk->wu.xyz[1].disp.pos = Pos_Data_69[ewk->wu.dir_old][1] + 0;
-        set_char_move_init2(&ewk->wu, 0, ewk->wu.char_index, ewk->wu.dir_step + 1, 0);
+        set_char_move_init2(&ewk->wu, &(CharMoveInit2){ 0, ewk->wu.char_index, ewk->wu.dir_step + 1, 0 });
         break;
 
     default:

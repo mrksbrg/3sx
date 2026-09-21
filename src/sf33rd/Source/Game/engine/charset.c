@@ -145,7 +145,12 @@ void setupCharTableData(WORK* wk, s32 clr, s32 info) {
     }
 }
 
-void set_char_move_init2(WORK* wk, s16 koc, s16 index, s16 ip, s16 scf) {
+void set_char_move_init2(WORK* wk, const CharMoveInit2* args) {
+    s16 koc = args->koc;
+    s16 index = args->index;
+    s16 ip = args->ip;
+    s16 scf = args->scf;
+
     u8 pst;
     u8 kow;
 
@@ -284,35 +289,35 @@ void char_move_index(WORK* wk, s16 ix) {
 
 void char_move_cmja(WORK* wk) {
     setup_comm_back(wk);
-    set_char_move_init2(wk, wk->cmja.koc, wk->cmja.ix, wk->cmja.pat, 0);
+    set_char_move_init2(wk, &(CharMoveInit2){ wk->cmja.koc, wk->cmja.ix, wk->cmja.pat, 0 });
 }
 
 #if CPS3
 void char_move_cmj2(WORK* wk) {
     setup_comm_back(wk);
-    set_char_move_init2(wk, wk->cmj2.koc, wk->cmj2.ix, wk->cmj2.pat, 0);
+    set_char_move_init2(wk, &(CharMoveInit2){ wk->cmj2.koc, wk->cmj2.ix, wk->cmj2.pat, 0 });
 }
 
 void char_move_cmj3(WORK* wk) {
     setup_comm_back(wk);
-    set_char_move_init2(wk, wk->cmj3.koc, wk->cmj3.ix, wk->cmj3.pat, 0);
+    set_char_move_init2(wk, &(CharMoveInit2){ wk->cmj3.koc, wk->cmj3.ix, wk->cmj3.pat, 0 });
 }
 #endif
 
 void char_move_cmj4(WORK* wk) {
     setup_comm_back(wk);
-    set_char_move_init2(wk, wk->cmj4.koc, wk->cmj4.ix, wk->cmj4.pat, 0);
+    set_char_move_init2(wk, &(CharMoveInit2){ wk->cmj4.koc, wk->cmj4.ix, wk->cmj4.pat, 0 });
 }
 
 #if CPS3
 void char_move_cmoa(WORK* wk) {
-    set_char_move_init2(wk, wk->cmoa.koc, wk->cmoa.ix, wk->cmoa.pat, 0);
+    set_char_move_init2(wk, &(CharMoveInit2){ wk->cmoa.koc, wk->cmoa.ix, wk->cmoa.pat, 0 });
 }
 #endif
 
 void char_move_cmms(WORK* wk) {
     setup_comm_back(wk);
-    set_char_move_init2(wk, wk->cmms.koc, wk->cmms.ix, wk->cmms.pat, 0);
+    set_char_move_init2(wk, &(CharMoveInit2){ wk->cmms.koc, wk->cmms.ix, wk->cmms.pat, 0 });
 }
 
 void char_move_cmms2(WORK* wk) {
@@ -447,7 +452,7 @@ void char_move_cmhs(PLW* wk) {
     if (wk->hsjp_ok != 0) {
         setup_comm_back(&wk->wu);
         wk->hsjp_ok = 0;
-        set_char_move_init2(&wk->wu, wk->wu.cmhs.koc, wk->wu.cmhs.ix, wk->wu.cmhs.pat, 0);
+        set_char_move_init2(&wk->wu, &(CharMoveInit2){ wk->wu.cmhs.koc, wk->wu.cmhs.ix, wk->wu.cmhs.pat, 0 });
     }
 }
 

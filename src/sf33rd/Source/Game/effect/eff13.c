@@ -112,7 +112,7 @@ static void initialize_tama_motion(WORK_Other* ewk, TAMA* tama) {
         set_tengu_init_pos(&ewk->wu, (WORK*)ewk->my_master);
         ewk->wu.disp_flag = 0;
         ewk->wu.dir_old = ((PLW*)ewk->my_master)->sa->id_arts;
-        set_char_move_init2(&ewk->wu, 0, tama->chix, random_16() & 7, 0);
+        set_char_move_init2(&ewk->wu, &(CharMoveInit2){ 0, tama->chix, random_16() & 7, 0 });
     } else if (tama->kind_of_tama == 0xF) {
         initialize_flat_tama_motion(ewk, tama);
     } else {

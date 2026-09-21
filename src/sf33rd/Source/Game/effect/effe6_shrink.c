@@ -19,7 +19,7 @@ static void update_effe6_0014_first_shrink(WORK_Other* ewk) {
 
         if (ewk->wu.my_mr.size.x < 60) {
             ewk->wu.routine_no[1]++;
-            set_char_move_init2(&ewk->wu, 0, 21, 9, 0);
+            set_char_move_init2(&ewk->wu, &(CharMoveInit2){ 0, 21, 9, 0 });
             ewk->wu.old_rno[2] = 4;
         } else {
             ewk->wu.old_rno[2] = 3;
@@ -37,7 +37,7 @@ static void update_effe6_0014_second_shrink(WORK_Other* ewk) {
 
         if (ewk->wu.my_mr.size.x < 56) {
             ewk->wu.routine_no[1]++;
-            set_char_move_init2(&ewk->wu, 0, 21, 10, 0);
+            set_char_move_init2(&ewk->wu, &(CharMoveInit2){ 0, 21, 10, 0 });
             ewk->wu.old_rno[2] = 4;
         }
     }

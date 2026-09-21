@@ -62,7 +62,7 @@ static void e98_begin_slide(WORK_Other* ewk) {
         ewk->wu.mvxy.d[0].sp = -0x8000;
     }
 
-    set_char_move_init2(&ewk->wu, 0, ewk->wu.char_index, ewk->wu.dir_step + 1, 0);
+    set_char_move_init2(&ewk->wu, &(CharMoveInit2){ 0, ewk->wu.char_index, ewk->wu.dir_step + 1, 0 });
 }
 
 /* Move one frame and settle once the slot is reached. */
@@ -110,7 +110,7 @@ void EFF98_SUDDENLY(WORK_Other* ewk) {
             bg_w.bgw[ewk->wu.my_family - 1].wxy[0].disp.pos + Plate_Pos_Data_79[1][ewk->master_id][0][0];
         ewk->wu.xyz[1].disp.pos =
             bg_w.bgw[ewk->wu.my_family - 1].wxy[1].disp.pos + Plate_Pos_Data_79[1][ewk->master_id][0][1];
-        set_char_move_init2(&ewk->wu, 0, ewk->wu.char_index, ewk->wu.dir_step + 1, 0);
+        set_char_move_init2(&ewk->wu, &(CharMoveInit2){ 0, ewk->wu.char_index, ewk->wu.dir_step + 1, 0 });
         break;
 
     default:

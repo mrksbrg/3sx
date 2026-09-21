@@ -609,6 +609,6 @@ s32 flPADShockSet(s32 pad_id, u32 level, u32 time) {
         }
     }
 
-    sceVibSetActParam(ps2slot[pad_id].socket_id, 1, &profile, vib_data_size, vib_data);
+    sceVibSetActParam(&(VibActParam){ ps2slot[pad_id].socket_id, 1, &profile, vib_data_size, vib_data });
     return 1;
 }

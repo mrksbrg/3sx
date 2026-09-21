@@ -37,7 +37,7 @@ static void l2_start(WORK_Other* ewk) {
     ewk->wu.routine_no[0]++;
     ewk->wu.disp_flag = 1;
     effl2_dir_check(ewk);
-    set_char_move_init2(&ewk->wu, 0, 0, 1, 0);
+    set_char_move_init2(&ewk->wu, &(CharMoveInit2){ 0, 0, 1, 0 });
 }
 
 /* Switch to the win animation - the winner's own, or the loser's. */
@@ -113,7 +113,7 @@ void effl2_dir_check(WORK_Other* ewk) {
 
     if (ewk->wu.direction != effl2_dir_tbl[ewk->master_id][work]) {
         ewk->wu.direction = effl2_dir_tbl[ewk->master_id][work];
-        set_char_move_init2(&ewk->wu, 0, 0, ewk->wu.direction + 1, 0);
+        set_char_move_init2(&ewk->wu, &(CharMoveInit2){ 0, 0, ewk->wu.direction + 1, 0 });
     }
 }
 

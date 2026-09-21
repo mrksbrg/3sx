@@ -22,7 +22,7 @@ void effect_G7_move(WORK_Other* ewk) {
     case 0:
         ewk->wu.routine_no[0]++;
         ewk->wu.disp_flag = 1;
-        set_char_move_init2(&ewk->wu, 0, 51, 1, 0);
+        set_char_move_init2(&ewk->wu, &(CharMoveInit2){ 0, 51, 1, 0 });
         disp_pos_trans_entry(ewk);
         break;
 

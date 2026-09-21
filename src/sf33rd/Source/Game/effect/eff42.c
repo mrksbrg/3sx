@@ -58,7 +58,7 @@ void EFF42_SUDDENLY(WORK_Other* ewk) {
             ewk->wu.xyz[1].disp.pos = Pos_Data_69[ewk->wu.dir_old][1] + 0;
         }
 
-        set_char_move_init2(&ewk->wu, 0, ewk->wu.char_index, ewk->wu.dir_step + 1, 0);
+        set_char_move_init2(&ewk->wu, &(CharMoveInit2){ 0, ewk->wu.char_index, ewk->wu.dir_step + 1, 0 });
         break;
 
     case 1:
@@ -92,7 +92,7 @@ static void initialize_slide_in(WORK_Other* ewk) {
         ewk->wu.mvxy.d[0].sp = 0x8000;
     }
 
-    set_char_move_init2(&ewk->wu, 0, ewk->wu.char_index, ewk->wu.dir_step + 1, 0);
+    set_char_move_init2(&ewk->wu, &(CharMoveInit2){ 0, ewk->wu.char_index, ewk->wu.dir_step + 1, 0 });
 }
 
 static void complete_slide_in(WORK_Other* ewk) {
@@ -193,7 +193,7 @@ void EFF42_MOVE(WORK_Other* ewk) {
         if (ewk->wu.rl_waza != Select_Timer) {
             ewk->wu.rl_waza = Select_Timer;
             Setup_Char_Index(ewk);
-            set_char_move_init2(&ewk->wu, 0, ewk->wu.char_index, ewk->wu.dir_step + 1, 0);
+            set_char_move_init2(&ewk->wu, &(CharMoveInit2){ 0, ewk->wu.char_index, ewk->wu.dir_step + 1, 0 });
         }
 
         break;

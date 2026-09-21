@@ -21,14 +21,15 @@ for the allowed transformations.
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | **Red** - severe debt | 1.0 - 3.9 | 19 | **0** | **0** | **0** | **0** | **0** |
 | **Yellow** - problematic debt | 4.0 - 8.9 | 207 | 93 | 28 | 2 | **0** | **0** |
-| Green | 9.0 - 9.9 | 158 | 91 | 79 | 61 | 27 | **11** |
-| Optimal | 10.0 | 98 | 475 | 553 | 598 | 634 | **650** |
+| Green | 9.0 - 9.9 | 158 | 91 | 79 | 61 | 27 | **9** |
+| Optimal | 10.0 | 98 | 475 | 553 | 598 | 634 | **652** |
 | Total scored | | 482 | 659 | 660 | 661 | 661 | 661 |
 
 The file count rises because the campaign splits files. Mean Code Health across every
-scorable first-party file is **9.991**, against 8.52 over the same files at the start.
-**The yellow band is empty**: nothing scores below 9.0, and 650 of the 661 scored files are
-at 10.00. Eleven are left, and they are listed under *The eleven that are left* below.
+scorable first-party file is **9.9929**, against 8.52 over the same files at the start.
+**The yellow band is empty**: nothing scores below 9.0, and 652 of the 661 scored files are
+at 10.00. Nine are left, and they are listed under *The last nine, priced one at a time*
+below.
 
 The 2026-09-21 pm column is the sweep taken after the green-band survey: sixty-one files
 diagnosed and probed in parallel, thirty-three lifted, and the last two yellow-band files
@@ -418,6 +419,122 @@ call sites were never updated. Those are API changes with their own blast radius
 want their own commit series, measured across every file they touch, not a one-file win
 taken off a survey probe.
 
+### The seven-function gate, and what it settles
+
+`plpat00.c`'s refusal above says the mean-probe model "can only lower the mean here" while
+CodeScene reported the finding closed at the higher number and open at the lower, and ends
+"Flagged rather than guessed at". It is settled now, measured rather than argued.
+
+**CodeScene does not report *Overall Code Complexity* on a file with fewer than seven
+functions.** Below that the finding is silent whatever the mean is; at seven and above it
+is the plain mean cyclomatic complexity against a strict `< 4`. That is why a six-function
+file at mean 7.8 shows nothing and the same file at mean 6.9 - one extraction later, seven
+functions - shows the finding. Nothing about the metric was odd; the *reporting* has a
+floor.
+
+Established three ways: on `eff11.c` (one added function 8.57 open, eight added 8.57 open,
+nine added 9.13 closed); on a synthetic file of identical cc-10 functions, silent at one to
+six and open at seven; and by pinning a real file's total complexity exactly - cc-3
+throwaway functions open the finding at k=25 and close it at k=26, which fixes the base
+total at 49.
+
+**What it means for pricing.** `mean_probe.py`'s arithmetic was right and its silence was
+the problem: on a file near the floor, an extraction can *open* a finding that was only
+ever hidden. So the first extraction on a small file may cost a point or more for reasons
+that have nothing to do with the extraction, and the answer is to keep going rather than
+revert - `eff11.c` needed **eight** commits, seven of them flat or down, before the ninth
+function and the folds brought the mean back under 4 and the file reached 10.00.
+
+### Primitive Obsession can only be gamed
+
+`psp_renderer.c` was the repository's last *Primitive Obsession* finding. A proposed
+"Domain Typedef" recipe - `typedef unsigned int ARGB;` and the seven parameters that carry
+a packed colour spelled `ARGB` - reaches **10.00**, compiles under `-Werror` against the
+unmodified header, and moves no literal.
+
+It is not in the catalogue and should not be, for a reason found while checking it: a probe
+spelling those parameters `ARGB` **with the typedef declared nowhere at all** also scores
+10.00. The check is **lexical on the type token**. It does not resolve the name, so it
+cannot tell a domain type from a misspelling, and a recipe built on it would be moving a
+number by choosing identifiers.
+
+The gate, measured: the finding opens above **60%** of parameters being built-in types
+(27 of 40 = 60.00% closes it), on modules of **thirty functions or more**, counting
+zero-argument functions in the denominator. Struct fields and locals do not count; only
+parameters.
+
+`Primitive Obsession` is open on exactly one file in the repository, so this was a patch
+rather than a recipe even before the lexical finding. Recorded so nobody re-derives it.
+
+### `config.c` and `fistbump.c`: a recipe that needs the owner's signature
+
+A proposed "Closed Key Set" recipe takes `port/config/config.c` from **9.68 to 10.00** by
+giving the seven configuration keys an enum and changing the three public getters from
+`const char*` to that enum. It measures clean: literals unchanged in both directions across
+all nine touched files, a full Release **and** Debug build of the whole project under the
+project's own `-Wall -Werror`, and a replay-trace comparison of 31,200 saved states, every
+one identical.
+
+**It is not applicable as things stand, because it changes a type.** "Never change a type"
+is on the unqualified hard-prohibition list. Recipe A is the precedent for a signature
+change and it carries an explicit dated owner authorisation; this has none. It is legal as
+a *proposal* and must not be applied until the owner adds it.
+
+Two things to weigh if it is ever considered. It does **not** move `fistbump.c`, which
+stays 9.68 - that file is a line protocol and its strings are strings. And the proposal as
+written drops a guard its own sibling has: `config_key_name` is `return key_names[key];`
+with no bounds check, so `Config_GetBool(42)` compiles silently and reads out of bounds,
+where today an unknown key reaches `SDL_assert(false)`. `port/config/keymap.c`, the same
+folder, already carries this exact shape **with** the bounds check. The guarded form
+measures 10.00 as well, so there is no reason to prefer the unguarded one.
+### The last nine, priced one at a time
+
+`charset.c` and `sdk_libpad2.c` came off this list on 2026-09-21: both were Recipe A, both
+reached 10.00, and what had been holding them was that a parameter object changes every
+call site and a survey probe never does. `set_char_move_init2` had 156 of them across 60
+files; none of the 60 regressed. What remains is nine files and four distinct reasons.
+
+**Three are file-level ratio smells, and the catalogue has no recipe for any of them.**
+
+- `platform/video/psp/psp_renderer.c` **9.68** after Recipe A cleared *Excess Number of
+  Function Arguments* from `draw_textured_sprite_rect`'s ten arguments. *Primitive
+  Obsession* is left, and it is a statement about the whole file's ratio of built-in types
+  rather than about one signature. The file is a renderer whose vocabulary is floats and
+  packed colours.
+- `platform/netplay/fistbump.c` **9.68** and `port/config/config.c` **9.68**, both
+  *String Heavy Function Arguments*: 72% of `fistbump.c`'s arguments are strings, because
+  it is a line protocol and its functions take lines. Wrapping `const char*` in a struct
+  would move the number and change nothing real.
+
+**Four are Code Duplication over shapes the catalogue refuses to fold.** `bg_zoom.c`
+(9.38, priced five ways from two baselines), `com_patterns_6step.c` (9.38, three signatures
+over the column limit by 6-17 characters), `eff68.c` (9.38) and `com_sub_command_term.c`
+(9.09, where the surveyed change measures 9.09 and gains nothing).
+
+**`ps2PAD.c` 9.92 is a clean refusal on Recipe E's own fourth condition.** `flPADShockSet`'s
+two bumps are the arms of `if (time == 0)`, and each writes `profile` **and**
+`vib_data_size` - two outer locals. The recipe says skip it and do not invent an
+out-parameter struct to carry results back. Both arms also contain
+`if ((ps2slot[pad_id].vprofile = 3) != 0)`, an assignment that is always true and whose
+else branch is therefore dead; that is arcade-accurate and is left alone.
+
+**`eff11.c` 9.13 is the one that resists hardest, now measured from four directions.**
+*Complex Method* on `quake_level_large` (cc 21) and `quake_level_middle` (cc 11), plus
+*Large Method* on the first at 105 lines. Every attempt opens *Overall Code Complexity*
+and lands below the baseline:
+
+| Attempt | Measured |
+| --- | --- |
+| Recipe C on the two shared step prefixes (`char_move`+`add_y_sub`, and with `add_x_sub`) | **8.57** |
+| Recipe X, `quake_level_middle` split in two | **8.84** |
+| Recipe X, both functions split | **8.79** |
+| the survey's eleven single-lever probes | all below 9.13, best **9.09** |
+
+One added function costs about 0.56 on this file whatever it contains, which is the same
+arithmetic `plpat00.c` showed before a seven-way decomposition beat it. A seven-step chain
+does reach 10.00 here - the survey built one - but that probe also had
+`ewk->wu.old_rno[5] = 28` written as `= 29`, so what it proves is unknown. A legal version
+of that chain is the open question on this file; every shorter answer is priced above.
 ### The survey, and the two things it nearly shipped
 
 Sixty-one files were surveyed in parallel: each diagnosed, each proposed change **probed**

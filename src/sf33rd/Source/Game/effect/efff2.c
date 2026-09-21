@@ -28,7 +28,7 @@ static void f2_start(WORK_Other* ewk) {
 
     ewk->wu.routine_no[1]++;
     ewk->wu.disp_flag = 1;
-    set_char_move_init2(&ewk->wu, 0, ewk->wu.old_rno[4], ewk->wu.char_index, 0);
+    set_char_move_init2(&ewk->wu, &(CharMoveInit2){ 0, ewk->wu.old_rno[4], ewk->wu.char_index, 0 });
     work = random_16();
     work &= 0xF;
     ewk->wu.old_rno[5] = efff2_timer_tbl[work];

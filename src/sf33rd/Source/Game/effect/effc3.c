@@ -1185,7 +1185,7 @@ static void break_car_part_C3(WORK_Other* ewk) {
     ewk->wu.routine_no[1] = 0;
     ewk->wu.routine_no[2] = 0;
     bs2_get_parts_break(&ewk->wu);
-    set_char_move_init2(&ewk->wu, 0, ewk->wu.dir_step + 7, ewk->wu.scr_mv_x, 0);
+    set_char_move_init2(&ewk->wu, &(CharMoveInit2){ 0, ewk->wu.dir_step + 7, ewk->wu.scr_mv_x, 0 });
 
     if (ewk->wu.vital_old < 7) {
         setup_effK2_sync_bomb(&ewk->wu);

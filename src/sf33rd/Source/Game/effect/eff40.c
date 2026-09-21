@@ -60,12 +60,12 @@ void EFF40_BACK(WORK_Other* ewk) {
         ix = 0;
     }
 
-    set_char_move_init2(&ewk->wu, 0, ewk->wu.char_index, ix + 1, 0);
+    set_char_move_init2(&ewk->wu, &(CharMoveInit2){ 0, ewk->wu.char_index, ix + 1, 0 });
 }
 
 void EFF40_ARROW(WORK_Other* ewk) {
     if (Menu_Cursor_Y[0] != Menu_Max) {
-        set_char_move_init2(&ewk->wu, 0, 76, (ewk->master_priority / 2) + 1, 0);
+        set_char_move_init2(&ewk->wu, &(CharMoveInit2){ 0, 76, (ewk->master_priority / 2) + 1, 0 });
         ewk->wu.routine_no[1] = 0;
     } else if (ewk->wu.rl_waza == ewk->master_priority) {
         if (ewk->wu.routine_no[1] == 0) {
@@ -75,7 +75,7 @@ void EFF40_ARROW(WORK_Other* ewk) {
             char_move(&ewk->wu);
         }
     } else {
-        set_char_move_init2(&ewk->wu, 0, 76, (ewk->master_priority / 2) + 1, 0);
+        set_char_move_init2(&ewk->wu, &(CharMoveInit2){ 0, 76, (ewk->master_priority / 2) + 1, 0 });
         ewk->wu.routine_no[1] = 0;
     }
 }
@@ -118,7 +118,7 @@ s32 effect_40_init(const Effect40Init* p) {
     if (p->master_priority < 2) {
         set_char_move_init(&ewk->wu, 0, ewk->wu.char_index);
     } else {
-        set_char_move_init2(&ewk->wu, 0, 76, (ewk->master_priority / 2) + 1, 0);
+        set_char_move_init2(&ewk->wu, &(CharMoveInit2){ 0, 76, (ewk->master_priority / 2) + 1, 0 });
     }
 
     return 0;

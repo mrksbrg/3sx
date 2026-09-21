@@ -250,7 +250,7 @@ static bool jyouka_collapse_finished(PLW* wk) {
 
 static void advance_jyouka_rise(PLW* wk) {
     if (wk->resurrection_resv) {
-        set_char_move_init2(&wk->wu, 5, 60, 8, 1);
+        set_char_move_init2(&wk->wu, &(CharMoveInit2){ 5, 60, 8, 1 });
         reset_mvxy_data(&wk->wu);
         wk->wu.routine_no[3] = 3;
         return;

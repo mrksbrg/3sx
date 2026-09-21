@@ -42,7 +42,7 @@ void EFF75_CHAR_CHANGE(WORK_Other* ewk) {
     ewk->wu.routine_no[0] = 0;
     Order[ewk->wu.dir_old] = 0;
     ewk->wu.dir_step = Order_Dir[ewk->wu.dir_old];
-    set_char_move_init2(&ewk->wu, 0, ewk->wu.char_index, ewk->wu.dir_step + 1, 0);
+    set_char_move_init2(&ewk->wu, &(CharMoveInit2){ 0, ewk->wu.char_index, ewk->wu.dir_step + 1, 0 });
 }
 
 void EFF75_SUDDENLY(WORK_Other* ewk) {
@@ -58,7 +58,7 @@ void EFF75_SUDDENLY(WORK_Other* ewk) {
         ewk->wu.xyz[1].disp.pos = bg_w.bgw[ewk->wu.my_family - 1].wxy[1].disp.pos + 1;
         ewk->wu.position_z = 76;
         ewk->wu.dir_step = Order_Dir[ewk->wu.dir_old];
-        set_char_move_init2(&ewk->wu, 0, ewk->wu.char_index, ewk->wu.dir_step + 1, 0);
+        set_char_move_init2(&ewk->wu, &(CharMoveInit2){ 0, ewk->wu.char_index, ewk->wu.dir_step + 1, 0 });
         break;
 
     default:

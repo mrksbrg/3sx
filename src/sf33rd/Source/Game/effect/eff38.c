@@ -62,7 +62,7 @@ void EFF38_SUDDENLY(WORK_Other* ewk) {
         Order[ewk->wu.dir_old] = 0;
         ewk->wu.routine_no[0] = 0;
         ewk->wu.xyz[0].disp.pos = ewk->wu.hit_quake;
-        set_char_move_init2(&ewk->wu, 0, ewk->wu.char_index, ewk->wu.dir_step + 1, 0);
+        set_char_move_init2(&ewk->wu, &(CharMoveInit2){ 0, ewk->wu.char_index, ewk->wu.dir_step + 1, 0 });
     }
 }
 
@@ -83,7 +83,7 @@ static void update_slide_in_wait_38(WORK_Other* ewk) {
     if (--Order_Timer[ewk->wu.dir_old] == 0) {
         ewk->wu.routine_no[6]++;
         ewk->wu.disp_flag = 1;
-        set_char_move_init2(&ewk->wu, 0, ewk->wu.char_index, ewk->wu.dir_step + 1, 0);
+        set_char_move_init2(&ewk->wu, &(CharMoveInit2){ 0, ewk->wu.char_index, ewk->wu.dir_step + 1, 0 });
     }
 }
 
@@ -322,7 +322,7 @@ static void update_selected_portrait_38(WORK_Other* ewk) {
             ewk->wu.dir_step = 23;
         }
 
-        set_char_move_init2(&ewk->wu, 0, ewk->wu.char_index, ewk->wu.dir_step + 1, 0);
+        set_char_move_init2(&ewk->wu, &(CharMoveInit2){ 0, ewk->wu.char_index, ewk->wu.dir_step + 1, 0 });
     }
 
     if (Sel_PL_Complete[ewk->master_id]) {

@@ -80,7 +80,7 @@ void mark_effe6_for_cleanup_if_stale(WORK_Other* ewk) {
 void effe6_init_common(WORK_Other* ewk) {
     ewk->wu.routine_no[1]++;
     ewk->wu.disp_flag = 1;
-    set_char_move_init2(&ewk->wu, 0, ewk->wu.old_rno[4], ewk->wu.char_index, 0);
+    set_char_move_init2(&ewk->wu, &(CharMoveInit2){ 0, ewk->wu.old_rno[4], ewk->wu.char_index, 0 });
 }
 
 s32 effect_E6_init(u8 char_num) {

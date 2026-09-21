@@ -5,8 +5,8 @@
  "bands": {
   "red": 0,
   "yellow": 0,
-  "green": 11,
-  "optimal": 650
+  "green": 9,
+  "optimal": 652
  },
  "scores": [
   {
@@ -18,14 +18,6 @@
    "score": 9.13
   },
   {
-   "path": "src/platform/video/psp/psp_renderer.c",
-   "score": 9.38
-  },
-  {
-   "path": "src/sf33rd/Source/Game/com/patterns/com_patterns_6step.c",
-   "score": 9.38
-  },
-  {
    "path": "src/sf33rd/Source/Game/effect/eff68.c",
    "score": 9.38
   },
@@ -34,19 +26,19 @@
    "score": 9.38
   },
   {
+   "path": "src/sf33rd/Source/Game/com/patterns/com_patterns_6step.c",
+   "score": 9.38
+  },
+  {
    "path": "src/platform/netplay/fistbump.c",
    "score": 9.68
   },
   {
+   "path": "src/platform/video/psp/psp_renderer.c",
+   "score": 9.68
+  },
+  {
    "path": "src/port/config/config.c",
-   "score": 9.68
-  },
-  {
-   "path": "src/port/sdk/sdk_libpad2.c",
-   "score": 9.68
-  },
-  {
-   "path": "src/sf33rd/Source/Game/engine/charset.c",
    "score": 9.68
   },
   {
@@ -175,6 +167,10 @@
   },
   {
    "path": "src/port/resources.c",
+   "score": 10.0
+  },
+  {
+   "path": "src/port/sdk/sdk_libpad2.c",
    "score": 10.0
   },
   {
@@ -438,14 +434,6 @@
    "score": 10.0
   },
   {
-   "path": "src/sf33rd/Source/Game/com/ck_pass_checks.c",
-   "score": 10.0
-  },
-  {
-   "path": "src/sf33rd/Source/Game/com/ck_pass_units_a.c",
-   "score": 10.0
-  },
-  {
    "path": "src/sf33rd/Source/Game/com/ck_pass_units_b.c",
    "score": 10.0
   },
@@ -590,10 +578,6 @@
    "score": 10.0
   },
   {
-   "path": "src/sf33rd/Source/Game/com/passive/pass07.c",
-   "score": 10.0
-  },
-  {
    "path": "src/sf33rd/Source/Game/com/passive/pass07_2.c",
    "score": 10.0
   },
@@ -602,19 +586,7 @@
    "score": 10.0
   },
   {
-   "path": "src/sf33rd/Source/Game/com/passive/pass07_4.c",
-   "score": 10.0
-  },
-  {
-   "path": "src/sf33rd/Source/Game/com/passive/pass08.c",
-   "score": 10.0
-  },
-  {
    "path": "src/sf33rd/Source/Game/com/passive/pass08_2.c",
-   "score": 10.0
-  },
-  {
-   "path": "src/sf33rd/Source/Game/com/passive/pass08_3.c",
    "score": 10.0
   },
   {
@@ -622,75 +594,7 @@
    "score": 10.0
   },
   {
-   "path": "src/sf33rd/Source/Game/com/passive/pass09.c",
-   "score": 10.0
-  },
-  {
-   "path": "src/sf33rd/Source/Game/com/passive/pass09_2.c",
-   "score": 10.0
-  },
-  {
    "path": "src/sf33rd/Source/Game/com/passive/pass09_3.c",
-   "score": 10.0
-  },
-  {
-   "path": "src/sf33rd/Source/Game/com/passive/pass10.c",
-   "score": 10.0
-  },
-  {
-   "path": "src/sf33rd/Source/Game/com/passive/pass10_2.c",
-   "score": 10.0
-  },
-  {
-   "path": "src/sf33rd/Source/Game/com/passive/pass10_3.c",
-   "score": 10.0
-  },
-  {
-   "path": "src/sf33rd/Source/Game/com/passive/pass11.c",
-   "score": 10.0
-  },
-  {
-   "path": "src/sf33rd/Source/Game/com/passive/pass11_2.c",
-   "score": 10.0
-  },
-  {
-   "path": "src/sf33rd/Source/Game/com/passive/pass11_3.c",
-   "score": 10.0
-  },
-  {
-   "path": "src/sf33rd/Source/Game/com/passive/pass11_4.c",
-   "score": 10.0
-  },
-  {
-   "path": "src/sf33rd/Source/Game/com/passive/pass11_5.c",
-   "score": 10.0
-  },
-  {
-   "path": "src/sf33rd/Source/Game/com/passive/pass12.c",
-   "score": 10.0
-  },
-  {
-   "path": "src/sf33rd/Source/Game/com/passive/pass12_2.c",
-   "score": 10.0
-  },
-  {
-   "path": "src/sf33rd/Source/Game/com/passive/pass12_3.c",
-   "score": 10.0
-  },
-  {
-   "path": "src/sf33rd/Source/Game/com/passive/pass12_4.c",
-   "score": 10.0
-  },
-  {
-   "path": "src/sf33rd/Source/Game/com/passive/pass13.c",
-   "score": 10.0
-  },
-  {
-   "path": "src/sf33rd/Source/Game/com/passive/pass13_2.c",
-   "score": 10.0
-  },
-  {
-   "path": "src/sf33rd/Source/Game/com/passive/pass13_3.c",
    "score": 10.0
   },
   {
@@ -698,19 +602,7 @@
    "score": 10.0
   },
   {
-   "path": "src/sf33rd/Source/Game/com/passive/pass14_2.c",
-   "score": 10.0
-  },
-  {
-   "path": "src/sf33rd/Source/Game/com/passive/pass14_3.c",
-   "score": 10.0
-  },
-  {
    "path": "src/sf33rd/Source/Game/com/passive/pass14_4.c",
-   "score": 10.0
-  },
-  {
-   "path": "src/sf33rd/Source/Game/com/passive/pass14_5.c",
    "score": 10.0
   },
   {
@@ -718,155 +610,7 @@
    "score": 10.0
   },
   {
-   "path": "src/sf33rd/Source/Game/com/passive/pass15_2.c",
-   "score": 10.0
-  },
-  {
-   "path": "src/sf33rd/Source/Game/com/passive/pass15_3.c",
-   "score": 10.0
-  },
-  {
-   "path": "src/sf33rd/Source/Game/com/passive/pass16.c",
-   "score": 10.0
-  },
-  {
-   "path": "src/sf33rd/Source/Game/com/passive/pass16_2.c",
-   "score": 10.0
-  },
-  {
-   "path": "src/sf33rd/Source/Game/com/passive/pass16_3.c",
-   "score": 10.0
-  },
-  {
-   "path": "src/sf33rd/Source/Game/com/passive/pass17.c",
-   "score": 10.0
-  },
-  {
-   "path": "src/sf33rd/Source/Game/com/passive/pass17_2.c",
-   "score": 10.0
-  },
-  {
-   "path": "src/sf33rd/Source/Game/com/passive/pass17_3.c",
-   "score": 10.0
-  },
-  {
-   "path": "src/sf33rd/Source/Game/com/passive/pass18.c",
-   "score": 10.0
-  },
-  {
-   "path": "src/sf33rd/Source/Game/com/passive/pass18_2.c",
-   "score": 10.0
-  },
-  {
-   "path": "src/sf33rd/Source/Game/com/passive/pass18_3.c",
-   "score": 10.0
-  },
-  {
-   "path": "src/sf33rd/Source/Game/com/passive/pass18_4.c",
-   "score": 10.0
-  },
-  {
-   "path": "src/sf33rd/Source/Game/com/passive/pass19.c",
-   "score": 10.0
-  },
-  {
-   "path": "src/sf33rd/Source/Game/com/passive/pass19_2.c",
-   "score": 10.0
-  },
-  {
-   "path": "src/sf33rd/Source/Game/com/passive/pass19_3.c",
-   "score": 10.0
-  },
-  {
-   "path": "src/sf33rd/Source/Game/com/patterns/com_pattern_run.c",
-   "score": 10.0
-  },
-  {
-   "path": "src/sf33rd/Source/Game/com/patterns/com_patterns_0step.c",
-   "score": 10.0
-  },
-  {
-   "path": "src/sf33rd/Source/Game/com/patterns/com_patterns_1step.c",
-   "score": 10.0
-  },
-  {
-   "path": "src/sf33rd/Source/Game/com/patterns/com_patterns_2step.c",
-   "score": 10.0
-  },
-  {
-   "path": "src/sf33rd/Source/Game/com/patterns/com_patterns_2step_2.c",
-   "score": 10.0
-  },
-  {
-   "path": "src/sf33rd/Source/Game/com/patterns/com_patterns_2step_3.c",
-   "score": 10.0
-  },
-  {
-   "path": "src/sf33rd/Source/Game/com/patterns/com_patterns_3step.c",
-   "score": 10.0
-  },
-  {
-   "path": "src/sf33rd/Source/Game/com/patterns/com_patterns_3step_2.c",
-   "score": 10.0
-  },
-  {
-   "path": "src/sf33rd/Source/Game/com/patterns/com_patterns_3step_3.c",
-   "score": 10.0
-  },
-  {
-   "path": "src/sf33rd/Source/Game/com/patterns/com_patterns_4step.c",
-   "score": 10.0
-  },
-  {
    "path": "src/sf33rd/Source/Game/com/patterns/com_patterns_4step_2.c",
-   "score": 10.0
-  },
-  {
-   "path": "src/sf33rd/Source/Game/com/patterns/com_patterns_4step_3.c",
-   "score": 10.0
-  },
-  {
-   "path": "src/sf33rd/Source/Game/com/patterns/com_patterns_5step.c",
-   "score": 10.0
-  },
-  {
-   "path": "src/sf33rd/Source/Game/com/patterns/com_patterns_5step_2.c",
-   "score": 10.0
-  },
-  {
-   "path": "src/sf33rd/Source/Game/com/shell/shell00.c",
-   "score": 10.0
-  },
-  {
-   "path": "src/sf33rd/Source/Game/com/shell/shell01.c",
-   "score": 10.0
-  },
-  {
-   "path": "src/sf33rd/Source/Game/com/shell/shell03.c",
-   "score": 10.0
-  },
-  {
-   "path": "src/sf33rd/Source/Game/com/shell/shell04.c",
-   "score": 10.0
-  },
-  {
-   "path": "src/sf33rd/Source/Game/com/shell/shell05.c",
-   "score": 10.0
-  },
-  {
-   "path": "src/sf33rd/Source/Game/com/shell/shell07.c",
-   "score": 10.0
-  },
-  {
-   "path": "src/sf33rd/Source/Game/com/shell/shell11.c",
-   "score": 10.0
-  },
-  {
-   "path": "src/sf33rd/Source/Game/com/shell/shell12.c",
-   "score": 10.0
-  },
-  {
-   "path": "src/sf33rd/Source/Game/com/shell/shell13.c",
    "score": 10.0
   },
   {
@@ -878,10 +622,6 @@
    "score": 10.0
   },
   {
-   "path": "src/sf33rd/Source/Game/demo/demo00.c",
-   "score": 10.0
-  },
-  {
    "path": "src/sf33rd/Source/Game/demo/demo01.c",
    "score": 10.0
   },
@@ -890,23 +630,7 @@
    "score": 10.0
   },
   {
-   "path": "src/sf33rd/Source/Game/effect/eff00.c",
-   "score": 10.0
-  },
-  {
    "path": "src/sf33rd/Source/Game/effect/eff01.c",
-   "score": 10.0
-  },
-  {
-   "path": "src/sf33rd/Source/Game/effect/eff02.c",
-   "score": 10.0
-  },
-  {
-   "path": "src/sf33rd/Source/Game/effect/eff03.c",
-   "score": 10.0
-  },
-  {
-   "path": "src/sf33rd/Source/Game/effect/eff04.c",
    "score": 10.0
   },
   {
@@ -914,39 +638,11 @@
    "score": 10.0
   },
   {
-   "path": "src/sf33rd/Source/Game/effect/eff06.c",
-   "score": 10.0
-  },
-  {
-   "path": "src/sf33rd/Source/Game/effect/eff07.c",
-   "score": 10.0
-  },
-  {
-   "path": "src/sf33rd/Source/Game/effect/eff08.c",
-   "score": 10.0
-  },
-  {
    "path": "src/sf33rd/Source/Game/effect/eff09.c",
    "score": 10.0
   },
   {
-   "path": "src/sf33rd/Source/Game/effect/eff09_animation.c",
-   "score": 10.0
-  },
-  {
-   "path": "src/sf33rd/Source/Game/effect/eff09_endgame.c",
-   "score": 10.0
-  },
-  {
-   "path": "src/sf33rd/Source/Game/effect/eff09_init.c",
-   "score": 10.0
-  },
-  {
    "path": "src/sf33rd/Source/Game/effect/eff09_late.c",
-   "score": 10.0
-  },
-  {
-   "path": "src/sf33rd/Source/Game/effect/eff10.c",
    "score": 10.0
   },
   {
@@ -1938,6 +1634,10 @@
    "score": 10.0
   },
   {
+   "path": "src/sf33rd/Source/Game/engine/charset.c",
+   "score": 10.0
+  },
+  {
    "path": "src/sf33rd/Source/Game/engine/charset_commands.c",
    "score": 10.0
   },
@@ -2194,10 +1894,6 @@
    "score": 10.0
   },
   {
-   "path": "src/sf33rd/Source/Game/engine/spgauge.c",
-   "score": 10.0
-  },
-  {
    "path": "src/sf33rd/Source/Game/engine/stun.c",
    "score": 10.0
   },
@@ -2214,19 +1910,11 @@
    "score": 10.0
   },
   {
-   "path": "src/sf33rd/Source/Game/game_result.c",
-   "score": 10.0
-  },
-  {
    "path": "src/sf33rd/Source/Game/game_round.c",
    "score": 10.0
   },
   {
    "path": "src/sf33rd/Source/Game/init3rd.c",
-   "score": 10.0
-  },
-  {
-   "path": "src/sf33rd/Source/Game/io/gd3rd.c",
    "score": 10.0
   },
   {
@@ -2651,6 +2339,318 @@
   },
   {
    "path": "src/utils/sha256.c",
+   "score": 10.0
+  },
+  {
+   "path": "src/sf33rd/Source/Game/com/ck_pass_checks.c",
+   "score": 10.0
+  },
+  {
+   "path": "src/sf33rd/Source/Game/com/ck_pass_units_a.c",
+   "score": 10.0
+  },
+  {
+   "path": "src/sf33rd/Source/Game/com/passive/pass07.c",
+   "score": 10.0
+  },
+  {
+   "path": "src/sf33rd/Source/Game/com/passive/pass07_4.c",
+   "score": 10.0
+  },
+  {
+   "path": "src/sf33rd/Source/Game/com/passive/pass08.c",
+   "score": 10.0
+  },
+  {
+   "path": "src/sf33rd/Source/Game/com/passive/pass08_3.c",
+   "score": 10.0
+  },
+  {
+   "path": "src/sf33rd/Source/Game/com/passive/pass09.c",
+   "score": 10.0
+  },
+  {
+   "path": "src/sf33rd/Source/Game/com/passive/pass09_2.c",
+   "score": 10.0
+  },
+  {
+   "path": "src/sf33rd/Source/Game/com/passive/pass10.c",
+   "score": 10.0
+  },
+  {
+   "path": "src/sf33rd/Source/Game/com/passive/pass10_2.c",
+   "score": 10.0
+  },
+  {
+   "path": "src/sf33rd/Source/Game/com/passive/pass10_3.c",
+   "score": 10.0
+  },
+  {
+   "path": "src/sf33rd/Source/Game/com/passive/pass11.c",
+   "score": 10.0
+  },
+  {
+   "path": "src/sf33rd/Source/Game/com/passive/pass11_2.c",
+   "score": 10.0
+  },
+  {
+   "path": "src/sf33rd/Source/Game/com/passive/pass11_3.c",
+   "score": 10.0
+  },
+  {
+   "path": "src/sf33rd/Source/Game/com/passive/pass11_4.c",
+   "score": 10.0
+  },
+  {
+   "path": "src/sf33rd/Source/Game/com/passive/pass11_5.c",
+   "score": 10.0
+  },
+  {
+   "path": "src/sf33rd/Source/Game/com/passive/pass12.c",
+   "score": 10.0
+  },
+  {
+   "path": "src/sf33rd/Source/Game/com/passive/pass12_2.c",
+   "score": 10.0
+  },
+  {
+   "path": "src/sf33rd/Source/Game/com/passive/pass12_3.c",
+   "score": 10.0
+  },
+  {
+   "path": "src/sf33rd/Source/Game/com/passive/pass12_4.c",
+   "score": 10.0
+  },
+  {
+   "path": "src/sf33rd/Source/Game/com/passive/pass13.c",
+   "score": 10.0
+  },
+  {
+   "path": "src/sf33rd/Source/Game/com/passive/pass13_2.c",
+   "score": 10.0
+  },
+  {
+   "path": "src/sf33rd/Source/Game/com/passive/pass13_3.c",
+   "score": 10.0
+  },
+  {
+   "path": "src/sf33rd/Source/Game/com/passive/pass14_2.c",
+   "score": 10.0
+  },
+  {
+   "path": "src/sf33rd/Source/Game/com/passive/pass14_3.c",
+   "score": 10.0
+  },
+  {
+   "path": "src/sf33rd/Source/Game/com/passive/pass14_5.c",
+   "score": 10.0
+  },
+  {
+   "path": "src/sf33rd/Source/Game/com/passive/pass15_2.c",
+   "score": 10.0
+  },
+  {
+   "path": "src/sf33rd/Source/Game/com/passive/pass15_3.c",
+   "score": 10.0
+  },
+  {
+   "path": "src/sf33rd/Source/Game/com/passive/pass16.c",
+   "score": 10.0
+  },
+  {
+   "path": "src/sf33rd/Source/Game/com/passive/pass16_2.c",
+   "score": 10.0
+  },
+  {
+   "path": "src/sf33rd/Source/Game/com/passive/pass16_3.c",
+   "score": 10.0
+  },
+  {
+   "path": "src/sf33rd/Source/Game/com/passive/pass17.c",
+   "score": 10.0
+  },
+  {
+   "path": "src/sf33rd/Source/Game/com/passive/pass17_2.c",
+   "score": 10.0
+  },
+  {
+   "path": "src/sf33rd/Source/Game/com/passive/pass17_3.c",
+   "score": 10.0
+  },
+  {
+   "path": "src/sf33rd/Source/Game/com/passive/pass18.c",
+   "score": 10.0
+  },
+  {
+   "path": "src/sf33rd/Source/Game/com/passive/pass18_2.c",
+   "score": 10.0
+  },
+  {
+   "path": "src/sf33rd/Source/Game/com/passive/pass18_3.c",
+   "score": 10.0
+  },
+  {
+   "path": "src/sf33rd/Source/Game/com/passive/pass18_4.c",
+   "score": 10.0
+  },
+  {
+   "path": "src/sf33rd/Source/Game/com/passive/pass19.c",
+   "score": 10.0
+  },
+  {
+   "path": "src/sf33rd/Source/Game/com/passive/pass19_2.c",
+   "score": 10.0
+  },
+  {
+   "path": "src/sf33rd/Source/Game/com/passive/pass19_3.c",
+   "score": 10.0
+  },
+  {
+   "path": "src/sf33rd/Source/Game/com/patterns/com_pattern_run.c",
+   "score": 10.0
+  },
+  {
+   "path": "src/sf33rd/Source/Game/com/patterns/com_patterns_0step.c",
+   "score": 10.0
+  },
+  {
+   "path": "src/sf33rd/Source/Game/com/patterns/com_patterns_1step.c",
+   "score": 10.0
+  },
+  {
+   "path": "src/sf33rd/Source/Game/com/patterns/com_patterns_2step.c",
+   "score": 10.0
+  },
+  {
+   "path": "src/sf33rd/Source/Game/com/patterns/com_patterns_2step_2.c",
+   "score": 10.0
+  },
+  {
+   "path": "src/sf33rd/Source/Game/com/patterns/com_patterns_2step_3.c",
+   "score": 10.0
+  },
+  {
+   "path": "src/sf33rd/Source/Game/com/patterns/com_patterns_3step.c",
+   "score": 10.0
+  },
+  {
+   "path": "src/sf33rd/Source/Game/com/patterns/com_patterns_3step_2.c",
+   "score": 10.0
+  },
+  {
+   "path": "src/sf33rd/Source/Game/com/patterns/com_patterns_3step_3.c",
+   "score": 10.0
+  },
+  {
+   "path": "src/sf33rd/Source/Game/com/patterns/com_patterns_4step.c",
+   "score": 10.0
+  },
+  {
+   "path": "src/sf33rd/Source/Game/com/patterns/com_patterns_4step_3.c",
+   "score": 10.0
+  },
+  {
+   "path": "src/sf33rd/Source/Game/com/patterns/com_patterns_5step.c",
+   "score": 10.0
+  },
+  {
+   "path": "src/sf33rd/Source/Game/com/patterns/com_patterns_5step_2.c",
+   "score": 10.0
+  },
+  {
+   "path": "src/sf33rd/Source/Game/com/shell/shell00.c",
+   "score": 10.0
+  },
+  {
+   "path": "src/sf33rd/Source/Game/com/shell/shell01.c",
+   "score": 10.0
+  },
+  {
+   "path": "src/sf33rd/Source/Game/com/shell/shell03.c",
+   "score": 10.0
+  },
+  {
+   "path": "src/sf33rd/Source/Game/com/shell/shell04.c",
+   "score": 10.0
+  },
+  {
+   "path": "src/sf33rd/Source/Game/com/shell/shell05.c",
+   "score": 10.0
+  },
+  {
+   "path": "src/sf33rd/Source/Game/com/shell/shell07.c",
+   "score": 10.0
+  },
+  {
+   "path": "src/sf33rd/Source/Game/com/shell/shell11.c",
+   "score": 10.0
+  },
+  {
+   "path": "src/sf33rd/Source/Game/com/shell/shell12.c",
+   "score": 10.0
+  },
+  {
+   "path": "src/sf33rd/Source/Game/com/shell/shell13.c",
+   "score": 10.0
+  },
+  {
+   "path": "src/sf33rd/Source/Game/demo/demo00.c",
+   "score": 10.0
+  },
+  {
+   "path": "src/sf33rd/Source/Game/effect/eff00.c",
+   "score": 10.0
+  },
+  {
+   "path": "src/sf33rd/Source/Game/effect/eff02.c",
+   "score": 10.0
+  },
+  {
+   "path": "src/sf33rd/Source/Game/effect/eff03.c",
+   "score": 10.0
+  },
+  {
+   "path": "src/sf33rd/Source/Game/effect/eff04.c",
+   "score": 10.0
+  },
+  {
+   "path": "src/sf33rd/Source/Game/effect/eff06.c",
+   "score": 10.0
+  },
+  {
+   "path": "src/sf33rd/Source/Game/effect/eff07.c",
+   "score": 10.0
+  },
+  {
+   "path": "src/sf33rd/Source/Game/effect/eff08.c",
+   "score": 10.0
+  },
+  {
+   "path": "src/sf33rd/Source/Game/effect/eff09_animation.c",
+   "score": 10.0
+  },
+  {
+   "path": "src/sf33rd/Source/Game/effect/eff09_endgame.c",
+   "score": 10.0
+  },
+  {
+   "path": "src/sf33rd/Source/Game/effect/eff09_init.c",
+   "score": 10.0
+  },
+  {
+   "path": "src/sf33rd/Source/Game/effect/eff10.c",
+   "score": 10.0
+  },
+  {
+   "path": "src/sf33rd/Source/Game/engine/spgauge.c",
+   "score": 10.0
+  },
+  {
+   "path": "src/sf33rd/Source/Game/game_result.c",
+   "score": 10.0
+  },
+  {
+   "path": "src/sf33rd/Source/Game/io/gd3rd.c",
    "score": 10.0
   }
  ],

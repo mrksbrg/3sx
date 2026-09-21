@@ -23,7 +23,7 @@ static void eff81_launch(WORK_Other* ewk) {
     ewk->wu.xyz[0].disp.pos = bg_w.bgw[1].xy[0].disp.pos - 416;
     ewk->wu.xyz[1].disp.pos = bg_w.bgw[1].xy[1].disp.pos - 24;
     ewk->wu.hit_quake = bg_w.bgw[1].xy[0].disp.pos - 16;
-    set_char_move_init2(&ewk->wu, 0, ewk->wu.char_index, ewk->wu.dir_step + 1, 0);
+    set_char_move_init2(&ewk->wu, &(CharMoveInit2){ 0, ewk->wu.char_index, ewk->wu.dir_step + 1, 0 });
 }
 
 static void eff81_drift(WORK_Other* ewk) {

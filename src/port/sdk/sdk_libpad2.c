@@ -2,6 +2,7 @@
 #include "core/input.h"
 
 #include <libpad2.h>
+#include <libvib.h>
 
 #include <string.h>
 
@@ -89,24 +90,24 @@ int sceVibGetProfile(int socket_number, unsigned char* profile) {
     return 1;
 }
 
-int sceVibSetActParam(int socket_number, int profile_size, unsigned char* profile, int data_size, unsigned char* data) {
-    const bool is_small_enabled = profile[0] & 1;
-    const bool is_big_enabled = profile[0] & 2;
+int sceVibSetActParam(const VibActParam* args) {
+    const bool is_small_enabled = args->profile[0] & 1;
+    const bool is_big_enabled = args->profile[0] & 2;
     unsigned char big_value = 0;
     bool small_value = false;
 
     if (is_small_enabled) {
-        small_value = data[0] & 1;
+        small_value = args->data[0] & 1;
     }
 
     if (is_big_enabled) {
         if (is_small_enabled) {
-            big_value = ((data[0] & 0xFE) >> 1) | ((data[1] & 1) << 7);
+            big_value = ((args->data[0] & 0xFE) >> 1) | ((args->data[1] & 1) << 7);
         } else {
-            big_value = data[0];
+            big_value = args->data[0];
         }
     }
 
-    Input_RumblePad(socket_number, small_value, big_value);
+    Input_RumblePad(args->socket_number, small_value, big_value);
     return 1;
 }

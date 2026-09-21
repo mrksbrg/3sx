@@ -105,7 +105,7 @@ static void initialize_slide_in_66(WORK_Other* ewk) {
     ewk->wu.hit_quake = bg_w.bgw[ewk->wu.my_family - 1].wxy[0].disp.pos + Slide_Pos_Data_66[ewk->wu.type - 7][0];
     ewk->wu.mvxy.a[0].sp = -0x400000;
     ewk->wu.mvxy.d[0].sp = 0x50000;
-    set_char_move_init2(&ewk->wu, 0, ewk->wu.char_index, ewk->wu.dir_step + 1, 0);
+    set_char_move_init2(&ewk->wu, &(CharMoveInit2){ 0, ewk->wu.char_index, ewk->wu.dir_step + 1, 0 });
 }
 
 static void advance_slide_in_66(WORK_Other* ewk) {
@@ -239,7 +239,7 @@ void Setup_Pos_66(WORK_Other* ewk) {
         }
     }
 
-    set_char_move_init2(&ewk->wu, 0, ewk->wu.char_index, ewk->wu.dir_step + 1, 0);
+    set_char_move_init2(&ewk->wu, &(CharMoveInit2){ 0, ewk->wu.char_index, ewk->wu.dir_step + 1, 0 });
 }
 
 static void initialize_effect_66_work(WORK_Other* ewk, Effect66InitParams params) {

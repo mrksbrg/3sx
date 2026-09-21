@@ -27,7 +27,7 @@ void effect_B9_move(WORK_Other* ewk) {
         case 0:
             ewk->wu.routine_no[1] += 1;
             ewk->wu.disp_flag = 1;
-            set_char_move_init2(&ewk->wu, 0, ewk->wu.old_rno[0], ewk->wu.char_index, 0);
+            set_char_move_init2(&ewk->wu, &(CharMoveInit2){ 0, ewk->wu.old_rno[0], ewk->wu.char_index, 0 });
             ewk->wu.my_mr_flag = 1;
             /* fallthrough */
 

@@ -21,7 +21,7 @@ void effect_H2_move(WORK_Other* ewk) {
         ewk->wu.disp_flag = 0;
         ewk->wu.my_col_mode = 0x4200;
         ewk->wu.my_col_code = 0x22;
-        set_char_move_init2(&ewk->wu, 0, 0, ewk->wu.type + 21, 0);
+        set_char_move_init2(&ewk->wu, &(CharMoveInit2){ 0, 0, ewk->wu.type + 21, 0 });
         ewk->wu.disp_flag = 0;
         ewk->wu.direction = 7;
         ewk->wu.dir_old = 7;
