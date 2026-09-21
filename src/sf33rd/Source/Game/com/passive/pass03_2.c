@@ -147,9 +147,7 @@ void Passive03_0075(PLW* wk) {
         [2] = STEP(SA_Term, 0xFFFF, 0x2F, 0xFFFF, 0), [3] = STEP(Normal_Attack, 8, 0x10),
         [4] = STEP(Normal_Attack, 8, 0x20),           [5] = STEP(Normal_Attack, 0xC, 0x40)
     };
-    if (!Run_Pattern_Steps(wk, script, 6)) {
-        pattern_com_random_select_from_step_6(wk);
-    }
+    Run_Pattern_Or(wk, script, 6, pattern_com_random_select_from_step_6);
 }
 
 void Passive03_0076(PLW* wk) {
@@ -159,9 +157,7 @@ void Passive03_0076(PLW* wk) {
                                      [3] = STEP(Normal_Attack, 0xB, 0x10),
                                      [4] = STEP(Normal_Attack, 8, 0x20),
                                      [5] = STEP(Normal_Attack, 0xC, 0x40) };
-    if (!Run_Pattern_Steps(wk, script, 6)) {
-        pattern_com_random_select_from_step_6(wk);
-    }
+    Run_Pattern_Or(wk, script, 6, pattern_com_random_select_from_step_6);
 }
 
 void Passive03_0077(PLW* wk) {
@@ -232,9 +228,7 @@ void Passive03_0087(PLW* wk) {
         [2] = STEP(SA_Term, 0xFFFF, 0x2F, 0xFFFF, 0), [3] = STEP(Normal_Attack, 0xB, 0x10),
         [4] = STEP(Normal_Attack, 8, 0x20),           [5] = STEP(Normal_Attack, 0xC, 0x40)
     };
-    if (!Run_Pattern_Steps(wk, script, 6)) {
-        pattern_com_random_select_from_step_6(wk);
-    }
+    Run_Pattern_Or(wk, script, 6, pattern_com_random_select_from_step_6);
 }
 
 void Passive03_0088(PLW* wk) {
