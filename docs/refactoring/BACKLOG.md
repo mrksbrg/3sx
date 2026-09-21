@@ -17,19 +17,59 @@ for the allowed transformations.
 
 ## Where the whole repository stands
 
-| Band | Score | 2026-09-01 | 2026-09-19 | 2026-09-20 | 09-21 am | 09-21 pm | 09-21 late |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| **Red** - severe debt | 1.0 - 3.9 | 19 | **0** | **0** | **0** | **0** | **0** |
-| **Yellow** - problematic debt | 4.0 - 8.9 | 207 | 93 | 28 | 2 | **0** | **0** |
-| Green | 9.0 - 9.9 | 158 | 91 | 79 | 61 | 27 | **9** |
-| Optimal | 10.0 | 98 | 475 | 553 | 598 | 634 | **652** |
-| Total scored | | 482 | 659 | 660 | 661 | 661 | 661 |
+| Band | Score | 2026-09-01 | 2026-09-19 | 2026-09-20 | 09-21 am | 09-21 pm | 09-21 late | 09-21 night |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| **Red** - severe debt | 1.0 - 3.9 | 19 | **0** | **0** | **0** | **0** | **0** | **0** |
+| **Yellow** - problematic debt | 4.0 - 8.9 | 207 | 93 | 28 | 2 | **0** | **0** | **0** |
+| Green | 9.0 - 9.9 | 158 | 91 | 79 | 61 | 27 | **9** | **1** |
+| Optimal | 10.0 | 98 | 475 | 553 | 598 | 634 | **652** | **661** |
+| Total scored | | 482 | 659 | 660 | 661 | 661 | 661 | 662 |
 
 The file count rises because the campaign splits files. Mean Code Health across every
-scorable first-party file is **9.9929**, against 8.52 over the same files at the start.
-**The yellow band is empty**: nothing scores below 9.0, and 652 of the 661 scored files are
-at 10.00. Nine are left, and they are listed under *The last nine, priced one at a time*
-below.
+scorable first-party file is **9.9995**, against 8.52 over the same files at the start.
+**661 of the 662 scored files are at 10.00.** One is left, `platform/netplay/fistbump.c`
+at 9.68, and it is a genuine plateau - see *The night of 2026-09-21* below for it and for
+how the other eight of *The last nine* came off the list.
+
+### The night of 2026-09-21: eight of the last nine, and three new recipes
+
+The eleven-then-nine files this page priced as refusals were reopened with one question:
+what transformation, not yet in the catalogue, is behaviour-preserving here, and how would
+it be **proven** rather than guarded? Three answers became recipes M, O and J2 (see
+`PLAYBOOK.md`, *Recipes M, O and J2*), each carrying an equivalence harness in
+`tools/equivalence/` that compiles the base ref's text and the working tree's text of the
+transformed region behind a minimal fake of the state it touches and diffs their observable
+effects over the whole input domain. Two more came off through the owner's signature on
+proposals this page already held, one through a formatting fact, and one was the catalogue's
+own Recipe F applied where an earlier survey had stopped.
+
+| File | Before | After | How | Proof |
+| --- | --- | --- | --- | --- |
+| `Game/effect/eff68.c` | 9.38 | **10.00** | Recipe F: the two flight legs join the ground legs behind one more descriptor field | guards; replay 8x1200 and 30x3600 - but no harness seed ever plays Santos Harbor, the one stage that spawns it (`REPLAY-VERIFICATION.md`), so a playtest there is the real check |
+| `AcrSDK/ps2/ps2PAD.c` | 9.92 | **10.00** | **Recipe O** - Return an Object: `flPADShockSet`'s two arms return a `VibCommand` by value | guard OK, 368 literals; SDK call recorded over both pads x 6 profiles x 17 levels x 6 times: 1,224 calls, 0 mismatches |
+| `Game/stage/bg_zoom.c` | 9.38 | **10.00** | **Recipe M** - Decision Table: both zoom chains as one 6x6 outcome table per axis | all 2^32 (p1zoom, p2zoom) pairs, two initial flag states: 8,589,934,592 checks, 0 mismatches; replay clean |
+| `Game/com/com_sub_command_term.c` | 9.09 | **10.00** | **Recipe J2** - Uniform Step Table: six Term dispatchers as tables of (wk, a) steps | every leaf call recorded, 256 states x 2 fighters x 3 entry points: 1,536 dispatches, 0 mismatches; CPU AI is outside replay, playtest a CPU Oro |
+| `port/config/config.c` | 9.68 | **10.00** | the Closed Key Set this page proposed, with the bounds check, under the owner's signature | build, guards `--combined`, replay clean |
+| `Game/com/patterns/com_patterns_6step.c` | 9.38 | **10.00** | designated initialisers of three tables ordered so clang-format packs them | guards PASS; a formatting fact, taken on the owner's request |
+| `platform/video/psp/psp_renderer.c` | 9.68 | **10.00** | Recipe S: the texture cache to `psp_textures.c` (also 10.00), one accessor across the cut | guards `--combined`; **not compiled here** - PSP-only code, `build_psp.yml` is the check |
+
+**What the clang-format finding actually was.** `com_patterns_6step.c`'s three flagged
+skeletons were ten lines only because clang-format refuses to lay a braced list out in
+columns when items in one column differ by more than ten characters, and `STEP(Wait, 5)`
+sat under forty-character steps. Signatures over the column limit were the trigger this
+page recorded; the column rule was the mechanism.
+
+**What the Primitive Obsession gate actually is.** Measured on `psp_renderer.c` copies: a
+21-function half with 20 of 31 parameters built-in scores 10.00, a 22-function half with 21
+of 32 does not, and adding a two-parameter function of struct types to the first keeps it
+at 10.00. The gate is a **parameter count near 32**, not the thirty functions recorded
+above; below it the ratio is not judged.
+
+**`fistbump.c` 9.68 is the one left, and it is a real plateau.** *String Heavy Function
+Arguments* closes at **7 string parameters of 18 and stays open at 8** - about 40% - and the
+honest count is 13: eight handlers each take the protocol line, because their `sscanf`
+formats carry the command word. Nothing that is not lexical reaches it.
+
 
 The 2026-09-21 pm column is the sweep taken after the green-band survey: sixty-one files
 diagnosed and probed in parallel, thirty-three lifted, and the last two yellow-band files
