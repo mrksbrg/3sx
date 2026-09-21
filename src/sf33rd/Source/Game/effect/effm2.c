@@ -57,6 +57,38 @@ void effect_M2_move(WORK_Other* ewk) {
     }
 }
 
+/* The cat is placed one screen-unit clear of its owner, on the side the owner's
+ * id selects. */
+static void offset_cat_from_owner(WORK_Other* ewk, WORK* oya_ptr) {
+    if (oya_ptr->id) {
+        ewk->wu.xyz[0].disp.pos = oya_ptr->xyz[0].disp.pos + 60;
+    } else {
+        ewk->wu.xyz[0].disp.pos = oya_ptr->xyz[0].disp.pos - 60;
+    }
+}
+
+/* On the last frame of the sit animation the cat turns (for one of the four
+ * poses) and breaks into a run. */
+static void start_cat_run_on_last_frame(WORK_Other* ewk) {
+    if (ewk->wu.cg_type == 0xFF) {
+        ewk->wu.routine_no[1]++;
+
+        if (ewk->wu.old_rno[0] == 2) {
+            ewk->wu.rl_flag ^= 1;
+        }
+
+        cat_run_set2(ewk);
+    }
+}
+
+/* Once the cat has run off the side of the screen the work retires itself. */
+static void finish_cat_when_off_screen(WORK_Other* ewk) {
+    if (!range_x_check3(ewk, 64)) {
+        ewk->wu.routine_no[0] = 99;
+        ewk->wu.routine_no[1]++;
+    }
+}
+
 void effm2_move(WORK_Other* ewk) {
     WORK* oya_ptr = (WORK*)ewk->my_master;
 
@@ -71,11 +103,7 @@ void effm2_move(WORK_Other* ewk) {
         ewk->wu.kage_prio = 71;
         ewk->wu.kage_char = 3;
 
-        if (oya_ptr->id) {
-            ewk->wu.xyz[0].disp.pos = oya_ptr->xyz[0].disp.pos + 60;
-        } else {
-            ewk->wu.xyz[0].disp.pos = oya_ptr->xyz[0].disp.pos - 60;
-        }
+        offset_cat_from_owner(ewk, oya_ptr);
 
         ewk->wu.xyz[1].disp.pos = 7;
         ewk->wu.my_priority = ewk->wu.position_z = 67;
@@ -84,29 +112,26 @@ void effm2_move(WORK_Other* ewk) {
 
     case 1:
         char_move(&ewk->wu);
-
-        if (ewk->wu.cg_type == 0xFF) {
-            ewk->wu.routine_no[1]++;
-
-            if (ewk->wu.old_rno[0] == 2) {
-                ewk->wu.rl_flag ^= 1;
-            }
-
-            cat_run_set2(ewk);
-        }
-
+        start_cat_run_on_last_frame(ewk);
         break;
 
     case 2:
         char_move(&ewk->wu);
         add_x_sub(&ewk->wu);
-
-        if (!range_x_check3(ewk, 64)) {
-            ewk->wu.routine_no[0] = 99;
-            ewk->wu.routine_no[1]++;
-        }
-
+        finish_cat_when_off_screen(ewk);
         break;
+    }
+}
+
+/* Owner facing one way: the cat comes in from the low edge, running if the owner
+ * is already past the camera's centre and walking otherwise. */
+static void start_cat_from_low_edge(WORK_Other* ewk, WORK* oya_ptr) {
+    ewk->wu.xyz[0].disp.pos = bg_w.bgw[1].wxy[0].disp.pos - bg_w.pos_offset - 48;
+
+    if (oya_ptr->xyz[0].disp.pos > bg_w.bgw[1].wxy[0].disp.pos) {
+        cat_run_set2(ewk);
+    } else {
+        cat_walk_set(ewk);
     }
 }
 
@@ -115,13 +140,7 @@ void effm2_move(WORK_Other* ewk) {
  * otherwise. */
 static void place_cat_beside_owner(WORK_Other* ewk, WORK* oya_ptr) {
     if (oya_ptr->rl_flag) {
-        ewk->wu.xyz[0].disp.pos = bg_w.bgw[1].wxy[0].disp.pos - bg_w.pos_offset - 48;
-
-        if (oya_ptr->xyz[0].disp.pos > bg_w.bgw[1].wxy[0].disp.pos) {
-            cat_run_set2(ewk);
-        } else {
-            cat_walk_set(ewk);
-        }
+        start_cat_from_low_edge(ewk, oya_ptr);
     } else {
         ewk->wu.xyz[0].disp.pos = bg_w.bgw[1].wxy[0].disp.pos + bg_w.pos_offset + 48;
 
