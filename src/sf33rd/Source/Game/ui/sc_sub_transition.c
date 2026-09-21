@@ -49,6 +49,14 @@ static void wipe_out_vertical(PAL_CURSOR* wipe_pc, PAL_CURSOR_P* wipe_p, s32 dmy
     }
 }
 
+static void draw_wipe_out_band(PAL_CURSOR* wipe_pc, PAL_CURSOR_P* wipe_p, s32 i, s32 dmylim) {
+    wipe_p[0].x = i;
+    wipe_p[1].x = (i + dmylim + 1);
+    wipe_p[2].x = 224.0f + wipe_p[0].x;
+    wipe_p[3].x = 224.0f + wipe_p[1].x;
+    njDrawPolygon2D(wipe_pc, 4, PrioBase[0], 32);
+}
+
 static void wipe_out_horizontal(PAL_CURSOR* wipe_pc, PAL_CURSOR_P* wipe_p, s32 dmylim) {
     s32 i;
 
@@ -56,11 +64,7 @@ static void wipe_out_horizontal(PAL_CURSOR* wipe_pc, PAL_CURSOR_P* wipe_p, s32 d
     wipe_p[2].y = wipe_p[3].y = 224.0f;
 
     for (i = -224; i < 384; i += 8) {
-        wipe_p[0].x = i;
-        wipe_p[1].x = (i + dmylim + 1);
-        wipe_p[2].x = 224.0f + wipe_p[0].x;
-        wipe_p[3].x = 224.0f + wipe_p[1].x;
-        njDrawPolygon2D(wipe_pc, 4, PrioBase[0], 32);
+        draw_wipe_out_band(wipe_pc, wipe_p, i, dmylim);
     }
 }
 
@@ -107,6 +111,21 @@ s32 WipeOut(u8 type) {
     return (WipeLimit < 8) ? 0 : 1;
 }
 
+static void wipe_in_horizontal(PAL_CURSOR* wipe_pc, PAL_CURSOR_P* wipe_p) {
+    s32 i;
+
+    wipe_p[0].y = wipe_p[1].y = 0.0f;
+    wipe_p[2].y = wipe_p[3].y = 224.0f;
+
+    for (i = -224; i < 384; i += 8) {
+        wipe_p[0].x = i;
+        wipe_p[1].x = ((i + 8) - (WipeLimit + 1));
+        wipe_p[2].x = 224.0f + wipe_p[0].x;
+        wipe_p[3].x = 224.0f + wipe_p[1].x;
+        njDrawPolygon2D(wipe_pc, 4, PrioBase[0], 32);
+    }
+}
+
 s32 WipeIn(u8 type) {
     PAL_CURSOR wipe_pc;
     PAL_CURSOR_P wipe_p[4];
@@ -130,16 +149,7 @@ s32 WipeIn(u8 type) {
                 njDrawPolygon2D(&wipe_pc, 4, PrioBase[0], 32);
             }
         } else {
-            wipe_p[0].y = wipe_p[1].y = 0.0f;
-            wipe_p[2].y = wipe_p[3].y = 224.0f;
-
-            for (i = -224; i < 384; i += 8) {
-                wipe_p[0].x = i;
-                wipe_p[1].x = ((i + 8) - (WipeLimit + 1));
-                wipe_p[2].x = 224.0f + wipe_p[0].x;
-                wipe_p[3].x = 224.0f + wipe_p[1].x;
-                njDrawPolygon2D(&wipe_pc, 4, PrioBase[0], 32);
-            }
+            wipe_in_horizontal(&wipe_pc, wipe_p);
         }
     }
 
@@ -205,6 +215,21 @@ s32 FadeOut(u8 type, u8 step, u8 priority) {
     return 0;
 }
 
+static void setup_fade_in_cursor(PAL_CURSOR* fade_pc, PAL_CURSOR_P* fade_p, PAL_CURSOR_COL* fade_col) {
+    njColorBlendingMode(0, 1);
+    fade_pc->p = fade_p;
+    fade_pc->col = fade_col;
+    fade_pc->num = 4;
+}
+
+static u32 fade_in_alpha_for_type(u8 type, u32 Alpha) {
+    if (type == 0) {
+        Alpha |= 0x00FFFFFF;
+    }
+
+    return Alpha;
+}
+
 s32 FadeIn(u8 type, u8 step, u8 priority) {
     PAL_CURSOR fade_pc;
     PAL_CURSOR_P fade_p[4];
@@ -215,10 +240,7 @@ s32 FadeIn(u8 type, u8 step, u8 priority) {
     Alpha = 0;
     flag = 0;
 
-    njColorBlendingMode(0, 1);
-    fade_pc.p = fade_p;
-    fade_pc.col = fade_col;
-    fade_pc.num = 4;
+    setup_fade_in_cursor(&fade_pc, fade_p, fade_col);
 
     if (FadeLimit * step < 255) {
         Alpha = (255 - FadeLimit * step) << 24;
@@ -226,9 +248,7 @@ s32 FadeIn(u8 type, u8 step, u8 priority) {
         flag = 1;
     }
 
-    if (type == 0) {
-        Alpha |= 0x00FFFFFF;
-    }
+    Alpha = fade_in_alpha_for_type(type, Alpha);
 
     fill_fade_quad(fade_p, fade_col, Alpha);
 
