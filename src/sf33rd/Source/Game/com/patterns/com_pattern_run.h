@@ -35,13 +35,13 @@ typedef struct {
 #define STEP_WITH(call, ...) { Step_##call, (__VA_ARGS__) }
 #define STEP_NOARG(call) { Step_##call, NULL }
 
-/* Runs the step the COM step counter selects. 0 if it selected none, which is
- * every index the switch used to send to its default arm: past the last step,
- * or a hole the step numbers left. */
-s32 Run_Pattern_Steps(PLW* wk, const Pattern_Step* steps, s32 count);
-
-/* The same, with the default arm all but five of the skeletons had. */
+/* Runs the step the COM step counter selects, then the default arm the
+ * switch sent every other index to: past the last step, or a hole the step
+ * numbers left. Run_Pattern supplies the End_Pattern that almost every
+ * script's default arm held; Run_Pattern_Or takes the continuation the rest
+ * of them chained to, so that arm stays data like all the others. */
 void Run_Pattern(PLW* wk, const Pattern_Step* steps, s32 count);
+void Run_Pattern_Or(PLW* wk, const Pattern_Step* steps, s32 count, void (*otherwise)(PLW* wk));
 
 void Step_Adjust_Attack(PLW* wk, const void* arg);
 void Step_Approach_Walk(PLW* wk, const void* arg);

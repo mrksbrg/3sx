@@ -13,7 +13,7 @@
 #include "sf33rd/Source/Game/com/com_sub.h"
 #include "sf33rd/Source/Game/engine/workuser.h"
 
-s32 Run_Pattern_Steps(PLW* wk, const Pattern_Step* steps, s32 count) {
+static s32 Run_Pattern_Steps(PLW* wk, const Pattern_Step* steps, s32 count) {
     s32 step = CP_Index[wk->wu.id][0];
 
     if (step >= count) {
@@ -31,6 +31,12 @@ s32 Run_Pattern_Steps(PLW* wk, const Pattern_Step* steps, s32 count) {
 void Run_Pattern(PLW* wk, const Pattern_Step* steps, s32 count) {
     if (!Run_Pattern_Steps(wk, steps, count)) {
         End_Pattern(wk);
+    }
+}
+
+void Run_Pattern_Or(PLW* wk, const Pattern_Step* steps, s32 count, void (*otherwise)(PLW* wk)) {
+    if (!Run_Pattern_Steps(wk, steps, count)) {
+        otherwise(wk);
     }
 }
 

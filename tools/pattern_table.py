@@ -219,7 +219,11 @@ def convert_source(src: str) -> str:
         if default == "End_Pattern(wk);":
             new_body = decl + "    Run_Pattern(wk, script, %d);\n" % count
         else:
-            new_body = decl + "    if (!Run_Pattern_Steps(wk, script, %d)) {\n        %s\n    }\n" % (count, default)
+            m = re.match(r"^(\w+)\(wk\);$", default.strip())
+            if m is None:
+                raise SystemExit("a default arm that is not `f(wk);` cannot be a Recipe J "
+                                 "continuation: " + default)
+            new_body = decl + "    Run_Pattern_Or(wk, script, %d, %s);\n" % (count, m.group(1))
         edits.append((start, end, "%svoid %s(%s) {\n%s}" % (
             "static " if name.startswith("static ") else "", name.replace("static ", ""), params, new_body)))
         # Formatting one function at a time keeps the diff to the conversion.
@@ -238,7 +242,15 @@ def convert_source(src: str) -> str:
 
 
 TABLE_RE = re.compile(r"const Pattern_Step script\[(\d+)\] = \{", re.S)
-CHAIN_RE = re.compile(r"if \(!Run_Pattern_Steps\(wk, script, \d+\)\) \{\s*(.*?)\s*\n    \}", re.S)
+# Both spellings of a chained default arm: the one this tool writes now, and the
+# `if (!Run_Pattern_Steps(...))` it wrote first. A restyle inverts what is on
+# disk, so dropping the older spelling here would silently turn a continuation
+# into End_Pattern - a behaviour change with nothing in the literals to show it.
+CHAIN_RE = re.compile(
+    r"Run_Pattern_Or\(wk, script, \d+, (\w+)\);"
+    r"|if \(!Run_Pattern_Steps\(wk, script, \d+\)\) \{\s*(\w+)\(wk\);",
+    re.S,
+)
 
 
 def braced_body(text: str, open_at: int) -> str:
@@ -282,7 +294,10 @@ def invert_source(src: str) -> str:
             e = ENTRY_RE.match(item.strip())
             entries.append((int(e.group(1)), call_for(e.group(2), e.group(3), e.group(4), plist)))
         chained = CHAIN_RE.search(body)
-        default = chained.group(1).strip() if chained else "End_Pattern(wk);"
+        if chained is None:
+            default = "End_Pattern(wk);"
+        else:
+            default = "%s(wk);" % (chained.group(1) or chained.group(2))
         arms = "".join("    case %d:\n        %s\n        break;\n\n" % (lab, call) for lab, call in entries)
         new_body = "    %s {\n%s    default:\n        %s\n        break;\n    }\n" % (
             SWITCH_HEAD,
@@ -392,13 +407,13 @@ def emit_infra(used: set) -> dict:
         "#define STEP_WITH(call, ...) { Step_##call, (__VA_ARGS__) }",
         "#define STEP_NOARG(call) { Step_##call, NULL }",
         "",
-        "/* Runs the step the COM step counter selects. 0 if it selected none, which is",
-        " * every index the switch used to send to its default arm: past the last step,",
-        " * or a hole the step numbers left. */",
-        "s32 Run_Pattern_Steps(PLW* wk, const Pattern_Step* steps, s32 count);",
-        "",
-        "/* The same, with the default arm all but five of the skeletons had. */",
+        "/* Runs the step the COM step counter selects, then the default arm the",
+        " * switch sent every other index to: past the last step, or a hole the step",
+        " * numbers left. Run_Pattern supplies the End_Pattern that almost every",
+        " * script's default arm held; Run_Pattern_Or takes the continuation the rest",
+        " * of them chained to, so that arm stays data like all the others. */",
         "void Run_Pattern(PLW* wk, const Pattern_Step* steps, s32 count);",
+        "void Run_Pattern_Or(PLW* wk, const Pattern_Step* steps, s32 count, void (*otherwise)(PLW* wk));",
         "",
     ]
     for c in sorted(used):
@@ -422,7 +437,7 @@ def emit_infra(used: set) -> dict:
         '#include "sf33rd/Source/Game/com/com_sub.h"',
         '#include "sf33rd/Source/Game/engine/workuser.h"',
         "",
-        "s32 Run_Pattern_Steps(PLW* wk, const Pattern_Step* steps, s32 count) {",
+        "static s32 Run_Pattern_Steps(PLW* wk, const Pattern_Step* steps, s32 count) {",
         "    s32 step = CP_Index[wk->wu.id][0];",
         "",
         "    if (step >= count) {",
@@ -440,6 +455,12 @@ def emit_infra(used: set) -> dict:
         "void Run_Pattern(PLW* wk, const Pattern_Step* steps, s32 count) {",
         "    if (!Run_Pattern_Steps(wk, steps, count)) {",
         "        End_Pattern(wk);",
+        "    }",
+        "}",
+        "",
+        "void Run_Pattern_Or(PLW* wk, const Pattern_Step* steps, s32 count, void (*otherwise)(PLW* wk)) {",
+        "    if (!Run_Pattern_Steps(wk, steps, count)) {",
+        "        otherwise(wk);",
         "    }",
         "}",
         "",
@@ -463,6 +484,24 @@ def emit_infra(used: set) -> dict:
 
 
 # --------------------------------------------------------------------------
+
+
+def conversion_base(rel: str):
+    """The commit this file was converted from: the Recipe J commit's parent.
+
+    A restyle has to prove itself against the switch source, not against the
+    previous table form. Checking one table form against another only says the
+    two agree, and if the inverse itself has changed underneath them they can
+    agree on something the source never said.
+    """
+    log = subprocess.run(
+        ["git", "log", "--format=%H %s", "--", rel], capture_output=True, text=True, cwd=REPO
+    ).stdout.splitlines()
+    for line in log:
+        sha, _, subject = line.partition(" ")
+        if "Recipe J" in subject:
+            return sha + "^"
+    return None
 
 
 def used_callees(paths):
@@ -557,11 +596,23 @@ def main() -> int:
         return 0
 
     if a.restyle is not None:
+        bad = 0
         for q in a.restyle:
-            src = Path(q).read_text()
-            Path(q).write_text(clang_format(convert_source(invert_source(src)), Path(q).name))
-            print("restyled", q)
-        return 0
+            rel = str(Path(q).resolve().relative_to(REPO))
+            base = conversion_base(rel)
+            if base is None:
+                bad += 1
+                print("FAIL %s  no Recipe J commit to restyle from" % rel)
+                continue
+            before = subprocess.run(["git", "show", base + ":" + rel],
+                                    capture_output=True, text=True, cwd=REPO).stdout
+            Path(q).write_text(convert_source(invert_source(Path(q).read_text())))
+            if tokens(invert_source(Path(q).read_text())) == tokens(before):
+                print("OK   %s  restyled; still inverts to %s" % (rel, base[:9]))
+            else:
+                bad += 1
+                print("FAIL %s  the restyled form does not invert to %s" % (rel, base[:9]))
+        return 1 if bad else 0
 
     if a.verify is not None:
         bad = 0
