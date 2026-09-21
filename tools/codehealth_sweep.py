@@ -153,6 +153,50 @@ def run_chunk(exe: str, paths: list[str], first_id: int) -> tuple[dict[int, str]
     return {rid: out.get(rid, "") for rid in ids}, ids
 
 
+FAILURE_MARKERS = ("error", "Error", "ERROR", "exception", "Exception", "OutOfMemory",
+                   "timed out", "timeout", "Unauthorized", "not authenticated")
+
+
+def looks_like_failure(text: str | None) -> bool:
+    """A response that is not a score and not silence: the server said something."""
+    return bool(text) and any(m in text for m in FAILURE_MARKERS)
+
+
+def check_the_sweep_is_whole(output: str, scores: dict, unscorable: list, failed: list) -> None:
+    """Refuse to overwrite a good sweep with a broken one.
+
+    A file the server never answered for is indistinguishable, here, from a data
+    table with no functions in it: both arrive without a score line. That is
+    fine when it is a handful of data tables and ruinous when the CLI has died
+    part-way, because the result still looks like a sweep - it just quietly
+    reports four fifths of the repository as unscorable, and whoever reads the
+    band table next believes it.
+
+    So: any response that carried an error is fatal, and a scored count that has
+    collapsed against the file being replaced is fatal. Neither is a judgement
+    about the code; both mean the run did not happen.
+    """
+    if failed:
+        for rel, text in failed[:5]:
+            print("  " + rel + ": " + text, file=sys.stderr)
+        sys.exit("%d files came back with an error; refusing to write %s" % (len(failed), output))
+
+    previous = Path(output)
+    if not previous.is_file():
+        return
+    try:
+        was = json.loads(previous.read_text())
+    except ValueError:
+        return
+    before = was.get("scored", 0)
+    if before and len(scores) < before * 0.9:
+        sys.exit(
+            "scored %d files against %d in the file being replaced, and %d came back without a "
+            "score. That is a run that died, not a repository that changed; %s is left alone."
+            % (len(scores), before, len(unscorable), output)
+        )
+
+
 def band(score: float) -> str:
     if score >= 10.0:
         return "optimal"
@@ -180,7 +224,7 @@ def main() -> int:
         print("cs-mcp:  " + exe)
         print("scoring: " + str(len(files)) + " files in chunks of " + str(args.chunk))
 
-    scores, unscorable = {}, []
+    scores, unscorable, failed = {}, [], []
     for start in range(0, len(files), args.chunk):
         chunk = files[start:start + args.chunk]
         responses, ids = run_chunk(exe, chunk, 100 + start)
@@ -189,6 +233,8 @@ def main() -> int:
             match = SCORE_RE.search(text or "")
             if match:
                 scores[rel] = float(match.group(1))
+            elif looks_like_failure(text):
+                failed.append((rel, " ".join((text or "").split())[:120]))
             else:
                 unscorable.append(rel)
         if not args.quiet:
@@ -201,6 +247,8 @@ def main() -> int:
     counts = {"red": 0, "yellow": 0, "green": 0, "optimal": 0}
     for value in scores.values():
         counts[band(value)] += 1
+
+    check_the_sweep_is_whole(args.output, scores, unscorable, failed)
 
     payload = {
         "total_candidates": len(files),
