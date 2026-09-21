@@ -568,12 +568,58 @@ void PADReadSub(s32 i) {
     tarpad_root[i].state = ps2slot[i].state;
 }
 
-s32 flPADShockSet(s32 pad_id, u32 level, u32 time) {
+/* One vibration command as sceVibSetActParam wants it: the actuator profile,
+ * and the data bytes that go with it. */
+typedef struct {
+    u8 profile;
     s32 vib_data_size;
     u8 vib_data[2];
-    u8 profile;
+} VibCommand;
+
+/* The command that stops the motors. */
+static VibCommand vib_stop_command(s32 pad_id) {
+    VibCommand c;
+
+    if ((ps2slot[pad_id].vprofile = 3) != 0) {
+        c.profile = 3;
+        c.vib_data_size = 2;
+        c.vib_data[0] = 0;
+        c.vib_data[1] = 0;
+    } else {
+        c.profile = 2;
+        c.vib_data_size = 1;
+        c.vib_data[0] = 0;
+    }
+
+    return c;
+}
+
+/* The command that runs the motors at a level. */
+static VibCommand vib_level_command(s32 pad_id, u32 level) {
+    VibCommand c;
     u8 big;
     u8 small;
+
+    level &= 7;
+    small = 1;
+    big = (level << 5) | 0xF;
+
+    if ((ps2slot[pad_id].vprofile = 3) != 0) {
+        c.profile = 3;
+        c.vib_data_size = 2;
+        c.vib_data[0] = ((big & 0x7F) << 1) | (small & 1);
+        c.vib_data[1] = (big & 0x80) >> 7;
+    } else {
+        c.profile = 2;
+        c.vib_data_size = 1;
+        c.vib_data[0] = big;
+    }
+
+    return c;
+}
+
+s32 flPADShockSet(s32 pad_id, u32 level, u32 time) {
+    VibCommand c;
 
     if (ps2slot[pad_id].vprofile == 0) {
         return 0;
@@ -582,33 +628,11 @@ s32 flPADShockSet(s32 pad_id, u32 level, u32 time) {
     ps2slot[pad_id].vib_timer = time;
 
     if (time == 0) {
-        if ((ps2slot[pad_id].vprofile = 3) != 0) {
-            profile = 3;
-            vib_data_size = 2;
-            vib_data[0] = 0;
-            vib_data[1] = 0;
-        } else {
-            profile = 2;
-            vib_data_size = 1;
-            vib_data[0] = 0;
-        }
+        c = vib_stop_command(pad_id);
     } else {
-        level &= 7;
-        small = 1;
-        big = (level << 5) | 0xF;
-
-        if ((ps2slot[pad_id].vprofile = 3) != 0) {
-            profile = 3;
-            vib_data_size = 2;
-            vib_data[0] = ((big & 0x7F) << 1) | (small & 1);
-            vib_data[1] = (big & 0x80) >> 7;
-        } else {
-            profile = 2;
-            vib_data_size = 1;
-            vib_data[0] = big;
-        }
+        c = vib_level_command(pad_id, level);
     }
 
-    sceVibSetActParam(&(VibActParam){ ps2slot[pad_id].socket_id, 1, &profile, vib_data_size, vib_data });
+    sceVibSetActParam(&(VibActParam) { ps2slot[pad_id].socket_id, 1, &c.profile, c.vib_data_size, c.vib_data });
     return 1;
 }
