@@ -67,9 +67,7 @@ void Passive06_0077(PLW* wk) {
         [2] = STEP(Check_EX, 6, 0x4E),      [3] = STEP(Wait, 10),
         [4] = STEP_NOARG(Pierce_On),        [5] = STEP(Command_Attack, 0xB, 0x1F, 10, 0x70)
     };
-    if (!Run_Pattern_Steps(wk, script, 6)) {
-        passive06_0077_from_step_6(wk);
-    }
+    Run_Pattern_Or(wk, script, 6, passive06_0077_from_step_6);
 }
 
 void Passive06_0078(PLW* wk) {
