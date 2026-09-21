@@ -96,6 +96,46 @@ void eff11_quake_sub(WORK_Other* ewk) {
     }
 }
 
+static void quake_level_middle_settle(WORK_Other* ewk) {
+    switch (ewk->wu.routine_no[2]) {
+    case 6:
+        char_move(&ewk->wu);
+        add_y_sub(&ewk->wu);
+
+        if (ewk->wu.xyz[1].disp.pos < ewk->wu.old_rno[2]) {
+            ewk->wu.routine_no[1] = 2;
+            set_char_move_init(&ewk->wu, 0, ewk->wu.old_rno[6]);
+        }
+
+        break;
+    }
+}
+
+static void quake_level_middle_fall(WORK_Other* ewk) {
+    switch (ewk->wu.routine_no[2]) {
+    case 2:
+    case 4:
+        char_move(&ewk->wu);
+        add_y_sub(&ewk->wu);
+
+        if (ewk->wu.xyz[1].disp.pos < ewk->wu.old_rno[2]) {
+            ewk->wu.routine_no[2]++;
+            set_char_move_init(&ewk->wu, 0, ewk->wu.old_rno[6] + 1);
+            ewk->wu.mvxy.a[1].sp = eff11_quake_speed_y_tbl[ewk->wu.old_rno[3]][ewk->wu.old_rno[1]];
+            ewk->wu.mvxy.a[1].sp >>= ewk->wu.routine_no[2];
+            ewk->wu.old_rno[0]++;
+            ewk->wu.old_rno[0] &= 3;
+            ewk->wu.mvxy.a[1].sp = eff11_quake_speed_y_tbl2[ewk->wu.old_rno[3]][ewk->wu.old_rno[0]];
+        }
+
+        break;
+
+    default:
+        quake_level_middle_settle(ewk);
+        break;
+    }
+}
+
 void quake_level_middle(WORK_Other* ewk) {
     switch (ewk->wu.routine_no[2]) {
     case 0:
@@ -119,32 +159,8 @@ void quake_level_middle(WORK_Other* ewk) {
 
         break;
 
-    case 2:
-    case 4:
-        char_move(&ewk->wu);
-        add_y_sub(&ewk->wu);
-
-        if (ewk->wu.xyz[1].disp.pos < ewk->wu.old_rno[2]) {
-            ewk->wu.routine_no[2]++;
-            set_char_move_init(&ewk->wu, 0, ewk->wu.old_rno[6] + 1);
-            ewk->wu.mvxy.a[1].sp = eff11_quake_speed_y_tbl[ewk->wu.old_rno[3]][ewk->wu.old_rno[1]];
-            ewk->wu.mvxy.a[1].sp >>= ewk->wu.routine_no[2];
-            ewk->wu.old_rno[0]++;
-            ewk->wu.old_rno[0] &= 3;
-            ewk->wu.mvxy.a[1].sp = eff11_quake_speed_y_tbl2[ewk->wu.old_rno[3]][ewk->wu.old_rno[0]];
-        }
-
-        break;
-
-    case 6:
-        char_move(&ewk->wu);
-        add_y_sub(&ewk->wu);
-
-        if (ewk->wu.xyz[1].disp.pos < ewk->wu.old_rno[2]) {
-            ewk->wu.routine_no[1] = 2;
-            set_char_move_init(&ewk->wu, 0, ewk->wu.old_rno[6]);
-        }
-
+    default:
+        quake_level_middle_fall(ewk);
         break;
     }
 }
