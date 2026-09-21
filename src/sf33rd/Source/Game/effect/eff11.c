@@ -42,6 +42,11 @@ static s32 can_update_effect(void) {
     return !EXE_flag && !Game_pause && !EXE_obroll;
 }
 
+static void quake_step_y(WORK_Other* ewk) {
+    char_move(&ewk->wu);
+    add_y_sub(&ewk->wu);
+}
+
 void effect_11_move(WORK_Other* ewk) {
     if (obr_no_disp_check()) {
         return;
@@ -99,8 +104,7 @@ void eff11_quake_sub(WORK_Other* ewk) {
 static void quake_level_middle_settle(WORK_Other* ewk) {
     switch (ewk->wu.routine_no[2]) {
     case 6:
-        char_move(&ewk->wu);
-        add_y_sub(&ewk->wu);
+        quake_step_y(ewk);
 
         if (ewk->wu.xyz[1].disp.pos < ewk->wu.old_rno[2]) {
             ewk->wu.routine_no[1] = 2;
@@ -115,8 +119,7 @@ static void quake_level_middle_fall(WORK_Other* ewk) {
     switch (ewk->wu.routine_no[2]) {
     case 2:
     case 4:
-        char_move(&ewk->wu);
-        add_y_sub(&ewk->wu);
+        quake_step_y(ewk);
 
         if (ewk->wu.xyz[1].disp.pos < ewk->wu.old_rno[2]) {
             ewk->wu.routine_no[2]++;
@@ -148,8 +151,7 @@ void quake_level_middle(WORK_Other* ewk) {
     case 1:
     case 3:
     case 5:
-        char_move(&ewk->wu);
-        add_y_sub(&ewk->wu);
+        quake_step_y(ewk);
 
         if (ewk->wu.mvxy.a[1].sp < 0) {
             ewk->wu.routine_no[2]++;
@@ -169,8 +171,7 @@ static void quake_level_large_settle(WORK_Other* ewk) {
     switch (ewk->wu.routine_no[2]) {
     case 6:
     case 8:
-        char_move(&ewk->wu);
-        add_y_sub(&ewk->wu);
+        quake_step_y(ewk);
 
         if (ewk->wu.xyz[1].disp.pos < ewk->wu.old_rno[2]) {
             ewk->wu.routine_no[2]++;
@@ -186,8 +187,7 @@ static void quake_level_large_settle(WORK_Other* ewk) {
         break;
 
     case 10:
-        char_move(&ewk->wu);
-        add_y_sub(&ewk->wu);
+        quake_step_y(ewk);
 
         if (ewk->wu.xyz[1].disp.pos < ewk->wu.old_rno[2]) {
             ewk->wu.routine_no[1] = 2;
@@ -223,8 +223,7 @@ static void quake_level_large_slide(WORK_Other* ewk) {
     case 5:
     case 7:
     case 9:
-        char_move(&ewk->wu);
-        add_y_sub(&ewk->wu);
+        quake_step_y(ewk);
 
         if (ewk->wu.mvxy.a[1].sp < 0) {
             ewk->wu.routine_no[2]++;
