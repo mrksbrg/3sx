@@ -24,241 +24,166 @@ static void request_horizontal_zoom(s16 pos) {
     scr_req_x = pos;
 }
 
-static void select_horizontal_zoom_request_last(u16 p1zoom, u16 zoom_wk) {
-    switch (p1zoom & 0xE200) {
-    case 0x2200:
-        switch (zoom_wk) {
-        case 0x0:
-        case 0x2200:
-        case 0x4000:
-            request_horizontal_zoom(fighters_horizontal_midpoint());
-            break;
-        case 0x2000:
-            request_horizontal_zoom(plw[0].wu.xyz[0].disp.pos);
-            break;
-        case 0x200:
-            request_horizontal_zoom(plw[1].wu.xyz[0].disp.pos);
-            break;
-
-            break;
-        }
-        break;
-    }
-}
-
-static void select_horizontal_zoom_request_later(u16 p1zoom, u16 zoom_wk) {
-    switch (p1zoom & 0xE200) {
-    case 0x0:
-        switch (zoom_wk) {
-        case 0x2200:
-            request_horizontal_zoom(fighters_horizontal_midpoint());
-            break;
-
-        case 0x2000:
-            request_horizontal_zoom(plw[0].wu.xyz[0].disp.pos);
-            break;
-
-        case 0x200:
-            request_horizontal_zoom(plw[1].wu.xyz[0].disp.pos);
-            break;
-
-        case 0x4000:
-        case 0x0:
-            break;
-        }
-        break;
-
-    default:
-        select_horizontal_zoom_request_last(p1zoom, zoom_wk);
-        break;
-    }
-}
-
-static void select_horizontal_zoom_request_middle(u16 p1zoom, u16 zoom_wk) {
-    switch (p1zoom & 0xE200) {
-    case 0x200:
-        switch (zoom_wk) {
-        case 0x2000:
-        case 0x0:
-        case 0x4000:
-        case 0x2200:
-            request_horizontal_zoom(plw[0].wu.xyz[0].disp.pos);
-            break;
-
-        case 0x200:
-            request_horizontal_zoom(fighters_horizontal_midpoint());
-            break;
-        }
-        break;
-
-    default:
-        select_horizontal_zoom_request_later(p1zoom, zoom_wk);
-        break;
-    }
-}
-
-static void select_horizontal_2000_zoom_request(u16 zoom_wk) {
-    switch (zoom_wk) {
-    case 0x4000:
-        request_horizontal_zoom(plw[0].wu.xyz[0].disp.pos);
-        break;
-
-    case 0x2000:
-        request_horizontal_zoom(fighters_horizontal_midpoint());
-        break;
-
-    case 0x200:
-    case 0x0:
-    case 0x2200:
-        request_horizontal_zoom(plw[1].wu.xyz[0].disp.pos);
-        break;
-    }
-}
-
-static void select_horizontal_zoom_request(u16 p1zoom, u16 p2zoom) {
-    u16 zoom_wk;
-
-    zoom_wk = p2zoom & 0xE200;
-
-    switch (p1zoom & 0xE200) {
-    case 0x4000:
-        break;
-
-    case 0x2000:
-        select_horizontal_2000_zoom_request(zoom_wk);
-        break;
-
-    default:
-        select_horizontal_zoom_request_middle(p1zoom, zoom_wk);
-        break;
-    }
-}
-
 static void request_vertical_zoom(s16 pos) {
     zoom_request_flag |= 0x1000;
     scr_req_y = pos;
 }
 
-static void select_vertical_zoom_request_last(u16 p1zoom, u16 zoom_wk) {
-    switch (p1zoom & 0xD100) {
-    case 0x1100:
-        switch (zoom_wk) {
-        case 0x1000:
-            request_vertical_zoom(plw[0].wu.xyz[1].disp.pos);
-            break;
+/* What a zoom request aims the screen at. */
+typedef enum { ZOOM_NONE, ZOOM_P1, ZOOM_P2, ZOOM_MID, ZOOM_ZERO } ZoomTarget;
 
-        case 0x100:
-            request_vertical_zoom(plw[1].wu.xyz[1].disp.pos);
-            break;
+/* The bit patterns of a fighter's masked zoom word that the request logic tells
+ * apart, in table order, plus a row and column for anything else. */
+enum {
+    ZOOM_CLASS_CLEAR,
+    ZOOM_CLASS_OWN,
+    ZOOM_CLASS_OTHER,
+    ZOOM_CLASS_BOTH,
+    ZOOM_CLASS_HOLD,
+    ZOOM_CLASS_UNKNOWN,
+    ZOOM_CLASS_COUNT
+};
 
-        case 0x1100:
-        case 0x0:
-            request_vertical_zoom(fighters_vertical_midpoint());
-            break;
+/* One screen axis: which bits of cg_zoom it reads, what they mean, and how it
+ * requests a position. */
+typedef struct {
+    u16 mask;
+    u16 own_bit;
+    u16 other_bit;
+    u16 both_bits;
+    s16 coord;
+    s16 (*midpoint)(void);
+    void (*request)(s16 pos);
+    const ZoomTarget (*targets)[ZOOM_CLASS_COUNT];
+} ZoomAxis;
 
-        case 0x4000:
-            request_vertical_zoom(0);
-            break;
-        }
-        break;
+/* Row: P1's class. Column: P2's class. Horizontal bits: own 0x200, other 0x2000. */
+static const ZoomTarget horizontal_targets[ZOOM_CLASS_COUNT][ZOOM_CLASS_COUNT] = {
+    [ZOOM_CLASS_CLEAR] = { [ZOOM_CLASS_CLEAR] = ZOOM_NONE,
+                           [ZOOM_CLASS_OWN] = ZOOM_P2,
+                           [ZOOM_CLASS_OTHER] = ZOOM_P1,
+                           [ZOOM_CLASS_BOTH] = ZOOM_MID,
+                           [ZOOM_CLASS_HOLD] = ZOOM_NONE,
+                           [ZOOM_CLASS_UNKNOWN] = ZOOM_NONE },
+    [ZOOM_CLASS_OWN] = { [ZOOM_CLASS_CLEAR] = ZOOM_P1,
+                         [ZOOM_CLASS_OWN] = ZOOM_MID,
+                         [ZOOM_CLASS_OTHER] = ZOOM_P1,
+                         [ZOOM_CLASS_BOTH] = ZOOM_P1,
+                         [ZOOM_CLASS_HOLD] = ZOOM_P1,
+                         [ZOOM_CLASS_UNKNOWN] = ZOOM_NONE },
+    [ZOOM_CLASS_OTHER] = { [ZOOM_CLASS_CLEAR] = ZOOM_P2,
+                           [ZOOM_CLASS_OWN] = ZOOM_P2,
+                           [ZOOM_CLASS_OTHER] = ZOOM_MID,
+                           [ZOOM_CLASS_BOTH] = ZOOM_P2,
+                           [ZOOM_CLASS_HOLD] = ZOOM_P1,
+                           [ZOOM_CLASS_UNKNOWN] = ZOOM_NONE },
+    [ZOOM_CLASS_BOTH] = { [ZOOM_CLASS_CLEAR] = ZOOM_MID,
+                          [ZOOM_CLASS_OWN] = ZOOM_P2,
+                          [ZOOM_CLASS_OTHER] = ZOOM_P1,
+                          [ZOOM_CLASS_BOTH] = ZOOM_MID,
+                          [ZOOM_CLASS_HOLD] = ZOOM_MID,
+                          [ZOOM_CLASS_UNKNOWN] = ZOOM_NONE },
+    [ZOOM_CLASS_HOLD] = { [ZOOM_CLASS_CLEAR] = ZOOM_NONE,
+                          [ZOOM_CLASS_OWN] = ZOOM_NONE,
+                          [ZOOM_CLASS_OTHER] = ZOOM_NONE,
+                          [ZOOM_CLASS_BOTH] = ZOOM_NONE,
+                          [ZOOM_CLASS_HOLD] = ZOOM_NONE,
+                          [ZOOM_CLASS_UNKNOWN] = ZOOM_NONE },
+    [ZOOM_CLASS_UNKNOWN] = { [ZOOM_CLASS_CLEAR] = ZOOM_NONE,
+                             [ZOOM_CLASS_OWN] = ZOOM_NONE,
+                             [ZOOM_CLASS_OTHER] = ZOOM_NONE,
+                             [ZOOM_CLASS_BOTH] = ZOOM_NONE,
+                             [ZOOM_CLASS_HOLD] = ZOOM_NONE,
+                             [ZOOM_CLASS_UNKNOWN] = ZOOM_NONE },
+};
+
+/* Vertical bits: own 0x100, other 0x1000. A holding P1 always requests zero. */
+static const ZoomTarget vertical_targets[ZOOM_CLASS_COUNT][ZOOM_CLASS_COUNT] = {
+    [ZOOM_CLASS_CLEAR] = { [ZOOM_CLASS_CLEAR] = ZOOM_NONE,
+                           [ZOOM_CLASS_OWN] = ZOOM_P2,
+                           [ZOOM_CLASS_OTHER] = ZOOM_P1,
+                           [ZOOM_CLASS_BOTH] = ZOOM_MID,
+                           [ZOOM_CLASS_HOLD] = ZOOM_ZERO,
+                           [ZOOM_CLASS_UNKNOWN] = ZOOM_NONE },
+    [ZOOM_CLASS_OWN] = { [ZOOM_CLASS_CLEAR] = ZOOM_P1,
+                         [ZOOM_CLASS_OWN] = ZOOM_MID,
+                         [ZOOM_CLASS_OTHER] = ZOOM_P1,
+                         [ZOOM_CLASS_BOTH] = ZOOM_P1,
+                         [ZOOM_CLASS_HOLD] = ZOOM_ZERO,
+                         [ZOOM_CLASS_UNKNOWN] = ZOOM_NONE },
+    [ZOOM_CLASS_OTHER] = { [ZOOM_CLASS_CLEAR] = ZOOM_P2,
+                           [ZOOM_CLASS_OWN] = ZOOM_P2,
+                           [ZOOM_CLASS_OTHER] = ZOOM_MID,
+                           [ZOOM_CLASS_BOTH] = ZOOM_P2,
+                           [ZOOM_CLASS_HOLD] = ZOOM_ZERO,
+                           [ZOOM_CLASS_UNKNOWN] = ZOOM_NONE },
+    [ZOOM_CLASS_BOTH] = { [ZOOM_CLASS_CLEAR] = ZOOM_MID,
+                          [ZOOM_CLASS_OWN] = ZOOM_P2,
+                          [ZOOM_CLASS_OTHER] = ZOOM_P1,
+                          [ZOOM_CLASS_BOTH] = ZOOM_MID,
+                          [ZOOM_CLASS_HOLD] = ZOOM_ZERO,
+                          [ZOOM_CLASS_UNKNOWN] = ZOOM_NONE },
+    [ZOOM_CLASS_HOLD] = { [ZOOM_CLASS_CLEAR] = ZOOM_ZERO,
+                          [ZOOM_CLASS_OWN] = ZOOM_ZERO,
+                          [ZOOM_CLASS_OTHER] = ZOOM_ZERO,
+                          [ZOOM_CLASS_BOTH] = ZOOM_ZERO,
+                          [ZOOM_CLASS_HOLD] = ZOOM_ZERO,
+                          [ZOOM_CLASS_UNKNOWN] = ZOOM_ZERO },
+    [ZOOM_CLASS_UNKNOWN] = { [ZOOM_CLASS_CLEAR] = ZOOM_NONE,
+                             [ZOOM_CLASS_OWN] = ZOOM_NONE,
+                             [ZOOM_CLASS_OTHER] = ZOOM_NONE,
+                             [ZOOM_CLASS_BOTH] = ZOOM_NONE,
+                             [ZOOM_CLASS_HOLD] = ZOOM_NONE,
+                             [ZOOM_CLASS_UNKNOWN] = ZOOM_NONE },
+};
+
+static const ZoomAxis horizontal_axis = {
+    0xE200, 0x200, 0x2000, 0x2200, 0, fighters_horizontal_midpoint, request_horizontal_zoom, horizontal_targets
+};
+static const ZoomAxis vertical_axis = {
+    0xD100, 0x100, 0x1000, 0x1100, 1, fighters_vertical_midpoint, request_vertical_zoom, vertical_targets
+};
+
+static s32 zoom_class(const ZoomAxis* axis, u16 zoom) {
+    u16 bits = zoom & axis->mask;
+
+    if (bits == 0x0) {
+        return ZOOM_CLASS_CLEAR;
     }
+    if (bits == axis->own_bit) {
+        return ZOOM_CLASS_OWN;
+    }
+    if (bits == axis->other_bit) {
+        return ZOOM_CLASS_OTHER;
+    }
+    if (bits == axis->both_bits) {
+        return ZOOM_CLASS_BOTH;
+    }
+    if (bits == 0x4000) {
+        return ZOOM_CLASS_HOLD;
+    }
+    return ZOOM_CLASS_UNKNOWN;
 }
 
-static void select_vertical_0_zoom_request(u16 zoom_wk) {
-    switch (zoom_wk) {
-    case 0x1000:
-        request_vertical_zoom(plw[0].wu.xyz[1].disp.pos);
+static void select_zoom_request(const ZoomAxis* axis, u16 p1zoom, u16 p2zoom) {
+    switch (axis->targets[zoom_class(axis, p1zoom)][zoom_class(axis, p2zoom)]) {
+    case ZOOM_P1:
+        axis->request(plw[0].wu.xyz[axis->coord].disp.pos);
         break;
 
-    case 0x100:
-        request_vertical_zoom(plw[1].wu.xyz[1].disp.pos);
+    case ZOOM_P2:
+        axis->request(plw[1].wu.xyz[axis->coord].disp.pos);
         break;
 
-    case 0x1100:
-        request_vertical_zoom(fighters_vertical_midpoint());
+    case ZOOM_MID:
+        axis->request(axis->midpoint());
         break;
 
-    case 0x0:
+    case ZOOM_ZERO:
+        axis->request(0);
         break;
 
-    case 0x4000:
-        request_vertical_zoom(0);
-        break;
-    }
-}
-
-static void select_vertical_zoom_request_later(u16 p1zoom, u16 zoom_wk) {
-    switch (p1zoom & 0xD100) {
-    case 0x0:
-        select_vertical_0_zoom_request(zoom_wk);
-        break;
-
-    default:
-        select_vertical_zoom_request_last(p1zoom, zoom_wk);
-        break;
-    }
-}
-
-static void select_vertical_zoom_request_middle(u16 p1zoom, u16 zoom_wk) {
-    switch (p1zoom & 0xD100) {
-    case 0x100:
-        switch (zoom_wk) {
-        case 0x1000:
-        case 0x0:
-        case 0x1100:
-            request_vertical_zoom(plw[0].wu.xyz[1].disp.pos);
-            break;
-
-        case 0x100:
-            request_vertical_zoom(fighters_vertical_midpoint());
-            break;
-
-        case 0x4000:
-            request_vertical_zoom(0);
-            break;
-        }
-        break;
-
-    default:
-        select_vertical_zoom_request_later(p1zoom, zoom_wk);
-        break;
-    }
-}
-
-static void select_vertical_1000_zoom_request(u16 zoom_wk) {
-    switch (zoom_wk) {
-    case 0x1000:
-        request_vertical_zoom(fighters_vertical_midpoint());
-        break;
-
-    case 0x100:
-    case 0x0:
-    case 0x1100:
-        request_vertical_zoom(plw[1].wu.xyz[1].disp.pos);
-        break;
-
-    case 0x4000:
-        request_vertical_zoom(0);
-        break;
-    }
-}
-
-static void select_vertical_zoom_request(u16 p1zoom, u16 p2zoom) {
-    u16 zoom_wk;
-
-    zoom_wk = p2zoom & 0xD100;
-
-    switch (p1zoom & 0xD100) {
-    case 0x4000:
-        request_vertical_zoom(0);
-        break;
-
-    case 0x1000:
-        select_vertical_1000_zoom_request(zoom_wk);
-        break;
-
-    default:
-        select_vertical_zoom_request_middle(p1zoom, zoom_wk);
+    case ZOOM_NONE:
         break;
     }
 }
@@ -329,8 +254,8 @@ void check_cg_zoom() {
 
     update_fighter_screen_positions();
 
-    select_horizontal_zoom_request(p1zoom, p2zoom);
-    select_vertical_zoom_request(p1zoom, p2zoom);
+    select_zoom_request(&horizontal_axis, p1zoom, p2zoom);
+    select_zoom_request(&vertical_axis, p1zoom, p2zoom);
 
     publish_zoom_request_level(p1zoom, p2zoom);
 }
