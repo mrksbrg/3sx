@@ -17,6 +17,21 @@
 extern const s16 eff09_data[2][9];
 extern const s16 eff09_data2[43][8];
 
+static void set_effect_09_identity(WORK_Other* ewk, const WORK* wk) {
+    ewk->wu.be_flag = 1;
+    ewk->wu.id = 9;
+    ewk->wu.work_id = 16;
+    ewk->master_id = wk->id;
+}
+
+static const s16* take_effect_09_tail(WORK_Other* ewk, const s16* data_ptr) {
+    ewk->wu.char_index = *data_ptr++;
+    ewk->wu.hit_stop = *data_ptr++;
+    ewk->wu.sync_suzi = *data_ptr++;
+    suzi_offset_set(ewk);
+    return data_ptr;
+}
+
 s32 effect_09_init(WORK* wk, u8 data) {
     WORK_Other* ewk;
     s16 ix;
@@ -29,10 +44,7 @@ s32 effect_09_init(WORK* wk, u8 data) {
     ewk = (WORK_Other*)frw[ix];
     ewk->wu.type = data;
     data_ptr = eff09_data[ewk->wu.type];
-    ewk->wu.be_flag = 1;
-    ewk->wu.id = 9;
-    ewk->wu.work_id = 16;
-    ewk->master_id = wk->id;
+    set_effect_09_identity(ewk, wk);
     ewk->wu.my_priority = 64;
     ewk->wu.cgromtype = 1;
     ewk->wu.rl_flag = 0;
@@ -45,10 +57,7 @@ s32 effect_09_init(WORK* wk, u8 data) {
     ewk->wu.xyz[1].disp.pos = *data_ptr++;
     ewk->wu.my_priority = ewk->wu.position_z = *data_ptr++;
     ;
-    ewk->wu.char_index = *data_ptr++;
-    ewk->wu.hit_stop = *data_ptr++;
-    ewk->wu.sync_suzi = *data_ptr++;
-    suzi_offset_set(ewk);
+    data_ptr = take_effect_09_tail(ewk, data_ptr);
     ewk->wu.my_mts = 14;
     ewk->wu.my_trans_mode = get_my_trans_mode(ewk->wu.my_mts);
     return 0;
@@ -94,20 +103,29 @@ static const s16* configure_effect_09_init2_late(WORK_Other* ewk, const WORK* wk
     return data_ptr;
 }
 
+static const s16* configure_effect_09_init2_mid(WORK_Other* ewk, const WORK* wk, u8 data, const s16* data_ptr) {
+    switch (data) {
+    case 24:
+    case 25:
+    case 26:
+    case 27:
+        ewk->wu.my_col_code = 0x3E;
+        data_ptr++;
+        break;
+
+    default:
+        return configure_effect_09_init2_late(ewk, wk, data, data_ptr);
+    }
+
+    return data_ptr;
+}
+
 static const s16* configure_effect_09_init2(WORK_Other* ewk, const WORK* wk, u8 data, const s16* data_ptr) {
     switch (data) {
     case 18:
     case 19:
     case 31:
         ewk->wu.my_col_code = 0x2020;
-        data_ptr++;
-        break;
-
-    case 24:
-    case 25:
-    case 26:
-    case 27:
-        ewk->wu.my_col_code = 0x3E;
         data_ptr++;
         break;
 
@@ -123,7 +141,7 @@ static const s16* configure_effect_09_init2(WORK_Other* ewk, const WORK* wk, u8 
         break;
 
     default:
-        return configure_effect_09_init2_late(ewk, wk, data, data_ptr);
+        return configure_effect_09_init2_mid(ewk, wk, data, data_ptr);
     }
 
     return data_ptr;
@@ -150,10 +168,7 @@ s32 effect_09_init2(WORK* wk, u8 data) {
     ewk->wu.type = data;
     ewk->my_master = wk;
     ewk->wu.target_adrs = wk->target_adrs;
-    ewk->wu.be_flag = 1;
-    ewk->wu.id = 9;
-    ewk->wu.work_id = 16;
-    ewk->master_id = wk->id;
+    set_effect_09_identity(ewk, wk);
     ewk->wu.cgromtype = 1;
     *ewk->wu.char_table = _etc_char_table;
     ewk->wu.my_col_mode = wk->my_col_mode;
@@ -183,10 +198,7 @@ s32 effect_09_init2(WORK* wk, u8 data) {
     ewk->wu.my_priority = wk->my_priority;
     ewk->wu.my_priority += *(s16*)data_ptr++;
     ewk->wu.position_z = ewk->wu.my_priority;
-    ewk->wu.char_index = *data_ptr++;
-    ewk->wu.hit_stop = *data_ptr++;
-    ewk->wu.sync_suzi = *data_ptr++;
-    suzi_offset_set(ewk);
+    data_ptr = take_effect_09_tail(ewk, data_ptr);
     ewk->wu.my_trans_mode = get_my_trans_mode(ewk->wu.my_mts);
     return 0;
 }
