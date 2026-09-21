@@ -269,9 +269,7 @@ void set_super_arts_status(s16 ix) { // 🟢
     super_arts[ix].ok = 0;
 }
 
-s16 remake_sa_store_max(s16 ix, s16 store_max) { // 🔴
-    s16 num = store_max + sag_stock_omake[omop_sag_max_ix[ix]];
-
+static s16 clamp_sa_store_max(s16 num) {
     if (num <= 0) {
         num = 1;
     }
@@ -283,9 +281,13 @@ s16 remake_sa_store_max(s16 ix, s16 store_max) { // 🔴
     return num;
 }
 
-s16 remake_sa_gauge_len(s16 ix, s16 gauge_len) { // 🔴
-    s16 num = gauge_len + sag_length_omake[omop_sag_len_ix[ix]] * 8;
+s16 remake_sa_store_max(s16 ix, s16 store_max) { // 🔴
+    s16 num = store_max + sag_stock_omake[omop_sag_max_ix[ix]];
 
+    return clamp_sa_store_max(num);
+}
+
+static s16 clamp_sa_gauge_len(s16 num) {
     if (num < 0x40) {
         num = 0x40;
     }
@@ -295,6 +297,12 @@ s16 remake_sa_gauge_len(s16 ix, s16 gauge_len) { // 🔴
     }
 
     return num;
+}
+
+s16 remake_sa_gauge_len(s16 ix, s16 gauge_len) { // 🔴
+    s16 num = gauge_len + sag_length_omake[omop_sag_len_ix[ix]] * 8;
+
+    return clamp_sa_gauge_len(num);
 }
 
 void set_super_arts_status_dc(s16 ix) { // 🔴
