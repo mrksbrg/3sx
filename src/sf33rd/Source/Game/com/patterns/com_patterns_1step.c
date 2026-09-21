@@ -12,6 +12,7 @@
 
 #include "common.h"
 #include "sf33rd/Source/Game/com/com_sub.h"
+#include "sf33rd/Source/Game/com/patterns/com_branch_menus.h"
 #include "sf33rd/Source/Game/com/patterns/com_pattern_run.h"
 #include "sf33rd/Source/Game/com/patterns/com_patterns.h"
 #include "sf33rd/Source/Game/engine/workuser.h"
@@ -145,9 +146,7 @@ void pattern_adjust_attack(PLW* wk, u16 lever_data) {
 }
 
 void pattern_com_random_select_from_step_6(PLW* wk) {
-    const Pattern_Step script[7] = {
-        [6] = STEP(Com_Random_Select, &(Branch_Menu_Args) { 6, 0x37, 0x37, 0x27, 0x27 }, 0)
-    };
+    const Pattern_Step script[7] = { [6] = STEP(Com_Random_Select, &Branch_Menu_6_37_37_27_27, 0) };
     Run_Pattern(wk, script, 7);
 }
 

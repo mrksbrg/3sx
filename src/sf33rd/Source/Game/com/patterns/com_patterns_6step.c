@@ -12,6 +12,7 @@
 
 #include "common.h"
 #include "sf33rd/Source/Game/com/com_sub.h"
+#include "sf33rd/Source/Game/com/patterns/com_branch_menus.h"
 #include "sf33rd/Source/Game/com/patterns/com_pattern_run.h"
 #include "sf33rd/Source/Game/com/patterns/com_patterns.h"
 #include "sf33rd/Source/Game/engine/workuser.h"
@@ -91,8 +92,7 @@ void pattern_approach_walk_em_term_sa_term_4(PLW* wk, s16 target_pos, const SA_T
                                      [2] = STEP_WITH(SA_Term, p),
                                      [3] = STEP(Normal_Attack, reaction, 0x12),
                                      [4] = STEP(Normal_Attack, 8, 0x42),
-                                     [5] = STEP(
-                                         Com_Random_Select, &(Branch_Menu_Args) { 6, 0x37, 0x37, 0x27, 0x27 }, 0) };
+                                     [5] = STEP(Com_Random_Select, &Branch_Menu_6_37_37_27_27, 0) };
     Run_Pattern(wk, script, 6);
 }
 
@@ -103,31 +103,25 @@ void pattern_approach_walk_turn_over_on_hi_jump_attack_term(PLW* wk, s16 target_
                                      [2] = STEP_WITH(Hi_Jump_Attack_Term, a),
                                      [3] = STEP(Normal_Attack, 9, 0x202),
                                      [4] = STEP_WITH(SA_Term, p),
-                                     [5] = STEP(
-                                         Com_Random_Select, &(Branch_Menu_Args) { 6, 0x77, 0x77, 0x78, 0x79 }, 2) };
+                                     [5] = STEP(Com_Random_Select, &Branch_Menu_6_77_77_78_79, 2) };
     Run_Pattern(wk, script, 6);
 }
 
 void pattern_em_term_sa_term_normal_attack(PLW* wk, const SA_Term_Args* p, s16 reaction, s16 reaction_b) {
-    const Pattern_Step script[6] = { [0] = STEP(EM_Term, -1, -0x7FD8, 6, 1, -1),
-                                     [1] = STEP_WITH(SA_Term, p),
-                                     [2] = STEP(Normal_Attack, reaction, 0x10),
-                                     [3] = STEP(Normal_Attack, 8, 0x20),
-                                     [4] = STEP(Normal_Attack, reaction_b, 0x40),
-                                     [5] = STEP(
-                                         Com_Random_Select, &(Branch_Menu_Args) { 6, 0x37, 0x37, 0x27, 0x27 }, 0) };
+    const Pattern_Step script[6] = {
+        [0] = STEP(EM_Term, -1, -0x7FD8, 6, 1, -1),  [1] = STEP_WITH(SA_Term, p),
+        [2] = STEP(Normal_Attack, reaction, 0x10),   [3] = STEP(Normal_Attack, 8, 0x20),
+        [4] = STEP(Normal_Attack, reaction_b, 0x40), [5] = STEP(Com_Random_Select, &Branch_Menu_6_37_37_27_27, 0)
+    };
     Run_Pattern(wk, script, 6);
 }
 
 void pattern_jump_attack_term_normal_attack_command_attack_4(PLW* wk, const Jump_Term_Args* a,
                                                              const Command_Attack_Args* p, s16 rnd_type) {
     const Pattern_Step script[6] = {
-        [0] = STEP_WITH(Jump_Attack_Term, a),
-        [1] = STEP(Normal_Attack, 9, 0x12),
-        [2] = STEP(Normal_Attack, 9, 0x102),
-        [3] = STEP(Normal_Attack, 8, 0x202),
-        [4] = STEP_WITH(Command_Attack, p),
-        [5] = STEP(Com_Random_Select, &(Branch_Menu_Args) { 6, 0x2D, 0xFF, 0xFF, 0xFF }, rnd_type)
+        [0] = STEP_WITH(Jump_Attack_Term, a), [1] = STEP(Normal_Attack, 9, 0x12),
+        [2] = STEP(Normal_Attack, 9, 0x102),  [3] = STEP(Normal_Attack, 8, 0x202),
+        [4] = STEP_WITH(Command_Attack, p),   [5] = STEP(Com_Random_Select, &Branch_Menu_6_2D_FF_FF_FF, rnd_type)
     };
     Run_Pattern(wk, script, 6);
 }
@@ -149,8 +143,7 @@ void pattern_jump_attack_term_normal_attack_j_command_attack_3(PLW* wk, const Co
                                      [2] = STEP(Normal_Attack, 9, 0x102),
                                      [3] = STEP(Normal_Attack, 8, 0x202),
                                      [4] = STEP_WITH(J_Command_Attack, p),
-                                     [5] = STEP(
-                                         Com_Random_Select, &(Branch_Menu_Args) { 6, 0x2D, 0xFF, 0xFF, 0xFF }, 2) };
+                                     [5] = STEP(Com_Random_Select, &Branch_Menu_6_2D_FF_FF_FF, 2) };
     Run_Pattern(wk, script, 6);
 }
 

@@ -12,6 +12,7 @@
 
 #include "common.h"
 #include "sf33rd/Source/Game/com/com_sub.h"
+#include "sf33rd/Source/Game/com/patterns/com_branch_menus.h"
 #include "sf33rd/Source/Game/com/patterns/com_pattern_run.h"
 #include "sf33rd/Source/Game/com/patterns/com_patterns.h"
 #include "sf33rd/Source/Game/engine/workuser.h"
@@ -54,9 +55,8 @@ void active_pattern_adjust_attack_command_attack(PLW* wk, s16 reaction, u16 leve
     Run_Pattern(wk, script, 2);
 }
 
-void active_pattern_adjust_attack_j_command_attack(
-    PLW* wk, s16 reaction, u16 lever_data, const Command_Attack_Args* p
-) {
+void active_pattern_adjust_attack_j_command_attack(PLW* wk, s16 reaction, u16 lever_data,
+                                                   const Command_Attack_Args* p) {
     const Pattern_Step script[2] = { [0] = STEP(Adjust_Attack, reaction, lever_data),
                                      [1] = STEP_WITH(J_Command_Attack, p) };
     Run_Pattern(wk, script, 2);
@@ -103,16 +103,14 @@ void active_pattern_command_attack_2(PLW* wk, const Command_Attack_Args* p, cons
     Run_Pattern(wk, script, 2);
 }
 
-void active_pattern_command_attack_com_random_select(
-    PLW* wk, const Command_Attack_Args* p, const Branch_Menu_Args* p_b, s16 rnd_type
-) {
+void active_pattern_command_attack_com_random_select(PLW* wk, const Command_Attack_Args* p, const Branch_Menu_Args* p_b,
+                                                     s16 rnd_type) {
     const Pattern_Step script[2] = { [0] = STEP_WITH(Command_Attack, p), [1] = STEP(Com_Random_Select, p_b, rnd_type) };
     Run_Pattern(wk, script, 2);
 }
 
-void active_pattern_command_attack_j_command_attack(
-    PLW* wk, const Command_Attack_Args* p, const Command_Attack_Args* p_b
-) {
+void active_pattern_command_attack_j_command_attack(PLW* wk, const Command_Attack_Args* p,
+                                                    const Command_Attack_Args* p_b) {
     const Pattern_Step script[2] = { [0] = STEP_WITH(Command_Attack, p), [1] = STEP_WITH(J_Command_Attack, p_b) };
     Run_Pattern(wk, script, 2);
 }
@@ -183,10 +181,8 @@ void active_pattern_etc_term_provoke(PLW* wk, u32 next_action, u16 next_menu) {
 }
 
 void active_pattern_hi_jump_attack_term_com_random_select(PLW* wk) {
-    const Pattern_Step script[2] = {
-        [0] = STEP(Hi_Jump_Attack_Term, -0x7FA0, -0x7FC0, 8, 0x20, 0, -0x7FA0, 8, 0x200),
-        [1] = STEP(Com_Random_Select, &(Branch_Menu_Args) { 2, 0x18, 0x18, 0x11, 0x11 }, 0)
-    };
+    const Pattern_Step script[2] = { [0] = STEP(Hi_Jump_Attack_Term, -0x7FA0, -0x7FC0, 8, 0x20, 0, -0x7FA0, 8, 0x200),
+                                     [1] = STEP(Com_Random_Select, &Branch_Menu_2_18_18_11_11, 0) };
     Run_Pattern(wk, script, 2);
 }
 
@@ -243,9 +239,8 @@ void active_pattern_normal_attack_command_attack(PLW* wk, s16 reaction, u16 leve
     Run_Pattern(wk, script, 2);
 }
 
-void active_pattern_normal_attack_j_command_attack(
-    PLW* wk, s16 reaction, u16 lever_data, const Command_Attack_Args* p
-) {
+void active_pattern_normal_attack_j_command_attack(PLW* wk, s16 reaction, u16 lever_data,
+                                                   const Command_Attack_Args* p) {
     const Pattern_Step script[2] = { [0] = STEP(Normal_Attack, reaction, lever_data),
                                      [1] = STEP_WITH(J_Command_Attack, p) };
     Run_Pattern(wk, script, 2);
@@ -331,17 +326,15 @@ void pattern_command_attack_branch_unit_area(PLW* wk, const Command_Attack_Args*
     Run_Pattern(wk, script, 2);
 }
 
-void pattern_search_back_term_jump_attack_term(
-    PLW* wk, const Search_Back_Term_Step* search_back_term, const Jump_Term_Args* a
-) {
+void pattern_search_back_term_jump_attack_term(PLW* wk, const Search_Back_Term_Step* search_back_term,
+                                               const Jump_Term_Args* a) {
     const Pattern_Step script[2] = { [0] = STEP_WITH(Search_Back_Term, search_back_term),
                                      [1] = STEP_WITH(Jump_Attack_Term, a) };
     Run_Pattern(wk, script, 2);
 }
 
-void pattern_check_store_lever_command_attack(
-    PLW* wk, const Check_Store_Lever_Step* check_store_lever, const Command_Attack_Args* p
-) {
+void pattern_check_store_lever_command_attack(PLW* wk, const Check_Store_Lever_Step* check_store_lever,
+                                              const Command_Attack_Args* p) {
     const Pattern_Step script[2] = { [0] = STEP_WITH(Check_Store_Lever, check_store_lever),
                                      [1] = STEP_WITH(Command_Attack, p) };
     Run_Pattern(wk, script, 2);
