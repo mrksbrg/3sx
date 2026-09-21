@@ -56,24 +56,29 @@ void effect_78_move(WORK_Other* ewk) {
     }
 }
 
-s32 crow_fuss_check(WORK_Other* ewk) {
+/* Which way the crow turns: compare its own x against the midpoint between the two
+ * fighters and pick a side once the gap is wide enough. Leaves the direction the
+ * caller already cleared when neither test fires. */
+static void aim_crow_away_from_fighters(WORK_Other* ewk) {
     s16 work;
 
+    work = plw[0].wu.xyz[0].disp.pos + plw[1].wu.xyz[0].disp.pos;
+    work >>= 1;
+    work = ewk->wu.xyz[0].disp.pos - work;
+
+    if (work > 64) {
+        ewk->wu.direction = 2;
+    } else if (work < -64) {
+        ewk->wu.direction = 1;
+    }
+}
+
+s32 crow_fuss_check(WORK_Other* ewk) {
     if (bg_w.quake_y_index > 3) {
         ewk->wu.routine_no[0]++;
         ewk->wu.routine_no[1] = 0;
         ewk->wu.direction = 0;
-
-        work = plw[0].wu.xyz[0].disp.pos + plw[1].wu.xyz[0].disp.pos;
-        work >>= 1;
-        work = ewk->wu.xyz[0].disp.pos - work;
-
-        if (work > 64) {
-            ewk->wu.direction = 2;
-        } else if (work < -64) {
-            ewk->wu.direction = 1;
-        }
-
+        aim_crow_away_from_fighters(ewk);
         return 0;
     }
 
@@ -84,83 +89,11 @@ const s16 eff78_data_tbl[4] = { 416, 71, 912, 64 };
 
 const s16 crow_char_tbl[3][3] = { { 8, 0, 64 }, { 18, -16, 64 }, { 13, 16, 64 } };
 
-void crow_fuss_move(WORK_Other* ewk) {
+/* The landing half of the crow's fuss: the drop onto the marked spot and the
+ * settle that hands control back to routine_no[0]. Case labels are the
+ * original ones. */
+static void crow_fuss_landing(WORK_Other* ewk) {
     switch (ewk->wu.routine_no[1]) {
-    case 0:
-        ewk->wu.routine_no[1]++;
-        ewk->wu.old_rno[0] = crow_char_tbl[ewk->wu.direction][0];
-        set_char_move_init(&ewk->wu, 0, ewk->wu.old_rno[0]);
-        break;
-
-    case 1:
-        char_move(&ewk->wu);
-
-        if (ewk->wu.cg_type == 0xFF) {
-            ewk->wu.routine_no[1]++;
-            set_char_move_init(&ewk->wu, 0, ewk->wu.old_rno[0] + 1);
-            ewk->wu.dir_timer = 28;
-            ewk->wu.old_rno[1] = ewk->wu.xyz[0].disp.pos + crow_char_tbl[ewk->wu.direction][1];
-            ewk->wu.old_rno[2] = ewk->wu.xyz[1].disp.pos + crow_char_tbl[ewk->wu.direction][2];
-            cal_all_speed_data(
-                &ewk->wu, &(Motion_Target) { ewk->wu.dir_timer, ewk->wu.old_rno[1], ewk->wu.old_rno[2], 2, 2 }
-            );
-        }
-
-        break;
-
-    case 2:
-        char_move(&ewk->wu);
-        ewk->wu.dir_timer--;
-
-        if (ewk->wu.dir_timer < 1) {
-            ewk->wu.routine_no[1]++;
-            ewk->wu.dir_timer = 4;
-            set_char_move_init(&ewk->wu, 0, ewk->wu.old_rno[0] + 2);
-        } else {
-            add_x_sub(&ewk->wu);
-            add_y_sub(&ewk->wu);
-        }
-
-        break;
-
-    case 3:
-        char_move(&ewk->wu);
-        ewk->wu.dir_timer--;
-
-        if (ewk->wu.dir_timer < 1) {
-            ewk->wu.routine_no[1]++;
-        }
-
-        break;
-
-    case 4:
-        char_move(&ewk->wu);
-
-        if (ewk->wu.cg_type == 0xFF) {
-            ewk->wu.routine_no[1]++;
-            set_char_move_init(&ewk->wu, 0, ewk->wu.old_rno[0] + 3);
-            ewk->wu.dir_timer = 48;
-            ewk->wu.old_rno[1] = eff78_data_tbl[ewk->wu.type << 1];
-            ewk->wu.old_rno[2] = eff78_data_tbl[(ewk->wu.type << 1) + 1];
-            cal_all_speed_data(
-                &ewk->wu, &(Motion_Target) { ewk->wu.dir_timer, ewk->wu.old_rno[1], ewk->wu.old_rno[2] + 4, 0, 0 }
-            );
-        }
-
-        break;
-
-    case 5:
-        ewk->wu.dir_timer--;
-        add_x_sub(&ewk->wu);
-        add_y_sub(&ewk->wu);
-        char_move(&ewk->wu);
-
-        if (ewk->wu.cg_type == 2) {
-            ewk->wu.routine_no[1]++;
-        }
-
-        break;
-
     case 6:
         ewk->wu.dir_timer--;
 
@@ -188,6 +121,124 @@ void crow_fuss_move(WORK_Other* ewk) {
     }
 }
 
+/* The airborne half: the glide out, the turn, and the dive. Reached from the
+ * caller's default, and reaching the landing half from its own. */
+static void crow_fuss_flight(WORK_Other* ewk) {
+    switch (ewk->wu.routine_no[1]) {
+    case 3:
+        char_move(&ewk->wu);
+        ewk->wu.dir_timer--;
+
+        if (ewk->wu.dir_timer < 1) {
+            ewk->wu.routine_no[1]++;
+        }
+
+        break;
+
+    case 4:
+        char_move(&ewk->wu);
+
+        if (ewk->wu.cg_type == 0xFF) {
+            ewk->wu.routine_no[1]++;
+            set_char_move_init(&ewk->wu, 0, ewk->wu.old_rno[0] + 3);
+            ewk->wu.dir_timer = 48;
+            ewk->wu.old_rno[1] = eff78_data_tbl[ewk->wu.type << 1];
+            ewk->wu.old_rno[2] = eff78_data_tbl[(ewk->wu.type << 1) + 1];
+            cal_all_speed_data(
+                &ewk->wu, &(Motion_Target) { ewk->wu.dir_timer, ewk->wu.old_rno[1], ewk->wu.old_rno[2] + 4, 0, 0 });
+        }
+
+        break;
+
+    case 5:
+        ewk->wu.dir_timer--;
+        add_x_sub(&ewk->wu);
+        add_y_sub(&ewk->wu);
+        char_move(&ewk->wu);
+
+        if (ewk->wu.cg_type == 2) {
+            ewk->wu.routine_no[1]++;
+        }
+
+        break;
+
+    default:
+        crow_fuss_landing(ewk);
+        break;
+    }
+}
+
+void crow_fuss_move(WORK_Other* ewk) {
+    switch (ewk->wu.routine_no[1]) {
+    case 0:
+        ewk->wu.routine_no[1]++;
+        ewk->wu.old_rno[0] = crow_char_tbl[ewk->wu.direction][0];
+        set_char_move_init(&ewk->wu, 0, ewk->wu.old_rno[0]);
+        break;
+
+    case 1:
+        char_move(&ewk->wu);
+
+        if (ewk->wu.cg_type == 0xFF) {
+            ewk->wu.routine_no[1]++;
+            set_char_move_init(&ewk->wu, 0, ewk->wu.old_rno[0] + 1);
+            ewk->wu.dir_timer = 28;
+            ewk->wu.old_rno[1] = ewk->wu.xyz[0].disp.pos + crow_char_tbl[ewk->wu.direction][1];
+            ewk->wu.old_rno[2] = ewk->wu.xyz[1].disp.pos + crow_char_tbl[ewk->wu.direction][2];
+            cal_all_speed_data(&ewk->wu,
+                               &(Motion_Target) { ewk->wu.dir_timer, ewk->wu.old_rno[1], ewk->wu.old_rno[2], 2, 2 });
+        }
+
+        break;
+
+    case 2:
+        char_move(&ewk->wu);
+        ewk->wu.dir_timer--;
+
+        if (ewk->wu.dir_timer < 1) {
+            ewk->wu.routine_no[1]++;
+            ewk->wu.dir_timer = 4;
+            set_char_move_init(&ewk->wu, 0, ewk->wu.old_rno[0] + 2);
+        } else {
+            add_x_sub(&ewk->wu);
+            add_y_sub(&ewk->wu);
+        }
+
+        break;
+
+    default:
+        crow_fuss_flight(ewk);
+        break;
+    }
+}
+
+/* The identity a freshly pulled crow carries: who it is, what it collides with,
+ * and how it is blended. Everything here is settled before the table supplies a
+ * position. */
+static void init_crow_work_flags(WORK_Other* ewk, s16 i) {
+    ewk->wu.be_flag = 1;
+    ewk->wu.id = 78;
+    ewk->wu.work_id = 16;
+    ewk->wu.cgromtype = 1;
+    ewk->wu.rl_flag = 0;
+    ewk->wu.type = i;
+    ewk->wu.dead_f = 0;
+    ewk->wu.my_family = 2;
+    ewk->wu.my_col_mode = 0x4200;
+    ewk->wu.my_col_code = 8492;
+    ewk->wu.my_mts = 7;
+    ewk->wu.my_trans_mode = get_my_trans_mode(ewk->wu.my_mts);
+}
+
+/* The rest, once the crow stands somewhere: depth, the cells it animates from,
+ * and a cleared hit stop. */
+static void give_crow_work_its_cells(WORK_Other* ewk) {
+    ewk->wu.position_z = ewk->wu.my_priority = 83;
+    ewk->wu.char_index = 4;
+    ewk->wu.char_table[0] = _j10_char_table;
+    ewk->wu.hit_stop = 0;
+}
+
 s32 effect_78_init() {
     WORK_Other* ewk;
     s16 ix;
@@ -200,24 +251,10 @@ s32 effect_78_init() {
         }
 
         ewk = (WORK_Other*)frw[ix];
-        ewk->wu.be_flag = 1;
-        ewk->wu.id = 78;
-        ewk->wu.work_id = 16;
-        ewk->wu.cgromtype = 1;
-        ewk->wu.rl_flag = 0;
-        ewk->wu.type = i;
-        ewk->wu.dead_f = 0;
-        ewk->wu.my_family = 2;
-        ewk->wu.my_col_mode = 0x4200;
-        ewk->wu.my_col_code = 8492;
-        ewk->wu.my_mts = 7;
-        ewk->wu.my_trans_mode = get_my_trans_mode(ewk->wu.my_mts);
+        init_crow_work_flags(ewk, i);
         ewk->wu.position_x = ewk->wu.xyz[0].disp.pos = *data_ptr++;
         ewk->wu.position_y = ewk->wu.xyz[1].disp.pos = *data_ptr++;
-        ewk->wu.position_z = ewk->wu.my_priority = 83;
-        ewk->wu.char_index = 4;
-        ewk->wu.char_table[0] = _j10_char_table;
-        ewk->wu.hit_stop = 0;
+        give_crow_work_its_cells(ewk);
     }
 
     return 0;
