@@ -207,17 +207,17 @@ void Scrscreen_Init() {
     ppgScrListShot.pal = &ppgScrPalShot;
     ppgScrListOpt.pal = &ppgScrPalOpt;
     ppgSetupCurrentDataList(&ppgScrList);
-    loadSize = load_it_use_any_key2(&(LoadAnyKeyArgs){ 10, &loadAdrs, &key, 2, 0 }); // scrscrn.ppg
+    loadSize = load_it_use_any_key2(&(LoadAnyKeyArgs) { 10, &loadAdrs, &key, 2, 0 }); // scrscrn.ppg
 
     if (loadSize == 0) {
         flLogOut("Couldn't load scrscrn.ppg\n");
     }
 
-    ppgSetupPalChunk(&ppgScrPalOpt, &(PPGPalChunkArgs){loadAdrs, loadSize, 0, 3, 1});
-    ppgSetupPalChunk(&ppgScrPalShot, &(PPGPalChunkArgs){loadAdrs, loadSize, 0, 2, 1});
-    ppgSetupPalChunk(&ppgScrPalFace, &(PPGPalChunkArgs){loadAdrs, loadSize, 0, 1, 1});
-    ppgSetupPalChunk(NULL, &(PPGPalChunkArgs){loadAdrs, loadSize, 0, 0, 1});
-    ppgSetupTexChunk_1st(NULL, &(PPGTexChunk1stArgs){loadAdrs, loadSize, 0, 6, 0, 0});
+    ppgSetupPalChunk(&ppgScrPalOpt, &(PPGPalChunkArgs) { loadAdrs, loadSize, 0, 3, 1 });
+    ppgSetupPalChunk(&ppgScrPalShot, &(PPGPalChunkArgs) { loadAdrs, loadSize, 0, 2, 1 });
+    ppgSetupPalChunk(&ppgScrPalFace, &(PPGPalChunkArgs) { loadAdrs, loadSize, 0, 1, 1 });
+    ppgSetupPalChunk(NULL, &(PPGPalChunkArgs) { loadAdrs, loadSize, 0, 0, 1 });
+    ppgSetupTexChunk_1st(NULL, &(PPGTexChunk1stArgs) { loadAdrs, loadSize, 0, 6, 0, 0 });
 
     for (i = 0; i < 3; i++) {
         ppgSetupTexChunk_2nd(NULL, i);
@@ -270,14 +270,9 @@ static void write_sa_frame_range(u8 first, u8 limit) {
         for (i = first; i < limit; i++) {
             if (sa_frame[j][i].atr != 0) {
                 scfont_put(
-                    &(ScFontCell){ i,
-                                   j + 25,
-                                   sa_frame[j][i].atr,
-                                   sa_frame[j][i].page,
-                                   sa_frame[j][i].cx,
-                                   sa_frame[j][i].cy },
-                    2
-                );
+                    &(ScFontCell) {
+                        i, j + 25, sa_frame[j][i].atr, sa_frame[j][i].page, sa_frame[j][i].cx, sa_frame[j][i].cy },
+                    2);
             }
         }
     }
@@ -464,18 +459,28 @@ void SSPutStr2(u16 x, u16 y, u8 atr, const char* str) {
     }
 }
 
-void SSPutStrTexInputB(f32 x, f32 y, const char* str, f32 sc) {
-    s32 u = ((*str & 0xF) * 8) + 128;
-    s32 v = ((*str & 0xF0) >> 4) * 8;
-
+/* The glyph's source cell: the 8x8 texel window at (u, v). */
+static void set_input_glyph_cell(s32 u, s32 v) {
     scrscrntex[0].u = scrscrntex[1].u = TO_UV_256(u);
     scrscrntex[2].u = scrscrntex[3].u = TO_UV_256(u + 8);
     scrscrntex[0].v = scrscrntex[2].v = TO_UV_256(v);
     scrscrntex[1].v = scrscrntex[3].v = TO_UV_256(v + 8);
+}
+
+/* The on-screen quad the cell is drawn into, scaled by sc. */
+static void set_input_glyph_quad(f32 x, f32 y, f32 sc) {
     scrscrntex[0].x = scrscrntex[1].x = x;
     scrscrntex[2].x = scrscrntex[3].x = (x + (8.0f * sc));
     scrscrntex[0].y = scrscrntex[2].y = y;
     scrscrntex[1].y = scrscrntex[3].y = (y + (8.0f * sc));
+}
+
+void SSPutStrTexInputB(f32 x, f32 y, const char* str, f32 sc) {
+    s32 u = ((*str & 0xF) * 8) + 128;
+    s32 v = ((*str & 0xF0) >> 4) * 8;
+
+    set_input_glyph_cell(u, v);
+    set_input_glyph_quad(x, y, sc);
 }
 
 void SSPutStrTexInputB2(f32 x, f32 y, s8 str) {
@@ -790,6 +795,30 @@ void scfont_sqput(const ScFontSquare* c, u16 priority) {
     njDrawSprite(scrscrntex, 4, page, 1);
 }
 
+/* The upright arm of scfont_sqput2. */
+static void fill_sa_frame_square_upright(const ScFontSquareInv* c) {
+    u16 x = c->x;
+    u16 y = c->y;
+    u8 atr = c->atr;
+    u8 page = c->page;
+    u8 cx1 = c->cx1;
+    u8 cy1 = c->cy1;
+    u8 cx2 = c->cx2;
+    u8 cy2 = c->cy2;
+
+    u8 i;
+    u8 j;
+
+    for (j = 0; j < cy2; j++) {
+        for (i = 0; i < cx2; i++) {
+            sa_frame[y - 25 + j][x + i].atr = atr;
+            sa_frame[y - 25 + j][x + i].page = page;
+            sa_frame[y - 25 + j][x + i].cx = cx1 + i;
+            sa_frame[y - 25 + j][x + i].cy = cy1 + j;
+        }
+    }
+}
+
 void scfont_sqput2(const ScFontSquareInv* c) {
     u16 x = c->x;
     u16 y = c->y;
@@ -805,14 +834,7 @@ void scfont_sqput2(const ScFontSquareInv* c) {
     u8 j;
 
     if (inverse == 0) {
-        for (j = 0; j < cy2; j++) {
-            for (i = 0; i < cx2; i++) {
-                sa_frame[y - 25 + j][x + i].atr = atr;
-                sa_frame[y - 25 + j][x + i].page = page;
-                sa_frame[y - 25 + j][x + i].cx = cx1 + i;
-                sa_frame[y - 25 + j][x + i].cy = cy1 + j;
-            }
-        }
+        fill_sa_frame_square_upright(c);
     } else {
         for (j = 0; j < cy2; j++) {
             for (i = 0; i < cx2; i++) {
@@ -924,14 +946,9 @@ void sc_ram_to_vram_opc(s8 sc_num, s8 x, s8 y, u16 atr) {
 
     for (i = 0; i < loop; i++) {
         scfont_put(
-            &(ScFontCell){ sc_pos_ptr[0] + x,
-                           sc_pos_ptr[1] + y,
-                           atr,
-                           sa_ram_vram_col[sc_num][1],
-                           sc_uv_ptr[0],
-                           sc_uv_ptr[1] },
-            3
-        );
+            &(ScFontCell) {
+                sc_pos_ptr[0] + x, sc_pos_ptr[1] + y, atr, sa_ram_vram_col[sc_num][1], sc_uv_ptr[0], sc_uv_ptr[1] },
+            3);
         sc_uv_ptr += 2;
         sc_pos_ptr += 2;
     }
