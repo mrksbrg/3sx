@@ -375,6 +375,36 @@ single function. The reading to carry forward is that a mean-probe number is onl
 argument about the mean - it says nothing about a finding it cannot move, and it should not
 be quoted as a reason to leave a file alone when the dominant finding is the other one.
 
+### `plpat00.c`: a measured refusal, and a hole in how the mean is priced
+
+`Game/engine/plpat00.c` scores **9.06** with *Bumpy Road Ahead* on two functions,
+*Complex Method* on two (`Att_JYOUKA` cc 20, `Att_PL00_TOKUSHUKOUDOU` cc 9) and *Large
+Method* on `Att_JYOUKA` at 95 lines. `tools/mean_probe.py` reports the mean finding
+**already closed**.
+
+Recipe E over `Att_JYOUKA`'s entry arm - 46 lines, lifted whole into `launch_jyouka` -
+clears *Large Method* and takes the function from cc 20 to cc 17. It measures **9.06 ->
+8.58**, because *Overall Code Complexity* **opens**. Extracting two more arms as well
+measures 8.66. Both reverted under rule 2.
+
+That is worth recording because it contradicts the model `mean_probe.py` is built on:
+
+> lifting `b` branches into a helper takes `b` off the parent and gives the helper
+> `1 + b`, so the file's total complexity rises by exactly one and its function count by
+> exactly one
+
+If that were the whole story the mean could only fall here: the file holds six functions
+and a total cyclomatic complexity near 47, so a seventh function and one more branch takes
+it from about 7.8 to about 6.9. CodeScene's own numbers agree with that arithmetic - it
+reports the same cc for `Att_JYOUKA` before and after - and yet the finding is closed at
+7.8 and open at 6.9.
+
+So either the threshold is not the flat 4 the tool's docstring states, or *Overall Code
+Complexity* is not the plain mean over all functions. **Do not price a mean finding on a
+small file from that model until someone establishes which.** The number to trust is the
+one `code_health_review` returns after the change, and on this file it says the extraction
+is not worth having.
+
 ### The other half of the lever: 59 files where duplication is all that is left
 
 Clearing Code Duplication on any of them means 10.00. Thirty-six are the machine-folded
