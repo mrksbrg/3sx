@@ -222,9 +222,12 @@ def convert_source(src: str) -> str:
             new_body = decl + "    if (!Run_Pattern_Steps(wk, script, %d)) {\n        %s\n    }\n" % (count, default)
         edits.append((start, end, "%svoid %s(%s) {\n%s}" % (
             "static " if name.startswith("static ") else "", name.replace("static ", ""), params, new_body)))
+        # Formatting one function at a time keeps the diff to the conversion.
+        # Most of Game/com is not clang-format clean, and reformatting a whole
+        # file would bury a Recipe J commit under a few hundred style lines.
     out = src
     for start, end, text in reversed(edits):
-        out = out[:start] + text + out[end:]
+        out = out[:start] + clang_format(text, "fragment.c").rstrip("\n") + out[end:]
     if edits and RUN_INCLUDE not in out:
         out = out.replace(PATTERNS_INCLUDE, RUN_INCLUDE + "\n" + PATTERNS_INCLUDE, 1)
     return out
@@ -288,6 +291,9 @@ def invert_source(src: str) -> str:
         )
         edits.append((start, end, "%svoid %s(%s) {\n%s}" % (
             "static " if name.startswith("static ") else "", name.replace("static ", ""), params, new_body)))
+        # Formatting one function at a time keeps the diff to the conversion.
+        # Most of Game/com is not clang-format clean, and reformatting a whole
+        # file would bury a Recipe J commit under a few hundred style lines.
     out = src
     for start, end, text in reversed(edits):
         out = out[:start] + text + out[end:]
@@ -489,6 +495,31 @@ CLANG_FORMAT = next(
 )
 
 
+TOKEN_RE = re.compile(
+    r"""\s+|/\*.*?\*/|//[^\n]*"""          # skipped: whitespace and comments
+    r"""|"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'"""  # kept: string and char literals
+    r"""|[A-Za-z_]\w*|\d[\w.]*|.""",       # kept: identifiers, numbers, punctuation
+    re.S,
+)
+
+
+def tokens(src: str) -> list:
+    """Every C token in src, with whitespace and comments dropped.
+
+    The round-trip is checked on tokens rather than on text so that it answers
+    the one question that matters - did any call, argument or step number move -
+    without also insisting that the file was laid out the way clang-format would
+    lay it out. Most of Game/com was not.
+    """
+    out = []
+    for m in TOKEN_RE.finditer(src):
+        t = m.group(0)
+        if t.isspace() or t.startswith("/*") or t.startswith("//"):
+            continue
+        out.append(t)
+    return out
+
+
 def clang_format(text: str, name: str) -> str:
     if CLANG_FORMAT is None:
         sys.exit("clang-format is not on PATH; the conversion must land clang-format clean")
@@ -521,7 +552,7 @@ def main() -> int:
     if a.convert is not None:
         for p in a.convert:
             src = Path(p).read_text()
-            Path(p).write_text(clang_format(convert_source(src), Path(p).name))
+            Path(p).write_text(convert_source(src))
             print("converted", p)
         return 0
 
@@ -543,16 +574,17 @@ def main() -> int:
                 print("SKIP %s  %s already holds the table form; verify against the "
                       "commit before the conversion" % (rel, a.base))
                 continue
-            back = clang_format(invert_source(Path(p).read_text()), Path(p).name)
-            if back.strip() == clang_format(old, Path(p).name).strip():
+            back = invert_source(Path(p).read_text())
+            want, got = tokens(old), tokens(back)
+            if want == got:
                 print("OK   %s  the table form inverts to the source it replaced" % rel)
             else:
                 bad += 1
                 print("FAIL %s  the inverse does not reproduce %s" % (rel, a.base))
                 import difflib
 
-                diff = list(difflib.unified_diff(old.splitlines(), back.splitlines(), lineterm="", n=1))
-                print("\n".join(diff[:40]))
+                for line in list(difflib.unified_diff(want, got, lineterm="", n=3))[:40]:
+                    print("    " + line)
         return 1 if bad else 0
 
     ap.print_help()
