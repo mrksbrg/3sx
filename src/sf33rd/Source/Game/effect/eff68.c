@@ -20,50 +20,25 @@ static s32 game_is_active(void) {
     return !EXE_flag && !Game_pause;
 }
 
-static s32 animation_can_advance(void) {
-    return !EXE_flag && !Game_pause;
+static void e68_start_flight_pattern(WORK_Other* ewk) {
+    ewk->wu.char_index = ewk->wu.routine_no[6];
+    set_char_move_init(&ewk->wu, 0, ewk->wu.char_index);
 }
 
-/* Hold until the first timer runs out, then aim at the first waypoint. */
-static void e68_wait_start(WORK_Other* ewk) {
-    if (game_is_active()) {
-        ewk->wu.routine_no[4]--;
-
-        if (ewk->wu.routine_no[4] < 1) {
-            ewk->wu.routine_no[0]++;
-            ewk->wu.routine_no[4] = 50;
-            cal_all_speed_data(
-                &ewk->wu, &(Motion_Target) { ewk->wu.routine_no[4], ewk->wu.old_rno[2], ewk->wu.old_rno[3], 1, 1 }
-            );
-            ewk->wu.char_index = ewk->wu.routine_no[6];
-            set_char_move_init(&ewk->wu, 0, ewk->wu.char_index);
-        }
-    }
+static void e68_drift(WORK_Other* ewk) {
+    add_x_sub(&ewk->wu);
+    add_y_sub(&ewk->wu);
 }
 
-/* Fly to the first waypoint, then aim at the second. */
-static void e68_arc_out(WORK_Other* ewk) {
-    if (animation_can_advance()) {
-        ewk->wu.routine_no[4]--;
-
-        if (ewk->wu.routine_no[4] < 1) {
-            ewk->wu.routine_no[0]++;
-            ewk->wu.routine_no[4] = 50;
-            cal_delta_speed(
-                &ewk->wu, &(Motion_Target) { ewk->wu.routine_no[4], ewk->wu.old_rno[4], ewk->wu.old_rno[5], 2, 2 }
-            );
-            ewk->wu.char_index = ewk->wu.routine_no[6];
-            set_char_move_init(&ewk->wu, 0, ewk->wu.char_index);
-        }
-
-        add_x_sub(&ewk->wu);
-        add_y_sub(&ewk->wu);
-    }
+static void e68_drift_and_animate(WORK_Other* ewk) {
+    add_x_sub(&ewk->wu);
+    add_y_sub(&ewk->wu);
+    char_move(&ewk->wu);
 }
 
-/* One leg of the arc, as the two ground legs run it: how long it takes, which
- * solver aims it, which pair of old_rno slots holds the waypoint, which speed
- * curve, and what the leg does to the pattern when it starts. */
+/* One leg of the arc: how long it takes, which solver aims it, which pair of
+ * old_rno slots holds the waypoint, which speed curve, what the leg does to the
+ * pattern when it starts, and what it does on every frame it runs. */
 typedef struct {
     s16 timer;
     void (*solve)(WORK* wk, const Motion_Target* t);
@@ -71,6 +46,7 @@ typedef struct {
     s16 waypoint_y;
     s8 curve;
     void (*start_pattern)(WORK_Other* ewk);
+    void (*frame)(WORK_Other* ewk);
 } E68Leg;
 
 static void e68_keep_pattern(WORK_Other* ewk) {}
@@ -80,11 +56,13 @@ static void e68_start_return_pattern(WORK_Other* ewk) {
     set_char_move_init(&ewk->wu, 0, ewk->wu.char_index);
 }
 
-/* The leg e68_arc_back and e68_return share: while the game is running, count
- * the leg down, and when it expires step the state and aim at the next
- * waypoint. Both drift and animate on every frame of the leg. */
-static void e68_run_ground_leg(WORK_Other* ewk, const E68Leg* leg) {
-    if (!EXE_flag && !Game_pause) {
+static void e68_hold(WORK_Other* ewk) {}
+
+/* The leg four of the five steps share: while the game is running, count the
+ * leg down, and when it expires step the state and aim at the next waypoint.
+ * What each leg does on every frame is its own. */
+static void e68_run_leg(WORK_Other* ewk, const E68Leg* leg) {
+    if (game_is_active()) {
         ewk->wu.routine_no[4]--;
 
         if (ewk->wu.routine_no[4] < 1) {
@@ -101,20 +79,28 @@ static void e68_run_ground_leg(WORK_Other* ewk, const E68Leg* leg) {
             leg->start_pattern(ewk);
         }
 
-        add_x_sub(&ewk->wu);
-        add_y_sub(&ewk->wu);
-        char_move(&ewk->wu);
+        leg->frame(ewk);
     }
+}
+
+/* Hold until the first timer runs out, then aim at the first waypoint. */
+static void e68_wait_start(WORK_Other* ewk) {
+    e68_run_leg(ewk, &(E68Leg) { 50, cal_all_speed_data, 2, 3, 1, e68_start_flight_pattern, e68_hold });
+}
+
+/* Fly to the first waypoint, then aim at the second. */
+static void e68_arc_out(WORK_Other* ewk) {
+    e68_run_leg(ewk, &(E68Leg) { 50, cal_delta_speed, 4, 5, 2, e68_start_flight_pattern, e68_drift });
 }
 
 /* Fly to the second waypoint, then aim at the third. */
 static void e68_arc_back(WORK_Other* ewk) {
-    e68_run_ground_leg(ewk, &(E68Leg) { 40, cal_all_speed_data, 6, 7, 1, e68_keep_pattern });
+    e68_run_leg(ewk, &(E68Leg) { 40, cal_all_speed_data, 6, 7, 1, e68_keep_pattern, e68_drift_and_animate });
 }
 
 /* Fly to the third waypoint, then aim back at the first. */
 static void e68_return(WORK_Other* ewk) {
-    e68_run_ground_leg(ewk, &(E68Leg) { 60, cal_delta_speed, 0, 1, 2, e68_start_return_pattern });
+    e68_run_leg(ewk, &(E68Leg) { 60, cal_delta_speed, 0, 1, 2, e68_start_return_pattern, e68_drift_and_animate });
 }
 
 /* Fly home, then start the arc again from state 2. */
@@ -128,8 +114,7 @@ static void e68_loop(WORK_Other* ewk) {
             cal_all_speed_data(
                 &ewk->wu, &(Motion_Target) { ewk->wu.routine_no[4], ewk->wu.old_rno[2], ewk->wu.old_rno[3], 1, 1 }
             );
-            ewk->wu.char_index = ewk->wu.routine_no[6];
-            set_char_move_init(&ewk->wu, 0, ewk->wu.char_index);
+            e68_start_flight_pattern(ewk);
         }
 
         add_x_sub(&ewk->wu);
