@@ -25,7 +25,6 @@
 #include "sf33rd/Source/Game/io/pulpul.h"
 #include "sf33rd/Source/Game/system/sysdir.h"
 
-
 /// Check EX SA attack
 /* The caller asked for a slot that must already be armed, and it is not. */
 static s32 slot_needs_arming_and_is_not(const PLW* wk, u8 slot_ix, s8 always) {
@@ -368,6 +367,26 @@ static s32 grounded_dc_slot_is_blocked(PLW* wk) {
  * The airborne arm keeps its own copy: it indexes its table from 38 rather than
  * 20 and reads a different slot field, so Recipe D cannot merge them and
  * extracting from both would create a twin pair. */
+/* Where the grounded direct cancel's animation set lives, and the fourth-EX
+ * flag the console rules latch alongside it. */
+static void select_grounded_dc_table(PLW* wk, s16 j) {
+    if (ArcadeBalance_IsEnabled()) {
+        wk->as = &asstbl_lv_9900_g_arcade[CHAR_3SX_TO_ARCADE(wk->player_number)][j + (wk->sa->nmsa_g_ix - 20) * 4];
+    } else {
+        wk->as = &_assadr_lv_9900[wk->player_number][cmdixconv(wk->sa->nmsa_g_ix)][j + (wk->sa->nmsa_g_ix - 20) * 4];
+        wk->sa->ex4th_exec = (j == 3) * wk->sa->ex4th_full;
+    }
+}
+
+/* The chain-EX bookkeeping the console rules add once the grounded direct
+ * cancel has fired. */
+static void record_grounded_dc_chain_use(PLW* wk) {
+    if (!ArcadeBalance_IsEnabled()) {
+        chainex_check[wk->wu.id][wk->sa->nmsa_g_ix - 20] = 1;
+        chainex_spat_cancel_kidou(&wk->wu);
+    }
+}
+
 static s32 try_grounded_dc_strengths(PLW* wk, u16 cusw) {
     s16 j;
     u16 exsw;
@@ -381,25 +400,14 @@ static s32 try_grounded_dc_strengths(PLW* wk, u16 cusw) {
 
         if (exsw == cmdshot_conv_tbl[wk->cp->exdt[wk->sa->nmsa_g_ix][j] & 0xF]) {
             setup_comm_back(&wk->wu);
-
-            if (ArcadeBalance_IsEnabled()) {
-                wk->as = &asstbl_lv_9900_g_arcade[CHAR_3SX_TO_ARCADE(wk->player_number)]
-                                                 [j + (wk->sa->nmsa_g_ix - 20) * 4];
-            } else {
-                wk->as = &_assadr_lv_9900[wk->player_number][cmdixconv(wk->sa->nmsa_g_ix)]
-                                         [j + (wk->sa->nmsa_g_ix - 20) * 4];
-                wk->sa->ex4th_exec = (j == 3) * wk->sa->ex4th_full;
-            }
+            select_grounded_dc_table(wk, j);
 
             wk->wu.cg_cancel = 0;
             wk->sa->ok = -1;
             hissatsu_setup_union(wk, wk->cp->waza_r[wk->sa->nmsa_g_ix][j]);
             waza_compel_all_init2(wk);
 
-            if (!ArcadeBalance_IsEnabled()) {
-                chainex_check[wk->wu.id][wk->sa->nmsa_g_ix - 20] = 1;
-                chainex_spat_cancel_kidou(&wk->wu);
-            }
+            record_grounded_dc_chain_use(wk);
 
             return 1;
         }
@@ -420,11 +428,9 @@ static void fire_airborne_dc(PLW* wk, s16 j) {
     setup_comm_back(&wk->wu);
 
     if (ArcadeBalance_IsEnabled()) {
-        wk->as = &asstbl_lv_9900_a_arcade[CHAR_3SX_TO_ARCADE(wk->player_number)]
-                                         [j + (wk->sa->nmsa_a_ix - 38) * 4];
+        wk->as = &asstbl_lv_9900_a_arcade[CHAR_3SX_TO_ARCADE(wk->player_number)][j + (wk->sa->nmsa_a_ix - 38) * 4];
     } else {
-        wk->as = &_assadr_lv_9900[wk->player_number][cmdixconv(wk->sa->nmsa_a_ix)]
-                                 [j + (wk->sa->nmsa_a_ix - 38) * 4];
+        wk->as = &_assadr_lv_9900[wk->player_number][cmdixconv(wk->sa->nmsa_a_ix)][j + (wk->sa->nmsa_a_ix - 38) * 4];
         wk->sa->ex4th_exec = (j == 3) * wk->sa->ex4th_full;
     }
 
