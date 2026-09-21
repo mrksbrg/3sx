@@ -17,19 +17,22 @@ for the allowed transformations.
 
 ## Where the whole repository stands
 
-| Band | Score | 2026-09-01 | 2026-09-19 | 2026-09-20 |
-| --- | --- | --- | --- | --- |
-| **Red** - severe debt | 1.0 - 3.9 | 19 | **0** | **0** |
-| **Yellow** - problematic debt | 4.0 - 8.9 | 207 | 93 | **28** |
-| Green | 9.0 - 9.9 | 158 | 91 | 79 |
-| Optimal | 10.0 | 98 | 475 | **553** |
-| Total scored | | 482 | 659 | 660 |
+| Band | Score | 2026-09-01 | 2026-09-19 | 2026-09-20 | 2026-09-21 |
+| --- | --- | --- | --- | --- | --- |
+| **Red** - severe debt | 1.0 - 3.9 | 19 | **0** | **0** | **0** |
+| **Yellow** - problematic debt | 4.0 - 8.9 | 207 | 93 | 28 | **2** |
+| Green | 9.0 - 9.9 | 158 | 91 | 79 | 61 |
+| Optimal | 10.0 | 98 | 475 | 553 | **598** |
+| Total scored | | 482 | 659 | 660 | 661 |
 
 The file count rises because the campaign splits files. Mean Code Health across every
-scorable first-party file is **9.85**.
+scorable first-party file is **9.944**, against 8.52 over the same files at the start.
 
-The 2026-09-20 column is the evening sweep in `codehealth-current.json` with the nine
-files re-measured after the `polish-the-green-band` merge folded in.
+The 2026-09-21 column is the sweep taken after Recipe J went through the CPU script
+family: 44 files, 998 scripts, `Game/com` from a mean of 9.495 to 9.955 and 128 of its 134
+files at 10.00. Two files are left in the yellow band -
+`Game/com/patterns/com_patterns_5step.c` at 8.03 and `Game/stage/bg_zoom.c` at 8.81 - and
+the first of them is priced under *Where `Game/com/patterns` stopped* below.
 
 ## The Red band is empty
 
@@ -53,9 +56,11 @@ switches. What is left there is the texture/palette twin pairs - `flPS2GetTextur
 against `flPS2GetPaletteHandle` and two more like them - which differ in their type and
 so are Recipe D's forbidden case.
 
-The lowest in the repository is now `platform/netplay/game_state.c` (6.30), then
+That paragraph named `platform/netplay/game_state.c` (6.30),
 `platform/video/sdl_gpu/sdl_gpu_renderer.c` (6.82), `AcrSDK/ps2/flps2etc.c` (6.94) and
-`AcrSDK/ps2/ps2PAD.c` (7.01).
+`AcrSDK/ps2/ps2PAD.c` (7.01) as the lowest in the repository. They now measure 10.00,
+10.00, 9.84 and 9.92. The two lowest are `Game/com/patterns/com_patterns_5step.c` (8.03)
+and `Game/stage/bg_zoom.c` (8.81), and nothing else is below 9.0.
 
 ## Track A - available now
 
@@ -144,56 +149,91 @@ three other groups in the same file could, "every split reproduces its shape" wh
 answer was not a split. A refusal is only as wide as the thing that was actually tried,
 and it expires when the catalogue grows.
 
-### What is left, and why it is structural
+### What was left, and why it was not structural after all
 
-Twenty-six files remain below 9.0. Twenty-five of them are the CPU script family, and they
-stop for one reason, which is now measured rather than argued.
+This section used to say that twenty-six files were stuck below 9.0, twenty-five of them
+the CPU script family, and that the reason was structural. The reasoning was:
 
-**Every one-step skeleton is the same ten lines.** `com_patterns_1step.c` holds 44
-functions; CodeScene puts **39 of them in a single mutual-duplication clique**. The shape
-is always
+> and the members differ in exactly two places: the `case` label, and the engine call. The
+> label is a literal and cannot be parameterised. The calls do not share a signature, so no
+> one function pointer reaches them.
 
-```c
-void pattern_x(PLW* wk, const Command_Attack_Args* p) {
-    switch (CP_Index[wk->wu.id][0]) {
-    case 6:
-        J_Command_Attack(wk, p);
-        break;
+Both halves of that are true and the conclusion did not follow. Recipe J takes the whole
+family out of the finding, and it is worth writing down exactly which step of the argument
+was the wrong one, because the same step is available to make the same mistake again.
 
-    default:
-        End_Pattern(wk);
-        break;
-    }
-}
-```
+**"The calls do not share a signature, so no one function pointer reaches them."** They do
+not share a signature *as written*. One adapter per call - `void Step_X(PLW*, const void*)`
+unpacking an argument struct whose fields are the call's own parameters - gives them one,
+without changing a type or a value, and the adapters are generated from `com_sub.h` rather
+than typed. Fifty-seven of them cover every engine call the 998 scripts make. The refusal
+had quietly assumed that the function pointer had to be the engine call itself.
 
-and the members differ in exactly two places: the `case` label, and the engine call. The
-label is a literal and cannot be parameterised. The calls do not share a signature, so no
-one function pointer reaches them. Folding any subset produces a helper that is itself a
-member of the remaining clique - the "which cut makes the twin" rule, at the scale of a
-whole file.
+**"The label is a literal and cannot be parameterised."** Correct, and irrelevant: it does
+not have to be parameterised, it has to be *kept*. A designated initialiser keyed by the
+case label keeps it exactly, which is what Recipe L already required for the same reason.
 
-The same count holds across the family: `com_patterns_2step.c` 54 of 63,
-`com_patterns_4step.c` 38 of 41, `com_patterns_6step.c` 19 of 24, `active08.c` 19,
-`pass14.c` 18, `pass09_2.c` 15. These are not several files with duplication; they are one
-shape written several hundred times, which is what a pattern script *is*.
+**The ten-line floor was the real finding, and it was right.** CodeScene groups functions
+of ten physical lines or more by shape. That number is now bisected rather than inferred -
+a synthetic file of thirty same-shaped functions scores 10.00 at five table lines and 8.03
+at six - and it is the budget every skeleton is written against. What changed is that a
+table is shorter than the switch it replaces: a step is one line, not four, so a six-step
+script comes in at eight lines where its switch was twenty-six.
 
-The skeleton is exactly ten lines of code, and CodeScene's duplication check has a
-ten-line floor. Nine lines would drop the whole family out of the finding, and
-`AllowShortCaseLabelsOnASingleLine` would get there. That is gaming the measurement rather
-than improving the code, and it is not done.
+The old note ended by refusing `AllowShortCaseLabelsOnASingleLine` as gaming the
+measurement. That refusal stands and is unaffected. Recipe J does not shorten the file by
+formatting it differently; it replaces control flow with data, and the file gets shorter
+because there is less of it.
 
-The individual folds that *are* legal in this family were taken: `com_patterns_3step.c`,
-`active07.c`, `active14_2.c`, `active17.c`, `pass08_4.c`, `pass14_4.c` and
-`pls00_normal_states.c` all lost their qualifying groups this session, mostly through
-Recipe A with named-member parameter objects. They moved the duplication counts and, where
-the clique still dominates, not the score - kept under rule 2's complexity clause.
+**What it measured.** `Game/com` went from a mean of **9.495 to 9.955**, 128 of its 134
+files at 10.00. The three files the old note named as the worst of the family -
+`active08.c` 19 in a clique, `pass14.c` 18, `pass09_2.c` 15 - are all at 10.00. So are
+`com_patterns_1step.c`, `2step.c`, `3step.c` and `4step.c`, whose cliques of 39, 54 and 38
+this section used as its evidence.
 
-**Overall Code Complexity on the four-, five- and six-step files** has the same shape of
-answer. A skeleton's cyclomatic complexity is its arm count plus one, so the file mean is
-pinned at roughly the step count. Recipe X would divide it, and `bg_zoom.c` already priced
-that: one split pays, and the full set of six measures 8.54 -> 8.28, because the split
-halves are themselves twins.
+### Where `Game/com/patterns` stopped, and why
+
+Three files did not reach 10.00: `com_patterns_5step.c` at 8.03 and
+`com_patterns_5step_2.c` and `com_patterns_6step.c` at 9.09. One cause, measured two ways.
+
+A converted skeleton measures `signature + steps + 2` physical lines, and the signature is
+one line unless it passes the 120-column limit, in which case clang-format gives it three.
+Seventeen of the thirty-one skeletons in `com_patterns_5step.c` are at ten lines or more;
+eleven of those are over only because their signature wrapped. Joining the wrapped
+signatures back onto one line - a probe, not a commit, since it breaks the column limit -
+takes `com_patterns_5step.c` to 10.00 and `com_patterns_5step_2.c` to 10.00 with nothing
+else changed. That is the whole of it.
+
+The signatures are long because the generated names restate the call sequence
+(`pattern_jump_attack_term_normal_attack_command_attack_6` is 54 characters) and the engine's
+argument types are long (`const Command_Attack_Args* p` is 28). They overflow by 3 to 36
+characters. Closing that gap means shortening 448 generated names across 3500 call sites,
+or wrapping skeleton parameters in new structs - and Recipe A does not help here, because
+`const Search_Back_Term_Step* s` is two characters *longer* than the `s16 move_value, s16
+next_menu` it would replace - or raising `ColumnLimit`. All three change the source to fit
+the measurement rather than to be better, which is the same objection that kept
+`AllowShortCaseLabelsOnASingleLine` out. Not done, and recorded here with the number so it
+does not have to be re-derived.
+
+The remaining few in `com_patterns_6step.c` have a second cause worth naming: one step wide
+enough to push the table past the column limit makes clang-format break the whole
+initialiser one-per-line, which costs two lines. The wide steps are the eight- and
+ten-value argument objects - `Jump_Term_Args`, `JCA_Term_Args`. Hoisting the repeated ones
+to named file-scope constants would shorten them, and 42 of the folder's 125 constant
+argument objects do repeat, but it does not clear any file on its own, because the wrapped
+signatures are still there.
+
+### The 54 files left in switch form
+
+Fifty-four files in `Game/com/passive`, `active`, `shell` and `follow` still hold
+skeleton-shaped switches and were not converted. Every one of them already scores 10.00,
+so rule 2 says leave them: there is no smell for the conversion to clear and no score for
+it to move. The cost is that the family now reads in two idioms. If that is judged worth
+fixing, `tools/pattern_table.py --convert` handles them unchanged - they were checked
+against the recipe's conditions along with the rest, and all 552 skeleton-shaped switches
+in `Game/com` meet them.
+
+### The one that was never a script
 
 The twenty-sixth file was `opening_bg0.c` at 8.12, recorded here as a genuine measured
 refusal: lifting `op_bg0_0003`'s inner block clears one Complex Method and creates a
@@ -322,11 +362,75 @@ note recording the same kind of refusal ("one split pays, and the full set of si
 8.54 -> 8.28, because the split halves are themselves twins"). Its rejected splits each
 *add a function*, so they pay into the mean they were never measured against.
 
-The remaining nine are the `Game/com/patterns` skeleton files at 7.55-7.78, and there the
-probe argues for leaving them: `com_patterns_4step_3.c` needs 12 functions and
-`com_patterns_3step.c` needs 14, both reaching only **8.03**, because Code Duplication x14 to
-x44 is what actually holds them down. That is the intrinsic-idiom finding already recorded
-for the folder, now with a number on the other half of it.
+The remaining nine were the `Game/com/patterns` skeleton files at 7.55-7.78, and the probe
+argued for leaving them: `com_patterns_4step_3.c` needed 12 functions and
+`com_patterns_3step.c` 14, both reaching only **8.03**, because Code Duplication x14 to x44
+was what actually held them down.
+
+**Overturned 2026-09-21.** The probe was measuring the wrong lever. Splitting a skeleton
+into more functions divides the complexity mean and leaves the duplication where it is;
+Recipe J removes both, because a table of steps is neither complex nor ten lines long.
+`com_patterns_4step_3.c` and `com_patterns_3step.c` are both at 10.00 without gaining a
+single function. The reading to carry forward is that a mean-probe number is only an
+argument about the mean - it says nothing about a finding it cannot move, and it should not
+be quoted as a reason to leave a file alone when the dominant finding is the other one.
+
+### `plpat00.c`: a measured refusal, and a hole in how the mean is priced
+
+`Game/engine/plpat00.c` scores **9.06** with *Bumpy Road Ahead* on two functions,
+*Complex Method* on two (`Att_JYOUKA` cc 20, `Att_PL00_TOKUSHUKOUDOU` cc 9) and *Large
+Method* on `Att_JYOUKA` at 95 lines. `tools/mean_probe.py` reports the mean finding
+**already closed**.
+
+Recipe E over `Att_JYOUKA`'s entry arm - 46 lines, lifted whole into `launch_jyouka` -
+clears *Large Method* and takes the function from cc 20 to cc 17. It measures **9.06 ->
+8.58**, because *Overall Code Complexity* **opens**. Extracting two more arms as well
+measures 8.66. Both reverted under rule 2.
+
+That is worth recording because it contradicts the model `mean_probe.py` is built on:
+
+> lifting `b` branches into a helper takes `b` off the parent and gives the helper
+> `1 + b`, so the file's total complexity rises by exactly one and its function count by
+> exactly one
+
+If that were the whole story the mean could only fall here: the file holds six functions
+and a total cyclomatic complexity near 47, so a seventh function and one more branch takes
+it from about 7.8 to about 6.9. CodeScene's own numbers agree with that arithmetic - it
+reports the same cc for `Att_JYOUKA` before and after - and yet the finding is closed at
+7.8 and open at 6.9.
+
+So either the threshold is not the flat 4 the tool's docstring states, or *Overall Code
+Complexity* is not the plain mean over all functions. **Do not price a mean finding on a
+small file from that model until someone establishes which.** The number to trust is the
+one `code_health_review` returns after the change, and on this file it says the extraction
+is not worth having.
+
+**`appear_late.c` refuses it a second way, and this one is understood.** The probe reads
+`9.38 -> 10.00 on 8 more low-complexity functions`, and the table above records "nothing;
+the mean is the only finding". Three extractions in - `Appear_33000`'s drop-in,
+`Appear_34000`'s random entry, and the fourth arm of `choose_appear_29000_entry` - the
+file measures **8.54**, with *Code Duplication* open on three groups that did not exist
+before:
+
+- `drop_appear_29000` against `start_appear_33000`: both are an entry arm that sets a
+  counter and calls `cal_initial_speed` at `pos_x_work` plus or minus 0x58. They were
+  never alike as *arms* of two different switches; lifting them out made them two
+  functions of the same shape.
+- `Appear_33000` against `step_appear_36000_settle` and `step_appear_29000_settle`:
+  shortening `Appear_33000` from 38 lines to 12 did not make it unlike anything - it made
+  it *like* the other short state machines in the file.
+
+That is the general shape of it. `mean_probe.py` prices one finding in isolation and its
+number is an **upper bound that assumes the functions you add are unlike each other and
+unlike what is already there**. In a file whose functions are the arms of a state machine,
+extracted arms are alike by construction, and shortening a function moves it into the size
+band where the duplication check compares it against its neighbours. Read the probe as
+"this many functions would close the mean *if nothing else opens*", and re-review after
+the third extraction rather than after the eighth.
+
+Both files reverted. Neither is a plateau in the catalogue's sense - a recipe that is
+legal and pays is still wanted - but Recipe E over their state-machine arms is priced and
+is not it.
 
 ### The other half of the lever: 59 files where duplication is all that is left
 
@@ -356,9 +460,9 @@ Recorded here so a later agent can see what has already been swept.
 | Folder | Files | Before | After | Notes |
 | --- | --- | --- | --- | --- |
 | `Game/ui` | 9 -> 11 | 4.06 - 9.92 | mean **8.58** | `sc_sub.c` split five ways; *Recipe A clears one finding, not fifteen*, and the re-wrap its call sites needed cost two files a band until they were split again |
-| `Game/com/passive` | 20 -> 67 | 4.90 - 7.55 | mean **9.65**, 47 at 10.00 | 3488 CPU pattern scripts folded onto shared skeletons; see *Where `Game/com/passive` stopped* in `PLAYBOOK.md` |
-| `Game/com/active` | 20 -> 22 | 5.04 - 8.03 | mean **9.33**, 11 at 10.00 | 1621 scripts, the same shape under another name; folded folder-wide first, then again across both folders at once |
-| `Game/com/patterns` | 0 -> 14 | - | mean **8.02**, 2 at 10.00 | the shared skeleton module the two script folders used to hold twice |
+| `Game/com/passive` | 20 -> 67 | 4.90 - 7.55 | mean **10.00**, all 67 at 10.00 | 3488 CPU pattern scripts folded onto shared skeletons, then Recipe J over what was left |
+| `Game/com/active` | 20 -> 22 | 5.04 - 8.03 | mean **10.00**, all 22 at 10.00 | 1621 scripts, the same shape under another name; folded folder-wide first, then again across both folders at once, then Recipe J |
+| `Game/com/patterns` | 0 -> 15 | - | mean **9.75**, 12 of 15 at 10.00 | the shared skeleton module the two script folders used to hold twice, plus Recipe J's interpreter |
 
 Both COM script folders are done, and since 2026-09-19 they share one skeleton module in
 `Game/com/patterns`. `tools/passive_fold.py --family {passive,active,com}` carries the

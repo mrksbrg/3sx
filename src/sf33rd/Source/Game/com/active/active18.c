@@ -4,6 +4,7 @@
  */
 
 #include "sf33rd/Source/Game/com/active/active18.h"
+#include "sf33rd/Source/Game/com/patterns/com_pattern_run.h"
 #include "sf33rd/Source/Game/com/patterns/com_patterns.h"
 #include "common.h"
 #include "sf33rd/Source/Game/com/com_sub.h"
@@ -56,14 +57,8 @@ void Pattern18_0009(PLW* wk) {
 }
 
 void Pattern18_0010(PLW* wk) {
-    switch (CP_Index[wk->wu.id][0]) {
-    case 0:
-        Normal_Attack(wk, 8, 0x402);
-        break;
-    default:
-        End_Pattern(wk);
-        break;
-    }
+    const Pattern_Step script[1] = { [0] = STEP(Normal_Attack, 8, 0x402) };
+    Run_Pattern(wk, script, 1);
 }
 
 void Pattern18_0011(PLW* wk) {
@@ -103,19 +98,9 @@ void Pattern18_0019(PLW* wk) {
 }
 
 void Pattern18_0020(PLW* wk) {
-    switch (CP_Index[wk->wu.id][0]) {
-    case 0:
-        Branch_Unit_Area(wk, &(Branch_Menu_Args){2, 0x41, 0x41, 0x42, 0x43});
-        break;
-
-    case 1:
-        Command_Attack(wk, &(Command_Attack_Args){8, 0x1C, 0xA, -1});
-        break;
-
-    default:
-        End_Pattern(wk);
-        break;
-    }
+    const Pattern_Step script[2] = { [0] = STEP(Branch_Unit_Area, 2, 0x41, 0x41, 0x42, 0x43),
+                                     [1] = STEP(Command_Attack, 8, 0x1C, 0xA, -1) };
+    Run_Pattern(wk, script, 2);
 }
 
 void Pattern18_0021(PLW* wk) {
@@ -191,35 +176,14 @@ void Pattern18_0037(PLW* wk) {
 }
 
 void Pattern18_0038(PLW* wk) {
-    switch (CP_Index[wk->wu.id][0]) {
-    case 0:
-        Adjust_Attack(wk, 0xB, 0x20);
-        break;
-
-    case 1:
-        Lever_Attack(wk, 8, 0, 0x40);
-        break;
-
-    default:
-        End_Pattern(wk);
-        break;
-    }
+    const Pattern_Step script[2] = { [0] = STEP(Adjust_Attack, 0xB, 0x20), [1] = STEP(Lever_Attack, 8, 0, 0x40) };
+    Run_Pattern(wk, script, 2);
 }
 
 void Pattern18_0039(PLW* wk) {
-    switch (CP_Index[wk->wu.id][0]) {
-    case 0:
-        Branch_Unit_Area(wk, &(Branch_Menu_Args){2, 0x41, 0x41, 0x42, 0x43});
-        break;
-
-    case 1:
-        Adjust_Attack(wk, 8, 0x10);
-        break;
-
-    default:
-        End_Pattern(wk);
-        break;
-    }
+    const Pattern_Step script[2] = { [0] = STEP(Branch_Unit_Area, 2, 0x41, 0x41, 0x42, 0x43),
+                                     [1] = STEP(Adjust_Attack, 8, 0x10) };
+    Run_Pattern(wk, script, 2);
 }
 
 void Pattern18_0040(PLW* wk) {
@@ -367,15 +331,8 @@ void Pattern18_0075(PLW* wk) {
 }
 
 void Pattern18_0076(PLW* wk) {
-    switch (CP_Index[wk->wu.id][0]) {
-    case 0:
-        Search_Back_Term(wk, 0x40, 2, 0x1B);
-        break;
-
-    default:
-        End_Pattern(wk);
-        break;
-    }
+    const Pattern_Step script[1] = { [0] = STEP(Search_Back_Term, 0x40, 2, 0x1B) };
+    Run_Pattern(wk, script, 1);
 }
 
 void Pattern18_0077(PLW* wk) {

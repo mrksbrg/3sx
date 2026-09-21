@@ -5,6 +5,7 @@
 
 #include "sf33rd/Source/Game/com/passive/pass07.h"
 #include "sf33rd/Source/Game/com/passive/pass07_internal.h"
+#include "sf33rd/Source/Game/com/patterns/com_pattern_run.h"
 #include "sf33rd/Source/Game/com/patterns/com_patterns.h"
 #include "common.h"
 #include "sf33rd/Source/Game/com/com_sub.h"
@@ -13,67 +14,25 @@
 void (*const Passive07_Tbl[214])();
 
 static void passive07_pattern_approach_walk_lever_attack(PLW* wk, s16 target_pos, u16 lever_data) {
-    switch (CP_Index[wk->wu.id][0]) {
-    case 0:
-        Approach_Walk(wk, target_pos, 2);
-        break;
-
-    case 1:
-        Lever_Attack(wk, 8, 0, lever_data);
-        break;
-
-    default:
-        End_Pattern(wk);
-        break;
-    }
+    const Pattern_Step script[2] = { [0] = STEP(Approach_Walk, target_pos, 2),
+                                     [1] = STEP(Lever_Attack, 8, 0, lever_data) };
+    Run_Pattern(wk, script, 2);
 }
 
 void passive07_pattern_keep_away_wait_get_up(PLW* wk, u16 lever_data, s16 option) {
-    switch (CP_Index[wk->wu.id][0]) {
-    case 0:
-        Keep_Away(wk, 0xC7, 0);
-        break;
-
-    case 1:
-        Wait_Get_Up(wk, lever_data, option);
-        break;
-
-    default:
-        End_Pattern(wk);
-        break;
-    }
+    const Pattern_Step script[2] = { [0] = STEP(Keep_Away, 0xC7, 0), [1] = STEP(Wait_Get_Up, lever_data, option) };
+    Run_Pattern(wk, script, 2);
 }
 
 void passive07_pattern_approach_walk_normal_attack(PLW* wk, s16 reaction, u16 lever_data) {
-    switch (CP_Index[wk->wu.id][0]) {
-    case 0:
-        Approach_Walk(wk, 0x3B, 2);
-        break;
-
-    case 1:
-        Normal_Attack(wk, reaction, lever_data);
-        break;
-
-    default:
-        End_Pattern(wk);
-        break;
-    }
+    const Pattern_Step script[2] = { [0] = STEP(Approach_Walk, 0x3B, 2),
+                                     [1] = STEP(Normal_Attack, reaction, lever_data) };
+    Run_Pattern(wk, script, 2);
 }
 
 void passive07_pattern_wait_get_up_j_command_attack(PLW* wk, const Command_Attack_Args* p) {
-    switch (CP_Index[wk->wu.id][0]) {
-    case 0:
-        Wait_Get_Up(wk, 0, 0);
-        break;
-
-    case 1:
-        J_Command_Attack(wk, p);
-        break;
-
-    default:
-        End_Pattern(wk);
-        break;
-    }
+    const Pattern_Step script[2] = { [0] = STEP(Wait_Get_Up, 0, 0), [1] = STEP_WITH(J_Command_Attack, p) };
+    Run_Pattern(wk, script, 2);
 }
 
 void Passive07(PLW* wk) {
@@ -117,27 +76,11 @@ void Passive07_0007(PLW* wk) {
 }
 
 void Passive07_0008(PLW* wk) {
-    switch (CP_Index[wk->wu.id][0]) {
-    case 0:
-        Approach_Walk(wk, 0x3B, 2);
-        break;
-
-    case 1:
-        EM_Term(wk, &(EM_Term_Params){-1, -0x7FC0, 6, 1, -1});
-        break;
-
-    case 2:
-        Normal_Attack(wk, 8, 0x100);
-        break;
-
-    case 3:
-        Normal_Attack(wk, 8, 0x402);
-        break;
-
-    default:
-        End_Pattern(wk);
-        break;
-    }
+    const Pattern_Step script[4] = { [0] = STEP(Approach_Walk, 0x3B, 2),
+                                     [1] = STEP(EM_Term, -1, -0x7FC0, 6, 1, -1),
+                                     [2] = STEP(Normal_Attack, 8, 0x100),
+                                     [3] = STEP(Normal_Attack, 8, 0x402) };
+    Run_Pattern(wk, script, 4);
 }
 
 void Passive07_0009(PLW* wk) {
@@ -149,35 +92,12 @@ void Passive07_0009(PLW* wk) {
 }
 
 void Passive07_0010(PLW* wk) {
-    switch (CP_Index[wk->wu.id][0]) {
-    case 0:
-        Approach_Walk(wk, 0x3B, 2);
-        break;
-
-    case 1:
-        EM_Term(wk, &(EM_Term_Params){-1, -0x7FD0, 6, 1, -1});
-        break;
-
-    case 2:
-        Normal_Attack(wk, 9, 0x100);
-        break;
-
-    case 3:
-        Normal_Attack(wk, 8, 0x102);
-        break;
-
-    case 4:
-        Lever_Attack(wk, 8, 0, 0x200);
-        break;
-
-    case 5:
-        Command_Attack(wk, &(Command_Attack_Args){8, 0x20, 10, -1});
-        break;
-
-    default:
-        End_Pattern(wk);
-        break;
-    }
+    const Pattern_Step script[6] = {
+        [0] = STEP(Approach_Walk, 0x3B, 2),    [1] = STEP(EM_Term, -1, -0x7FD0, 6, 1, -1),
+        [2] = STEP(Normal_Attack, 9, 0x100),   [3] = STEP(Normal_Attack, 8, 0x102),
+        [4] = STEP(Lever_Attack, 8, 0, 0x200), [5] = STEP(Command_Attack, 8, 0x20, 10, -1)
+    };
+    Run_Pattern(wk, script, 6);
 }
 
 void Passive07_0011(PLW* wk) {
@@ -233,27 +153,11 @@ void Passive07_0023(PLW* wk) {
 }
 
 void Passive07_0024(PLW* wk) {
-    switch (CP_Index[wk->wu.id][0]) {
-    case 0:
-        Approach_Walk(wk, 0x3B, 2);
-        break;
-
-    case 1:
-        Normal_Attack(wk, 8, 0x20);
-        break;
-
-    case 2:
-        Lever_Attack(wk, 8, 0, 0x100);
-        break;
-
-    case 3:
-        Command_Attack(wk, &(Command_Attack_Args){8, 0x1F, 10, -1});
-        break;
-
-    default:
-        End_Pattern(wk);
-        break;
-    }
+    const Pattern_Step script[4] = { [0] = STEP(Approach_Walk, 0x3B, 2),
+                                     [1] = STEP(Normal_Attack, 8, 0x20),
+                                     [2] = STEP(Lever_Attack, 8, 0, 0x100),
+                                     [3] = STEP(Command_Attack, 8, 0x1F, 10, -1) };
+    Run_Pattern(wk, script, 4);
 }
 
 void Passive07_0025(PLW* wk) {
@@ -265,19 +169,10 @@ void Passive07_0026(PLW* wk) {
 }
 
 void Passive07_0027(PLW* wk) {
-    switch (CP_Index[wk->wu.id][0]) {
-    case 0:
-        Search_Back_Term(wk, 0x60, 6, 0x2E);
-        break;
-
-    case 1:
-        Jump_Command_Attack_Term(wk, &(JCA_Term_Args){8, 0x2E, 10, -1, -1, 0x40, 1, -1, -1, 0xFFFF});
-        break;
-
-    default:
-        End_Pattern(wk);
-        break;
-    }
+    const Pattern_Step script[2] = { [0] = STEP(Search_Back_Term, 0x60, 6, 0x2E),
+                                     [1] =
+                                         STEP(Jump_Command_Attack_Term, 8, 0x2E, 10, -1, -1, 0x40, 1, -1, -1, 0xFFFF) };
+    Run_Pattern(wk, script, 2);
 }
 
 void Passive07_0028(PLW* wk) {
@@ -293,23 +188,10 @@ void Passive07_0029(PLW* wk) {
 }
 
 void Passive07_0030(PLW* wk) {
-    switch (CP_Index[wk->wu.id][0]) {
-    case 0:
-        Approach_Walk(wk, 0x3B, 2);
-        break;
-
-    case 1:
-        Normal_Attack(wk, 8, 0x102);
-        break;
-
-    case 2:
-        Lever_Attack(wk, 8, 0x1E, 10);
-        break;
-
-    default:
-        End_Pattern(wk);
-        break;
-    }
+    const Pattern_Step script[3] = { [0] = STEP(Approach_Walk, 0x3B, 2),
+                                     [1] = STEP(Normal_Attack, 8, 0x102),
+                                     [2] = STEP(Lever_Attack, 8, 0x1E, 10) };
+    Run_Pattern(wk, script, 3);
 }
 
 void Passive07_0031(PLW* wk) {
@@ -419,23 +301,10 @@ void Passive07_0051(PLW* wk) {
 }
 
 void Passive07_0052(PLW* wk) {
-    switch (CP_Index[wk->wu.id][0]) {
-    case 0:
-        Check_EX(wk, 6, 2);
-        break;
-
-    case 1:
-        Jump_Attack_Term(wk, &(Jump_Term_Args){-0x7FA8, -0x7FC0, 9, 0x20, 0, -0x7FB0, -1, 0x200});
-        break;
-
-    case 2:
-        J_Command_Attack(wk, &(Command_Attack_Args){8, 0x1E, 9, 0x700});
-        break;
-
-    default:
-        End_Pattern(wk);
-        break;
-    }
+    const Pattern_Step script[3] = { [0] = STEP(Check_EX, 6, 2),
+                                     [1] = STEP(Jump_Attack_Term, -0x7FA8, -0x7FC0, 9, 0x20, 0, -0x7FB0, -1, 0x200),
+                                     [2] = STEP(J_Command_Attack, 8, 0x1E, 9, 0x700) };
+    Run_Pattern(wk, script, 3);
 }
 
 void Passive07_0053(PLW* wk) {
