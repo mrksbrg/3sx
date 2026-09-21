@@ -18,9 +18,7 @@ void Passive08_0159(PLW* wk) {
         [2] = STEP(SA_Term, 0x39, 0x3A, 0x3B, 0), [3] = STEP(J_Command_Attack, 8, 0x1E, 10, -1),
         [4] = STEP(Normal_Attack, 8, 0x402),      [5] = STEP_NOARG(Pierce_On)
     };
-    if (!Run_Pattern_Steps(wk, script, 6)) {
-        pattern_search_back_term_command_attack_from_step_6(wk);
-    }
+    Run_Pattern_Or(wk, script, 6, pattern_search_back_term_command_attack_from_step_6);
 }
 
 void Passive08_0160(PLW* wk) {
