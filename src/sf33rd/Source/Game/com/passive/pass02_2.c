@@ -48,9 +48,7 @@ void Passive02_0070(PLW* wk) {
                                      [3] = STEP(SA_Term, 0x35, 0x36, 0xFFFF, 0x47),
                                      [4] = STEP(SA_Term, 0xFFFF, 0xFFFF, 0x19, 0x3C),
                                      [5] = STEP(Wait_Get_Up, 0, -1) };
-    if (!Run_Pattern_Steps(wk, script, 6)) {
-        passive02_0070_from_step_6(wk);
-    }
+    Run_Pattern_Or(wk, script, 6, passive02_0070_from_step_6);
 }
 
 static void passive02_0071_from_step_6(PLW* wk) {
@@ -64,9 +62,7 @@ void Passive02_0071(PLW* wk) {
         [2] = STEP(ETC_Term, 8, 6, 7),      [3] = STEP(Check_SA, 6, 7),
         [4] = STEP_NOARG(Pierce_On),        [5] = STEP(Command_Attack, 8, 0x8016, 10, -1)
     };
-    if (!Run_Pattern_Steps(wk, script, 6)) {
-        passive02_0071_from_step_6(wk);
-    }
+    Run_Pattern_Or(wk, script, 6, passive02_0071_from_step_6);
 }
 
 void Passive02_0072(PLW* wk) {
@@ -125,9 +121,7 @@ void Passive02_0078(PLW* wk) {
                                      [3] = STEP_NOARG(Pierce_On),
                                      [4] = STEP(Command_Attack, 8, 0x1F, 8, 0x700),
                                      [5] = STEP(Check_BOSS_EX, 1, 0xFFFF) };
-    if (!Run_Pattern_Steps(wk, script, 6)) {
-        passive02_0078_from_step_6(wk);
-    }
+    Run_Pattern_Or(wk, script, 6, passive02_0078_from_step_6);
 }
 
 void Passive02_0079(PLW* wk) {
