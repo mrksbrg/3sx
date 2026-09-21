@@ -214,9 +214,7 @@ void Pattern08_0034(PLW* wk) {
     const Pattern_Step script[6] = { [0] = STEP(Normal_Attack, 0xb, 0x100),    [1] = STEP(Normal_Attack, 0xb, 0x40),
                                      [2] = STEP(Normal_Attack, 0xb, 0x402),    [3] = STEP_NOARG(Pierce_On),
                                      [4] = STEP(Command_Attack, 8, 1, 10, -1), [5] = STEP_NOARG(Lever_Off) };
-    if (!Run_Pattern_Steps(wk, script, 6)) {
-        pattern08_0034_from_step_6(wk);
-    }
+    Run_Pattern_Or(wk, script, 6, pattern08_0034_from_step_6);
 }
 
 void Pattern08_0035(PLW* wk) {
