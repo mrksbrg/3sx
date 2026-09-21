@@ -42,6 +42,12 @@ static s32 can_update_effect(void) {
     return !EXE_flag && !Game_pause && !EXE_obroll;
 }
 
+static void quake_step_xy(WORK_Other* ewk) {
+    char_move(&ewk->wu);
+    add_x_sub(&ewk->wu);
+    add_y_sub(&ewk->wu);
+}
+
 static void quake_step_y(WORK_Other* ewk) {
     char_move(&ewk->wu);
     add_y_sub(&ewk->wu);
@@ -201,9 +207,7 @@ static void quake_level_large_settle(WORK_Other* ewk) {
 static void quake_level_large_slide(WORK_Other* ewk) {
     switch (ewk->wu.routine_no[2]) {
     case 4:
-        char_move(&ewk->wu);
-        add_x_sub(&ewk->wu);
-        add_y_sub(&ewk->wu);
+        quake_step_xy(ewk);
         ewk->wu.old_rno[5]--;
 
         if (ewk->wu.old_rno[5] <= 0) {
@@ -241,9 +245,7 @@ static void quake_level_large_slide(WORK_Other* ewk) {
 static void quake_level_large_land(WORK_Other* ewk) {
     switch (ewk->wu.routine_no[2]) {
     case 2:
-        char_move(&ewk->wu);
-        add_x_sub(&ewk->wu);
-        add_y_sub(&ewk->wu);
+        quake_step_xy(ewk);
 
         if (!(ewk->wu.xyz[1].disp.pos < ewk->wu.old_rno[2])) {
             break;
@@ -266,9 +268,7 @@ static void quake_level_large_land(WORK_Other* ewk) {
         break;
 
     case 3:
-        char_move(&ewk->wu);
-        add_x_sub(&ewk->wu);
-        add_y_sub(&ewk->wu);
+        quake_step_xy(ewk);
         ewk->wu.old_rno[5]--;
 
         if (ewk->wu.mvxy.a[1].sp < 0) {
@@ -301,9 +301,7 @@ void quake_level_large(WORK_Other* ewk) {
         /* fallthrough */
 
     case 1:
-        char_move(&ewk->wu);
-        add_x_sub(&ewk->wu);
-        add_y_sub(&ewk->wu);
+        quake_step_xy(ewk);
 
         if (ewk->wu.mvxy.a[1].sp < 0) {
             ewk->wu.routine_no[2]++;
