@@ -74,6 +74,51 @@ void end_100_move() {
     end_100_jp[end_w.r_no_2]();
 }
 
+static void end_100_0000_wait_for_free(BGW* bgw) {
+    bgw->free--;
+
+    if (bgw->free < 1) {
+        bgw->r_no_1++;
+    }
+}
+
+static void end_100_0000_pan_camera(BGW* bgw) {
+    bgw->xy[0].cal += 0x8000;
+
+    if (384 < bgw->xy[0].disp.pos) {
+        bgw->r_no_1++;
+        bgw->xy[0].cal = 0x1800000;
+        bgw->free = 0x5A;
+    }
+
+    bgw->abs_x = bgw->xy[0].disp.pos;
+}
+
+static void end_100_0000_ask_for_fade(BGW* bgw) {
+    if (Request_Fade(3)) {
+        bgw->r_no_1++;
+        end_no_cut = 1;
+    }
+}
+
+static void end_100_0000_raise_panel(BGW* bgw) {
+    if (end_fade_complete()) {
+        bgw->r_no_1++;
+        bgw->free = 0x28;
+        overwrite_panel(0xFFFFFFFF, 0x17);
+    }
+}
+
+static void end_100_0000_hold_panel(BGW* bgw) {
+    overwrite_panel(0xFFFFFFFF, 0x17);
+    bgw->free--;
+
+    if (bgw->free < 0) {
+        bgw->r_no_1++;
+        end_w.timer = 0;
+    }
+}
+
 void end_100_0000() {
     switch (bgw_ptr->r_no_1) {
     case 0:
@@ -89,60 +134,27 @@ void end_100_0000() {
         break;
 
     case 1:
-        bgw_ptr->free--;
-
-        if (bgw_ptr->free < 1) {
-            bgw_ptr->r_no_1++;
-        }
-
+        end_100_0000_wait_for_free(bgw_ptr);
         break;
 
     case 2:
-        bgw_ptr->xy[0].cal += 0x8000;
-
-        if (384 < bgw_ptr->xy[0].disp.pos) {
-            bgw_ptr->r_no_1++;
-            bgw_ptr->xy[0].cal = 0x1800000;
-            bgw_ptr->free = 0x5A;
-        }
-
-        bgw_ptr->abs_x = bgw_ptr->xy[0].disp.pos;
+        end_100_0000_pan_camera(bgw_ptr);
         break;
 
     case 3:
-        bgw_ptr->free--;
-
-        if (bgw_ptr->free < 1) {
-            bgw_ptr->r_no_1++;
-        }
-
+        end_100_0000_wait_for_free(bgw_ptr);
         break;
 
     case 4:
-        if (Request_Fade(3)) {
-            bgw_ptr->r_no_1++;
-            end_no_cut = 1;
-        }
-
+        end_100_0000_ask_for_fade(bgw_ptr);
         break;
 
     case 5:
-        if (end_fade_complete()) {
-            bgw_ptr->r_no_1++;
-            bgw_ptr->free = 0x28;
-            overwrite_panel(0xFFFFFFFF, 0x17);
-        }
-
+        end_100_0000_raise_panel(bgw_ptr);
         break;
 
     case 6:
-        overwrite_panel(0xFFFFFFFF, 0x17);
-        bgw_ptr->free--;
-
-        if (bgw_ptr->free < 0) {
-            bgw_ptr->r_no_1++;
-            end_w.timer = 0;
-        }
+        end_100_0000_hold_panel(bgw_ptr);
     }
 }
 
