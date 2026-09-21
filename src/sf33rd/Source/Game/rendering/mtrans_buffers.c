@@ -63,8 +63,7 @@ static s32 claim_mltbuf16_slot(MultiTexture* mt, s32 b, u32 code, u32 palt) {
             mt, mt->mltcsh16, mt->mltnum16, mt->mltcshtime16, "ＣＧキャッシュが一杯になりました。１６×１６ : %d\n" },
         b,
         code,
-        palt
-    );
+        palt);
 }
 
 /* One of the two multi-texture pattern caches, with everything the search needs
@@ -118,8 +117,7 @@ static s32 get_mltbuf(const MltbufBank* bank, u32 code, u32 palt, s32* ret) {
 
 s32 get_mltbuf16(MultiTexture* mt, u32 code, u32 palt, s32* ret) {
     return get_mltbuf(
-        &(MltbufBank) { mt, mt->mltcsh16, mt->mltnum16, mt->mltcshtime16, claim_mltbuf16_slot }, code, palt, ret
-    );
+        &(MltbufBank) { mt, mt->mltcsh16, mt->mltnum16, mt->mltcshtime16, claim_mltbuf16_slot }, code, palt, ret);
 }
 
 static s32 claim_mltbuf32_slot(MultiTexture* mt, s32 b, u32 code, u32 palt) {
@@ -129,32 +127,55 @@ static s32 claim_mltbuf32_slot(MultiTexture* mt, s32 b, u32 code, u32 palt) {
             mt, mt->mltcsh32, mt->mltnum32, mt->mltcshtime32, "ＣＧキャッシュが一杯になりました。３２×３２ : %d\n" },
         b,
         code,
-        palt
-    );
+        palt);
 }
 
 s32 get_mltbuf32(MultiTexture* mt, u32 code, u32 palt, s32* ret) {
     return get_mltbuf(
-        &(MltbufBank) { mt, mt->mltcsh32, mt->mltnum32, mt->mltcshtime32, claim_mltbuf32_slot }, code, palt, ret
-    );
+        &(MltbufBank) { mt, mt->mltcsh32, mt->mltnum32, mt->mltcshtime32, claim_mltbuf32_slot }, code, palt, ret);
+}
+
+// Move the next 16x16 page off the free list and into the pool's used table.
+static void take_free_x16_page(const MltbufExtLookup* look, s32 i) {
+    look->mt->tpf->x16 -= 1;
+    look->mt->tpu->x16_used[i] = look->mt->tpf->x16_free[look->mt->tpf->x16];
+    look->mt->tpu->x16 += 1;
+}
+
+// Write the pattern into the page just taken, and report the page back.
+static void record_x16_pattern(const MltbufExtLookup* look, PatternState* mc, s32 i) {
+    mc[look->mt->tpu->x16_used[i]].cs.code = look->code;
+    mc[look->mt->tpu->x16_used[i]].state = look->palt;
+    *look->ret = look->mt->tpu->x16_used[i];
+    mc[look->mt->tpu->x16_used[i]].time = 1;
+}
+
+// Count the page against this collection the first time its map records it.
+static void note_x16_page_in_map(const MltbufExtLookup* look) {
+    if (x16_mapping_set(&look->cp->map, *look->ret)) {
+        look->cp->x16 += 1;
+    }
 }
 
 // Take the next free 16x16 slot, record the pattern in it, and note it in the
 // collection's map.
 static s32 claim_free_x16_slot(const MltbufExtLookup* look, PatternState* mc, s32 i) {
-    look->mt->tpf->x16 -= 1;
-    look->mt->tpu->x16_used[i] = look->mt->tpf->x16_free[look->mt->tpf->x16];
-    look->mt->tpu->x16 += 1;
-    mc[look->mt->tpu->x16_used[i]].cs.code = look->code;
-    mc[look->mt->tpu->x16_used[i]].state = look->palt;
+    take_free_x16_page(look, i);
+    record_x16_pattern(look, mc, i);
+    note_x16_page_in_map(look);
+
+    return 1;
+}
+
+// The 16x16 slot the search matched: hand it back, and the first time this
+// collection maps it, count it and age the slot.
+static void take_matched_x16_slot(const MltbufExtLookup* look, PatternState* mc, s32 i) {
     *look->ret = look->mt->tpu->x16_used[i];
-    mc[look->mt->tpu->x16_used[i]].time = 1;
 
     if (x16_mapping_set(&look->cp->map, *look->ret)) {
         look->cp->x16 += 1;
+        mc[look->mt->tpu->x16_used[i]].time += 1;
     }
-
-    return 1;
 }
 
 s32 get_mltbuf16_ext_2(const MltbufExtLookup* look) {
@@ -164,13 +185,7 @@ s32 get_mltbuf16_ext_2(const MltbufExtLookup* look) {
     for (i = 0; i < look->mt->tpu->x16; i++) {
         if ((look->code == mc[look->mt->tpu->x16_used[i]].cs.code) &&
             (look->palt == mc[look->mt->tpu->x16_used[i]].state)) {
-            *look->ret = look->mt->tpu->x16_used[i];
-
-            if (x16_mapping_set(&look->cp->map, *look->ret)) {
-                look->cp->x16 += 1;
-                mc[look->mt->tpu->x16_used[i]].time += 1;
-            }
-
+            take_matched_x16_slot(look, mc, i);
             return 0;
         }
     }
@@ -256,14 +271,16 @@ static s32 get_mltbuf_ext(const MltbufExtBank* bank, u32 code, u32 palt) {
 
 s32 get_mltbuf16_ext(MultiTexture* mt, u32 code, u32 palt) {
     return get_mltbuf_ext(
-        &(MltbufExtBank) { mt->mltcsh16, &tpu_free->x16, tpu_free->x16_used, "ＣＧ展開エラー　１６×１６\n" }, code, palt
-    );
+        &(MltbufExtBank) { mt->mltcsh16, &tpu_free->x16, tpu_free->x16_used, "ＣＧ展開エラー　１６×１６\n" },
+        code,
+        palt);
 }
 
 s32 get_mltbuf32_ext(MultiTexture* mt, u32 code, u32 palt) {
     return get_mltbuf_ext(
-        &(MltbufExtBank) { mt->mltcsh32, &tpu_free->x32, tpu_free->x32_used, "ＣＧ展開エラー　３２×３２\n" }, code, palt
-    );
+        &(MltbufExtBank) { mt->mltcsh32, &tpu_free->x32, tpu_free->x32_used, "ＣＧ展開エラー　３２×３２\n" },
+        code,
+        palt);
 }
 
 u16 x16_mapping_set(PatternMap* map, s32 code) {
