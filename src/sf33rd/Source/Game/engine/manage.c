@@ -46,7 +46,6 @@
 #include "sf33rd/Source/Game/ui/sc_sub.h"
 #include "sf33rd/Source/Game/engine/manage_internal.h"
 
-
 void Game_Manage_1st();
 void Clear_1Stage_Work();
 void Game_Manage_2nd();
@@ -871,10 +870,8 @@ void Game_Manage_7_3() {
         if (--C_Timer) {
             return;
         }
-    } else {
-        if (--C_Timer) {
-            return;
-        }
+    } else if (--C_Timer) {
+        return;
     }
 
     Message_Suicide[1] = 1;
@@ -1307,7 +1304,6 @@ void Game_Manage_11th() {
         break;
     }
 }
-
 
 s16 Check_Time_Over() {
     s16 return_x = 0;
