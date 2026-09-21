@@ -42,6 +42,11 @@ static s32 can_update_effect(void) {
     return !EXE_flag && !Game_pause && !EXE_obroll;
 }
 
+static void quake_end(WORK_Other* ewk) {
+    ewk->wu.routine_no[1] = 2;
+    set_char_move_init(&ewk->wu, 0, ewk->wu.old_rno[6]);
+}
+
 static void quake_advance_bounce_speed(WORK_Other* ewk) {
     ewk->wu.old_rno[0]++;
     ewk->wu.old_rno[0] &= 3;
@@ -131,8 +136,7 @@ static void quake_level_middle_settle(WORK_Other* ewk) {
         quake_step_y(ewk);
 
         if (ewk->wu.xyz[1].disp.pos < ewk->wu.old_rno[2]) {
-            ewk->wu.routine_no[1] = 2;
-            set_char_move_init(&ewk->wu, 0, ewk->wu.old_rno[6]);
+            quake_end(ewk);
         }
 
         break;
@@ -204,8 +208,7 @@ static void quake_level_large_settle(WORK_Other* ewk) {
         quake_step_y(ewk);
 
         if (ewk->wu.xyz[1].disp.pos < ewk->wu.old_rno[2]) {
-            ewk->wu.routine_no[1] = 2;
-            set_char_move_init(&ewk->wu, 0, ewk->wu.old_rno[6]);
+            quake_end(ewk);
         }
 
         break;
