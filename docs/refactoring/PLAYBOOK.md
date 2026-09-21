@@ -1525,6 +1525,174 @@ high-risk tier of the verification loop: run `tools/replay_verify.sh` on it.
 
 ---
 
+## Recipes M, O, J2 and Q - authorised 2026-09-21
+
+Added under the project owner's authorisation after being probed, compiled under
+`-Wall -Werror`, scored 10.00 and proven equivalent by a harness in `tools/equivalence/`.
+What they share: each replaces the guard's literal-multiset argument with a **stronger,
+mechanical equivalence proof over the transformed code's whole input domain**, because
+each changes the shape of the text rather than moving it. Run the matching harness and
+quote its count in the commit message; where the guard also passes, run it too.
+
+| Recipe | First applied to | Before | After | Proof |
+| --- | --- | --- | --- | --- |
+| M - Decision Table | `Game/stage/bg_zoom.c` | 9.38 | **10.00** | all 2^32 input pairs, two initial states: 8,589,934,592 checks, 0 mismatches |
+| O - Return an Object | `AcrSDK/ps2/ps2PAD.c` | 9.92 | **10.00** | SDK call recorded over the input grid: 1,224 calls, 0 mismatches |
+| J2 - Uniform Step Table | `Game/com/com_sub_command_term.c` | 9.09 | **10.00** | every leaf call recorded, 256 states x 2 fighters x 3 entry points: 1,536 dispatches, 0 mismatches |
+| Q - Parsed Message | `platform/netplay/fistbump.c` | 9.68 | **10.00** | both parsers over 140,377 lines x 4 starting states, every log and side effect recorded: 561,508 runs, 0 mismatches |
+
+## Recipe M - Decision Table
+
+**Use when:** CodeScene reports *Code Duplication* on two or more dispatcher chains that
+are the same *shape* on different masks, labels or callees - the case *Two mirrored arms
+are cheaper left together* was written for - **and** the chains' behaviour depends only on
+a small, finite classification of their inputs.
+
+**How:**
+
+1. Enumerate the input classes each chain distinguishes. In `bg_zoom.c` a fighter's masked
+   zoom word takes one of five values the switches name - `0x0`, own bit, other bit, both,
+   `0x4000` - and everything else falls through every `default` to nothing. That is six
+   classes per fighter, thirty-six cells per axis.
+2. Write the chain's outcome per cell into a `static const` table of a small `enum` of
+   *outcomes* (`ZOOM_P1`, `ZOOM_P2`, `ZOOM_MID`, `ZOOM_ZERO`, `ZOOM_NONE`). Use designated
+   initialisers keyed by the class names so every cell reads as the case it came from.
+3. One classifier turns a value into its class; one interpreter looks the cell up and
+   performs the outcome. The per-chain differences - mask, bit values, coordinate, request
+   function, midpoint function - travel in a `static const` descriptor per chain.
+4. **Prove it by enumeration**, not by the guard. The literal guard will WARN or FAIL: case
+   labels stop being labels and become descriptor fields, and the chain helpers this
+   campaign created disappear. Instead compile old and new behind a fake of the state they
+   touch and compare the observable effects over the **whole** input domain. For two 16-bit
+   inputs that is 2^32 pairs and takes under a minute.
+
+**Preconditions:**
+
+- The input domain is finite and small enough to enumerate completely. If it is not, this
+  is not the recipe.
+- The chains have no side effects other than the outcomes the table names, and the
+  outcome actions are the *same* functions the original called, in the same order per
+  call. `bg_zoom.c` calls `request_horizontal_zoom` once or not at all per frame, before
+  or after `request_vertical_zoom`, exactly as before.
+- The descriptor is `static const` and selected at compile time at each call site. It is
+  not indexed at run time by anything the program computes.
+- The table's own comments say what each row and column is in the original's terms.
+
+**Measured:** `bg_zoom.c` 9.38 -> 10.00, twelve functions down from sixteen, mean
+complexity 2.4. Replay gate 8 x 1200 and 30 x 3600 identical against HEAD. This file *is*
+covered by replay, unlike the CPU scripts.
+
+---
+
+## Recipe O - Return an Object
+
+**Use when:** CodeScene reports *Bumpy Road Ahead* or *Complex Method* on a function
+whose bumps are the arms of one conditional, and Recipe E's fourth condition refuses the
+extraction because each arm writes **two or more outer locals** that only one sink after
+the branch reads.
+
+**How:**
+
+1. Declare a small `struct` holding exactly those locals, with their original types, in
+   the order the sink consumes them. Name it for what the sink receives, not for the
+   function.
+2. Extract each arm verbatim into a `static` helper that fills and **returns the struct by
+   value**. Nothing else in the arm changes: the odd `if ((x = 3) != 0)` in
+   `flPADShockSet` travels as written.
+3. The parent becomes `c = arm_a(...)` or `c = arm_b(...)` and the unchanged sink reads
+   `c.field` where it read the local.
+
+This is Recipe A turned around: A bundles a function's *inputs* into one object, O bundles
+an arm's *outputs*. The playbook's refusal of "an out-parameter struct" was about passing
+a pointer for the helper to write through; returning by value has no aliasing, no partial
+writes, and nothing the caller can observe half-done.
+
+**Preconditions:**
+
+- The locals are only read after the branch, by code that does not depend on which arm
+  ran.
+- No arm reads a local another arm wrote (they are disjoint writers of the same set).
+- The guard must report **OK or the plain extract WARN** - every literal moved, none
+  changed - and `--calls` the extract signature `+2` per helper.
+- Prove the sink sees the same values: record the sink's arguments old and new over the
+  function's input domain, or a representative grid of it, in a harness.
+
+**Measured:** `ps2PAD.c` 9.92 -> 10.00, guard OK (368 literals unchanged), `--calls` PASS.
+
+---
+
+## Recipe J2 - Uniform Step Table
+
+**Use when:** Recipe J's shape - functions that are one `switch` whose every arm is a
+single call - occurs **outside** the pattern folder, on callees that are file-local statics
+with heterogeneous signatures, so `tools/pattern_table.py` and its generated adapters do
+not apply. `com_sub_command_term.c`'s six Term dispatchers are the case.
+
+**How:**
+
+1. Every step becomes a `static` adapter with **one uniform signature** - the dispatcher's
+   own parameters, `(PLW* wk, const JCA_Term_Args* a)` - whose body is the original arm's
+   call, verbatim, with any argument objects it built from `a` built inline.
+2. One interpreter per argument type: read the state, take the step at that index if the
+   table has one, otherwise the `end` step - the switch's `default`. Written with a
+   bounds test and a null test as two statements, not one condition, or CodeScene reports
+   *Complex Conditional*.
+3. Each dispatcher becomes a table keyed by designated initialisers whose subscripts are
+   the original case labels, and one call to the interpreter with the table, its length
+   and the `end` step in a compound literal.
+
+**Preconditions:** Recipe J's five, with condition 5 replaced by: the adapters are written
+by hand only because the callees are file-local, and **every dispatcher in the file is
+converted in one commit** so the file reads in one idiom.
+
+**Proof:** the literal guard FAILs by construction - case labels become subscripts, table
+sizes appear, a shared mask literal loses a copy - so **prove dispatch equivalence**: stub
+every leaf callee to record its name and arguments, drive every state value the index type
+can hold through old and new, and diff the recordings. CPU AI is outside replay coverage,
+so this harness is the only mechanical evidence available for this file; a playtest
+against a CPU Oro and a CPU using hi-jump command attacks is the human check.
+
+**Measured:** `com_sub_command_term.c` 9.09 -> 10.00. Twenty small adapters added, all of
+complexity one; the file's mean complexity falls. Cost to weigh: the file grows from 30 to
+52 functions, and a step now reads through one indirection.
+
+---
+
+---
+
+## Recipe Q - Parsed Message
+
+**Use when:** CodeScene reports *String Heavy Function Arguments* on a module that speaks a
+line protocol, where a dispatcher matches a command word by prefix and each handler then
+matches the same word again inside its own parse.
+
+**How:**
+
+1. Declare an `enum` of the command words and a message `struct` of two fields: the
+   command, and a pointer to the payload after the word.
+2. Write **one table** of command words - each with the space that ends it and its length,
+   copied from the `strncmp` calls - and one function that splits a line into a message
+   by that table. A line matching no word is the unknown command with the whole line as
+   payload.
+3. Each handler takes `const Message*` and parses `msg->payload` with its old format minus
+   the command word. **Watch `sscanf`'s whitespace rules**: a format space skips any run
+   of whitespace, a literal does not, so a format that began with a literal after the word
+   (`"TOKEN refresh %s"`) keeps a leading space (`" refresh %s"`) to accept what it accepted.
+4. Dispatch through a table of handlers indexed by the enum, not a switch: eight arms is a
+   *Complex Method*.
+
+**This edits string literals**, the formats, so the literal guard FAILs by construction and
+the recipe brings its own proof: run both parsers behind the same fakes of the module state
+and the calls the handlers make, record every log and side effect, and diff them over a
+corpus of every command word and near-miss, spacing variants, missing and oversized fields,
+and tens of thousands of random lines, from several starting states.
+`tools/equivalence/fistbump_parse.py` is the pattern.
+
+**Measured:** `platform/netplay/fistbump.c` 9.68 -> 10.00, thirteen string parameters
+of eighteen down to five. 140,377 distinct lines x 4 starting states, 0 mismatches.
+
+---
+
 ## Known plateaus
 
 A plateau is a result, not a failure: the point where no legal recipe raises the score

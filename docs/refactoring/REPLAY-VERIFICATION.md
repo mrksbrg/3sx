@@ -136,6 +136,18 @@ targeted playtesting rather than replacing it.
   however many seeds you run. `settle_check`, `check_sa_resurrection` and everything
   downstream of them are invisible to this harness.
 
+- **Most stages are never played, and Santos Harbor never.** Versus mode draws the stage
+  as `Random_Stage_Data[1][random_32()]`, and the harness's fixed path through the menus
+  leaves the random counter on a narrow set of slots. Measured on 2026-09-21 by reading
+  `bg_w.stage` out of each seed's frame-1 state dump (byte 13651 of `states/0_9999`: a
+  `State` is a `GameState` then an `EffectState`, `bg_w` sits at 13648 and `stage` at +3):
+  over 1,038 seeds, stages 0, 1, 18 and 19 took four fifths of the runs, stages 8 to 11
+  never appeared, and 12 appeared once. A stage effect such as `eff68.c`, which only
+  `bg090.c` spawns, is therefore outside this harness however many seeds are run. There is
+  no command-line or config way to force a stage; `debug_config.stage_override` is the
+  ImGui debug menu in Debug builds only. Say so in the commit and ask for a playtest on
+  the stage.
+
 A file such as `manage.c` (round and continue flow) or `plmain2.c` (bonus stages) is
 barely touched by this harness even when the run is clean.
 

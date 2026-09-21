@@ -1,6 +1,7 @@
 #if CRS_VIDEO_DRIVER_PSP
 
 #include "platform/video/psp/psp_renderer.h"
+#include "platform/video/psp/psp_textures.h"
 
 #include "common.h"
 #include "port/utils.h"
@@ -52,37 +53,11 @@ static void* depth_buffer = NULL;
 static int current_back_buffer = 0;
 static bool initialized = false;
 
-static unsigned int current_texture_code = -1;
-static void* current_texture_source = NULL;
-static void* current_palette_source = NULL;
-
 static bool textured_enabled = false;
 static bool full_screen_scissor_enabled = false;
 
 static unsigned int argb_to_abgr(unsigned int color) {
     return (color & 0xFF00FF00u) | ((color >> 16) & 0xFFu) | ((color & 0xFFu) << 16);
-}
-
-static const void* get_source_pixels(const FLTexture* texture) {
-    if (texture->wkVram != NULL) {
-        return texture->wkVram;
-    }
-
-    if (texture->mem_handle != 0) {
-        return flPS2GetSystemBuffAdrs(texture->mem_handle);
-    }
-
-    return NULL;
-}
-
-static const FLTexture* current_texture(void) {
-    const unsigned int texture_handle = LO_16_BITS(current_texture_code);
-
-    if ((texture_handle == 0) || (texture_handle > FL_TEXTURE_MAX)) {
-        fatal_error("Invalid PSP texture handle: %u", texture_handle);
-    }
-
-    return &flTexture[texture_handle - 1];
 }
 
 static float snap_screen_coord(float value) {
@@ -99,22 +74,6 @@ static float game_to_screen_y(float value) {
 
 static short texel_coord(float normalized, float extent) {
     return (short)(normalized * extent + 0.5f);
-}
-
-static unsigned int ps2_to_psp_format(int ps2_format) {
-    switch (ps2_format) {
-    case SCE_GS_PSMCT16:
-        return GU_PSM_5551;
-    case SCE_GS_PSMCT24:
-    case SCE_GS_PSMCT32:
-        return GU_PSM_8888;
-    case SCE_GS_PSMT8:
-        return GU_PSM_T8;
-    case SCE_GS_PSMT4:
-        return GU_PSM_T4;
-    default:
-        fatal_error("Unhandled PSP texture format: %d", ps2_format);
-    }
 }
 
 static void setup_full_screen_scissor(bool full_screen_scissor) {
@@ -144,7 +103,7 @@ static void setup_draw_textured(bool textured) {
 }
 
 static void fill_textured_vertices(PSPVertex* vertices, const Sprite* sprite, unsigned int color) {
-    const FLTexture* texture = current_texture();
+    const FLTexture* texture = PSPTextures_Current();
     const float texture_width = (float)texture->width;
     const float texture_height = (float)texture->height;
 
@@ -195,7 +154,7 @@ static void draw_textured_sprite_rect(const TexturedSpriteRect* r) {
     const float t1 = r->t1;
     const unsigned int color = r->color;
 
-    const FLTexture* texture = current_texture();
+    const FLTexture* texture = PSPTextures_Current();
     const float texture_width = (float)texture->width;
     const float texture_height = (float)texture->height;
     PSPVertex* vertices = sceGuGetMemory(2 * sizeof(PSPVertex));
@@ -330,9 +289,7 @@ void PSPRenderer_Shutdown() {
     sceGuTerm();
     initialized = false;
 
-    current_texture_code = 0;
-    current_texture_source = NULL;
-    current_palette_source = NULL;
+    PSPTextures_Reset(0);
 }
 
 void PSPRenderer_BeginFrame() {
@@ -353,9 +310,7 @@ void PSPRenderer_BeginFrame() {
     sceGuClearColor(clear_color);
     sceGuClear(GU_COLOR_BUFFER_BIT | GU_DEPTH_BUFFER_BIT);
 
-    current_texture_code = -1;
-    current_texture_source = NULL;
-    current_palette_source = NULL;
+    PSPTextures_Reset(-1);
 
     setup_draw_textured(true);
 }
@@ -371,69 +326,6 @@ void PSPRenderer_EndFrame() {
     sceDisplayWaitVblankStart();
     sceGuSwapBuffers();
     current_back_buffer ^= 1;
-}
-
-void PSPRenderer_CreateTexture(unsigned int th) {
-    const unsigned int texture_handle = LO_16_BITS(th);
-    FLTexture* flTex;
-
-    if ((texture_handle == 0) || (texture_handle > FL_TEXTURE_MAX)) {
-        fatal_error("Invalid PSP texture handle: %u", texture_handle);
-    }
-}
-
-void PSPRenderer_DestroyTexture(unsigned int texture_handle) {
-    if ((texture_handle == 0) || (texture_handle > FL_TEXTURE_MAX)) {
-        return;
-    }
-}
-
-void PSPRenderer_UnlockTexture(unsigned int th) {
-    const unsigned int texture_handle = LO_16_BITS(th);
-
-    if ((texture_handle == 0) || (texture_handle > FL_TEXTURE_MAX)) {
-        fatal_error("Invalid PSP texture handle: %u", texture_handle);
-    }
-}
-
-void PSPRenderer_CreatePalette(unsigned int ph) {
-    // Do nothing
-}
-
-void PSPRenderer_DestroyPalette(unsigned int palette_handle) {
-    // Do nothing
-}
-
-void PSPRenderer_UnlockPalette(unsigned int ph) {
-    // Do nothing
-}
-
-void PSPRenderer_SetTexture(unsigned int th) {
-    int texture_handle = LO_16_BITS(th) - 1;
-    FLTexture* flTex = &flTexture[texture_handle];
-    int palette_handle = HI_16_BITS(th) - 1;
-    FLTexture* flPal = &flPalette[palette_handle];
-
-    void* texture_source = get_source_pixels(flTex);
-    void* palette_source = get_source_pixels(flPal);
-
-    unsigned int tex_format = ps2_to_psp_format(flTex->format);
-
-    bool is_indexed = tex_format == GU_PSM_T4 || tex_format == GU_PSM_T8;
-
-    if (current_palette_source != palette_source && is_indexed) {
-        sceGuClutMode(GU_PSM_5551, 0, 255, 0);
-        sceGuClutLoad(flPal->size / 16, palette_source);
-        current_palette_source = palette_source;
-    }
-
-    if (current_texture_source != texture_source) {
-        sceGuTexMode(tex_format, 0, 0, GU_FALSE);
-        sceGuTexImage(0, flTex->width, flTex->height, flTex->width, texture_source);
-        current_texture_source = texture_source;
-    }
-
-    current_texture_code = th;
 }
 
 void PSPRenderer_DrawTexturedQuad(const Sprite* sprite, unsigned int color) {

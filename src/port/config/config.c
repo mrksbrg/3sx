@@ -27,14 +27,16 @@ typedef struct ConfigEntry {
     ConfigValue value;
 } ConfigEntry;
 
-static const ConfigEntry default_entries[] = {
-    { .key = CFG_KEY_FULLSCREEN, .type = CFG_BOOL, .value.b = true },
-    { .key = CFG_KEY_WINDOW_WIDTH, .type = CFG_INT, .value.i = 640 },
-    { .key = CFG_KEY_WINDOW_HEIGHT, .type = CFG_INT, .value.i = 480 },
-    { .key = CFG_KEY_SCALEMODE, .type = CFG_STRING, .value.s = "nearest" },
-    { .key = CFG_KEY_SCANLINES, .type = CFG_INT, .value.i = 0 },
-    { .key = CFG_DRAW_PLAYERS_ABOVE_HUD, .type = CFG_BOOL, .value.b = false },
-    { .key = CFG_ARCADE_BALANCE, .type = CFG_BOOL, .value.b = false },
+/* One default per key, indexed by the key. The .key string is the name the
+ * config file uses for it. */
+static const ConfigEntry default_entries[CFG_KEY_COUNT] = {
+    [CFG_KEY_FULLSCREEN] = { .key = "fullscreen", .type = CFG_BOOL, .value.b = true },
+    [CFG_KEY_WINDOW_WIDTH] = { .key = "window-width", .type = CFG_INT, .value.i = 640 },
+    [CFG_KEY_WINDOW_HEIGHT] = { .key = "window-height", .type = CFG_INT, .value.i = 480 },
+    [CFG_KEY_SCALEMODE] = { .key = "scale-mode", .type = CFG_STRING, .value.s = "nearest" },
+    [CFG_KEY_SCANLINES] = { .key = "scanlines", .type = CFG_INT, .value.i = 0 },
+    [CFG_DRAW_PLAYERS_ABOVE_HUD] = { .key = "draw-players-above-hud", .type = CFG_BOOL, .value.b = false },
+    [CFG_ARCADE_BALANCE] = { .key = "arcade-balance", .type = CFG_BOOL, .value.b = false },
 };
 
 static ConfigEntry entries[CONFIG_ENTRIES_MAX] = { 0 };
@@ -71,24 +73,36 @@ static ConfigEntry* find_entry_in_array(const char* key, const ConfigEntry* arra
     return NULL;
 }
 
-static ConfigEntry* find_entry(const char* key) {
-    ConfigEntry* default_entry = find_entry_in_array(key, default_entries, SDL_arraysize(default_entries));
-    ConfigEntry* read_entry = find_entry_in_array(key, entries, entry_count);
+/* The default for a key, or NULL for a value that is not a key. */
+static const ConfigEntry* default_entry_for(ConfigKey key) {
+    if (key < 0 || key >= CFG_KEY_COUNT) {
+        SDL_assert(false);
+        return NULL;
+    }
+
+    return &default_entries[key];
+}
+
+static const ConfigEntry* find_entry(ConfigKey key) {
+    const ConfigEntry* default_entry = default_entry_for(key);
+
+    if (default_entry == NULL) {
+        return NULL;
+    }
+
+    const ConfigEntry* read_entry = find_entry_in_array(default_entry->key, entries, entry_count);
 
     if (read_entry != NULL) {
-        if (default_entry != NULL && read_entry->type != default_entry->type) {
+        if (read_entry->type != default_entry->type) {
             // If we expect a certain type and the one we read from config is unexpected, let's use the default entry
             // instead
             return default_entry;
         } else {
             return read_entry;
         }
-    } else if (default_entry != NULL) {
-        return default_entry;
-    } else {
-        SDL_assert(false);
-        return NULL;
     }
+
+    return default_entry;
 }
 
 static void print_config_entry_to_io(SDL_IOStream* io, const ConfigEntry* entry) {
@@ -182,7 +196,7 @@ void Config_Destroy() {
     entry_count = 0;
 }
 
-bool Config_GetBool(const char* key) {
+bool Config_GetBool(ConfigKey key) {
     const ConfigEntry* entry = find_entry(key);
 
     if (entry == NULL || entry->type != CFG_BOOL) {
@@ -192,7 +206,7 @@ bool Config_GetBool(const char* key) {
     return entry->value.b;
 }
 
-int Config_GetInt(const char* key) {
+int Config_GetInt(ConfigKey key) {
     const ConfigEntry* entry = find_entry(key);
 
     if (entry == NULL || entry->type != CFG_INT) {
@@ -202,7 +216,7 @@ int Config_GetInt(const char* key) {
     return entry->value.i;
 }
 
-const char* Config_GetString(const char* key) {
+const char* Config_GetString(ConfigKey key) {
     const ConfigEntry* entry = find_entry(key);
 
     if (entry == NULL || entry->type != CFG_STRING) {

@@ -320,56 +320,79 @@ static void HJCA_Term_End(PLW* wk, s16 Reaction) {
     Check_Landed(wk, Reaction & 0xFFF);
 }
 
+/* A Term step: what one state of a Term does, given the Term's arguments. The
+ * dispatchers below are tables of these, indexed by the state the switch they
+ * replace used to test. */
+typedef void (*JCA_Term_Step)(PLW* wk, const JCA_Term_Args* a);
+
+typedef struct {
+    const JCA_Term_Step* steps;
+    s32 count;
+    JCA_Term_Step end;
+} JCA_Term_Script;
+
+/* The step the Term's state selects, or `end` for a state past the table or
+ * with no step of its own - the default arm of the switch this replaces. */
+static void Run_JCA_Term(PLW* wk, const JCA_Term_Args* a, const JCA_Term_Script* s) {
+    s32 state = CP_Index[wk->wu.id][1];
+    JCA_Term_Step step = NULL;
+
+    if (state >= 0 && state < s->count) {
+        step = s->steps[state];
+    }
+
+    if (step != NULL) {
+        step(wk, a);
+    } else {
+        s->end(wk, a);
+    }
+}
+
+static void HJCA_Begin_Step(PLW* wk, const JCA_Term_Args* a) {
+    HJCA_Term_Begin(wk, a->Tech_Number);
+}
+
+static void HJCA_Launch_Step(PLW* wk, const JCA_Term_Args* a) {
+    HJCA_Term_Launch(wk, a->Jump_Dir);
+}
+
+static void HJCA_Arm_Step(PLW* wk, const JCA_Term_Args* a) {
+    HJCA_Term_Arm(wk);
+}
+
+static void HJCA_Rise_Step(PLW* wk, const JCA_Term_Args* a) {
+    HJCA_Term_Rise(wk);
+}
+
+static void HJCA_Approach_Step(PLW* wk, const JCA_Term_Args* a) {
+    Command_Term_Approach(wk, &(Attack_Range_Args) { a->Reaction, a->RX, a->RY, a->JRX, a->JRY, a->JLD });
+}
+
+static void HJCA_Hold_Step(PLW* wk, const JCA_Term_Args* a) {
+    Command_Term_Hold(wk, a->Reaction, 0xFFF);
+}
+
+static void HJCA_Land_Step(PLW* wk, const JCA_Term_Args* a) {
+    HJCA_Term_Land(wk, &(Command_Landing_Args) { a->Reaction, a->Tech_Number, a->Power_Level, a->Ex_Shot });
+}
+
+static void HJCA_End_Step(PLW* wk, const JCA_Term_Args* a) {
+    HJCA_Term_End(wk, a->Reaction);
+}
+
 /* The airborne half of Hi_Jump_Command_Attack_Term: everything from the rise
  * onwards. The case labels are the original ones, so this reads against the
  * same state numbers as the ground half it was lifted out of. */
 static void HJCA_Term_Airborne(PLW* wk, const JCA_Term_Args* a) {
-    const Attack_Range_Args r = { a->Reaction, a->RX, a->RY, a->JRX, a->JRY, a->JLD };
-    const Command_Landing_Args L = { a->Reaction, a->Tech_Number, a->Power_Level, a->Ex_Shot };
-
-    switch (CP_Index[wk->wu.id][1]) {
-
-    case 3:
-        HJCA_Term_Rise(wk);
-        break;
-
-    case 4:
-        Command_Term_Approach(wk, &r);
-        break;
-
-    case 5:
-        Command_Term_Hold(wk, a->Reaction, 0xFFF);
-        break;
-
-    case 6:
-        HJCA_Term_Land(wk, &L);
-        break;
-
-    default:
-        HJCA_Term_End(wk, a->Reaction);
-        break;
-    }
+    const JCA_Term_Step steps[7] = {
+        [3] = HJCA_Rise_Step, [4] = HJCA_Approach_Step, [5] = HJCA_Hold_Step, [6] = HJCA_Land_Step
+    };
+    Run_JCA_Term(wk, a, &(JCA_Term_Script) { steps, 7, HJCA_End_Step });
 }
 
 void Hi_Jump_Command_Attack_Term(PLW* wk, const JCA_Term_Args* a) {
-    switch (CP_Index[wk->wu.id][1]) {
-
-    case 0:
-        HJCA_Term_Begin(wk, a->Tech_Number);
-        break;
-
-    case 1:
-        HJCA_Term_Launch(wk, a->Jump_Dir);
-        break;
-
-    case 2:
-        HJCA_Term_Arm(wk);
-        break;
-
-    default:
-        HJCA_Term_Airborne(wk, a);
-        break;
-    }
+    const JCA_Term_Step steps[3] = { [0] = HJCA_Begin_Step, [1] = HJCA_Launch_Step, [2] = HJCA_Arm_Step };
+    Run_JCA_Term(wk, a, &(JCA_Term_Script) { steps, 3, HJCA_Term_Airborne });
 }
 
 /* ORO_JCA_Term's opening: unlike the jump Terms it has no spmv_ng_flag guard. */
@@ -396,109 +419,94 @@ static void ORO_JCA_Term_Launch(PLW* wk, s16 Jump_Dir) {
     }
 }
 
-/* The airborne half of ORO_JCA_Term: everything from the rise onwards. The case
- * labels are the original ones. */
-static void ORO_JCA_Term_Airborne(PLW* wk, const ORO_JCA_Term_Args* a) {
-    const Attack_Range_Args r = { a->Reaction, a->RX, a->RY, a->RJX, a->RJY, a->JLD };
-    const Command_Landing_Args L = { a->Reaction, a->Tech_Number, a->Power_Level, a->Ex_Shot };
+typedef void (*ORO_Term_Step)(PLW* wk, const ORO_JCA_Term_Args* a);
 
-    switch (CP_Index[wk->wu.id][1]) {
+typedef struct {
+    const ORO_Term_Step* steps;
+    s32 count;
+    ORO_Term_Step end;
+} ORO_Term_Script;
 
-    case 2:
-        ORO_Term_Rise(wk);
-        break;
+static void Run_ORO_Term(PLW* wk, const ORO_JCA_Term_Args* a, const ORO_Term_Script* s) {
+    s32 state = CP_Index[wk->wu.id][1];
+    ORO_Term_Step step = NULL;
 
-    case 3:
-        ORO_Term_Climb(wk, a);
-        break;
+    if (state >= 0 && state < s->count) {
+        step = s->steps[state];
+    }
 
-    case 4:
-        Command_Term_Approach(wk, &r);
-        break;
-
-    case 5:
-        Command_Term_Hold(wk, a->Reaction, 0x7F);
-        break;
-
-    case 6:
-        JCA_Term_Land(wk, &L);
-        break;
-
-    default:
-        JCA_Term_End(wk, a->Reaction);
-        break;
+    if (step != NULL) {
+        step(wk, a);
+    } else {
+        s->end(wk, a);
     }
 }
 
+static void ORO_JCA_Begin_Step(PLW* wk, const ORO_JCA_Term_Args* a) {
+    ORO_JCA_Term_Begin(wk, a->Tech_Number);
+}
+
+static void ORO_JCA_Launch_Step(PLW* wk, const ORO_JCA_Term_Args* a) {
+    ORO_JCA_Term_Launch(wk, a->Jump_Dir);
+}
+
+static void ORO_HJCA_Begin_Step(PLW* wk, const ORO_JCA_Term_Args* a) {
+    HJCA_Term_Begin(wk, a->Tech_Number);
+}
+
+static void ORO_HJCA_Launch_Step(PLW* wk, const ORO_JCA_Term_Args* a) {
+    HJCA_Term_Launch(wk, a->Jump_Dir);
+}
+
+static void ORO_HJCA_Arm_Step(PLW* wk, const ORO_JCA_Term_Args* a) {
+    HJCA_Term_Arm(wk);
+}
+
+static void ORO_Rise_Step(PLW* wk, const ORO_JCA_Term_Args* a) {
+    ORO_Term_Rise(wk);
+}
+
+static void ORO_Approach_Step(PLW* wk, const ORO_JCA_Term_Args* a) {
+    Command_Term_Approach(wk, &(Attack_Range_Args) { a->Reaction, a->RX, a->RY, a->RJX, a->RJY, a->JLD });
+}
+
+static void ORO_Hold_Step(PLW* wk, const ORO_JCA_Term_Args* a) {
+    Command_Term_Hold(wk, a->Reaction, 0x7F);
+}
+
+static void ORO_Land_Step(PLW* wk, const ORO_JCA_Term_Args* a) {
+    JCA_Term_Land(wk, &(Command_Landing_Args) { a->Reaction, a->Tech_Number, a->Power_Level, a->Ex_Shot });
+}
+
+static void ORO_End_Step(PLW* wk, const ORO_JCA_Term_Args* a) {
+    JCA_Term_End(wk, a->Reaction);
+}
+
+/* The airborne half of ORO_JCA_Term: everything from the rise onwards. The case
+ * labels are the original ones. */
+static void ORO_JCA_Term_Airborne(PLW* wk, const ORO_JCA_Term_Args* a) {
+    const ORO_Term_Step steps[7] = {
+        [2] = ORO_Rise_Step, [3] = ORO_Term_Climb, [4] = ORO_Approach_Step, [5] = ORO_Hold_Step, [6] = ORO_Land_Step
+    };
+    Run_ORO_Term(wk, a, &(ORO_Term_Script) { steps, 7, ORO_End_Step });
+}
+
 void ORO_JCA_Term(PLW* wk, const ORO_JCA_Term_Args* a) {
-    switch (CP_Index[wk->wu.id][1]) {
-
-    case 0:
-        ORO_JCA_Term_Begin(wk, a->Tech_Number);
-        break;
-
-    case 1:
-        ORO_JCA_Term_Launch(wk, a->Jump_Dir);
-        break;
-
-    default:
-        ORO_JCA_Term_Airborne(wk, a);
-        break;
-    }
+    const ORO_Term_Step steps[2] = { [0] = ORO_JCA_Begin_Step, [1] = ORO_JCA_Launch_Step };
+    Run_ORO_Term(wk, a, &(ORO_Term_Script) { steps, 2, ORO_JCA_Term_Airborne });
 }
 
 /* The airborne half of ORO_HJCA_Term: everything from the rise onwards. The
  * case labels are the original ones, so this reads against the same state
  * numbers as the ground half it was lifted out of. */
 static void ORO_HJCA_Term_Airborne(PLW* wk, const ORO_JCA_Term_Args* a) {
-    const Attack_Range_Args r = { a->Reaction, a->RX, a->RY, a->RJX, a->RJY, a->JLD };
-    const Command_Landing_Args L = { a->Reaction, a->Tech_Number, a->Power_Level, a->Ex_Shot };
-
-    switch (CP_Index[wk->wu.id][1]) {
-
-    case 3:
-        ORO_Term_Rise(wk);
-        break;
-
-    case 4:
-        ORO_Term_Climb(wk, a);
-        break;
-
-    case 5:
-        Command_Term_Approach(wk, &r);
-        break;
-
-    case 6:
-        Command_Term_Hold(wk, a->Reaction, 0x7F);
-        break;
-
-    case 7:
-        JCA_Term_Land(wk, &L);
-        break;
-
-    default:
-        JCA_Term_End(wk, a->Reaction);
-        break;
-    }
+    const ORO_Term_Step steps[8] = {
+        [3] = ORO_Rise_Step, [4] = ORO_Term_Climb, [5] = ORO_Approach_Step, [6] = ORO_Hold_Step, [7] = ORO_Land_Step
+    };
+    Run_ORO_Term(wk, a, &(ORO_Term_Script) { steps, 8, ORO_End_Step });
 }
 
 void ORO_HJCA_Term(PLW* wk, const ORO_JCA_Term_Args* a) {
-    switch (CP_Index[wk->wu.id][1]) {
-
-    case 0:
-        HJCA_Term_Begin(wk, a->Tech_Number);
-        break;
-
-    case 1:
-        HJCA_Term_Launch(wk, a->Jump_Dir);
-        break;
-
-    case 2:
-        HJCA_Term_Arm(wk);
-        break;
-
-    default:
-        ORO_HJCA_Term_Airborne(wk, a);
-        break;
-    }
+    const ORO_Term_Step steps[3] = { [0] = ORO_HJCA_Begin_Step, [1] = ORO_HJCA_Launch_Step, [2] = ORO_HJCA_Arm_Step };
+    Run_ORO_Term(wk, a, &(ORO_Term_Script) { steps, 3, ORO_HJCA_Term_Airborne });
 }
