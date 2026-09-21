@@ -42,6 +42,12 @@ static s32 can_update_effect(void) {
     return !EXE_flag && !Game_pause && !EXE_obroll;
 }
 
+static void quake_start_bounce_rise(WORK_Other* ewk) {
+    ewk->wu.routine_no[2]++;
+    set_char_move_init(&ewk->wu, 0, ewk->wu.old_rno[6] + 1);
+    ewk->wu.mvxy.a[1].sp = eff11_quake_speed_y_tbl[ewk->wu.old_rno[3]][ewk->wu.old_rno[1]];
+}
+
 static void quake_settle_on_floor(WORK_Other* ewk) {
     ewk->wu.xyz[1].disp.pos = ewk->wu.old_rno[2];
     ewk->wu.xyz[1].disp.low = 0;
@@ -134,9 +140,7 @@ static void quake_level_middle_fall(WORK_Other* ewk) {
         quake_step_y(ewk);
 
         if (ewk->wu.xyz[1].disp.pos < ewk->wu.old_rno[2]) {
-            ewk->wu.routine_no[2]++;
-            set_char_move_init(&ewk->wu, 0, ewk->wu.old_rno[6] + 1);
-            ewk->wu.mvxy.a[1].sp = eff11_quake_speed_y_tbl[ewk->wu.old_rno[3]][ewk->wu.old_rno[1]];
+            quake_start_bounce_rise(ewk);
             ewk->wu.mvxy.a[1].sp >>= ewk->wu.routine_no[2];
             ewk->wu.old_rno[0]++;
             ewk->wu.old_rno[0] &= 3;
@@ -154,9 +158,7 @@ static void quake_level_middle_fall(WORK_Other* ewk) {
 void quake_level_middle(WORK_Other* ewk) {
     switch (ewk->wu.routine_no[2]) {
     case 0:
-        ewk->wu.routine_no[2]++;
-        set_char_move_init(&ewk->wu, 0, ewk->wu.old_rno[6] + 1);
-        ewk->wu.mvxy.a[1].sp = eff11_quake_speed_y_tbl[ewk->wu.old_rno[3]][ewk->wu.old_rno[1]];
+        quake_start_bounce_rise(ewk);
         ewk->wu.mvxy.d[1].sp = -0x6000;
         /* fallthrough */
 
@@ -288,9 +290,7 @@ void quake_level_large(WORK_Other* ewk) {
     s16 work;
     switch (ewk->wu.routine_no[2]) {
     case 0:
-        ewk->wu.routine_no[2]++;
-        set_char_move_init(&ewk->wu, 0, ewk->wu.old_rno[6] + 1);
-        ewk->wu.mvxy.a[1].sp = eff11_quake_speed_y_tbl[ewk->wu.old_rno[3]][ewk->wu.old_rno[1]];
+        quake_start_bounce_rise(ewk);
         ewk->wu.mvxy.d[1].sp = -0x6000;
         ewk->wu.mvxy.a[0].sp = eff11_quake_speed_x_tbl[ewk->wu.old_rno[3]][ewk->wu.old_rno[1]];
         work = random_16();
