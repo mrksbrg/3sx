@@ -391,6 +391,37 @@ single function. The reading to carry forward is that a mean-probe number is onl
 argument about the mean - it says nothing about a finding it cannot move, and it should not
 be quoted as a reason to leave a file alone when the dominant finding is the other one.
 
+### The survey, and the two things it nearly shipped
+
+Sixty-one files were surveyed in parallel: each diagnosed, each proposed change **probed**
+against a scratch copy and scored rather than estimated, and every claimed win re-done
+independently by a second agent. Thirty-five wins were confirmed and thirty-three applied.
+Two were not, and both refusals are worth keeping.
+
+**`eff11.c` - a changed constant, caught by the guard.** The only probe that reached 10.00
+on this file had `ewk->wu.old_rno[5] = 28;` written as `= 29;`. Every literal-clean probe
+of the same file measured 8.57, below its own 9.13 baseline. The step that nearly shipped
+it was mine, not the surveyor's: I picked the best-*scoring* probe out of each directory,
+and the directories contain diagnostics as well as proposals. `refactor_guard.py` reported
+the both-ways FAIL - a value removed while another appeared - which is exactly the
+signature it exists to catch, and the only reason this is a footnote rather than a defect.
+**Select on legality first and on score second.** A score is a preference; the literal
+multiset is a precondition.
+
+**`charset.c` - a real lever, the wrong commit.** `set_char_move_init2` takes five
+parameters, so Recipe A's trigger is genuinely present and the parameter object measures
+9.68 -> 10.00. But the function has **157 call sites in 60 files**, and the probe was never
+compiled - the first variant of it did not build at all. A 157-site API change is its own
+commit series with its own measurement, not a one-file win taken on the back of a survey.
+Deferred rather than refused.
+
+**`com_patterns_6step.c` - refused on catalogue grounds, correctly.** A parameter object
+bundling two engine argument objects per skeleton reaches 10.00 and breaks no hard rule.
+The checker refused it anyway: Recipe A's trigger is *Excess Number of Function Arguments*
+and these functions take three and four, the finding being attacked is Code Duplication,
+and the playbook already priced the struct-per-skeleton form on `Game/com/active` and took
+a third of a point less rather than mint a grab-bag type per skeleton. That precedent
+holds. The file stays at 9.38.
 ### `bg_zoom.c`: priced three ways, and it stays at 8.81
 
 The last file in the yellow band. Its two findings are *Overall Code Complexity* and
