@@ -17,17 +17,21 @@
 void efff6_move_common(WORK_Other* ewk);
 void efff6_move01(WORK_Other* ewk);
 
+static void efff6_move_by_type(WORK_Other* ewk) {
+    if (ewk->wu.type == 0x1B) {
+        efff6_move01(ewk);
+    } else {
+        efff6_move(ewk);
+    }
+}
+
 void effect_F6_move(WORK_Other* ewk) {
     switch (ewk->wu.routine_no[0]) {
     case 0:
         if (ewk->wu.old_rno[1] <= op_w.index) {
             ewk->wu.routine_no[0] += 1;
         } else if (ewk->wu.old_rno[2] <= op_w.index) {
-            if (ewk->wu.type == 0x1B) {
-                efff6_move01(ewk);
-            } else {
-                efff6_move(ewk);
-            }
+            efff6_move_by_type(ewk);
         }
         break;
     default:
@@ -64,113 +68,137 @@ void efff6_move(WORK_Other* ewk) {
     }
 }
 
-/* Closing on the target: each direction bit pair moves on its own axis and
- * stops when it arrives, and the diagonals step only when both have. */
-static void efff6_approach_target(WORK_Other* ewk) {
+/* One axis has arrived: clamp it to its limit and step the routine on. */
+static void stop_x_at_or_below_limit(WORK_Other* ewk) {
+    if (ewk->wu.xyz[0].disp.pos <= ewk->wu.old_rno[3]) {
+        ewk->wu.routine_no[3] += 1;
+        ewk->wu.xyz[0].disp.pos = ewk->wu.old_rno[3];
+    }
+}
+
+static void stop_x_at_or_above_limit(WORK_Other* ewk) {
+    if (ewk->wu.xyz[0].disp.pos >= ewk->wu.old_rno[3]) {
+        ewk->wu.routine_no[3] += 1;
+        ewk->wu.xyz[0].disp.pos = ewk->wu.old_rno[3];
+    }
+}
+
+static void stop_y_at_or_below_limit(WORK_Other* ewk) {
+    if (ewk->wu.xyz[1].disp.pos <= ewk->wu.old_rno[4]) {
+        ewk->wu.routine_no[3] += 1;
+        ewk->wu.xyz[1].disp.pos = ewk->wu.old_rno[4];
+    }
+}
+
+static void stop_y_at_or_above_limit(WORK_Other* ewk) {
+    if (ewk->wu.xyz[1].disp.pos >= ewk->wu.old_rno[4]) {
+        ewk->wu.routine_no[3] += 1;
+        ewk->wu.xyz[1].disp.pos = ewk->wu.old_rno[4];
+    }
+}
+
+/* A diagonal's single axis: keep moving, or clamp and record arrival in work. */
+static s16 step_x_down_to_limit(WORK_Other* ewk, s16 work) {
+    if (ewk->wu.xyz[0].disp.pos > ewk->wu.old_rno[3]) {
+        add_x_sub(&ewk->wu);
+    } else {
+        ewk->wu.xyz[0].disp.pos = ewk->wu.old_rno[3];
+        work |= 1;
+    }
+    return work;
+}
+
+static s16 step_x_up_to_limit(WORK_Other* ewk, s16 work) {
+    if (ewk->wu.xyz[0].disp.pos < ewk->wu.old_rno[3]) {
+        add_x_sub(&ewk->wu);
+    } else {
+        ewk->wu.xyz[0].disp.pos = ewk->wu.old_rno[3];
+        work |= 1;
+    }
+    return work;
+}
+
+static s16 step_y_down_to_limit(WORK_Other* ewk, s16 work) {
+    if (ewk->wu.xyz[1].disp.pos > ewk->wu.old_rno[4]) {
+        add_y_sub(&ewk->wu);
+    } else {
+        ewk->wu.xyz[1].disp.pos = ewk->wu.old_rno[4];
+        work |= 0x10;
+    }
+    return work;
+}
+
+static s16 step_y_up_to_limit(WORK_Other* ewk, s16 work) {
+    if (ewk->wu.xyz[1].disp.pos < ewk->wu.old_rno[4]) {
+        add_y_sub(&ewk->wu);
+    } else {
+        ewk->wu.xyz[1].disp.pos = ewk->wu.old_rno[4];
+        work |= 0x10;
+    }
+    return work;
+}
+
+static void advance_when_both_axes_arrived(WORK_Other* ewk, s16 work) {
+    if (work == 0x11) {
+        ewk->wu.routine_no[3] += 1;
+    }
+}
+
+/* The four diagonals, on the same expression and the original labels: a
+ * direction that is not one of them still matches nothing and does nothing. */
+static void efff6_approach_target_diagonal(WORK_Other* ewk) {
     s16 work;
 
     switch (ewk->wu.direction) {
-    case 0x20:
-        add_x_sub(&ewk->wu);
-        if (ewk->wu.xyz[0].disp.pos <= ewk->wu.old_rno[3]) {
-            ewk->wu.routine_no[3] += 1;
-            ewk->wu.xyz[0].disp.pos = ewk->wu.old_rno[3];
-        }
-        break;
-    default:
-        break;
-    case 0x10:
-        add_x_sub(&ewk->wu);
-        if (ewk->wu.xyz[0].disp.pos >= ewk->wu.old_rno[3]) {
-            ewk->wu.routine_no[3] += 1;
-            ewk->wu.xyz[0].disp.pos = ewk->wu.old_rno[3];
-        }
-        break;
-    case 0x200:
-        add_y_sub(&ewk->wu);
-        if (ewk->wu.xyz[1].disp.pos <= ewk->wu.old_rno[4]) {
-            ewk->wu.routine_no[3] += 1;
-            ewk->wu.xyz[1].disp.pos = ewk->wu.old_rno[4];
-        }
-        break;
-    case 0x100:
-        add_y_sub(&ewk->wu);
-        if (ewk->wu.xyz[1].disp.pos >= ewk->wu.old_rno[4]) {
-            ewk->wu.routine_no[3] += 1;
-            ewk->wu.xyz[1].disp.pos = ewk->wu.old_rno[4];
-        }
-        break;
     case 0x120:
         work = 0;
-        if (ewk->wu.xyz[0].disp.pos > ewk->wu.old_rno[3]) {
-            add_x_sub(&ewk->wu);
-        } else {
-            ewk->wu.xyz[0].disp.pos = ewk->wu.old_rno[3];
-            work |= 1;
-        }
-        if (ewk->wu.xyz[1].disp.pos < ewk->wu.old_rno[4]) {
-            add_y_sub(&ewk->wu);
-        } else {
-            ewk->wu.xyz[1].disp.pos = ewk->wu.old_rno[4];
-            work |= 0x10;
-        }
-        if (work == 0x11) {
-            ewk->wu.routine_no[3] += 1;
-        }
+        work = step_x_down_to_limit(ewk, work);
+        work = step_y_up_to_limit(ewk, work);
+        advance_when_both_axes_arrived(ewk, work);
         break;
     case 0x220:
         work = 0;
-        if (ewk->wu.xyz[0].disp.pos > ewk->wu.old_rno[3]) {
-            add_x_sub(&ewk->wu);
-        } else {
-            ewk->wu.xyz[0].disp.pos = ewk->wu.old_rno[3];
-            work |= 1;
-        }
-        if (ewk->wu.xyz[1].disp.pos > ewk->wu.old_rno[4]) {
-            add_y_sub(&ewk->wu);
-        } else {
-            ewk->wu.xyz[1].disp.pos = ewk->wu.old_rno[4];
-            work |= 0x10;
-        }
-        if (work == 0x11) {
-            ewk->wu.routine_no[3] += 1;
-        }
+        work = step_x_down_to_limit(ewk, work);
+        work = step_y_down_to_limit(ewk, work);
+        advance_when_both_axes_arrived(ewk, work);
         break;
     case 0x110:
         work = 0;
-        if (ewk->wu.xyz[0].disp.pos < ewk->wu.old_rno[3]) {
-            add_x_sub(&ewk->wu);
-        } else {
-            ewk->wu.xyz[0].disp.pos = ewk->wu.old_rno[3];
-            work |= 1;
-        }
-        if (ewk->wu.xyz[1].disp.pos < ewk->wu.old_rno[4]) {
-            add_y_sub(&ewk->wu);
-        } else {
-            ewk->wu.xyz[1].disp.pos = ewk->wu.old_rno[4];
-            work |= 0x10;
-        }
-        if (work == 0x11) {
-            ewk->wu.routine_no[3] += 1;
-        }
+        work = step_x_up_to_limit(ewk, work);
+        work = step_y_up_to_limit(ewk, work);
+        advance_when_both_axes_arrived(ewk, work);
         break;
     case 0x210:
         work = 0;
-        if (ewk->wu.xyz[0].disp.pos < ewk->wu.old_rno[3]) {
-            add_x_sub(&ewk->wu);
-        } else {
-            ewk->wu.xyz[0].disp.pos = ewk->wu.old_rno[3];
-            work |= 1;
-        }
-        if (ewk->wu.xyz[1].disp.pos > ewk->wu.old_rno[4]) {
-            add_y_sub(&ewk->wu);
-        } else {
-            ewk->wu.xyz[1].disp.pos = ewk->wu.old_rno[4];
-            work |= 0x10;
-        }
-        if (work == 0x11) {
-            ewk->wu.routine_no[3] += 1;
-        }
+        work = step_x_up_to_limit(ewk, work);
+        work = step_y_down_to_limit(ewk, work);
+        advance_when_both_axes_arrived(ewk, work);
+        break;
+    }
+}
+
+/* Closing on the target: each direction bit pair moves on its own axis and
+ * stops when it arrives, and the diagonals step only when both have. */
+static void efff6_approach_target(WORK_Other* ewk) {
+    switch (ewk->wu.direction) {
+    case 0x20:
+        add_x_sub(&ewk->wu);
+        stop_x_at_or_below_limit(ewk);
+        break;
+    default:
+        efff6_approach_target_diagonal(ewk);
+        break;
+    case 0x10:
+        add_x_sub(&ewk->wu);
+        stop_x_at_or_above_limit(ewk);
+        break;
+    case 0x200:
+        add_y_sub(&ewk->wu);
+        stop_y_at_or_below_limit(ewk);
+        break;
+    case 0x100:
+        add_y_sub(&ewk->wu);
+        stop_y_at_or_above_limit(ewk);
         break;
     }
 }
@@ -183,6 +211,21 @@ void efff6_move_common(WORK_Other* ewk) {
         break;
     case 1:
         break;
+    }
+}
+
+/* One tick of the colour cycle: count down, advance the table index, and
+ * leave the routine when the table runs out. */
+static void efff6_step_move01_colour(WORK_Other* ewk) {
+    ewk->wu.old_rno[5] -= 1;
+    if (ewk->wu.old_rno[5] <= 0) {
+        ewk->wu.old_rno[5] = 2;
+        ewk->wu.old_rno[6] += 1;
+        if (ewk->wu.old_rno[6] >= 6) {
+            ewk->wu.routine_no[2] += 1;
+        } else {
+            push_color_trans_req(efff6_move01_tbl[ewk->wu.old_rno[6]] + 0x12C, 0);
+        }
     }
 }
 
@@ -203,16 +246,7 @@ void efff6_move01(WORK_Other* ewk) {
         ewk->wu.my_col_code = 0;
         /* fallthrough */
     case 1:
-        ewk->wu.old_rno[5] -= 1;
-        if (ewk->wu.old_rno[5] <= 0) {
-            ewk->wu.old_rno[5] = 2;
-            ewk->wu.old_rno[6] += 1;
-            if (ewk->wu.old_rno[6] >= 6) {
-                ewk->wu.routine_no[2] += 1;
-            } else {
-                push_color_trans_req(efff6_move01_tbl[ewk->wu.old_rno[6]] + 0x12C, 0);
-            }
-        }
+        efff6_step_move01_colour(ewk);
         /* fallthrough */
     case 2:
         efff6_move_common(ewk);
