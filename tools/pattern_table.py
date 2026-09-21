@@ -497,11 +497,15 @@ def conversion_base(rel: str):
     log = subprocess.run(
         ["git", "log", "--format=%H %s", "--", rel], capture_output=True, text=True, cwd=REPO
     ).stdout.splitlines()
+    # git log is newest first and a file may have taken the recipe more than
+    # once - the conversion, then a change in how a table is written. The switch
+    # source is the parent of the *first* of them, so take the last match.
+    base = None
     for line in log:
         sha, _, subject = line.partition(" ")
         if "Recipe J" in subject:
-            return sha + "^"
-    return None
+            base = sha + "^"
+    return base
 
 
 def used_callees(paths):
