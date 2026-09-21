@@ -72,11 +72,7 @@ static void setup_keyboard() {
     }
 }
 
-static void remove_keyboard() {
-    if (keyboard_index < 0) {
-        return;
-    }
-
+static void release_keyboard_slot() {
     for (int i = 0; i < SDL_arraysize(input_sources); i++) {
         SDLPad_InputSource* input_source = &input_sources[i];
 
@@ -87,6 +83,14 @@ static void remove_keyboard() {
             break;
         }
     }
+}
+
+static void remove_keyboard() {
+    if (keyboard_index < 0) {
+        return;
+    }
+
+    release_keyboard_slot();
 }
 
 static void handle_gamepad_added_event(SDL_GamepadDeviceEvent* event) {
