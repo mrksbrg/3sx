@@ -228,6 +228,15 @@ s32 CAPCOM_Logo() {
     return Next_Demo;
 }
 
+/* Both texture loads stop dead when nothing came back. The blocks differed in
+ * the message alone, and it is written out at each call site. */
+static void halt_if_not_loaded(u32 loadSize, const char* message) {
+    if (loadSize == 0) {
+        flLogOut(message);
+        while (1) {}
+    }
+}
+
 void CAPLOGO_Init() {
     void* loadAdrs;
     u32 loadSize;
@@ -236,19 +245,29 @@ void CAPLOGO_Init() {
     ppgCapLogoList.tex = &ppgCapLogoTex;
     ppgCapLogoList.pal = &ppgCapLogoPal;
     ppgSetupCurrentDataList(&ppgCapLogoList);
-    loadSize = load_it_use_any_key2(&(LoadAnyKeyArgs){ 75, &loadAdrs, &key, 2, 1 }); // CapLogo.ppg
+    loadSize = load_it_use_any_key2(&(LoadAnyKeyArgs) { 75, &loadAdrs, &key, 2, 1 }); // CapLogo.ppg
 
-    if (loadSize == 0) {
-        flLogOut("カプロゴのテクスチャが読み込めませんでした。\n");
-        while (1) {}
-    }
+    halt_if_not_loaded(loadSize, "カプロゴのテクスチャが読み込めませんでした。\n");
 
-    ppgSetupPalChunk(NULL, &(PPGPalChunkArgs){loadAdrs, loadSize, 0, 0, 1});
-    ppgSetupTexChunk_1st(NULL, &(PPGTexChunk1stArgs){loadAdrs, loadSize, 600, 1, 0, 0});
+    ppgSetupPalChunk(NULL, &(PPGPalChunkArgs) { loadAdrs, loadSize, 0, 0, 1 });
+    ppgSetupTexChunk_1st(NULL, &(PPGTexChunk1stArgs) { loadAdrs, loadSize, 600, 1, 0, 0 });
     ppgSetupTexChunk_2nd(NULL, 600);
     ppgSetupTexChunk_3rd(NULL, 600, 1);
     Push_ramcnt_key(key);
     ppgSourceDataReleased(0);
+}
+
+/* One frame of the logo's palette walk, reporting whether it moved. */
+static s16 step_caplogo_palette() {
+    s16 rnum = 0;
+
+    if (!Game_pause && (op_timer0 != 61)) {
+        njSetPaletteBankNumG(600, op_timer0 / 2);
+        op_timer0 += 1;
+        rnum = 1;
+    }
+
+    return rnum;
 }
 
 s16 CAPLOGO_Move(u16 type) {
@@ -256,22 +275,39 @@ s16 CAPLOGO_Move(u16 type) {
 
     switch (type) {
     case 0:
-        if (!Game_pause && (op_timer0 != 61)) {
-            njSetPaletteBankNumG(600, op_timer0 / 2);
-            op_timer0 += 1;
-            rnum = 1;
-        }
-
-        Put_char(&(PutCharArgs){ caplogo[type], 600, 9, -16, 80, 1.0f, 1.0f });
+        rnum = step_caplogo_palette();
+        Put_char(&(PutCharArgs) { caplogo[type], 600, 9, -16, 80, 1.0f, 1.0f });
         break;
 
     default:
         njSetPaletteBankNumG(600, 0x1F);
-        Put_char(&(PutCharArgs){ caplogo[type], 600, 9, 48, 88, 1.0f, 1.0f });
+        Put_char(&(PutCharArgs) { caplogo[type], 600, 9, 48, 88, 1.0f, 1.0f });
         break;
     }
 
     return rnum;
+}
+
+/* One character quad, placed at the caller's origin and scale. Returns the
+ * pointer advanced past the eight values the block read - the only outer local
+ * it writes; the vertices go through the array it was handed. */
+static const f32* put_char_quad(ColoredVertex* tex, const f32* ptr, const PutCharArgs* a) {
+    s16 off_x;
+    s16 off_y;
+
+    tex[0].u = tex[1].u = *ptr++;
+    tex[0].v = tex[2].v = *ptr++;
+    tex[2].u = tex[3].u = *ptr++;
+    tex[1].v = tex[3].v = *ptr++;
+    off_x = *ptr++;
+    off_y = *ptr++;
+    tex[0].x = tex[1].x = (a->x + off_x * a->zx);
+    tex[0].y = tex[2].y = (a->y + off_y * a->zy);
+    tex[2].x = tex[3].x = (a->x + (off_x * a->zx) + ((u32)*ptr++ * a->zx));
+    tex[1].y = tex[3].y = (a->y + (off_y * a->zy) + ((u32)*ptr++ * a->zy));
+    njDrawTexture(tex, 4, a->indexG, 1);
+
+    return ptr;
 }
 
 void Put_char(const PutCharArgs* a) {
@@ -279,8 +315,6 @@ void Put_char(const PutCharArgs* a) {
      * keeps that local, which is what a by-value parameter was. */
     const f32* ptr = a->ptr;
     ColoredVertex tex[4];
-    s16 off_x;
-    s16 off_y;
 
     if (No_Trans) {
         return;
@@ -290,17 +324,17 @@ void Put_char(const PutCharArgs* a) {
     tex[0].z = tex[1].z = tex[2].z = tex[3].z = PrioBase[a->prio];
 
     while (*ptr != -1.0f) {
-        tex[0].u = tex[1].u = *ptr++;
-        tex[0].v = tex[2].v = *ptr++;
-        tex[2].u = tex[3].u = *ptr++;
-        tex[1].v = tex[3].v = *ptr++;
-        off_x = *ptr++;
-        off_y = *ptr++;
-        tex[0].x = tex[1].x = (a->x + off_x * a->zx);
-        tex[0].y = tex[2].y = (a->y + off_y * a->zy);
-        tex[2].x = tex[3].x = (a->x + (off_x * a->zx) + ((u32)*ptr++ * a->zx));
-        tex[1].y = tex[3].y = (a->y + (off_y * a->zy) + ((u32)*ptr++ * a->zy));
-        njDrawTexture(tex, 4, a->indexG, 1);
+        ptr = put_char_quad(tex, ptr, a);
+    }
+}
+
+/* The warning screen's texture pages, set up one after another. */
+static void setup_warning_texture_pages() {
+    s16 i;
+
+    for (i = 0; i < ppgWarTex.textures; i++) {
+        ppgSetupTexChunk_2nd(0, i + 590);
+        ppgSetupTexChunk_3rd(0, i + 590, 1);
     }
 }
 
@@ -308,46 +342,31 @@ void Warning_Init() {
     void* loadAdrs;
     u32 loadSize;
     s16 key;
-    s16 i;
 
     ppgWarList.tex = &ppgWarTex;
     ppgWarList.pal = &ppgWarPal;
     ppgAdxList.tex = &ppgWarTex;
     ppgAdxList.pal = &ppgAdxPal;
     ppgSetupCurrentDataList(&ppgWarList);
-    loadSize = load_it_use_any_key2(&(LoadAnyKeyArgs){ 12, &loadAdrs, &key, 2, 1 }); // Warning.ppg
+    loadSize = load_it_use_any_key2(&(LoadAnyKeyArgs) { 12, &loadAdrs, &key, 2, 1 }); // Warning.ppg
 
-    if (loadSize == 0) {
-        flLogOut("警告文のテクスチャが読み込めませんでした。\n");
-        while (1) {}
-    }
+    halt_if_not_loaded(loadSize, "警告文のテクスチャが読み込めませんでした。\n");
 
-    ppgSetupPalChunk(&ppgWarPal, &(PPGPalChunkArgs){loadAdrs, loadSize, 0, 0, 1});
-    ppgSetupPalChunk(&ppgAdxPal, &(PPGPalChunkArgs){loadAdrs, loadSize, 0, 1, 1});
-    ppgSetupTexChunk_1st(0, &(PPGTexChunk1stArgs){loadAdrs, loadSize, 590, 4, 0, 0});
+    ppgSetupPalChunk(&ppgWarPal, &(PPGPalChunkArgs) { loadAdrs, loadSize, 0, 0, 1 });
+    ppgSetupPalChunk(&ppgAdxPal, &(PPGPalChunkArgs) { loadAdrs, loadSize, 0, 1, 1 });
+    ppgSetupTexChunk_1st(0, &(PPGTexChunk1stArgs) { loadAdrs, loadSize, 590, 4, 0, 0 });
 
-    for (i = 0; i < ppgWarTex.textures; i++) {
-        ppgSetupTexChunk_2nd(0, i + 590);
-        ppgSetupTexChunk_3rd(0, i + 590, 1);
-    }
+    setup_warning_texture_pages();
 
     Push_ramcnt_key(key);
     ppgSourceDataReleased(0);
     picon_no = 0;
 }
 
-// FIXME: When is this ever called?
-void Put_Warning(s16 type) {
-    ColoredVertex tex[4];
-
-    tex[0].col = tex[1].col = tex[2].col = tex[3].col = 0xFFFFFFFF;
-
-    if (type == 2) {
-        tex[0].z = tex[1].z = tex[2].z = tex[3].z = PrioBase[0x14];
-    } else {
-        tex[0].z = tex[1].z = tex[2].z = tex[3].z = PrioBase[0x1E];
-    }
-
+/* The quad the warning screen draws, per type. The case labels are the
+ * original ones and the arms are unchanged; the vertices go through the
+ * array the caller handed over. */
+static void setup_warning_quad(ColoredVertex* tex, s16 type) {
     switch (type) {
     case 0:
         ppgSetupCurrentDataList(&ppgWarList);
@@ -384,6 +403,21 @@ void Put_Warning(s16 type) {
         tex[1].y = tex[3].y = 480.0f;
         break;
     }
+}
+
+// FIXME: When is this ever called?
+void Put_Warning(s16 type) {
+    ColoredVertex tex[4];
+
+    tex[0].col = tex[1].col = tex[2].col = tex[3].col = 0xFFFFFFFF;
+
+    if (type == 2) {
+        tex[0].z = tex[1].z = tex[2].z = tex[3].z = PrioBase[0x14];
+    } else {
+        tex[0].z = tex[1].z = tex[2].z = tex[3].z = PrioBase[0x1E];
+    }
+
+    setup_warning_quad(tex, type);
 
     if (type == 2) {
         njDrawTexture(tex, 4, type + 590, 1);
@@ -393,21 +427,11 @@ void Put_Warning(s16 type) {
     njDrawTexture(tex, 4, type + 590, 0);
 }
 
-void Pal_Cursor_Put(s16 type) {
-    PAL_CURSOR_TBL pal_cursor_tbl[3] = {
-        { { { 48.0f, 64.0f }, { 48.0f, 99.0f }, { 144.0f, 99.0f }, { 144.0f, 64.0f } },
-          { { 0xA0FF0000 }, { 0xA0FF0000 }, { 0xA0FF0000 }, { 0xA0FF0000 } } },
-        { { { 48.0f, 296.0f }, { 48.0f, 332.0f }, { 286.0f, 332.0f }, { 286.0f, 296.0f } },
-          { { 0xA0FF0000 }, { 0xA0FF0000 }, { 0xA0FF0000 }, { 0xA0FF0000 } } },
-        { { { 48.0f, 379.0f }, { 48.0f, 415.0f }, { 286.0f, 415.0f }, { 286.0f, 379.0f } },
-          { { 0xA0FF0000 }, { 0xA0FF0000 }, { 0xA0FF0000 }, { 0xA0FF0000 } } }
-    };
-
+/* The palette cursor's alpha pulse: picon_level ramps down to the dim level
+ * and back to the bright one at the rates the alpha table holds. The table
+ * was the caller's local and stays a local here. */
+static void advance_pal_cursor_alpha() {
     f32 pal_alpha_tbl[4] = { 255.0f, 48.0f, 178.5f, 48.0f };
-    PAL_CURSOR pal_cursor;
-    f32 prio;
-    PAL_CURSOR_TBL* pal_cursorwk;
-    s16 i;
 
     switch (picon_no) {
     case 0:
@@ -435,10 +459,15 @@ void Pal_Cursor_Put(s16 type) {
 
         break;
     }
+}
 
-    if (No_Trans) {
-        return;
-    }
+/* The cursor quad itself: the row the type names, at the pulse's current
+ * alpha. Writes only its own locals and the array it was handed. */
+static void draw_pal_cursor(PAL_CURSOR_TBL* pal_cursor_tbl, s16 type) {
+    PAL_CURSOR pal_cursor;
+    f32 prio;
+    PAL_CURSOR_TBL* pal_cursorwk;
+    s16 i;
 
     pal_cursorwk = pal_cursor_tbl;
     prio = PrioBase[0x50];
@@ -451,4 +480,23 @@ void Pal_Cursor_Put(s16 type) {
     }
 
     njDrawPolygon2D(&pal_cursor, 4, prio, 0x60);
+}
+
+void Pal_Cursor_Put(s16 type) {
+    PAL_CURSOR_TBL pal_cursor_tbl[3] = {
+        { { { 48.0f, 64.0f }, { 48.0f, 99.0f }, { 144.0f, 99.0f }, { 144.0f, 64.0f } },
+          { { 0xA0FF0000 }, { 0xA0FF0000 }, { 0xA0FF0000 }, { 0xA0FF0000 } } },
+        { { { 48.0f, 296.0f }, { 48.0f, 332.0f }, { 286.0f, 332.0f }, { 286.0f, 296.0f } },
+          { { 0xA0FF0000 }, { 0xA0FF0000 }, { 0xA0FF0000 }, { 0xA0FF0000 } } },
+        { { { 48.0f, 379.0f }, { 48.0f, 415.0f }, { 286.0f, 415.0f }, { 286.0f, 379.0f } },
+          { { 0xA0FF0000 }, { 0xA0FF0000 }, { 0xA0FF0000 }, { 0xA0FF0000 } } }
+    };
+
+    advance_pal_cursor_alpha();
+
+    if (No_Trans) {
+        return;
+    }
+
+    draw_pal_cursor(pal_cursor_tbl, type);
 }
