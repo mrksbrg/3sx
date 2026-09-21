@@ -393,6 +393,34 @@ static s32 start_pulpul_row(PPWORK* wk, s32 i) {
     return 1;
 }
 
+/* One pattern slot's state machine, moved whole so that every arm's fallthrough
+ * into the next travels with it. */
+static void step_pulpul_pattern(PPWORK* wk, s32 i) {
+    switch (wk->p[i].rno[0]) {
+    case 0:
+        if (!begin_pulpul_pattern(wk, i))
+            break;
+        /* fallthrough */
+    case 1:
+        wk->p[i].exix += 1;
+
+        if (!advance_pulpul_step(wk, i)) {
+            break;
+        }
+        /* fallthrough */
+
+    case 2:
+        if (!start_pulpul_row(wk, i)) {
+            break;
+        }
+        /* fallthrough */
+
+    case 3:
+        tick_pulpul_row(wk, i);
+        break;
+    }
+}
+
 static void run_pulpul_device(PPWORK* wk) {
     s32 i;
 
@@ -403,29 +431,7 @@ static void run_pulpul_device(PPWORK* wk) {
     }
 
     for (i = 0; i <= 0; i++) {
-        switch (wk->p[i].rno[0]) {
-        case 0:
-            if (!begin_pulpul_pattern(wk, i))
-                break;
-            /* fallthrough */
-        case 1:
-            wk->p[i].exix += 1;
-
-            if (!advance_pulpul_step(wk, i)) {
-                break;
-            }
-            /* fallthrough */
-
-        case 2:
-            if (!start_pulpul_row(wk, i)) {
-                break;
-            }
-            /* fallthrough */
-
-        case 3:
-            tick_pulpul_row(wk, i);
-            break;
-        }
+        step_pulpul_pattern(wk, i);
     }
 }
 

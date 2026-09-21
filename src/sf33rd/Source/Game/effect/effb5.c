@@ -16,6 +16,61 @@
 
 void current_name_move(WORK_Other* ewk, NAME_WK* np);
 
+/* The flash-out half of the name cell: everything from the violent flash onwards,
+ * plus the teardown. The case labels are the original ones. */
+static void effect_B5_flash_out(WORK_Other* ewk, NAME_WK* np) {
+    switch (ewk->wu.routine_no[0]) {
+    case 3:
+        if (Flash_Violent(ewk, 9)) {
+            ewk->wu.routine_no[0]++;
+        }
+
+        if (ewk->wu.vitality) {
+            set_char_move_init2(&ewk->wu, 0, 6, np->code[ewk->wu.old_rno[2]] + 1, 0);
+        }
+
+        break;
+
+    case 4:
+        break;
+
+    default:
+        all_cgps_put_back(&ewk->wu);
+        push_effect_work(&ewk->wu);
+        break;
+    }
+}
+
+static void begin_b5_flash_out(WORK_Other* ewk, NAME_WK* np) {
+    if (np->r_no_0 == 7) {
+        ewk->wu.routine_no[0] = 3;
+        ewk->wu.routine_no[2] = 1;
+        ewk->wu.routine_no[3] = 3;
+        ewk->wu.routine_no[4] = 0;
+        ewk->wu.vitality = 0;
+        ewk->wu.vital_new = 66;
+        ewk->wu.vital_old = 67;
+    }
+}
+
+static void restart_b5_name_cell(WORK_Other* ewk, NAME_WK* np) {
+    if (ewk->wu.old_rno[3] != np->code[ewk->wu.type]) {
+        ewk->wu.old_rno[0] = 0;
+        ewk->wu.old_rno[4] = 1;
+        set_char_move_init2(&ewk->wu, 0, 6, np->code[ewk->wu.old_rno[2]] + 1, 0);
+        ewk->wu.old_rno[3] = np->code[ewk->wu.type];
+    }
+}
+
+static void resync_b5_name_cell(WORK_Other* ewk, NAME_WK* np) {
+    if (ewk->wu.old_rno[3] != np->code[ewk->wu.type]) {
+        ewk->wu.old_rno[4] = 0;
+        ewk->wu.old_rno[0] = 0;
+        set_char_move_init2(&ewk->wu, 0, 6, np->code[ewk->wu.type] + 1, 0);
+        ewk->wu.old_rno[3] = np->code[ewk->wu.type];
+    }
+}
+
 void effect_B5_move(WORK_Other* ewk) {
     NAME_WK* np = (NAME_WK*)ewk->my_master;
 
@@ -42,15 +97,7 @@ void effect_B5_move(WORK_Other* ewk) {
         break;
 
     case 2:
-        if (np->r_no_0 == 7) {
-            ewk->wu.routine_no[0] = 3;
-            ewk->wu.routine_no[2] = 1;
-            ewk->wu.routine_no[3] = 3;
-            ewk->wu.routine_no[4] = 0;
-            ewk->wu.vitality = 0;
-            ewk->wu.vital_new = 66;
-            ewk->wu.vital_old = 67;
-        }
+        begin_b5_flash_out(ewk, np);
 
         if (np->end_flag[ewk->wu.type] == 0) {
             ewk->wu.old_rno[0] = 0;
@@ -61,41 +108,16 @@ void effect_B5_move(WORK_Other* ewk) {
             goto case_1;
         }
 
-        if (ewk->wu.old_rno[3] != np->code[ewk->wu.type]) {
-            ewk->wu.old_rno[0] = 0;
-            ewk->wu.old_rno[4] = 1;
-            set_char_move_init2(&ewk->wu, 0, 6, np->code[ewk->wu.old_rno[2]] + 1, 0);
-            ewk->wu.old_rno[3] = np->code[ewk->wu.type];
-        }
+        restart_b5_name_cell(ewk, np);
 
-        break;
-
-    case 3:
-        if (Flash_Violent(ewk, 9)) {
-            ewk->wu.routine_no[0]++;
-        }
-
-        if (ewk->wu.vitality) {
-            set_char_move_init2(&ewk->wu, 0, 6, np->code[ewk->wu.old_rno[2]] + 1, 0);
-        }
-
-        break;
-
-    case 4:
         break;
 
     default:
-        all_cgps_put_back(&ewk->wu);
-        push_effect_work(&ewk->wu);
+        effect_B5_flash_out(ewk, np);
         break;
     }
 
-    if (ewk->wu.old_rno[3] != np->code[ewk->wu.type]) {
-        ewk->wu.old_rno[4] = 0;
-        ewk->wu.old_rno[0] = 0;
-        set_char_move_init2(&ewk->wu, 0, 6, np->code[ewk->wu.type] + 1, 0);
-        ewk->wu.old_rno[3] = np->code[ewk->wu.type];
-    }
+    resync_b5_name_cell(ewk, np);
 
     disp_pos_trans_entry(ewk);
 }

@@ -28,64 +28,10 @@ s32 plAPXGetPaletteNum(void* lpbas) {
     return lpApxFileHeader->ClutNum;
 }
 
-/* The pixel layout each APX bit depth names. Writes only through dst. */
-static void set_apx_pixel_format(plContext* dst, s32 PixelBit) {
+/* The wide layouts, reached from the dispatch above. Same expression, same
+ * case labels, no default of its own. */
+static void set_apx_wide_pixel_format(plContext* dst, s32 PixelBit) {
     switch (PixelBit) {
-    case 4:
-        dst->desc |= 0x14;
-        dst->bitdepth = 0;
-        dst->pitch = dst->width >> 1;
-        dst->pixelformat.rs = 0;
-        dst->pixelformat.rl = 0;
-        dst->pixelformat.rm = 0;
-        dst->pixelformat.gs = 0;
-        dst->pixelformat.gl = 0;
-        dst->pixelformat.gm = 0;
-        dst->pixelformat.bs = 0;
-        dst->pixelformat.bl = 0;
-        dst->pixelformat.bm = 0;
-        dst->pixelformat.as = 0;
-        dst->pixelformat.al = 0;
-        dst->pixelformat.am = 0;
-        break;
-
-    case 8:
-        dst->desc |= 4;
-        dst->bitdepth = 1;
-        dst->pitch = dst->bitdepth * dst->width;
-        dst->pixelformat.rs = 0;
-        dst->pixelformat.rl = 0;
-        dst->pixelformat.rm = 0;
-        dst->pixelformat.gs = 0;
-        dst->pixelformat.gl = 0;
-        dst->pixelformat.gm = 0;
-        dst->pixelformat.bs = 0;
-        dst->pixelformat.bl = 0;
-        dst->pixelformat.bm = 0;
-        dst->pixelformat.as = 0;
-        dst->pixelformat.al = 0;
-        dst->pixelformat.am = 0;
-        break;
-
-    case 16:
-        dst->bitdepth = 2;
-        dst->pitch = dst->bitdepth * dst->width;
-        dst->pixelformat.rl = 5;
-        dst->pixelformat.rs = 0xA;
-        dst->pixelformat.rm = 0x1F;
-        dst->pixelformat.gl = 5;
-        dst->pixelformat.gs = 5;
-        dst->pixelformat.gm = 0x1F;
-        dst->pixelformat.bl = 5;
-        dst->pixelformat.bs = 0;
-        dst->pixelformat.bm = 0x1F;
-        dst->pixelformat.al = 1;
-        dst->pixelformat.as = 0xF;
-        dst->pixelformat.am = 1;
-        dst->pixelformat.rs = 0;
-        dst->pixelformat.bs = 0xA;
-        break;
-
     case 24:
         dst->bitdepth = 3;
         dst->pitch = dst->bitdepth * dst->width;
@@ -122,6 +68,65 @@ static void set_apx_pixel_format(plContext* dst, s32 PixelBit) {
         dst->pixelformat.am = 0xFF;
         dst->pixelformat.rs = 0;
         dst->pixelformat.bs = 0x10;
+        break;
+    }
+}
+
+/* The run the 4- and 8-bit arms end with: every pixelformat field zeroed,
+ * in the order they were written. */
+static void clear_apx_pixelformat(plContext* dst) {
+    dst->pixelformat.rs = 0;
+    dst->pixelformat.rl = 0;
+    dst->pixelformat.rm = 0;
+    dst->pixelformat.gs = 0;
+    dst->pixelformat.gl = 0;
+    dst->pixelformat.gm = 0;
+    dst->pixelformat.bs = 0;
+    dst->pixelformat.bl = 0;
+    dst->pixelformat.bm = 0;
+    dst->pixelformat.as = 0;
+    dst->pixelformat.al = 0;
+    dst->pixelformat.am = 0;
+}
+
+/* The pixel layout each APX bit depth names. Writes only through dst. */
+static void set_apx_pixel_format(plContext* dst, s32 PixelBit) {
+    switch (PixelBit) {
+    case 4:
+        dst->desc |= 0x14;
+        dst->bitdepth = 0;
+        dst->pitch = dst->width >> 1;
+        clear_apx_pixelformat(dst);
+        break;
+
+    case 8:
+        dst->desc |= 4;
+        dst->bitdepth = 1;
+        dst->pitch = dst->bitdepth * dst->width;
+        clear_apx_pixelformat(dst);
+        break;
+
+    case 16:
+        dst->bitdepth = 2;
+        dst->pitch = dst->bitdepth * dst->width;
+        dst->pixelformat.rl = 5;
+        dst->pixelformat.rs = 0xA;
+        dst->pixelformat.rm = 0x1F;
+        dst->pixelformat.gl = 5;
+        dst->pixelformat.gs = 5;
+        dst->pixelformat.gm = 0x1F;
+        dst->pixelformat.bl = 5;
+        dst->pixelformat.bs = 0;
+        dst->pixelformat.bm = 0x1F;
+        dst->pixelformat.al = 1;
+        dst->pixelformat.as = 0xF;
+        dst->pixelformat.am = 1;
+        dst->pixelformat.rs = 0;
+        dst->pixelformat.bs = 0xA;
+        break;
+
+    default:
+        set_apx_wide_pixel_format(dst, PixelBit);
         break;
     }
 }

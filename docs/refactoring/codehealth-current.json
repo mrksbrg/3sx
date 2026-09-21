@@ -5,8 +5,8 @@
  "bands": {
   "red": 0,
   "yellow": 0,
-  "green": 27,
-  "optimal": 634
+  "green": 11,
+  "optimal": 650
  },
  "scores": [
   {
@@ -30,44 +30,8 @@
    "score": 9.38
   },
   {
-   "path": "src/sf33rd/Source/Game/opening/opening_bg1.c",
-   "score": 9.38
-  },
-  {
    "path": "src/sf33rd/Source/Game/stage/bg_zoom.c",
    "score": 9.38
-  },
-  {
-   "path": "src/sf33rd/Source/Game/system/sys_sub_ranking.c",
-   "score": 9.38
-  },
-  {
-   "path": "src/sf33rd/Source/Game/ui/sc_sub_gauges.c",
-   "score": 9.38
-  },
-  {
-   "path": "src/sf33rd/Source/Game/menu/netplay_menu.c",
-   "score": 9.41
-  },
-  {
-   "path": "src/sf33rd/AcrSDK/common/plapx.c",
-   "score": 9.48
-  },
-  {
-   "path": "src/sf33rd/AcrSDK/MiddleWare/PS2/CapSndEng/emlTSB.c",
-   "score": 9.5
-  },
-  {
-   "path": "src/sf33rd/Source/Game/effect/eff78.c",
-   "score": 9.54
-  },
-  {
-   "path": "src/sf33rd/Source/Game/effect/effb5.c",
-   "score": 9.58
-  },
-  {
-   "path": "src/sf33rd/Source/Game/ending/end_01.c",
-   "score": 9.6
   },
   {
    "path": "src/platform/netplay/fistbump.c",
@@ -82,43 +46,19 @@
    "score": 9.68
   },
   {
-   "path": "src/port/sound/emlShim.c",
-   "score": 9.68
-  },
-  {
-   "path": "src/sf33rd/Source/Game/effect/eff09_init.c",
-   "score": 9.68
-  },
-  {
    "path": "src/sf33rd/Source/Game/engine/charset.c",
    "score": 9.68
-  },
-  {
-   "path": "src/sf33rd/Source/Game/io/pulpul.c",
-   "score": 9.68
-  },
-  {
-   "path": "src/sf33rd/Source/Game/effect/effm2.c",
-   "score": 9.84
-  },
-  {
-   "path": "src/arcade/arcade_char_data.c",
-   "score": 9.92
   },
   {
    "path": "src/sf33rd/AcrSDK/ps2/ps2PAD.c",
    "score": 9.92
   },
   {
-   "path": "src/sf33rd/Source/Common/MemMan.c",
-   "score": 9.92
-  },
-  {
-   "path": "src/sf33rd/Source/Game/engine/pls03_super_arts.c",
-   "score": 9.92
-  },
-  {
    "path": "src/arcade/arcade_balance.c",
+   "score": 10.0
+  },
+  {
+   "path": "src/arcade/arcade_char_data.c",
    "score": 10.0
   },
   {
@@ -254,6 +194,10 @@
    "score": 10.0
   },
   {
+   "path": "src/port/sound/emlShim.c",
+   "score": 10.0
+  },
+  {
    "path": "src/port/sound/spu.c",
    "score": 10.0
   },
@@ -282,6 +226,10 @@
    "score": 10.0
   },
   {
+   "path": "src/sf33rd/AcrSDK/MiddleWare/PS2/CapSndEng/emlTSB.c",
+   "score": 10.0
+  },
+  {
    "path": "src/sf33rd/AcrSDK/common/fbms.c",
    "score": 10.0
   },
@@ -295,6 +243,10 @@
   },
   {
    "path": "src/sf33rd/AcrSDK/common/mlPAD.c",
+   "score": 10.0
+  },
+  {
+   "path": "src/sf33rd/AcrSDK/common/plapx.c",
    "score": 10.0
   },
   {
@@ -327,6 +279,10 @@
   },
   {
    "path": "src/sf33rd/AcrSDK/ps2/foundaps2.c",
+   "score": 10.0
+  },
+  {
+   "path": "src/sf33rd/Source/Common/MemMan.c",
    "score": 10.0
   },
   {
@@ -982,6 +938,10 @@
    "score": 10.0
   },
   {
+   "path": "src/sf33rd/Source/Game/effect/eff09_init.c",
+   "score": 10.0
+  },
+  {
    "path": "src/sf33rd/Source/Game/effect/eff09_late.c",
    "score": 10.0
   },
@@ -1262,6 +1222,10 @@
    "score": 10.0
   },
   {
+   "path": "src/sf33rd/Source/Game/effect/eff78.c",
+   "score": 10.0
+  },
+  {
    "path": "src/sf33rd/Source/Game/effect/eff79.c",
    "score": 10.0
   },
@@ -1391,6 +1355,10 @@
   },
   {
    "path": "src/sf33rd/Source/Game/effect/effb4.c",
+   "score": 10.0
+  },
+  {
+   "path": "src/sf33rd/Source/Game/effect/effb5.c",
    "score": 10.0
   },
   {
@@ -1842,6 +1810,10 @@
    "score": 10.0
   },
   {
+   "path": "src/sf33rd/Source/Game/effect/effm2.c",
+   "score": 10.0
+  },
+  {
    "path": "src/sf33rd/Source/Game/effect/effm3.c",
    "score": 10.0
   },
@@ -1867,6 +1839,10 @@
   },
   {
    "path": "src/sf33rd/Source/Game/ending/end_00.c",
+   "score": 10.0
+  },
+  {
+   "path": "src/sf33rd/Source/Game/ending/end_01.c",
    "score": 10.0
   },
   {
@@ -2206,6 +2182,10 @@
    "score": 10.0
   },
   {
+   "path": "src/sf33rd/Source/Game/engine/pls03_super_arts.c",
+   "score": 10.0
+  },
+  {
    "path": "src/sf33rd/Source/Game/engine/pow_pow.c",
    "score": 10.0
   },
@@ -2254,6 +2234,10 @@
    "score": 10.0
   },
   {
+   "path": "src/sf33rd/Source/Game/io/pulpul.c",
+   "score": 10.0
+  },
+  {
    "path": "src/sf33rd/Source/Game/io/vm_sub.c",
    "score": 10.0
   },
@@ -2279,6 +2263,10 @@
   },
   {
    "path": "src/sf33rd/Source/Game/menu/menu_selection.c",
+   "score": 10.0
+  },
+  {
+   "path": "src/sf33rd/Source/Game/menu/netplay_menu.c",
    "score": 10.0
   },
   {
@@ -2331,6 +2319,10 @@
   },
   {
    "path": "src/sf33rd/Source/Game/opening/opening_bg0.c",
+   "score": 10.0
+  },
+  {
+   "path": "src/sf33rd/Source/Game/opening/opening_bg1.c",
    "score": 10.0
   },
   {
@@ -2582,6 +2574,10 @@
    "score": 10.0
   },
   {
+   "path": "src/sf33rd/Source/Game/system/sys_sub_ranking.c",
+   "score": 10.0
+  },
+  {
    "path": "src/sf33rd/Source/Game/system/sys_sub_replay.c",
    "score": 10.0
   },
@@ -2611,6 +2607,10 @@
   },
   {
    "path": "src/sf33rd/Source/Game/ui/sc_sub_combo.c",
+   "score": 10.0
+  },
+  {
+   "path": "src/sf33rd/Source/Game/ui/sc_sub_gauges.c",
    "score": 10.0
   },
   {

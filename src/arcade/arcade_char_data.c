@@ -46,9 +46,8 @@ typedef struct LocationData {
     Location prot;
 } LocationData;
 
-_Static_assert(
-    sizeof(LocationData) == CHAR_DATA_SECTION_COUNT * sizeof(Location), "LocationData must follow CharDataSection order"
-);
+_Static_assert(sizeof(LocationData) == CHAR_DATA_SECTION_COUNT * sizeof(Location),
+               "LocationData must follow CharDataSection order");
 
 typedef struct CgRemapRange {
     Uint16 first;
@@ -222,6 +221,20 @@ static Uint8* read_script_header(SDL_IOStream* rom, Uint8* p, Sint16* cgd_type) 
     return p;
 }
 
+/* The optional tails a CG entry carries: the hit fields from cgd_type 4 up, the
+ * zoom fields only at 6. Returns the write pointer where it stopped. */
+static Uint8* read_cg_optional_fields(SDL_IOStream* rom, Uint8* p, Sint16 cgd_type) {
+    if (cgd_type >= 4) {
+        p = read_cg_hit_fields(rom, p);
+    }
+
+    if (cgd_type == 6) {
+        p = read_cg_zoom_fields(rom, p);
+    }
+
+    return p;
+}
+
 static void read_script(SDL_IOStream* rom, Uint8* p, const Uint8* end, Character character) {
     Sint16 cgd_type = 0;
 
@@ -235,14 +248,7 @@ static void read_script(SDL_IOStream* rom, Uint8* p, const Uint8* end, Character
             p = read_command_entry(rom, p, code, cgd_type);
         } else {
             p = read_cg_header(rom, p, code, character);
-
-            if (cgd_type >= 4) {
-                p = read_cg_hit_fields(rom, p);
-            }
-
-            if (cgd_type == 6) {
-                p = read_cg_zoom_fields(rom, p);
-            }
+            p = read_cg_optional_fields(rom, p, cgd_type);
         }
     }
 }
@@ -324,7 +330,7 @@ static void sort_sections_by_offset(CharDataSection* sections, const Location* s
         }
 
         sections[j] = section;
-}
+    }
 }
 
 /* How far the run of sections that sit end to end in the ROM reaches from

@@ -139,46 +139,54 @@ s32 Check_Sort_Wins(s16 PL_id) {
     return -1;
 }
 
-s32 Check_Sort_CPU_Grade(s16 PL_id) {
+/* The graded tables scan the same five rows; they differ in the row test they
+ * call and in the pair of offsets their table starts at, both written out at
+ * their own call site. */
+static s32 sort_into_graded_table(s16 PL_id, s32 (*beats_row)(s16, s16), s16 base, s16 next) {
     s16 i;
 
     for (i = 0; i < 5; i++) {
-        if (!Check_CPU_Grade_Score(PL_id, i)) {
+        if (!beats_row(PL_id, i)) {
             continue;
         }
 
-        insert_ranking_row(PL_id, i, 10, 11);
+        insert_ranking_row(PL_id, i, base, next);
         return i;
     }
 
     return -1;
+}
+
+s32 Check_Sort_CPU_Grade(s16 PL_id) {
+    return sort_into_graded_table(PL_id, Check_CPU_Grade_Score, 10, 11);
 }
 
 s32 Check_Sort_Grade(s16 PL_id) {
-    s16 i;
+    return sort_into_graded_table(PL_id, Check_Grade_Score, 15, 16);
+}
 
-    for (i = 0; i < 5; i++) {
-        if (!Check_Grade_Score(PL_id, i)) {
-            continue;
-        }
+static s32 cpu_grade_row_ranks_above(s16 PL_id, s16 i) {
+    return Ranking_Data[i + 10].cpu_grade > Present_Data[PL_id].cpu_grade;
+}
 
-        insert_ranking_row(PL_id, i, 15, 16);
-        return i;
-    }
+static s32 cpu_grade_row_ranks_below(s16 PL_id, s16 i) {
+    return Ranking_Data[i + 10].cpu_grade < Present_Data[PL_id].cpu_grade;
+}
 
-    return -1;
+static s32 cpu_grade_row_holds_tie(s16 PL_id, s16 i) {
+    return Ranking_Data[i + 10].score >= Present_Data[PL_id].score;
 }
 
 s32 Check_CPU_Grade_Score(s16 PL_id, s16 i) {
-    if (Ranking_Data[i + 10].cpu_grade > Present_Data[PL_id].cpu_grade) {
+    if (cpu_grade_row_ranks_above(PL_id, i)) {
         return 0;
     }
 
-    if (Ranking_Data[i + 10].cpu_grade < Present_Data[PL_id].cpu_grade) {
+    if (cpu_grade_row_ranks_below(PL_id, i)) {
         return 1;
     }
 
-    if (Ranking_Data[i + 10].score >= Present_Data[PL_id].score) {
+    if (cpu_grade_row_holds_tie(PL_id, i)) {
         return 0;
     }
 

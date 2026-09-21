@@ -34,16 +34,18 @@
 #include "sf33rd/Source/Game/system/work_sys.h"
 #include "sf33rd/Source/Game/ui/sc_sub.h"
 
-void op_bg1_move(s16 r_index) {
-    opw_ptr = &op_w.bgw[1];
-    bgw_ptr = &bg_w.bgw[1];
+/* Both opening background layers open their first step the same way: advance the
+ * state, park the layer at 512 and clear the second axis. */
+static void place_op_bg_at_512(void) {
+    opw_ptr->r_no_0 += 1;
+    bgw_ptr->wxy[0].disp.pos = 512;
+    bgw_ptr->xy[1].disp.pos = 0;
+}
 
+/* The later half of the bg1 dispatch, reached from the caller's default. The case
+ * labels are the original ones, so the states still read as the same numbers. */
+static void op_bg1_move_later(s16 r_index) {
     switch (r_index) {
-    case 55:
-    case 56:
-        op_bg1_0001(r_index);
-        break;
-
     case 60:
         op_bg1_0002(r_index);
         break;
@@ -56,6 +58,22 @@ void op_bg1_move(s16 r_index) {
         op_bg1_0000(r_index);
         break;
     }
+}
+
+void op_bg1_move(s16 r_index) {
+    opw_ptr = &op_w.bgw[1];
+    bgw_ptr = &bg_w.bgw[1];
+
+    switch (r_index) {
+    case 55:
+    case 56:
+        op_bg1_0001(r_index);
+        break;
+
+    default:
+        op_bg1_move_later(r_index);
+        break;
+    }
 
     op_scrn_pos_set2(1);
 }
@@ -63,9 +81,7 @@ void op_bg1_move(s16 r_index) {
 void op_bg1_0000(s16 /* unused */) {
     switch (opw_ptr->r_no_0) {
     case 0:
-        opw_ptr->r_no_0 += 1;
-        bgw_ptr->wxy[0].disp.pos = 512;
-        bgw_ptr->xy[1].disp.pos = 0;
+        place_op_bg_at_512();
         Bg_Off_W(2);
         break;
 
@@ -254,9 +270,7 @@ void op_bg2_0000() {
 void op_bg2_0001() {
     switch (opw_ptr->r_no_0) {
     case 0:
-        opw_ptr->r_no_0 += 1;
-        bgw_ptr->wxy[0].disp.pos = 512;
-        bgw_ptr->xy[1].disp.pos = 0;
+        place_op_bg_at_512();
         break;
 
     case 1:

@@ -92,6 +92,27 @@ static struct _MEMMAN_CELL* mm_find_gap_forward(_MEMMAN_OBJ* mmobj, ssize_t size
     return cell;
 }
 
+/* The upward allocation path: find the tightest gap above, then link the new
+ * cell in after the cell that precedes it. */
+static struct _MEMMAN_CELL* mm_alloc_forward(_MEMMAN_OBJ* mmobj, ssize_t sizeTrue, ptrdiff_t gapMin) {
+    struct _MEMMAN_CELL* myself;
+    struct _MEMMAN_CELL* cell;
+
+    cell = mm_find_gap_forward(mmobj, sizeTrue, gapMin);
+
+    if (cell == NULL) {
+        return NULL;
+    }
+
+    myself = (struct _MEMMAN_CELL*)((uintptr_t)cell + cell->size);
+    myself->prev = cell;
+    myself->next = cell->next;
+    myself->size = sizeTrue;
+    cell->next->prev = myself;
+    cell->next = myself;
+    return myself;
+}
+
 struct _MEMMAN_CELL* mmAllocSub(_MEMMAN_OBJ* mmobj, ssize_t size, s32 flag) {
     struct _MEMMAN_CELL* myself;
     struct _MEMMAN_CELL* next;
@@ -105,19 +126,7 @@ struct _MEMMAN_CELL* mmAllocSub(_MEMMAN_OBJ* mmobj, ssize_t size, s32 flag) {
     cell = NULL;
 
     if (flag != 1) {
-        cell = mm_find_gap_forward(mmobj, sizeTrue, gapMin);
-
-        if (cell == NULL) {
-            return NULL;
-        }
-
-        myself = (struct _MEMMAN_CELL*)((uintptr_t)cell + cell->size);
-        myself->prev = cell;
-        myself->next = cell->next;
-        myself->size = sizeTrue;
-        cell->next->prev = myself;
-        cell->next = myself;
-        return myself;
+        return mm_alloc_forward(mmobj, sizeTrue, gapMin);
     }
 
     myself = mmobj->cell_fin;
