@@ -418,6 +418,54 @@ call sites were never updated. Those are API changes with their own blast radius
 want their own commit series, measured across every file they touch, not a one-file win
 taken off a survey probe.
 
+### The last nine, priced one at a time
+
+`charset.c` and `sdk_libpad2.c` came off this list on 2026-09-21: both were Recipe A, both
+reached 10.00, and what had been holding them was that a parameter object changes every
+call site and a survey probe never does. `set_char_move_init2` had 156 of them across 60
+files; none of the 60 regressed. What remains is nine files and four distinct reasons.
+
+**Three are file-level ratio smells, and the catalogue has no recipe for any of them.**
+
+- `platform/video/psp/psp_renderer.c` **9.68** after Recipe A cleared *Excess Number of
+  Function Arguments* from `draw_textured_sprite_rect`'s ten arguments. *Primitive
+  Obsession* is left, and it is a statement about the whole file's ratio of built-in types
+  rather than about one signature. The file is a renderer whose vocabulary is floats and
+  packed colours.
+- `platform/netplay/fistbump.c` **9.68** and `port/config/config.c` **9.68**, both
+  *String Heavy Function Arguments*: 72% of `fistbump.c`'s arguments are strings, because
+  it is a line protocol and its functions take lines. Wrapping `const char*` in a struct
+  would move the number and change nothing real.
+
+**Four are Code Duplication over shapes the catalogue refuses to fold.** `bg_zoom.c`
+(9.38, priced five ways from two baselines), `com_patterns_6step.c` (9.38, three signatures
+over the column limit by 6-17 characters), `eff68.c` (9.38) and `com_sub_command_term.c`
+(9.09, where the surveyed change measures 9.09 and gains nothing).
+
+**`ps2PAD.c` 9.92 is a clean refusal on Recipe E's own fourth condition.** `flPADShockSet`'s
+two bumps are the arms of `if (time == 0)`, and each writes `profile` **and**
+`vib_data_size` - two outer locals. The recipe says skip it and do not invent an
+out-parameter struct to carry results back. Both arms also contain
+`if ((ps2slot[pad_id].vprofile = 3) != 0)`, an assignment that is always true and whose
+else branch is therefore dead; that is arcade-accurate and is left alone.
+
+**`eff11.c` 9.13 is the one that resists hardest, now measured from four directions.**
+*Complex Method* on `quake_level_large` (cc 21) and `quake_level_middle` (cc 11), plus
+*Large Method* on the first at 105 lines. Every attempt opens *Overall Code Complexity*
+and lands below the baseline:
+
+| Attempt | Measured |
+| --- | --- |
+| Recipe C on the two shared step prefixes (`char_move`+`add_y_sub`, and with `add_x_sub`) | **8.57** |
+| Recipe X, `quake_level_middle` split in two | **8.84** |
+| Recipe X, both functions split | **8.79** |
+| the survey's eleven single-lever probes | all below 9.13, best **9.09** |
+
+One added function costs about 0.56 on this file whatever it contains, which is the same
+arithmetic `plpat00.c` showed before a seven-way decomposition beat it. A seven-step chain
+does reach 10.00 here - the survey built one - but that probe also had
+`ewk->wu.old_rno[5] = 28` written as `= 29`, so what it proves is unknown. A legal version
+of that chain is the open question on this file; every shorter answer is priced above.
 ### The survey, and the two things it nearly shipped
 
 Sixty-one files were surveyed in parallel: each diagnosed, each proposed change **probed**
