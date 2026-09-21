@@ -366,7 +366,7 @@ static void draw_stage03_tiles(const StageDrawContext* context) {
                 global_index_real = remap_stage03_background_chip(global_index_real, &vtxColor);
             }
 
-            draw_chip_and_restore_list(context, &(ChipRect){ x, y, 128, 128 }, global_index_real, vtxColor);
+            draw_chip_and_restore_list(context, &(ChipRect) { x, y, 128, 128 }, global_index_real, vtxColor);
         }
     }
 }
@@ -387,7 +387,7 @@ static void draw_stage02_tiles(const StageDrawContext* context, u32 vtxColor) {
             if (ppgCheckTextureNumber(0, global_index_real) == 0) {
                 ppgSetupCurrentDataList(&ppgRwBgList);
             }
-            draw_chip_and_restore_list(context, &(ChipRect){ x, y, 128, 128 }, global_index_real, vtxColor);
+            draw_chip_and_restore_list(context, &(ChipRect) { x, y, 128, 128 }, global_index_real, vtxColor);
         }
     }
 }
@@ -489,11 +489,7 @@ static s32 advance_stage02_state(u8 bgnm) {
     return 0;
 }
 
-static s32 advance_stage19_state(u8 bgnm) {
-    if (is_exe_or_pause_active()) {
-        return 1;
-    }
-
+static s32 step_stage19_background(u8 bgnm) {
     if (bgnm != 1) {
         return 0;
     }
@@ -501,6 +497,14 @@ static s32 advance_stage19_state(u8 bgnm) {
     advance_stage19_flash_state();
     advance_stage19_loop_state();
     return 0;
+}
+
+static s32 advance_stage19_state(u8 bgnm) {
+    if (is_exe_or_pause_active()) {
+        return 1;
+    }
+
+    return step_stage19_background(bgnm);
 }
 
 static s32 advance_stage03_state(u8 bgnm) {
@@ -543,7 +547,7 @@ static void draw_remapped_tiles(const StageDrawContext* context, s32 (*remap)(u8
             global_index_real = context->global_index + (((y >> 7) << 3) + (x >> 7));
             global_index_real = remap(context->bgnm, global_index_real);
 
-            draw_chip_and_restore_list(context, &(ChipRect){ x, y, 128, 128 }, global_index_real, -1);
+            draw_chip_and_restore_list(context, &(ChipRect) { x, y, 128, 128 }, global_index_real, -1);
         }
     }
 }
@@ -594,8 +598,13 @@ static void draw_ending_c_tiles(const StageDrawContext* context) {
 }
 
 static void draw_ending_stage7(const StageDrawContext* context) {
-    bgDrawOneScreen(&(ScreenDraw){ context->bgnm, context->global_index, &context->xx[0], &context->yy[0], -1,
-                                   context->pal_offset, context->data_list });
+    bgDrawOneScreen(&(ScreenDraw) { context->bgnm,
+                                    context->global_index,
+                                    &context->xx[0],
+                                    &context->yy[0],
+                                    -1,
+                                    context->pal_offset,
+                                    context->data_list });
 
     if (EXE_flag != 0) {
         return;
@@ -636,8 +645,13 @@ static void draw_later_special_stage(const StageDrawContext* context) {
         /* fallthrough */
 
     default:
-        bgDrawOneScreen(&(ScreenDraw){ context->bgnm, context->global_index, &context->xx[0], &context->yy[0], -1,
-                                       context->pal_offset, context->data_list });
+        bgDrawOneScreen(&(ScreenDraw) { context->bgnm,
+                                        context->global_index,
+                                        &context->xx[0],
+                                        &context->yy[0],
+                                        -1,
+                                        context->pal_offset,
+                                        context->data_list });
 
         if (should_update_rw_work(context->bgnm)) {
             bgRWWorkUpdate();
@@ -769,7 +783,7 @@ void bgDrawOneScreen(const ScreenDraw* screen) {
 
             gbix = remap_screen_chip(screen->bgnum, gbix);
 
-            bgDrawOneChip(&(ChipRect){ x, y, 128, 128 }, gbix, -1, screen->ofsPal);
+            bgDrawOneChip(&(ChipRect) { x, y, 128, 128 }, gbix, -1, screen->ofsPal);
             ppgSetupCurrentDataList(screen->curDataList);
         }
     }
@@ -788,7 +802,7 @@ void bgDrawOneChip(const ChipRect* rect, s32 gbix, u32 vtxCol, s32 ofsPal) {
             return;
         }
 
-        ppgWriteQuadUseTrans(scrDrawPos, &(PPGQuadTransArgs){vtxCol, 0, gbix, 0, 0, ofsPal});
+        ppgWriteQuadUseTrans(scrDrawPos, &(PPGQuadTransArgs) { vtxCol, 0, gbix, 0, 0, ofsPal });
     }
 }
 
@@ -805,7 +819,7 @@ void bgAkebonoDraw() {
     scrDrawPos[3].t = 0.875f;
 
     for (i = 0; i < 3; i++) {
-        ppgWriteQuadUseTrans(scrDrawPos, &(PPGQuadTransArgs){0xFFFFFFFF, NULL, i, i, 0, 0});
+        ppgWriteQuadUseTrans(scrDrawPos, &(PPGQuadTransArgs) { 0xFFFFFFFF, NULL, i, i, 0, 0 });
         scrDrawPos->x += 128.0f;
         scrDrawPos[3].x += 128.0f;
     }
