@@ -147,9 +147,7 @@ void Pattern14_0026(PLW* wk) {
                                      [3] = STEP(Normal_Attack, 0xb, 0x202),
                                      [4] = STEP(J_Command_Attack, 0xb, 0x20, 8, -1),
                                      [5] = STEP(Wait, 5) };
-    if (!Run_Pattern_Steps(wk, script, 6)) {
-        pattern14_0026_from_step_6(wk);
-    }
+    Run_Pattern_Or(wk, script, 6, pattern14_0026_from_step_6);
 }
 
 void Pattern14_0027(PLW* wk) {
@@ -188,9 +186,7 @@ void Pattern14_0033(PLW* wk) {
                                      [3] = STEP(Normal_Attack, 0xb, 0x202),
                                      [4] = STEP(J_Command_Attack, 8, 0x20, 8, -1),
                                      [5] = STEP(Wait, 3) };
-    if (!Run_Pattern_Steps(wk, script, 6)) {
-        active_pattern_j_command_attack_from_step_6(wk);
-    }
+    Run_Pattern_Or(wk, script, 6, active_pattern_j_command_attack_from_step_6);
 }
 
 void Pattern14_0034(PLW* wk) {
@@ -225,9 +221,7 @@ void Pattern14_0037(PLW* wk) {
                                      [3] = STEP_NOARG(Pierce_On),
                                      [4] = STEP(J_Command_Attack, 8, 0x20, 8, -1),
                                      [5] = STEP(Wait, 3) };
-    if (!Run_Pattern_Steps(wk, script, 6)) {
-        active_pattern_j_command_attack_from_step_6(wk);
-    }
+    Run_Pattern_Or(wk, script, 6, active_pattern_j_command_attack_from_step_6);
 }
 
 void Pattern14_0038(PLW* wk) {
@@ -310,9 +304,7 @@ void Pattern14_0052(PLW* wk) {
     const Pattern_Step script[6] = { [0] = STEP(Check_SA_Full, 6, 0x7c), [1] = STEP(EM_Term, 0x80d0, -1, 5, 2, 0),
                                      [2] = STEP(Only_Shot, 0x10),        [3] = STEP(Wait, 1),
                                      [4] = STEP(Only_Shot, 0x10),        [5] = STEP(Wait, 1) };
-    if (!Run_Pattern_Steps(wk, script, 6)) {
-        pattern14_0052_from_step_6(wk);
-    }
+    Run_Pattern_Or(wk, script, 6, pattern14_0052_from_step_6);
 }
 
 void Pattern14_0053(PLW* wk) {
@@ -360,9 +352,7 @@ void Pattern14_0059(PLW* wk) {
                                      [3] = STEP(Normal_Attack, 0xc, 0x202),
                                      [4] = STEP(Command_Attack, 0xc, 0x1f, 10, -1),
                                      [5] = STEP(Wait, 1) };
-    if (!Run_Pattern_Steps(wk, script, 6)) {
-        pattern14_0059_from_step_6(wk);
-    }
+    Run_Pattern_Or(wk, script, 6, pattern14_0059_from_step_6);
 }
 
 void Pattern14_0060(PLW* wk) {
