@@ -21,14 +21,15 @@ for the allowed transformations.
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | **Red** - severe debt | 1.0 - 3.9 | 19 | **0** | **0** | **0** | **0** | **0** |
 | **Yellow** - problematic debt | 4.0 - 8.9 | 207 | 93 | 28 | 2 | **0** | **0** |
-| Green | 9.0 - 9.9 | 158 | 91 | 79 | 61 | 27 | **11** |
-| Optimal | 10.0 | 98 | 475 | 553 | 598 | 634 | **650** |
+| Green | 9.0 - 9.9 | 158 | 91 | 79 | 61 | 27 | **9** |
+| Optimal | 10.0 | 98 | 475 | 553 | 598 | 634 | **652** |
 | Total scored | | 482 | 659 | 660 | 661 | 661 | 661 |
 
 The file count rises because the campaign splits files. Mean Code Health across every
-scorable first-party file is **9.991**, against 8.52 over the same files at the start.
-**The yellow band is empty**: nothing scores below 9.0, and 650 of the 661 scored files are
-at 10.00. Eleven are left, and they are listed under *The eleven that are left* below.
+scorable first-party file is **9.9929**, against 8.52 over the same files at the start.
+**The yellow band is empty**: nothing scores below 9.0, and 652 of the 661 scored files are
+at 10.00. Nine are left, and they are listed under *The last nine, priced one at a time*
+below.
 
 The 2026-09-21 pm column is the sweep taken after the green-band survey: sixty-one files
 diagnosed and probed in parallel, thirty-three lifted, and the last two yellow-band files

@@ -245,10 +245,6 @@ def main() -> int:
     if not args.quiet:
         print(" " * 40, end="\r")
 
-    counts = {"red": 0, "yellow": 0, "green": 0, "optimal": 0}
-    for value in scores.values():
-        counts[band(value)] += 1
-
     # A file that came back silent is usually a data table, but under load it is
     # sometimes a request the server dropped. Ask again, in small chunks, before
     # believing the silence. Two sweeps in a row lost a third of the repository
@@ -270,6 +266,12 @@ def main() -> int:
                     unscorable.append(rel)
 
     check_the_sweep_is_whole(args.output, scores, unscorable, failed)
+
+    # Counted here rather than before the retry: the retry adds scores, and a
+    # band table taken ahead of it reports the file count it had at the time.
+    counts = {"red": 0, "yellow": 0, "green": 0, "optimal": 0}
+    for value in scores.values():
+        counts[band(value)] += 1
 
     payload = {
         "total_candidates": len(files),
