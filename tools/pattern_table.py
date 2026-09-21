@@ -37,6 +37,7 @@ from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
 PATTERNS = REPO / "src/sf33rd/Source/Game/com/patterns"
+COM = REPO / "src/sf33rd/Source/Game/com"
 COM_SUB_H = REPO / "src/sf33rd/Source/Game/com/com_sub.h"
 
 SWITCH_HEAD = "switch (CP_Index[wk->wu.id][0])"
@@ -91,12 +92,24 @@ def split_top_level(text: str):
 
 
 def parse_params(params: str):
-    """[(type, name)] for a parameter list, pointer stars kept on the type."""
+    """[(type, name)] for a parameter list, pointer stars kept on the type.
+
+    A declaration may leave a parameter unnamed - com_sub.h has
+    `void Next_Be_Passive(PLW* wk, s32);` - so an unnamed one is given its
+    position as a name, which is what the generated struct field is called.
+    """
     out = []
-    for p in split_top_level(params):
-        m = re.match(r"^(.*?)(\w+)$", p.strip())
-        out.append((m.group(1).strip(), m.group(2)))
+    for i, p in enumerate(split_top_level(params)):
+        text = p.strip()
+        m = re.match(r"^(.*?[ \*])(\w+)$", text)
+        if m and m.group(2) not in TYPE_WORDS:
+            out.append((m.group(1).strip(), m.group(2)))
+        else:
+            out.append((text, "arg%d" % i))
     return out
+
+
+TYPE_WORDS = {"void", "s8", "u8", "s16", "u16", "s32", "u32", "s64", "u64", "int", "char", "float", "double"}
 
 
 def parse_skeleton(body: str):
@@ -324,7 +337,8 @@ def emit_infra(used: set) -> dict:
     ]
     for c in wrapped:
         ps = SIGS[c]
-        lines.append("/* The %d values %s takes, in its own parameter order. */" % (len(ps), c))
+        lines.append("/* The %d value%s %s takes, in its own parameter order. */"
+                     % (len(ps), "" if len(ps) == 1 else "s", c))
         lines.append("typedef struct {")
         for t, n in ps:
             lines.append("    %s%s%s;" % (t, "" if t.endswith("*") else " ", n))
@@ -479,7 +493,8 @@ def clang_format(text: str, name: str) -> str:
     if CLANG_FORMAT is None:
         sys.exit("clang-format is not on PATH; the conversion must land clang-format clean")
     r = subprocess.run(
-        [CLANG_FORMAT, "--assume-filename=" + name],
+        [CLANG_FORMAT, "--assume-filename=" + name,
+         "--style={BasedOnStyle: InheritParentConfig, SortIncludes: Never}"],
         input=text, capture_output=True, text=True, cwd=REPO,
     )
     return r.stdout if r.returncode == 0 else text
@@ -497,7 +512,7 @@ def main() -> int:
     a = ap.parse_args()
 
     if a.emit_infra:
-        paths = sorted(PATTERNS.glob("*.c"))
+        paths = sorted(COM.rglob("*.c"))
         for name, text in emit_infra(used_callees(paths)).items():
             (PATTERNS / name).write_text(clang_format(text, name))
             print("wrote", (PATTERNS / name).relative_to(REPO))
@@ -524,6 +539,10 @@ def main() -> int:
             old = subprocess.run(
                 ["git", "show", "%s:%s" % (a.base, rel)], capture_output=True, text=True, cwd=REPO
             ).stdout
+            if TABLE_RE.search(old):
+                print("SKIP %s  %s already holds the table form; verify against the "
+                      "commit before the conversion" % (rel, a.base))
+                continue
             back = clang_format(invert_source(Path(p).read_text()), Path(p).name)
             if back.strip() == clang_format(old, Path(p).name).strip():
                 print("OK   %s  the table form inverts to the source it replaced" % rel)

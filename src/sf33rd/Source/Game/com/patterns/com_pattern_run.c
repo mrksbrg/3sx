@@ -54,6 +54,18 @@ void Step_Branch_Wait_Area(PLW* wk, const void* arg) {
     Branch_Wait_Area(wk, arg);
 }
 
+void Step_Check_BOSS(PLW* wk, const void* arg) {
+    const Check_BOSS_Step* a = arg;
+
+    Check_BOSS(wk, a->Next_Action, a->Next_Menu);
+}
+
+void Step_Check_BOSS_EX(PLW* wk, const void* arg) {
+    const Check_BOSS_EX_Step* a = arg;
+
+    Check_BOSS_EX(wk, a->Next_Action, a->Next_Menu);
+}
+
 void Step_Check_EX(PLW* wk, const void* arg) {
     const Check_EX_Step* a = arg;
 
@@ -195,6 +207,12 @@ void Step_Next_Be_Flip(PLW* wk, const void* arg) {
     Next_Be_Flip(wk, a->xx);
 }
 
+void Step_Next_Be_Passive(PLW* wk, const void* arg) {
+    const Next_Be_Passive_Step* a = arg;
+
+    Next_Be_Passive(wk, a->arg1);
+}
+
 void Step_Normal_Attack(PLW* wk, const void* arg) {
     const Normal_Attack_Step* a = arg;
 
@@ -207,6 +225,10 @@ void Step_Normal_Attack_SP(PLW* wk, const void* arg) {
     Normal_Attack_SP(wk, a->Reaction, a->Lever_Data, a->Time);
 }
 
+void Step_ORO_HJA_Term(PLW* wk, const void* arg) {
+    ORO_HJA_Term(wk, arg);
+}
+
 void Step_ORO_HJCA_Term(PLW* wk, const void* arg) {
     ORO_HJCA_Term(wk, arg);
 }
@@ -217,6 +239,12 @@ void Step_ORO_JA_Term(PLW* wk, const void* arg) {
 
 void Step_ORO_JCA_Term(PLW* wk, const void* arg) {
     ORO_JCA_Term(wk, arg);
+}
+
+void Step_Only_Shot(PLW* wk, const void* arg) {
+    const Only_Shot_Step* a = arg;
+
+    Only_Shot(wk, a->Lever_Data);
 }
 
 void Step_Pierce_On(PLW* wk, const void* arg) {
@@ -252,6 +280,11 @@ void Step_Search_Back_Term(PLW* wk, const void* arg) {
     const Search_Back_Term_Step* a = arg;
 
     Search_Back_Term(wk, a->Move_Value, a->Next_Action, a->Next_Menu);
+}
+
+void Step_Setup_DENJIN_LEVEL(PLW* wk, const void* arg) {
+    (void)arg;
+    Setup_DENJIN_LEVEL(wk);
 }
 
 void Step_Short_Range_Attack(PLW* wk, const void* arg) {

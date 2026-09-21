@@ -36,6 +36,18 @@ typedef struct {
     s16 Option;
 } Approach_Walk_Step;
 
+/* The 2 values Check_BOSS takes, in its own parameter order. */
+typedef struct {
+    u32 Next_Action;
+    u16 Next_Menu;
+} Check_BOSS_Step;
+
+/* The 2 values Check_BOSS_EX takes, in its own parameter order. */
+typedef struct {
+    u32 Next_Action;
+    u16 Next_Menu;
+} Check_BOSS_EX_Step;
+
 /* The 2 values Check_EX takes, in its own parameter order. */
 typedef struct {
     s16 Next_Action;
@@ -74,7 +86,7 @@ typedef struct {
     u16 Next_Menu;
 } ETC_Term_Step;
 
-/* The 1 values Forced_Guard takes, in its own parameter order. */
+/* The 1 value Forced_Guard takes, in its own parameter order. */
 typedef struct {
     s16 Guard_Type;
 } Forced_Guard_Step;
@@ -85,7 +97,7 @@ typedef struct {
     s16 Jump_Dir;
 } Hi_Jump_Step;
 
-/* The 1 values Jump takes, in its own parameter order. */
+/* The 1 value Jump takes, in its own parameter order. */
 typedef struct {
     s16 Time;
 } Jump_Step;
@@ -115,7 +127,7 @@ typedef struct {
     u16 UD_Lever;
 } Lever_On_Step;
 
-/* The 1 values Look takes, in its own parameter order. */
+/* The 1 value Look takes, in its own parameter order. */
 typedef struct {
     s16 Time;
 } Look_Step;
@@ -126,10 +138,15 @@ typedef struct {
     u16 Next_Menu;
 } Next_Another_Menu_Step;
 
-/* The 1 values Next_Be_Flip takes, in its own parameter order. */
+/* The 1 value Next_Be_Flip takes, in its own parameter order. */
 typedef struct {
     s16 xx;
 } Next_Be_Flip_Step;
+
+/* The 1 value Next_Be_Passive takes, in its own parameter order. */
+typedef struct {
+    s32 arg1;
+} Next_Be_Passive_Step;
 
 /* The 2 values Normal_Attack takes, in its own parameter order. */
 typedef struct {
@@ -144,12 +161,17 @@ typedef struct {
     s16 Time;
 } Normal_Attack_SP_Step;
 
-/* The 1 values Provoke takes, in its own parameter order. */
+/* The 1 value Only_Shot takes, in its own parameter order. */
+typedef struct {
+    s16 Lever_Data;
+} Only_Shot_Step;
+
+/* The 1 value Provoke takes, in its own parameter order. */
 typedef struct {
     s16 Lever;
 } Provoke_Step;
 
-/* The 1 values Push_Shot takes, in its own parameter order. */
+/* The 1 value Push_Shot takes, in its own parameter order. */
 typedef struct {
     s16 Power_Level;
 } Push_Shot_Step;
@@ -161,7 +183,7 @@ typedef struct {
     s16 Next_Menu;
 } Search_Back_Term_Step;
 
-/* The 1 values Wait takes, in its own parameter order. */
+/* The 1 value Wait takes, in its own parameter order. */
 typedef struct {
     s16 Time;
 } Wait_Step;
@@ -178,7 +200,7 @@ typedef struct {
     s16 Option;
 } Wait_Get_Up_Step;
 
-/* The 1 values Wait_Lie takes, in its own parameter order. */
+/* The 1 value Wait_Lie takes, in its own parameter order. */
 typedef struct {
     u16 Lever_Data;
 } Wait_Lie_Step;
@@ -205,6 +227,7 @@ typedef Jump_Attack_Args Jump_Attack_Step;
 typedef Jump_Term_Args Jump_Attack_Term_Step;
 typedef JCA_Term_Args Jump_Command_Attack_Term_Step;
 typedef Lever_Attack_SP_Args Lever_Attack_SP_Step;
+typedef ORO_Air_Term_Args ORO_HJA_Term_Step;
 typedef ORO_JCA_Term_Args ORO_HJCA_Term_Step;
 typedef ORO_Air_Term_Args ORO_JA_Term_Step;
 typedef ORO_JCA_Term_Args ORO_JCA_Term_Step;
