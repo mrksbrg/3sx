@@ -53,6 +53,50 @@ s32 mlTsbKeyOn(SoundEvent* pTSB, CSE_REQP* pReqp, u32 bank, u32 prog) {
     return 0;
 }
 
+/* The commands that carry no request of their own. The labels are the original
+ * ones, so a command still reads as the number the sound data uses. */
+static void run_tsb_quiet_command(SoundEvent* pTSB) {
+    switch (pTSB->cmd) {
+    case 10:
+    case 11:
+    case 12:
+    default:
+        // Do nothing
+        break;
+    }
+}
+
+/* The echo half of the command dispatch, reached from the caller's default.
+ * Every label it holds is the label the caller used to hold. */
+static void run_tsb_echo_command(SoundEvent* pTSB, u16 bank, u16 code, s32* aRtpc) {
+    switch (pTSB->cmd) {
+    case 0:
+    case 4:
+    case 8:
+    case 9:
+        // Do nothing
+        break;
+
+    case 6:
+        mlTsbCreateEcho(bank, code, aRtpc);
+        break;
+
+    case 7:
+        mlTsbStopEcho(bank, code);
+        break;
+
+    default:
+        run_tsb_quiet_command(pTSB);
+        break;
+    }
+}
+
+/* The loop continues while this event links on to a different one. Copied
+ * operand for operand from the test it replaces. */
+static s32 tsb_links_to_another_event(SoundEvent* pTSB, u16 code) {
+    return ((pTSB->link) != 0xFFFF) && (pTSB->link != code);
+}
+
 s32 mlTsbRequest(u16 bank, u16 code, s32* aRtpc) {
     CSE_REQP reqp = {};
     SoundEvent* pTSB;
@@ -71,25 +115,6 @@ s32 mlTsbRequest(u16 bank, u16 code, s32* aRtpc) {
         reqp.limit += aRtpc[9];
 
         switch (pTSB->cmd) {
-        case 0:
-        case 4:
-        case 8:
-        case 9:
-        case 10:
-        case 11:
-        case 12:
-        default:
-            // Do nothing
-            break;
-
-        case 6:
-            mlTsbCreateEcho(bank, code, aRtpc);
-            break;
-
-        case 7:
-            mlTsbStopEcho(bank, code);
-            break;
-
         case 1:
             mlTsbKeyOn(pTSB, &reqp, bank, pTSB->prog + aRtpc[0]);
             break;
@@ -103,11 +128,15 @@ s32 mlTsbRequest(u16 bank, u16 code, s32* aRtpc) {
             break;
 
         case 5:
-            mlSeSetLfo(&reqp, &(CSE_LFO_PARAMS){ pTSB->param0, pTSB->param1, pTSB->param2, pTSB->param3 });
+            mlSeSetLfo(&reqp, &(CSE_LFO_PARAMS) { pTSB->param0, pTSB->param1, pTSB->param2, pTSB->param3 });
+            break;
+
+        default:
+            run_tsb_echo_command(pTSB, bank, code, aRtpc);
             break;
         }
 
-        if (((pTSB->link) != 0xFFFF) && (pTSB->link != code)) {
+        if (tsb_links_to_another_event(pTSB, code)) {
             code = (u16)pTSB->link;
         } else {
             break;
