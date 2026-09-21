@@ -261,13 +261,18 @@ void end_2001_0000() {
     }
 }
 
+/* Open this scene's panel and start its effect. */
+static void end_2001_0002_open_panel() {
+    bgw_ptr->r_no_1++;
+    end_20_place_panel_at_scene_start();
+    bgw_ptr->abs_x = bgw_ptr->xy[0].disp.pos;
+    effect_E6_init(0x41);
+}
+
 void end_2001_0002() {
     switch (bgw_ptr->r_no_1) {
     case 0:
-        bgw_ptr->r_no_1++;
-        end_20_place_panel_at_scene_start();
-        bgw_ptr->abs_x = bgw_ptr->xy[0].disp.pos;
-        effect_E6_init(0x41);
+        end_2001_0002_open_panel();
         break;
 
     case 1:
