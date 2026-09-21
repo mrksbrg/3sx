@@ -1525,7 +1525,7 @@ high-risk tier of the verification loop: run `tools/replay_verify.sh` on it.
 
 ---
 
-## Recipes M, O and J2 - authorised 2026-09-21
+## Recipes M, O, J2 and Q - authorised 2026-09-21
 
 Added under the project owner's authorisation after being probed, compiled under
 `-Wall -Werror`, scored 10.00 and proven equivalent by a harness in `tools/equivalence/`.
@@ -1539,6 +1539,7 @@ quote its count in the commit message; where the guard also passes, run it too.
 | M - Decision Table | `Game/stage/bg_zoom.c` | 9.38 | **10.00** | all 2^32 input pairs, two initial states: 8,589,934,592 checks, 0 mismatches |
 | O - Return an Object | `AcrSDK/ps2/ps2PAD.c` | 9.92 | **10.00** | SDK call recorded over the input grid: 1,224 calls, 0 mismatches |
 | J2 - Uniform Step Table | `Game/com/com_sub_command_term.c` | 9.09 | **10.00** | every leaf call recorded, 256 states x 2 fighters x 3 entry points: 1,536 dispatches, 0 mismatches |
+| Q - Parsed Message | `platform/netplay/fistbump.c` | 9.68 | **10.00** | both parsers over 140,377 lines x 4 starting states, every log and side effect recorded: 561,508 runs, 0 mismatches |
 
 ## Recipe M - Decision Table
 
@@ -1656,6 +1657,39 @@ complexity one; the file's mean complexity falls. Cost to weigh: the file grows 
 52 functions, and a step now reads through one indirection.
 
 ---
+
+---
+
+## Recipe Q - Parsed Message
+
+**Use when:** CodeScene reports *String Heavy Function Arguments* on a module that speaks a
+line protocol, where a dispatcher matches a command word by prefix and each handler then
+matches the same word again inside its own parse.
+
+**How:**
+
+1. Declare an `enum` of the command words and a message `struct` of two fields: the
+   command, and a pointer to the payload after the word.
+2. Write **one table** of command words - each with the space that ends it and its length,
+   copied from the `strncmp` calls - and one function that splits a line into a message
+   by that table. A line matching no word is the unknown command with the whole line as
+   payload.
+3. Each handler takes `const Message*` and parses `msg->payload` with its old format minus
+   the command word. **Watch `sscanf`'s whitespace rules**: a format space skips any run
+   of whitespace, a literal does not, so a format that began with a literal after the word
+   (`"TOKEN refresh %s"`) keeps a leading space (`" refresh %s"`) to accept what it accepted.
+4. Dispatch through a table of handlers indexed by the enum, not a switch: eight arms is a
+   *Complex Method*.
+
+**This edits string literals**, the formats, so the literal guard FAILs by construction and
+the recipe brings its own proof: run both parsers behind the same fakes of the module state
+and the calls the handlers make, record every log and side effect, and diff them over a
+corpus of every command word and near-miss, spacing variants, missing and oversized fields,
+and tens of thousands of random lines, from several starting states.
+`tools/equivalence/fistbump_parse.py` is the pattern.
+
+**Measured:** `platform/netplay/fistbump.c` 9.68 -> 10.00, thirteen string parameters
+of eighteen down to five. 140,377 distinct lines x 4 starting states, 0 mismatches.
 
 ---
 

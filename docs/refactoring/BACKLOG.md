@@ -17,19 +17,19 @@ for the allowed transformations.
 
 ## Where the whole repository stands
 
-| Band | Score | 2026-09-01 | 2026-09-19 | 2026-09-20 | 09-21 am | 09-21 pm | 09-21 late | 09-21 night |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| **Red** - severe debt | 1.0 - 3.9 | 19 | **0** | **0** | **0** | **0** | **0** | **0** |
-| **Yellow** - problematic debt | 4.0 - 8.9 | 207 | 93 | 28 | 2 | **0** | **0** | **0** |
-| Green | 9.0 - 9.9 | 158 | 91 | 79 | 61 | 27 | **9** | **1** |
-| Optimal | 10.0 | 98 | 475 | 553 | 598 | 634 | **652** | **661** |
-| Total scored | | 482 | 659 | 660 | 661 | 661 | 661 | 662 |
+| Band | Score | 2026-09-01 | 2026-09-19 | 2026-09-20 | 09-21 am | 09-21 pm | 09-21 late | 09-21 night | 09-21 last |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| **Red** - severe debt | 1.0 - 3.9 | 19 | **0** | **0** | **0** | **0** | **0** | **0** | **0** |
+| **Yellow** - problematic debt | 4.0 - 8.9 | 207 | 93 | 28 | 2 | **0** | **0** | **0** | **0** |
+| Green | 9.0 - 9.9 | 158 | 91 | 79 | 61 | 27 | **9** | **1** | **0** |
+| Optimal | 10.0 | 98 | 475 | 553 | 598 | 634 | **652** | **661** | **662** |
+| Total scored | | 482 | 659 | 660 | 661 | 661 | 661 | 662 | 662 |
 
 The file count rises because the campaign splits files. Mean Code Health across every
-scorable first-party file is **9.9995**, against 8.52 over the same files at the start.
-**661 of the 662 scored files are at 10.00.** One is left, `platform/netplay/fistbump.c`
-at 9.68, and it is a genuine plateau - see *The night of 2026-09-21* below for it and for
-how the other eight of *The last nine* came off the list.
+scorable first-party file is **10.00**, against 8.52 over the same files at the start.
+**Every one of the 662 scored files is at 10.00.** How the last nine came off the list is
+under *The night of 2026-09-21* below; the last of them, `platform/netplay/fistbump.c`,
+went by a fourth new recipe later the same night.
 
 ### The night of 2026-09-21: eight of the last nine, and three new recipes
 
@@ -65,10 +65,15 @@ of 32 does not, and adding a two-parameter function of struct types to the first
 at 10.00. The gate is a **parameter count near 32**, not the thirty functions recorded
 above; below it the ratio is not judged.
 
-**`fistbump.c` 9.68 is the one left, and it is a real plateau.** *String Heavy Function
+**`fistbump.c` 9.68 was the last, and it needed a fourth recipe.** *String Heavy Function
 Arguments* closes at **7 string parameters of 18 and stays open at 8** - about 40% - and the
-honest count is 13: eight handlers each take the protocol line, because their `sscanf`
-formats carry the command word. Nothing that is not lexical reaches it.
+honest count was 13: eight handlers each took the protocol line, because their `sscanf`
+formats carried the command word. **Recipe Q - Parsed Message** splits the line once into
+a command enum and a payload and hands the handlers the message, which is the design the
+finding was asking for; it edits the format strings, so its proof is both parsers run over
+140,377 distinct lines from four starting states with every log and side effect recorded,
+561,508 runs, 0 mismatches (`tools/equivalence/fistbump_parse.py`). 9.68 -> 10.00, and the
+board is full.
 
 
 The 2026-09-21 pm column is the sweep taken after the green-band survey: sixty-one files

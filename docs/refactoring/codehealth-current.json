@@ -5,14 +5,10 @@
  "bands": {
   "red": 0,
   "yellow": 0,
-  "green": 1,
-  "optimal": 661
+  "green": 0,
+  "optimal": 662
  },
  "scores": [
-  {
-   "path": "src/platform/netplay/fistbump.c",
-   "score": 9.68
-  },
   {
    "path": "src/arcade/arcade_balance.c",
    "score": 10.0
@@ -83,6 +79,10 @@
   },
   {
    "path": "src/platform/input/statcheck/statcheck_input.c",
+   "score": 10.0
+  },
+  {
+   "path": "src/platform/netplay/fistbump.c",
    "score": 10.0
   },
   {
