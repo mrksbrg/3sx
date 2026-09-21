@@ -6,6 +6,7 @@
 #include "sf33rd/Source/Game/com/active/active17.h"
 #include "common.h"
 #include "sf33rd/Source/Game/com/com_sub.h"
+#include "sf33rd/Source/Game/com/patterns/com_pattern_run.h"
 #include "sf33rd/Source/Game/com/patterns/com_patterns.h"
 #include "sf33rd/Source/Game/engine/workuser.h"
 
@@ -176,23 +177,10 @@ void Pattern17_0038(PLW* wk) {
 }
 
 void Pattern17_0039(PLW* wk) {
-    switch (CP_Index[wk->wu.id][0]) {
-    case 0:
-        Command_Attack(wk, &(Command_Attack_Args) { 8, 0x1F, 8, -1 });
-        break;
-
-    case 1:
-        Wait(wk, 6);
-        break;
-
-    case 2:
-        Normal_Attack(wk, 8, 0x40);
-        break;
-
-    default:
-        End_Pattern(wk);
-        break;
-    }
+    const Pattern_Step script[3] = { [0] = STEP(Command_Attack, 8, 0x1F, 8, -1),
+                                     [1] = STEP(Wait, 6),
+                                     [2] = STEP(Normal_Attack, 8, 0x40) };
+    Run_Pattern(wk, script, 3);
 }
 
 void Pattern17_0040(PLW* wk) {
@@ -244,55 +232,19 @@ void Pattern17_0051(PLW* wk) {
 }
 
 void Pattern17_0052(PLW* wk) {
-    switch (CP_Index[wk->wu.id][0]) {
-    case 0:
-        EM_Term(wk, &(EM_Term_Params) { -1, -0x7FD0, 5, 2, 0 });
-        break;
-
-    case 1:
-        SA_Term(wk, &(SA_Term_Args) { 0x2E, 0x2F, 0xFFFF, 0 });
-        break;
-
-    case 2:
-        Command_Attack(wk, &(Command_Attack_Args) { 8, 0x1F, 0xA, -1 });
-        break;
-
-    default:
-        End_Pattern(wk);
-        break;
-    }
+    const Pattern_Step script[3] = { [0] = STEP(EM_Term, -1, -0x7FD0, 5, 2, 0),
+                                     [1] = STEP(SA_Term, 0x2E, 0x2F, 0xFFFF, 0),
+                                     [2] = STEP(Command_Attack, 8, 0x1F, 0xA, -1) };
+    Run_Pattern(wk, script, 3);
 }
 
 void Pattern17_0053(PLW* wk) {
-    switch (CP_Index[wk->wu.id][0]) {
-    case 0:
-        EM_Term(wk, &(EM_Term_Params) { -1, -0x7FD0, 5, 2, 0 });
-        break;
-
-    case 1:
-        SA_Term(wk, &(SA_Term_Args) { 0x2e, -1, -1, 0 });
-        break;
-
-    case 2:
-        Approach_Walk(wk, 0x7f, 2);
-        break;
-
-    case 3:
-        SA_Term(wk, &(SA_Term_Args) { -1, 0x2f, -1, 0 });
-        break;
-
-    case 4:
-        Approach_Walk(wk, 0x41, 2);
-        break;
-
-    case 5:
-        Command_Attack(wk, &(Command_Attack_Args) { 8, 0x1f, 10, -1 });
-        break;
-
-    default:
-        End_Pattern(wk);
-        break;
-    }
+    const Pattern_Step script[6] = {
+        [0] = STEP(EM_Term, -1, -0x7FD0, 5, 2, 0), [1] = STEP(SA_Term, 0x2e, -1, -1, 0),
+        [2] = STEP(Approach_Walk, 0x7f, 2),        [3] = STEP(SA_Term, -1, 0x2f, -1, 0),
+        [4] = STEP(Approach_Walk, 0x41, 2),        [5] = STEP(Command_Attack, 8, 0x1f, 10, -1)
+    };
+    Run_Pattern(wk, script, 6);
 }
 
 void Pattern17_0054(PLW* wk) {
@@ -358,185 +310,65 @@ void Pattern17_0068(PLW* wk) {
 }
 
 void Pattern17_0069(PLW* wk) {
-    switch (CP_Index[wk->wu.id][0]) {
-    case 0:
-        Pierce_On(wk);
-        break;
-
-    case 1:
-        Command_Attack(wk, &(Command_Attack_Args) { 9, 0x1F, 8, -1 });
-        break;
-
-    case 2:
-        Normal_Attack(wk, 8, 0x40);
-        break;
-
-    default:
-        End_Pattern(wk);
-        break;
-    }
+    const Pattern_Step script[3] = { [0] = STEP_NOARG(Pierce_On),
+                                     [1] = STEP(Command_Attack, 9, 0x1F, 8, -1),
+                                     [2] = STEP(Normal_Attack, 8, 0x40) };
+    Run_Pattern(wk, script, 3);
 }
 
 void Pattern17_0070(PLW* wk) {
-    switch (CP_Index[wk->wu.id][0]) {
-    case 0:
-        Pierce_On(wk);
-        break;
-
-    case 1:
-        Command_Attack(wk, &(Command_Attack_Args) { 9, 0x1F, 8, -1 });
-        break;
-
-    case 2:
-        Walk(wk, 0, 8, 0);
-        break;
-
-    case 3:
-        Command_Attack(wk, &(Command_Attack_Args) { 8, 0x1E, 0xA, -1 });
-        break;
-
-    default:
-        End_Pattern(wk);
-        break;
-    }
+    const Pattern_Step script[4] = { [0] = STEP_NOARG(Pierce_On),
+                                     [1] = STEP(Command_Attack, 9, 0x1F, 8, -1),
+                                     [2] = STEP(Walk, 0, 8, 0),
+                                     [3] = STEP(Command_Attack, 8, 0x1E, 0xA, -1) };
+    Run_Pattern(wk, script, 4);
 }
 
 void Pattern17_0071(PLW* wk) {
-    switch (CP_Index[wk->wu.id][0]) {
-    case 0:
-        Command_Attack(wk, &(Command_Attack_Args) { 9, 0x1F, 0xA, -1 });
-        break;
-
-    case 1:
-        Pierce_On(wk);
-        break;
-
-    case 2:
-        Provoke(wk, -1);
-        break;
-
-    default:
-        End_Pattern(wk);
-        break;
-    }
+    const Pattern_Step script[3] = { [0] = STEP(Command_Attack, 9, 0x1F, 0xA, -1),
+                                     [1] = STEP_NOARG(Pierce_On),
+                                     [2] = STEP(Provoke, -1) };
+    Run_Pattern(wk, script, 3);
 }
 
 void Pattern17_0072(PLW* wk) {
-    switch (CP_Index[wk->wu.id][0]) {
-    case 0:
-        Command_Attack(wk, &(Command_Attack_Args) { 9, 0x1F, 0xA, -1 });
-        break;
-
-    case 1:
-        Pierce_On(wk);
-        break;
-
-    case 2:
-        Provoke(wk, 1);
-        break;
-
-    case 3:
-        Com_Random_Select(wk, &(Branch_Menu_Args) { 6, 0x85, 0x86, 0x87, 0x70 }, 1);
-        break;
-
-    default:
-        End_Pattern(wk);
-        break;
-    }
+    const Pattern_Step script[4] = { [0] = STEP(Command_Attack, 9, 0x1F, 0xA, -1),
+                                     [1] = STEP_NOARG(Pierce_On),
+                                     [2] = STEP(Provoke, 1),
+                                     [3] = STEP(
+                                         Com_Random_Select, &(Branch_Menu_Args) { 6, 0x85, 0x86, 0x87, 0x70 }, 1) };
+    Run_Pattern(wk, script, 4);
 }
 
 void Pattern17_0073(PLW* wk) {
-    switch (CP_Index[wk->wu.id][0]) {
-    case 0:
-        Check_SA(wk, 2, 0x44);
-        break;
-
-    case 1:
-        Pierce_On(wk);
-        break;
-
-    case 2:
-        Command_Attack(wk, &(Command_Attack_Args) { 9, 0x1f, 8, -1 });
-        break;
-
-    case 3:
-        Walk(wk, 0, 8, 0);
-        break;
-
-    case 4:
-        EM_Term(wk, &(EM_Term_Params) { -1, -0x7FD0, 6, 1, -1 });
-        break;
-
-    case 5:
-        SA_Term(wk, &(SA_Term_Args) { -1, 0x2f, -1, 0 });
-        break;
-
-    default:
-        End_Pattern(wk);
-        break;
-    }
+    const Pattern_Step script[6] = { [0] = STEP(Check_SA, 2, 0x44),
+                                     [1] = STEP_NOARG(Pierce_On),
+                                     [2] = STEP(Command_Attack, 9, 0x1f, 8, -1),
+                                     [3] = STEP(Walk, 0, 8, 0),
+                                     [4] = STEP(EM_Term, -1, -0x7FD0, 6, 1, -1),
+                                     [5] = STEP(SA_Term, -1, 0x2f, -1, 0) };
+    Run_Pattern(wk, script, 6);
 }
 
 void Pattern17_0074(PLW* wk) {
-    switch (CP_Index[wk->wu.id][0]) {
-    case 0:
-        Pierce_On(wk);
-        break;
-
-    case 1:
-        Command_Attack(wk, &(Command_Attack_Args) { 9, 0x1F, 8, -1 });
-        break;
-
-    case 2:
-        Walk(wk, 0, 8, 0);
-        break;
-
-    case 3:
-        EM_Term(wk, &(EM_Term_Params) { -1, -0x7FD0, 6, 1, -1 });
-        break;
-
-    case 4:
-        Command_Attack(wk, &(Command_Attack_Args) { 8, 0x20, 9, -1 });
-        break;
-
-    default:
-        End_Pattern(wk);
-        break;
-    }
+    const Pattern_Step script[5] = { [0] = STEP_NOARG(Pierce_On),
+                                     [1] = STEP(Command_Attack, 9, 0x1F, 8, -1),
+                                     [2] = STEP(Walk, 0, 8, 0),
+                                     [3] = STEP(EM_Term, -1, -0x7FD0, 6, 1, -1),
+                                     [4] = STEP(Command_Attack, 8, 0x20, 9, -1) };
+    Run_Pattern(wk, script, 5);
 }
 
 /* Pattern17_0075 and Pattern17_0082 are the same six-step script; only the
  * lever the hi-jump term watches and the fifth step lever data differ. */
 static void run_pattern17_hi_jump_pierce(PLW* wk, u16 jump_lever, u16 lever_data_b) {
-    switch (CP_Index[wk->wu.id][0]) {
-    case 0:
-        Pierce_On(wk);
-        break;
-
-    case 1:
-        Hi_Jump_Attack_Term(wk, &(Hi_Jump_Term_Args) { -1, 0x40, 8, jump_lever, 0, -0x7FA0, -1, 0x200 });
-        break;
-
-    case 2:
-        Lever_On(wk, 1, 0xffff);
-        break;
-
-    case 3:
-        Normal_Attack(wk, 8, 0x12);
-        break;
-
-    case 4:
-        Normal_Attack(wk, 8, lever_data_b);
-        break;
-
-    case 5:
-        Command_Attack(wk, &(Command_Attack_Args) { 8, 0x1c, 8, -1 });
-        break;
-
-    default:
-        End_Pattern(wk);
-        break;
-    }
+    const Pattern_Step script[6] = { [0] = STEP_NOARG(Pierce_On),
+                                     [1] = STEP(Hi_Jump_Attack_Term, -1, 0x40, 8, jump_lever, 0, -0x7FA0, -1, 0x200),
+                                     [2] = STEP(Lever_On, 1, 0xffff),
+                                     [3] = STEP(Normal_Attack, 8, 0x12),
+                                     [4] = STEP(Normal_Attack, 8, lever_data_b),
+                                     [5] = STEP(Command_Attack, 8, 0x1c, 8, -1) };
+    Run_Pattern(wk, script, 6);
 }
 
 void Pattern17_0075(PLW* wk) {
