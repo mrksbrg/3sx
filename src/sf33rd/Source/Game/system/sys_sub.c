@@ -196,7 +196,7 @@ s16 Check_Count_Cut(s16 PL_id, s16 Limit) {
 }
 
 void Disp_Personal_Count(s16 PL_id, s8 counter) {
-    SSPutDec(&(ScDec){ DE_X[PL_id] + 14, 0, 9, counter }, 0);
+    SSPutDec(&(ScDec) { DE_X[PL_id] + 14, 0, 9, counter }, 0);
 }
 
 void Setup_Play_Type() {
@@ -275,7 +275,7 @@ static void put_score_digits(s16 PL_id, u32 Score_Buff) {
     }
 
     for (i = Coin_Message_Data[3][PL_id] - First_Digit, j = First_Digit; j >= 0; j--, assign3 = i++) {
-        score8x16_put(&(ScoreChar){ i, 0, 8, Digit[j] }, TopHUDPriority);
+        score8x16_put(&(ScoreChar) { i, 0, 8, Digit[j] }, TopHUDPriority);
     }
 }
 
@@ -378,11 +378,11 @@ void Disp_Win_Record_Sub(u16 win_record, s16 zz) {
 
     switch (win_record) {
     case 1:
-        SSPutStr(&(ScStr){ zz, 0, 9, "WIN" }, TopHUDPriority);
+        SSPutStr(&(ScStr) { zz, 0, 9, "WIN" }, TopHUDPriority);
         break;
 
     default:
-        SSPutStr(&(ScStr){ zz, 0, 9, "WINS" }, TopHUDPriority);
+        SSPutStr(&(ScStr) { zz, 0, 9, "WINS" }, TopHUDPriority);
         break;
     }
 
@@ -392,19 +392,19 @@ void Disp_Win_Record_Sub(u16 win_record, s16 zz) {
 
     if (xx > 0) {
         First_Digit = 1;
-        SSPutDec(&(ScDec){ zz - 4, 0, 9, xx }, 1);
+        SSPutDec(&(ScDec) { zz - 4, 0, 9, xx }, 1);
     }
 
     Wins_Buff -= xx * 100;
     xx = Wins_Buff / 10;
 
     if (First_Digit != 0 || xx > 0) {
-        SSPutDec(&(ScDec){ zz - 3, 0, 9, xx }, 1);
+        SSPutDec(&(ScDec) { zz - 3, 0, 9, xx }, 1);
     }
 
     Wins_Buff -= xx * 10;
 
-    SSPutDec(&(ScDec){ zz - 2, 0, 9, Wins_Buff }, 1);
+    SSPutDec(&(ScDec) { zz - 2, 0, 9, Wins_Buff }, 1);
 }
 
 s32 Button_Cut_EX(s16* Timer, s16 Limit_Time) {
@@ -522,24 +522,26 @@ void Meltw(u16* s, u16* d, s32 file_ptr) {
             if (flag >= 0) {
                 *d++ = *s++;
                 file_ptr--;
-            } else {
-                s_len = *s++;
-                s_cnt = s_len >> 11;
-
-                if (s_cnt != 0) {
-                    s_len = s_len & 0x7FF;
-                    file_ptr--;
-                } else {
-                    s_cnt = *s++;
-                    file_ptr -= 2;
-                }
-
-                if (s_len == 0 && s_cnt == 0) {
-                    return;
-                }
-
-                d = meltw_write_run(d, s_len, s_cnt);
+                flag <<= 1;
+                continue;
             }
+
+            s_len = *s++;
+            s_cnt = s_len >> 11;
+
+            if (s_cnt != 0) {
+                s_len = s_len & 0x7FF;
+                file_ptr--;
+            } else {
+                s_cnt = *s++;
+                file_ptr -= 2;
+            }
+
+            if (s_len == 0 && s_cnt == 0) {
+                return;
+            }
+
+            d = meltw_write_run(d, s_len, s_cnt);
 
             flag <<= 1;
         } while (--i);
@@ -1265,8 +1267,8 @@ static void disp_copyright_usa() {
     case 4:
     case 5:
     case 6:
-        xres = SSPutStrPro(&(ScStrPro){ 1, 386, 212, 9, -1, "@CAPCOM U.S.A., INC. 1999, 2004 ALL RIGHTS RESERVED." });
-        SSPutStrPro(&(ScStrPro){ 0, xres, 202, 9, -1, "@CAPCOM CO., LTD. 1999, 2004," });
+        xres = SSPutStrPro(&(ScStrPro) { 1, 386, 212, 9, -1, "@CAPCOM U.S.A., INC. 1999, 2004 ALL RIGHTS RESERVED." });
+        SSPutStrPro(&(ScStrPro) { 0, xres, 202, 9, -1, "@CAPCOM CO., LTD. 1999, 2004," });
         break;
     }
 }
@@ -1278,7 +1280,7 @@ void Disp_Copyright() {
     case 3:
     case 7:
     case 8:
-        SSPutStrPro(&(ScStrPro){ 1, 386, 208, 9, -1, "@CAPCOM CO., LTD. 1999, 2004 ALL RIGHTS RESERVED." });
+        SSPutStrPro(&(ScStrPro) { 1, 386, 208, 9, -1, "@CAPCOM CO., LTD. 1999, 2004 ALL RIGHTS RESERVED." });
         break;
 
     default:
