@@ -165,13 +165,36 @@ static void draw_textured_quad(const Sprite* sprite, unsigned int color) {
     setup_full_screen_scissor(false);
     setup_draw_textured(true);
     sceGuDrawArray(
-        GU_TRIANGLE_STRIP, GU_TEXTURE_16BIT | GU_COLOR_8888 | GU_VERTEX_32BITF | GU_TRANSFORM_2D, 4, 0, vertices
-    );
+        GU_TRIANGLE_STRIP, GU_TEXTURE_16BIT | GU_COLOR_8888 | GU_VERTEX_32BITF | GU_TRANSFORM_2D, 4, 0, vertices);
 }
 
-static void draw_textured_sprite_rect(
-    float x0, float y0, float z0, float s0, float t0, float x1, float y1, float s1, float t1, unsigned int color
-) {
+/* The two corners of a textured sprite rectangle and the colour it is drawn
+ * with, in the order draw_textured_sprite_rect took them. */
+typedef struct {
+    float x0;
+    float y0;
+    float z0;
+    float s0;
+    float t0;
+    float x1;
+    float y1;
+    float s1;
+    float t1;
+    unsigned int color;
+} TexturedSpriteRect;
+
+static void draw_textured_sprite_rect(const TexturedSpriteRect* r) {
+    const float x0 = r->x0;
+    const float y0 = r->y0;
+    const float z0 = r->z0;
+    const float s0 = r->s0;
+    const float t0 = r->t0;
+    const float x1 = r->x1;
+    const float y1 = r->y1;
+    const float s1 = r->s1;
+    const float t1 = r->t1;
+    const unsigned int color = r->color;
+
     const FLTexture* texture = current_texture();
     const float texture_width = (float)texture->width;
     const float texture_height = (float)texture->height;
@@ -418,33 +441,29 @@ void PSPRenderer_DrawTexturedQuad(const Sprite* sprite, unsigned int color) {
 }
 
 void PSPRenderer_DrawSprite(const Sprite* sprite, unsigned int color) {
-    draw_textured_sprite_rect(
-        sprite->v[0].x,
-        sprite->v[0].y,
-        sprite->v[0].z,
-        sprite->t[0].s,
-        sprite->t[0].t,
-        sprite->v[3].x,
-        sprite->v[3].y,
-        sprite->t[3].s,
-        sprite->t[3].t,
-        color
-    );
+    draw_textured_sprite_rect(&(TexturedSpriteRect) { sprite->v[0].x,
+                                                      sprite->v[0].y,
+                                                      sprite->v[0].z,
+                                                      sprite->t[0].s,
+                                                      sprite->t[0].t,
+                                                      sprite->v[3].x,
+                                                      sprite->v[3].y,
+                                                      sprite->t[3].s,
+                                                      sprite->t[3].t,
+                                                      color });
 }
 
 void PSPRenderer_DrawSprite2(const Sprite2* sprite2) {
-    draw_textured_sprite_rect(
-        sprite2->v[0].x,
-        sprite2->v[0].y,
-        sprite2->v[0].z,
-        sprite2->t[0].s,
-        sprite2->t[0].t,
-        sprite2->v[1].x,
-        sprite2->v[1].y,
-        sprite2->t[1].s,
-        sprite2->t[1].t,
-        sprite2->vertex_color
-    );
+    draw_textured_sprite_rect(&(TexturedSpriteRect) { sprite2->v[0].x,
+                                                      sprite2->v[0].y,
+                                                      sprite2->v[0].z,
+                                                      sprite2->t[0].s,
+                                                      sprite2->t[0].t,
+                                                      sprite2->v[1].x,
+                                                      sprite2->v[1].y,
+                                                      sprite2->t[1].s,
+                                                      sprite2->t[1].t,
+                                                      sprite2->vertex_color });
 }
 
 void PSPRenderer_DrawSolidQuad(const Quad* quad, unsigned int color) {
