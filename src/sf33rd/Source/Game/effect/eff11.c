@@ -42,6 +42,12 @@ static s32 can_update_effect(void) {
     return !EXE_flag && !Game_pause && !EXE_obroll;
 }
 
+static void quake_advance_bounce_speed(WORK_Other* ewk) {
+    ewk->wu.old_rno[0]++;
+    ewk->wu.old_rno[0] &= 3;
+    ewk->wu.mvxy.a[1].sp = eff11_quake_speed_y_tbl2[ewk->wu.old_rno[3]][ewk->wu.old_rno[0]];
+}
+
 static void quake_start_bounce_rise(WORK_Other* ewk) {
     ewk->wu.routine_no[2]++;
     set_char_move_init(&ewk->wu, 0, ewk->wu.old_rno[6] + 1);
@@ -142,9 +148,7 @@ static void quake_level_middle_fall(WORK_Other* ewk) {
         if (ewk->wu.xyz[1].disp.pos < ewk->wu.old_rno[2]) {
             quake_start_bounce_rise(ewk);
             ewk->wu.mvxy.a[1].sp >>= ewk->wu.routine_no[2];
-            ewk->wu.old_rno[0]++;
-            ewk->wu.old_rno[0] &= 3;
-            ewk->wu.mvxy.a[1].sp = eff11_quake_speed_y_tbl2[ewk->wu.old_rno[3]][ewk->wu.old_rno[0]];
+            quake_advance_bounce_speed(ewk);
         }
 
         break;
@@ -190,9 +194,7 @@ static void quake_level_large_settle(WORK_Other* ewk) {
         if (ewk->wu.xyz[1].disp.pos < ewk->wu.old_rno[2]) {
             ewk->wu.routine_no[2]++;
             quake_settle_on_floor(ewk);
-            ewk->wu.old_rno[0]++;
-            ewk->wu.old_rno[0] &= 3;
-            ewk->wu.mvxy.a[1].sp = eff11_quake_speed_y_tbl2[ewk->wu.old_rno[3]][ewk->wu.old_rno[0]];
+            quake_advance_bounce_speed(ewk);
             ewk->wu.mvxy.d[1].sp = -0x6000;
         }
 
