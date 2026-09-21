@@ -363,6 +363,18 @@ void end_e00_2000() {
     }
 }
 
+/* What the 3000 fade does once the fade has finished: clear the cut flag, arm the
+ * wipe timer, and take the panel down one step further than its twin does. */
+static void end_e00_3000_finish_fade() {
+    if (end_fade_complete()) {
+        bgw_ptr->r_no_1++;
+        end_no_cut = 0;
+        end_w.timer = 10;
+        overwrite_panel(0xFFFFFFFF, 0x17);
+        Frame_Down(0xC0, 0x30, 0x10);
+    }
+}
+
 /* The fade out to the next scene, and the panel wipe that follows it. */
 static void end_e00_3000_fade() {
     switch (bgw_ptr->r_no_1) {
@@ -375,14 +387,7 @@ static void end_e00_3000_fade() {
         break;
 
     case 4:
-        if (end_fade_complete()) {
-            bgw_ptr->r_no_1++;
-            end_no_cut = 0;
-            end_w.timer = 10;
-            overwrite_panel(0xFFFFFFFF, 0x17);
-            Frame_Down(0xC0, 0x30, 0x10);
-        }
-
+        end_e00_3000_finish_fade();
         break;
 
     case 5:
