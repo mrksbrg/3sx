@@ -178,6 +178,6 @@ s32 effect_50_init(s16 PL_id, s16 Direction, s16 dm_vital) {
     ewk->wu.dmcal_m = EFF50_Correct_Data[Direction - 1][dm_vital][0];
     ewk->wu.dmcal_d = EFF50_Correct_Data[Direction - 1][dm_vital][1];
     ewk->wu.position_z = 30;
-    set_char_move_init2(&ewk->wu, 0, ewk->wu.char_index, ewk->wu.dir_step + 1, 0);
+    set_char_move_init2(&ewk->wu, &(CharMoveInit2){ 0, ewk->wu.char_index, ewk->wu.dir_step + 1, 0 });
     return 0;
 }

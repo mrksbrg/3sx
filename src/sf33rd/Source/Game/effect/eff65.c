@@ -19,9 +19,9 @@ static void eff65_show_pad(WORK_Other* ewk) {
     } else if (ewk->wu.type == Menu_Cursor_X[0]) {
         ewk->wu.routine_no[0] = 2;
         ewk->wu.my_clear_level = 0;
-        set_char_move_init2(&ewk->wu, 0, 0x46, 3, 0);
+        set_char_move_init2(&ewk->wu, &(CharMoveInit2){ 0, 0x46, 3, 0 });
     } else {
-        set_char_move_init2(&ewk->wu, 0, 0x46, 2, 0);
+        set_char_move_init2(&ewk->wu, &(CharMoveInit2){ 0, 0x46, 2, 0 });
     }
 }
 
@@ -31,7 +31,7 @@ static void eff65_track_cursor(WORK_Other* ewk) {
         set_char_move_init(&ewk->wu, 0, 0x46);
     } else if (ewk->wu.type != Menu_Cursor_X[0]) {
         ewk->wu.routine_no[0] = 1;
-        set_char_move_init2(&ewk->wu, 0, 0x46, 2, 0);
+        set_char_move_init2(&ewk->wu, &(CharMoveInit2){ 0, 0x46, 2, 0 });
     } else {
         ewk->wu.my_clear_level = 0;
         char_move(&ewk->wu);

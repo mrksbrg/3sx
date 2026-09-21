@@ -39,7 +39,7 @@ s32 comm_roa(WORK* wk, UNK11* /* unused */) {
         wk->cmoa.pat = 1;
     }
 
-    set_char_move_init2(wk, wk->cmoa.koc, wk->cmoa.ix, wk->cmoa.pat, 0);
+    set_char_move_init2(wk, &(CharMoveInit2){ wk->cmoa.koc, wk->cmoa.ix, wk->cmoa.pat, 0 });
     return 0;
 }
 
@@ -50,13 +50,13 @@ s32 comm_end(WORK* wk, UNK11* ctc) {
 
 s32 comm_jmp(WORK* wk, UNK11* ctc) {
     setup_comm_back(wk);
-    set_char_move_init2(wk, ctc->koc, ctc->ix, ctc->pat, 0);
+    set_char_move_init2(wk, &(CharMoveInit2){ ctc->koc, ctc->ix, ctc->pat, 0 });
     return 0;
 }
 
 s32 comm_jpss(WORK* wk, UNK11* ctc) {
     setup_comm_back(wk);
-    set_char_move_init2(wk, ctc->koc, ctc->ix, ctc->pat, 1);
+    set_char_move_init2(wk, &(CharMoveInit2){ ctc->koc, ctc->ix, ctc->pat, 1 });
     return 0;
 }
 
@@ -64,12 +64,12 @@ s32 comm_jsr(WORK* wk, UNK11* ctc) {
     wk->cmsw.koc = wk->now_koc;
     wk->cmsw.ix = wk->char_index;
     wk->cmsw.pat = (wk->cg_ix / wk->cgd_type) + 2;
-    set_char_move_init2(wk, ctc->koc, ctc->ix, ctc->pat, 0);
+    set_char_move_init2(wk, &(CharMoveInit2){ ctc->koc, ctc->ix, ctc->pat, 0 });
     return 0;
 }
 
 s32 comm_ret(WORK* wk, UNK11* /* unused */) {
-    set_char_move_init2(wk, wk->cmsw.koc, wk->cmsw.ix, wk->cmsw.pat, 0);
+    set_char_move_init2(wk, &(CharMoveInit2){ wk->cmsw.koc, wk->cmsw.ix, wk->cmsw.pat, 0 });
     return 0;
 }
 
@@ -157,7 +157,7 @@ s32 comm_for(WORK* wk, UNK11* ctc) {
 
 s32 comm_nex(WORK* wk, UNK11* ctc) {
     if (wk->cmlp.code && --wk->cmlp.code > 0) {
-        set_char_move_init2(wk, wk->cmlp.koc, wk->cmlp.ix, wk->cmlp.pat, 1);
+        set_char_move_init2(wk, &(CharMoveInit2){ wk->cmlp.koc, wk->cmlp.ix, wk->cmlp.pat, 1 });
         return 0;
     } else {
         return 1;
@@ -170,7 +170,7 @@ s32 comm_for2(WORK* wk, UNK11* ctc) {
 
 s32 comm_nex2(WORK* wk, UNK11* ctc) {
     if (wk->cml2.code && --wk->cml2.code > 0) {
-        set_char_move_init2(wk, wk->cml2.koc, wk->cml2.ix, wk->cml2.pat, 1);
+        set_char_move_init2(wk, &(CharMoveInit2){ wk->cml2.koc, wk->cml2.ix, wk->cml2.pat, 1 });
         return 0;
     } else {
         return 1;
@@ -186,7 +186,7 @@ s32 comm_rja(WORK* wk, UNK11* ctc) {
 
 s32 comm_uja(WORK* wk, UNK11* ctc) {
     setup_comm_back(wk);
-    set_char_move_init2(wk, wk->cmja.koc, wk->cmja.ix, wk->cmja.pat, 0);
+    set_char_move_init2(wk, &(CharMoveInit2){ wk->cmja.koc, wk->cmja.ix, wk->cmja.pat, 0 });
     return 0;
 }
 
@@ -199,7 +199,7 @@ s32 comm_rja2(WORK* wk, UNK11* ctc) {
 
 s32 comm_uja2(WORK* wk, UNK11* ctc) {
     setup_comm_back(wk);
-    set_char_move_init2(wk, wk->cmj2.koc, wk->cmj2.ix, wk->cmj2.pat, 0);
+    set_char_move_init2(wk, &(CharMoveInit2){ wk->cmj2.koc, wk->cmj2.ix, wk->cmj2.pat, 0 });
     return 0;
 }
 
@@ -212,7 +212,7 @@ s32 comm_rja3(WORK* wk, UNK11* ctc) {
 
 s32 comm_uja3(WORK* wk, UNK11* ctc) {
     setup_comm_back(wk);
-    set_char_move_init2(wk, wk->cmj3.koc, wk->cmj3.ix, wk->cmj3.pat, 0);
+    set_char_move_init2(wk, &(CharMoveInit2){ wk->cmj3.koc, wk->cmj3.ix, wk->cmj3.pat, 0 });
     return 0;
 }
 
@@ -225,7 +225,7 @@ s32 comm_rja4(WORK* wk, UNK11* ctc) {
 
 s32 comm_uja4(WORK* wk, UNK11* /* unused */) {
     setup_comm_back(wk);
-    set_char_move_init2(wk, wk->cmj4.koc, wk->cmj4.ix, wk->cmj4.pat, 0);
+    set_char_move_init2(wk, &(CharMoveInit2){ wk->cmj4.koc, wk->cmj4.ix, wk->cmj4.pat, 0 });
     return 0;
 }
 
@@ -238,7 +238,7 @@ s32 comm_rja5(WORK* wk, UNK11* ctc) {
 
 s32 comm_uja5(WORK* wk, UNK11* /* unused */) {
     setup_comm_back(wk);
-    set_char_move_init2(wk, wk->cmj5.koc, wk->cmj5.ix, wk->cmj5.pat, 0);
+    set_char_move_init2(wk, &(CharMoveInit2){ wk->cmj5.koc, wk->cmj5.ix, wk->cmj5.pat, 0 });
     return 0;
 }
 
@@ -251,7 +251,7 @@ s32 comm_rja6(WORK* wk, UNK11* ctc) {
 
 s32 comm_uja6(WORK* wk, UNK11* ctc) {
     setup_comm_back(wk);
-    set_char_move_init2(wk, wk->cmj6.koc, wk->cmj6.ix, wk->cmj6.pat, 0);
+    set_char_move_init2(wk, &(CharMoveInit2){ wk->cmj6.koc, wk->cmj6.ix, wk->cmj6.pat, 0 });
     return 0;
 }
 
@@ -264,7 +264,7 @@ s32 comm_rja7(WORK* wk, UNK11* ctc) {
 
 s32 comm_uja7(WORK* wk, UNK11* ctc) {
     setup_comm_back(wk);
-    set_char_move_init2(wk, wk->cmj7.koc, wk->cmj7.ix, wk->cmj7.pat, 0);
+    set_char_move_init2(wk, &(CharMoveInit2){ wk->cmj7.koc, wk->cmj7.ix, wk->cmj7.pat, 0 });
     return 0;
 }
 
@@ -277,7 +277,7 @@ s32 comm_rmja(WORK* wk, UNK11* ctc) {
 
 s32 comm_umja(WORK* wk, UNK11* /* unused */) {
     setup_comm_back(wk);
-    set_char_move_init2(wk, wk->cmms.koc, wk->cmms.ix, wk->cmms.pat, 0);
+    set_char_move_init2(wk, &(CharMoveInit2){ wk->cmms.koc, wk->cmms.ix, wk->cmms.pat, 0 });
     return 0;
 }
 
@@ -463,7 +463,7 @@ static s32 jump_on_waza_flag(WORK* wk, UNK11* ctc, s32 waza_index) {
     if (wk->work_id == 1) {
         if (wcp[wk->id].waza_flag[waza_index]) {
             setup_comm_back(wk);
-            set_char_move_init2(wk, ctc->koc, ctc->ix, ctc->pat, 1);
+            set_char_move_init2(wk, &(CharMoveInit2){ ctc->koc, ctc->ix, ctc->pat, 1 });
             return 0;
         }
 
@@ -472,7 +472,7 @@ static s32 jump_on_waza_flag(WORK* wk, UNK11* ctc, s32 waza_index) {
 
     if (wcp[((WORK_Other*)wk)->master_id & 1].waza_flag[waza_index]) {
         setup_comm_back(wk);
-        set_char_move_init2(wk, ctc->koc, ctc->ix, ctc->pat, 1);
+        set_char_move_init2(wk, &(CharMoveInit2){ ctc->koc, ctc->ix, ctc->pat, 1 });
         return 0;
     }
 
@@ -582,7 +582,7 @@ s32 comm_iflb(WORK* wk, UNK11* ctc) {
 }
 
 s32 comm_back(WORK* wk, UNK11* /* unused */) {
-    set_char_move_init2(wk, wk->cmbk.koc, wk->cmbk.ix, wk->cmbk.pat, 0);
+    set_char_move_init2(wk, &(CharMoveInit2){ wk->cmbk.koc, wk->cmbk.ix, wk->cmbk.pat, 0 });
     return 0;
 }
 
@@ -1021,7 +1021,7 @@ s32 comm_ifs2(WORK* wk, UNK11* ctc) {
 }
 
 s32 comm_abbak(WORK* wk, UNK11* /* unused */) {
-    set_char_move_init2(wk, wk->cmb3.koc, wk->cmb3.ix, wk->cmb3.pat, 0);
+    set_char_move_init2(wk, &(CharMoveInit2){ wk->cmb3.koc, wk->cmb3.ix, wk->cmb3.pat, 0 });
     return 0;
 }
 
@@ -1067,7 +1067,7 @@ s32 comm_rhsja(PLW* wk, UNK11* ctc) {
 s32 comm_uhsja(PLW* wk, UNK11* /* unused */) {
     setup_comm_back(&wk->wu);
     wk->hsjp_ok = 0;
-    set_char_move_init2(&wk->wu, wk->wu.cmhs.koc, wk->wu.cmhs.ix, wk->wu.cmhs.pat, 0);
+    set_char_move_init2(&wk->wu, &(CharMoveInit2){ wk->wu.cmhs.koc, wk->wu.cmhs.ix, wk->wu.cmhs.pat, 0 });
     return 0;
 }
 

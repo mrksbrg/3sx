@@ -54,7 +54,7 @@ void eff36_move00(WORK_Other* ewk) {
     case 0:
         ewk->wu.routine_no[2] += 1;
         ewk->wu.disp_flag = 1;
-        set_char_move_init2(&ewk->wu, 0, ewk->wu.old_rno[0], ewk->wu.char_index, 0);
+        set_char_move_init2(&ewk->wu, &(CharMoveInit2){ 0, ewk->wu.old_rno[0], ewk->wu.char_index, 0 });
         ewk->wu.my_mr_flag = 1;
         ewk->wu.my_mr.size.x = 63;
         ewk->wu.my_mr.size.y = 63;
@@ -105,7 +105,7 @@ static void run_eff36_move(WORK_Other* ewk, void (*initialize)(WORK_Other*), voi
     case 0:
         ewk->wu.routine_no[2] += 1;
         ewk->wu.disp_flag = 1;
-        set_char_move_init2(&ewk->wu, 0, ewk->wu.old_rno[0], ewk->wu.char_index, 0);
+        set_char_move_init2(&ewk->wu, &(CharMoveInit2){ 0, ewk->wu.old_rno[0], ewk->wu.char_index, 0 });
         initialize(ewk);
         ewk->wu.my_col_code = 0;
         break;
@@ -161,7 +161,7 @@ static void advance_eff36_sequence(WORK_Other* ewk, s16 char_index) {
     ewk->wu.routine_no[2] += 1;
     ewk->wu.disp_flag = 1;
     ewk->wu.old_rno[6] = 4;
-    set_char_move_init2(&ewk->wu, 0, ewk->wu.old_rno[0], char_index, 0);
+    set_char_move_init2(&ewk->wu, &(CharMoveInit2){ 0, ewk->wu.old_rno[0], char_index, 0 });
 }
 
 static void initialize_eff36_sequence(WORK_Other* ewk) {
@@ -230,7 +230,7 @@ void eff36_move06(WORK_Other* ewk) {
     case 0:
         ewk->wu.routine_no[2] += 1;
         ewk->wu.disp_flag = 1;
-        set_char_move_init2(&ewk->wu, 0, ewk->wu.old_rno[0], ewk->wu.char_index, 0);
+        set_char_move_init2(&ewk->wu, &(CharMoveInit2){ 0, ewk->wu.old_rno[0], ewk->wu.char_index, 0 });
         push_color_trans_req((ewk->wu.my_col_code & 0x1FF) + 0x15, 8);
         push_color_trans_req((ewk->wu.my_col_code & 0x1FF) + 0x16, 9);
         ewk->wu.my_col_code = 8;

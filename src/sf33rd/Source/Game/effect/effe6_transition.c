@@ -50,7 +50,7 @@ void effe6_0019(WORK_Other* ewk) {
             ewk->wu.routine_no[1]++;
             ewk->wu.xyz[0].disp.pos = 496;
             ewk->wu.xyz[1].disp.pos = 16;
-            set_char_move_init2(&ewk->wu, 0, 37, 1, 0);
+            set_char_move_init2(&ewk->wu, &(CharMoveInit2){ 0, 37, 1, 0 });
         }
 
         disp_pos_trans_entry(ewk);
@@ -63,7 +63,7 @@ void effe6_0019(WORK_Other* ewk) {
             ewk->wu.routine_no[1]++;
             ewk->wu.xyz[0].disp.pos = 416;
             ewk->wu.xyz[1].disp.pos = 48;
-            set_char_move_init2(&ewk->wu, 0, 37, 1, 0);
+            set_char_move_init2(&ewk->wu, &(CharMoveInit2){ 0, 37, 1, 0 });
         }
 
         disp_pos_trans_entry(ewk);

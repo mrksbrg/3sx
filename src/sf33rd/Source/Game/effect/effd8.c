@@ -90,7 +90,7 @@ static void d8_follow_cursor(WORK_Other* ewk) {
         }
 
         Setup_EffD8_Pos(ewk, offset_x);
-        set_char_move_init2(&ewk->wu, 0, ewk->wu.char_index, (ewk->wu.cg_ix / ewk->wu.cgd_type) + 1, 0);
+        set_char_move_init2(&ewk->wu, &(CharMoveInit2){ 0, ewk->wu.char_index, (ewk->wu.cg_ix / ewk->wu.cgd_type) + 1, 0 });
     }
 
     if (Sel_PL_Complete[ewk->master_id]) {

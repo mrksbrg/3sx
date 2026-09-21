@@ -75,6 +75,6 @@ s32 effect_91_init(const Effect91Init* p) {
     ewk->wu.position_x = bg_w.bgw[ewk->wu.my_family - 1].wxy[0].disp.pos + EFF91_Pos_Data[p->master_id][ewk->wu.type][0];
     ewk->wu.position_y = bg_w.bgw[ewk->wu.my_family - 1].wxy[1].disp.pos + EFF91_Pos_Data[p->master_id][ewk->wu.type][1];
     ewk->wu.position_z = 68;
-    set_char_move_init2(&ewk->wu, 0, p->char_ix, p->char_ix2 + 1, 0);
+    set_char_move_init2(&ewk->wu, &(CharMoveInit2){ 0, p->char_ix, p->char_ix2 + 1, 0 });
     return 0;
 }

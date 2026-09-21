@@ -66,7 +66,7 @@ void EFF39_SUDDENLY(WORK_Other* ewk) {
         bg_w.bgw[ewk->wu.my_family - 1].wxy[0].disp.pos + Name_Pos_Data[ewk->master_id][1][ewk->wu.dir_step][0];
     ewk->wu.xyz[1].disp.pos =
         bg_w.bgw[ewk->wu.my_family - 1].wxy[1].disp.pos + Name_Pos_Data[ewk->master_id][1][ewk->wu.dir_step][1];
-    set_char_move_init2(&ewk->wu, 0, ewk->wu.char_index, ewk->wu.dir_step + 1, 0);
+    set_char_move_init2(&ewk->wu, &(CharMoveInit2){ 0, ewk->wu.char_index, ewk->wu.dir_step + 1, 0 });
 }
 
 static void finish_slide_in(WORK_Other* ewk) {
@@ -106,7 +106,7 @@ static void start_slide_in(WORK_Other* ewk) {
             bg_w.bgw[ewk->wu.my_family - 1].wxy[1].disp.pos + Get_Pos39(ewk, ewk->wu.dir_step, 1);
     }
 
-    set_char_move_init2(&ewk->wu, 0, (s16)(ewk->wu.char_index), (ewk->wu.dir_step) + 1, 0);
+    set_char_move_init2(&ewk->wu, &(CharMoveInit2){ 0, (s16)(ewk->wu.char_index), (ewk->wu.dir_step) + 1, 0 });
 }
 
 void EFF39_SLIDE_IN(WORK_Other* ewk) {
@@ -226,7 +226,7 @@ if (is_selection_ready(ewk)) {
                 bg_w.bgw[ewk->wu.my_family - 1].wxy[0].disp.pos + Get_Pos39(ewk, ewk->wu.dir_step, 0);
             ewk->wu.xyz[1].disp.pos =
                 bg_w.bgw[ewk->wu.my_family - 1].wxy[1].disp.pos + Get_Pos39(ewk, ewk->wu.dir_step, 1);
-            set_char_move_init2(&ewk->wu, 0, ewk->wu.char_index, ewk->wu.dir_step + 1, 0);
+            set_char_move_init2(&ewk->wu, &(CharMoveInit2){ 0, ewk->wu.char_index, ewk->wu.dir_step + 1, 0 });
         }
 
         if (Sel_PL_Complete[ewk->master_id]) {

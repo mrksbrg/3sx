@@ -371,7 +371,7 @@ void eff09_2000(WORK_Other* ewk) {
             if (hit_check_subroutine(&hit_pl->wu, &ewk->wu, pl_hit_ptr, sean_ball_hit)) {
                 ewk->wu.routine_no[1]++;
                 ball_bound_set(ewk);
-                set_char_move_init2(&hit_pl->wu, 9, 63, 1, 0);
+                set_char_move_init2(&hit_pl->wu, &(CharMoveInit2){ 9, 63, 1, 0 });
                 Appear_free[ewk->master_id] = 2;
                 effect_B4_init(ewk);
                 work = random_16();
@@ -1189,7 +1189,7 @@ static void advance_eff09_27000_landing(WORK_Other* ewk) {
                 ewk->wu.mvxy.a[0].sp = -ewk->wu.mvxy.a[0].sp;
             }
 
-            set_char_move_init2(&ewk->wu, 0, 107, 2, 0);
+            set_char_move_init2(&ewk->wu, &(CharMoveInit2){ 0, 107, 2, 0 });
         }
     }
 }

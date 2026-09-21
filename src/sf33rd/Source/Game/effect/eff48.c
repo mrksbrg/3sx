@@ -37,7 +37,7 @@ void eff48_0000(WORK_Other* ewk) {
     case 0:
         ewk->wu.routine_no[1] += 1;
         ewk->wu.disp_flag = 1;
-        set_char_move_init2(&ewk->wu, 0, ewk->wu.old_rno[0], ewk->wu.char_index, 0);
+        set_char_move_init2(&ewk->wu, &(CharMoveInit2){ 0, ewk->wu.old_rno[0], ewk->wu.char_index, 0 });
         /* fallthrough */
 
     case 1:
@@ -91,7 +91,7 @@ void eff48_1000(WORK_Other* ewk) {
         ewk->wu.routine_no[1] += 1;
         op_scrn_end = 0;
         ewk->wu.disp_flag = 1;
-        set_char_move_init2(&ewk->wu, 0, ewk->wu.old_rno[0], ewk->wu.char_index, 0);
+        set_char_move_init2(&ewk->wu, &(CharMoveInit2){ 0, ewk->wu.old_rno[0], ewk->wu.char_index, 0 });
         ewk->wu.old_rno[3] = 10;
         cal_all_speed_data(
             &ewk->wu, &(Motion_Target) { ewk->wu.old_rno[3], ewk->wu.xyz[0].disp.pos, ewk->wu.old_rno[2], 2, 2 }

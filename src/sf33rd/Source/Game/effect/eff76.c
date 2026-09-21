@@ -134,7 +134,7 @@ void EFF76_SLIDE_IN(WORK_Other* ewk) {
         if (!--Order_Timer[ewk->wu.dir_old]) {
             ewk->wu.routine_no[1]++;
             ewk->wu.disp_flag = 1;
-            set_char_move_init2(&ewk->wu, 0, ewk->wu.char_index, ewk->wu.dir_step + 1, 0);
+            set_char_move_init2(&ewk->wu, &(CharMoveInit2){ 0, ewk->wu.char_index, ewk->wu.dir_step + 1, 0 });
         }
 
         break;
@@ -171,7 +171,7 @@ static void show_sudden_effect(WORK_Other* ewk) {
         break;
     }
 
-    set_char_move_init2(&ewk->wu, 0, ewk->wu.char_index, ewk->wu.dir_step + 1, 0);
+    set_char_move_init2(&ewk->wu, &(CharMoveInit2){ 0, ewk->wu.char_index, ewk->wu.dir_step + 1, 0 });
 }
 
 void EFF76_SUDDENLY(WORK_Other* ewk) {
@@ -223,7 +223,7 @@ void EFF76_BEFORE(WORK_Other* ewk) {
     ewk->wu.routine_no[0] = 0;
     ewk->wu.routine_no[1] = 0;
     Order[ewk->wu.dir_old] = 0;
-    set_char_move_init2(&ewk->wu, 0, ewk->wu.char_index, ewk->wu.dir_step + 1, 0);
+    set_char_move_init2(&ewk->wu, &(CharMoveInit2){ 0, ewk->wu.char_index, ewk->wu.dir_step + 1, 0 });
 }
 
 void EFF76_SHIFT(WORK_Other* ewk) {

@@ -114,7 +114,7 @@ void quake_level_middle(WORK_Other* ewk) {
 
         if (ewk->wu.mvxy.a[1].sp < 0) {
             ewk->wu.routine_no[2]++;
-            set_char_move_init2(&ewk->wu, 0, ewk->wu.old_rno[6] + 1, 13, 0);
+            set_char_move_init2(&ewk->wu, &(CharMoveInit2){ 0, ewk->wu.old_rno[6] + 1, 13, 0 });
             ewk->wu.old_rno[0] = 0;
         }
 
@@ -173,7 +173,7 @@ void quake_level_large(WORK_Other* ewk) {
 
         if (ewk->wu.mvxy.a[1].sp < 0) {
             ewk->wu.routine_no[2]++;
-            set_char_move_init2(&ewk->wu, 0, ewk->wu.old_rno[6] + 1, 13, 0);
+            set_char_move_init2(&ewk->wu, &(CharMoveInit2){ 0, ewk->wu.old_rno[6] + 1, 13, 0 });
             break;
         }
 
@@ -212,7 +212,7 @@ void quake_level_large(WORK_Other* ewk) {
 
         if (ewk->wu.mvxy.a[1].sp < 0) {
             ewk->wu.routine_no[2]++;
-            set_char_move_init2(&ewk->wu, 0, ewk->wu.old_rno[6] + 3, 7, 0);
+            set_char_move_init2(&ewk->wu, &(CharMoveInit2){ 0, ewk->wu.old_rno[6] + 3, 7, 0 });
         }
 
         break;
@@ -245,7 +245,7 @@ void quake_level_large(WORK_Other* ewk) {
 
         if (ewk->wu.mvxy.a[1].sp < 0) {
             ewk->wu.routine_no[2]++;
-            set_char_move_init2(&ewk->wu, 0, ewk->wu.old_rno[6] + 3, 7, 0);
+            set_char_move_init2(&ewk->wu, &(CharMoveInit2){ 0, ewk->wu.old_rno[6] + 3, 7, 0 });
         }
 
         break;

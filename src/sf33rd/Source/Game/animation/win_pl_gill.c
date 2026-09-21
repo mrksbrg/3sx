@@ -134,7 +134,7 @@ void jijii_jump(PLW* wk) {
 
     case 2:
         win_rno[1]++;
-        set_char_move_init2(&wk->wu, 9, 36, 7, 0);
+        set_char_move_init2(&wk->wu, &(CharMoveInit2){ 9, 36, 7, 0 });
         win_free[wk->wu.id] = 48;
         break;
 

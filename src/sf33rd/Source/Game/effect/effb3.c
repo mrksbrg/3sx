@@ -102,7 +102,7 @@ void round_move_init(WORK_Other* ewk) {
         ewk->wu.routine_no[1] += 1;
         ewk->wu.disp_flag = 1;
         ewk->wu.my_mr_flag = 1;
-        set_char_move_init2(&ewk->wu, 0, 2, 1, 0);
+        set_char_move_init2(&ewk->wu, &(CharMoveInit2){ 0, 2, 1, 0 });
         /* fallthrough */
 
     case 1:
@@ -123,12 +123,12 @@ void round_move(WORK_Other* ewk) {
             ewk->wu.xyz[0].disp.pos = bg_w.bgw[ewk->wu.my_family - 1].position_x + bg_w.pos_offset;
             ewk->wu.xyz[0].disp.pos -= 96;
             ewk->wu.xyz[1].disp.pos = 144;
-            set_char_move_init2(&ewk->wu, 0, 2, 4, 0);
+            set_char_move_init2(&ewk->wu, &(CharMoveInit2){ 0, 2, 4, 0 });
         } else {
             Sound_SE(oya_adrs->wu.dir_old);
             ewk->wu.xyz[0].disp.pos = bg_w.bgw[ewk->wu.my_family - 1].position_x + bg_w.pos_offset;
             ewk->wu.xyz[0].disp.pos -= 32;
-            set_char_move_init2(&ewk->wu, 0, 2, 2, 0);
+            set_char_move_init2(&ewk->wu, &(CharMoveInit2){ 0, 2, 2, 0 });
         }
 
         /* fallthrough */
@@ -145,7 +145,7 @@ void fight_move(WORK_Other* ewk) {
     switch (ewk->wu.routine_no[1]) {
     case 0:
         ewk->wu.routine_no[1] += 1;
-        set_char_move_init2(&ewk->wu, 0, 2, 5, 0);
+        set_char_move_init2(&ewk->wu, &(CharMoveInit2){ 0, 2, 5, 0 });
         ewk->wu.my_mr.size.x = 63;
         ewk->wu.my_mr.size.y = 0;
         ewk->wu.xyz[0].disp.pos = bg_w.bgw[ewk->wu.my_family - 1].position_x + bg_w.pos_offset;
@@ -170,7 +170,7 @@ void fight_vanish(WORK_Other* ewk) {
     switch (ewk->wu.routine_no[1]) {
     case 0:
         ewk->wu.routine_no[1] += 1;
-        set_char_move_init2(&ewk->wu, 0, 4, 1, 0);
+        set_char_move_init2(&ewk->wu, &(CharMoveInit2){ 0, 4, 1, 0 });
         disp_pos_trans_entry5(ewk);
         ewk->wu.my_col_code = 0x52;
         ewk->wu.extra_col = 0;

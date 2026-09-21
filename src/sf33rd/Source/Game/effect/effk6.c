@@ -112,7 +112,7 @@ static void initialize_slide_in_K6(WORK_Other* ewk) {
         }
     }
 
-    set_char_move_init2(&ewk->wu, 0, ewk->wu.char_index, ewk->wu.dir_step + 1, 0);
+    set_char_move_init2(&ewk->wu, &(CharMoveInit2){ 0, ewk->wu.char_index, ewk->wu.dir_step + 1, 0 });
 }
 
 static void update_slide_in_motion_K6(WORK_Other* ewk) {
@@ -205,7 +205,7 @@ static void initialize_sudden_K6(WORK_Other* ewk) {
     xx = Setup_K6_Index(ewk);
     ewk->wu.xyz[0].disp.pos = bg_w.bgw[ewk->wu.my_family - 1].wxy[0].disp.pos + Get_PosK6(ewk, xx, 0, 1);
     ewk->wu.xyz[1].disp.pos = bg_w.bgw[ewk->wu.my_family - 1].wxy[1].disp.pos + Get_PosK6(ewk, xx, 1, 1);
-    set_char_move_init2(&ewk->wu, 0, ewk->wu.char_index, ewk->wu.dir_step + 1, 0);
+    set_char_move_init2(&ewk->wu, &(CharMoveInit2){ 0, ewk->wu.char_index, ewk->wu.dir_step + 1, 0 });
 }
 
 void EFFK6_SUDDENLY(WORK_Other* ewk) {
@@ -253,7 +253,7 @@ static void update_name_selection_K6(WORK_Other* ewk) {
             bg_w.bgw[ewk->wu.my_family - 1].wxy[1].disp.pos + Get_PosK6(ewk, ewk->wu.dir_step, 1, Play_Type);
 
         if (ewk->wu.direction == 19) {
-            set_char_move_init2(&ewk->wu, 0, ewk->wu.char_index, (ewk->wu.dir_step) + 1, 0);
+            set_char_move_init2(&ewk->wu, &(CharMoveInit2){ 0, ewk->wu.char_index, (ewk->wu.dir_step) + 1, 0 });
         }
     }
 
@@ -310,7 +310,7 @@ s32 effect_K6_init(s16 PL_id, s16 dir_old, s16 dm_vital, s16 Target_BG) {
     ewk->wu.my_mts = 13;
     ewk->wu.my_trans_mode = get_my_trans_mode(ewk->wu.my_mts);
     Setup_CharK6(ewk, dm_vital);
-    set_char_move_init2(&ewk->wu, 0, ewk->wu.char_index, ewk->wu.dir_step + 1, 0);
+    set_char_move_init2(&ewk->wu, &(CharMoveInit2){ 0, ewk->wu.char_index, ewk->wu.dir_step + 1, 0 });
     return 0;
 }
 

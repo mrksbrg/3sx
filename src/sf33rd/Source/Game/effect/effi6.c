@@ -52,7 +52,7 @@ void effi6_line_move(WORK_Other* ewk) {
         ewk->wu.my_mr_flag = 1;
         ewk->wu.my_mr.size.x = 0;
         ewk->wu.my_mr.size.y = 0;
-        set_char_move_init2(&ewk->wu, 0, 2, 3, 0);
+        set_char_move_init2(&ewk->wu, &(CharMoveInit2){ 0, 2, 3, 0 });
         /* fallthrough */
 
     case 1:

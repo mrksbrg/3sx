@@ -56,7 +56,7 @@ void effect_L7_move(WORK_Other* ewk) {
 
 static void effl7_start_drift(WORK_Other* ewk) {
     ewk->wu.routine_no[1] += 1;
-    set_char_move_init2(&ewk->wu, 0, 0, 3, 1);
+    set_char_move_init2(&ewk->wu, &(CharMoveInit2){ 0, 0, 3, 1 });
 
     if (ewk->wu.rl_flag) {
         ewk->wu.mvxy.a[0].sp = 0x20000;

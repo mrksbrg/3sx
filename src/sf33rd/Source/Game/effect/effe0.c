@@ -204,6 +204,6 @@ s32 effect_E0_init(s16 Direction, s16 dm_vital, s16 Pos_Type) {
         Setup_Char_E0(ewk);
     }
 
-    set_char_move_init2(&ewk->wu, 0, ewk->wu.char_index, ewk->wu.dir_step + 1, 0);
+    set_char_move_init2(&ewk->wu, &(CharMoveInit2){ 0, ewk->wu.char_index, ewk->wu.dir_step + 1, 0 });
     return 0;
 }

@@ -24,14 +24,14 @@ const s16 eff95_data_tbl[10][4] = { { 0, 0, 0, 0 }, { 0, 0, 1, 1 }, { 2, 2, 3, 3
 static void show_finished_countdown_95(WORK_Other* ewk) {
     ewk->wu.routine_no[0] = 3;
     ewk->wu.dir_step = 0;
-    set_char_move_init2(&ewk->wu, 0, ewk->wu.char_index, ewk->wu.dir_step + 1, 0);
+    set_char_move_init2(&ewk->wu, &(CharMoveInit2){ 0, ewk->wu.char_index, ewk->wu.dir_step + 1, 0 });
 }
 
 static void show_continue_number_95(WORK_Other* ewk) {
     ewk->wu.old_rno[5] = 6;
     ewk->wu.old_rno[6] = 6;
     ewk->wu.dir_step = 9;
-    set_char_move_init2(&ewk->wu, 0, ewk->wu.char_index, ewk->wu.dir_step + 1, 0);
+    set_char_move_init2(&ewk->wu, &(CharMoveInit2){ 0, ewk->wu.char_index, ewk->wu.dir_step + 1, 0 });
 }
 
 static void update_changed_count_95(WORK_Other* ewk) {
@@ -59,7 +59,7 @@ static void update_decreasing_count_95(WORK_Other* ewk) {
             ewk->wu.dir_step = 0;
         }
 
-        set_char_move_init2(&ewk->wu, 0, ewk->wu.char_index, ewk->wu.dir_step + 1, 0);
+        set_char_move_init2(&ewk->wu, &(CharMoveInit2){ 0, ewk->wu.char_index, ewk->wu.dir_step + 1, 0 });
     }
 }
 
@@ -72,7 +72,7 @@ static void update_table_count_95(WORK_Other* ewk) {
 
     RND_95 = (random_16() >> 1) & 3;
     ewk->wu.dir_step = eff95_data_tbl[ewk->wu.old_rno[6]][RND_95];
-    set_char_move_init2(&ewk->wu, 0, ewk->wu.char_index, ewk->wu.dir_step + 1, 0);
+    set_char_move_init2(&ewk->wu, &(CharMoveInit2){ 0, ewk->wu.char_index, ewk->wu.dir_step + 1, 0 });
 }
 
 static void update_random_count_95(WORK_Other* ewk) {
@@ -84,7 +84,7 @@ static void update_random_count_95(WORK_Other* ewk) {
     }
 
     ewk->wu.dir_step = RND_95;
-    set_char_move_init2(&ewk->wu, 0, ewk->wu.char_index, ewk->wu.dir_step + 1, 0);
+    set_char_move_init2(&ewk->wu, &(CharMoveInit2){ 0, ewk->wu.char_index, ewk->wu.dir_step + 1, 0 });
 }
 
 static void update_steady_count_95(WORK_Other* ewk) {
@@ -123,7 +123,7 @@ void effect_95_move(WORK_Other* ewk) {
         }
 
         ewk->wu.disp_flag = 1;
-        set_char_move_init2(&ewk->wu, 0, ewk->wu.char_index, ewk->wu.dir_step + 1, 0);
+        set_char_move_init2(&ewk->wu, &(CharMoveInit2){ 0, ewk->wu.char_index, ewk->wu.dir_step + 1, 0 });
         break;
 
     case 1:

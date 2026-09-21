@@ -19,7 +19,16 @@ void check_cgd_patdat(WORK* wk);
 void set_jugde_area(WORK* wk);
 void set_new_attnum(WORK* wk);
 void set_char_move_init(WORK* wk, s16 koc, s16 index);
-void set_char_move_init2(WORK* wk, s16 koc, s16 index, s16 ip, s16 scf);
+/* The four values set_char_move_init2 takes after the work pointer, in its own
+ * parameter order. */
+typedef struct {
+    s16 koc;
+    s16 index;
+    s16 ip;
+    s16 scf;
+} CharMoveInit2;
+
+void set_char_move_init2(WORK* wk, const CharMoveInit2* args);
 void char_move_z(WORK* wk);
 void char_move_wca(WORK* wk);
 void char_move_wca_init(WORK* wk);

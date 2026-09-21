@@ -321,7 +321,7 @@ static void launch_appear_05000(PLW* wk) {
 
 static void land_appear_05000(PLW* wk) {
     wk->wu.routine_no[3]++;
-    set_char_move_init2(&wk->wu, 9, 0x17, 9, 0);
+    set_char_move_init2(&wk->wu, &(CharMoveInit2){ 9, 0x17, 9, 0 });
 
     if (wk->wu.id) {
         wk->wu.xyz[0].disp.pos = bg_w.bgw[1].pos_x_work + 0x58;
@@ -834,7 +834,7 @@ void Appear_12000(PLW* wk) {
         if (app_counter[wk->wu.id] <= 0) {
             wk->wu.routine_no[3]++;
             wk->wu.xyz[1].cal = 0;
-            set_char_move_init2(&wk->wu, 9, 12, 19, 0);
+            set_char_move_init2(&wk->wu, &(CharMoveInit2){ 9, 12, 19, 0 });
             Appear_end++;
             return;
         }
@@ -859,7 +859,7 @@ static void begin_appear_13000(PLW* wk) {
     wk->wu.routine_no[3]++;
     wk->wu.disp_flag = 1;
     bg_app_stop = 1;
-    set_char_move_init2(&wk->wu, 9, 0x3D, 4, 0);
+    set_char_move_init2(&wk->wu, &(CharMoveInit2){ 9, 0x3D, 4, 0 });
     wk->wu.mvxy.a[1].sp = 0x78000;
     wk->wu.mvxy.d[1].sp = -0x3000;
     wk->wu.kage_flag = 0;
@@ -910,7 +910,7 @@ static void step_appear_14000_partner(PLW* wk, s16 id_w) {
 
     case 1:
         work = wk->wu.cg_ix / wk->wu.cgd_type;
-        set_char_move_init2(&wk->wu, 0, 0, work + 1, 0);
+        set_char_move_init2(&wk->wu, &(CharMoveInit2){ 0, 0, work + 1, 0 });
         wk->wu.routine_no[2] = 1;
         wk->wu.routine_no[3] = 1;
         Appear_end += 1;
@@ -1201,7 +1201,7 @@ static void launch_appear_19000(PLW* wk) {
     wk->wu.my_mr.size.x = 0x3F;
     wk->wu.my_mr.size.y = 0x3F;
 
-    set_char_move_init2(&wk->wu, 9, 0x3D, 4, 0);
+    set_char_move_init2(&wk->wu, &(CharMoveInit2){ 9, 0x3D, 4, 0 });
 
     appear_work[wk->wu.id] = 0x20;
 

@@ -301,7 +301,7 @@ static void start_win_04000_normal_pose(PLW* wk, s16 work) {
         if (wk->wu.now_koc == 0 && wk->wu.char_index == 0) {
             work2 = wk->wu.cg_ix / wk->wu.cgd_type;
             work2 += 2;
-            set_char_move_init2(&wk->wu, 9, work + 32, work2, 0);
+            set_char_move_init2(&wk->wu, &(CharMoveInit2){ 9, work + 32, work2, 0 });
         } else {
             set_char_move_init(&wk->wu, 9, work + 32);
         }
