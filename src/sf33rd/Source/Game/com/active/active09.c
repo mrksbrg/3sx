@@ -4,6 +4,7 @@
  */
 
 #include "sf33rd/Source/Game/com/active/active09.h"
+#include "sf33rd/Source/Game/com/patterns/com_pattern_run.h"
 #include "sf33rd/Source/Game/com/patterns/com_patterns.h"
 #include "common.h"
 #include "sf33rd/Source/Game/com/com_sub.h"
@@ -112,23 +113,11 @@ void Pattern09_0019(PLW* wk) {
 }
 
 void Pattern09_0020(PLW* wk) {
-    switch (CP_Index[wk->wu.id][0]) {
-    case 0:
-        Pierce_On(wk);
-        break;
-
-    case 1:
-        Lever_On(wk, 1, 2);
-        break;
-
-    case 2:
-        Com_Random_Select(wk, &(Branch_Menu_Args){2, 0x41, 0x42, 0x43, 0x44}, 1);
-        break;
-
-    default:
-        End_Pattern(wk);
-        break;
-    }
+    const Pattern_Step script[3] = { [0] = STEP_NOARG(Pierce_On),
+                                     [1] = STEP(Lever_On, 1, 2),
+                                     [2] = STEP(
+                                         Com_Random_Select, &(Branch_Menu_Args) { 2, 0x41, 0x42, 0x43, 0x44 }, 1) };
+    Run_Pattern(wk, script, 3);
 }
 
 void Pattern09_0021(PLW* wk) {
@@ -168,43 +157,17 @@ void Pattern09_0028(PLW* wk) {
 }
 
 void Pattern09_0029(PLW* wk) {
-    switch (CP_Index[wk->wu.id][0]) {
-    case 0:
-        EM_Term(wk, &(EM_Term_Params){-0x7FB0, -1, 5, 1, -1});
-        break;
-
-    case 1:
-        Adjust_Attack(wk, 9, 0x100);
-        break;
-
-    case 2:
-        Command_Attack(wk, &(Command_Attack_Args){8, 0x1E, 9, -1});
-        break;
-
-    default:
-        End_Pattern(wk);
-        break;
-    }
+    const Pattern_Step script[3] = { [0] = STEP(EM_Term, -0x7FB0, -1, 5, 1, -1),
+                                     [1] = STEP(Adjust_Attack, 9, 0x100),
+                                     [2] = STEP(Command_Attack, 8, 0x1E, 9, -1) };
+    Run_Pattern(wk, script, 3);
 }
 
 void Pattern09_0030(PLW* wk) {
-    switch (CP_Index[wk->wu.id][0]) {
-    case 0:
-        EM_Term(wk, &(EM_Term_Params){-0x7FB0, -1, 5, 1, -1});
-        break;
-
-    case 1:
-        Adjust_Attack(wk, 9, 0x100);
-        break;
-
-    case 2:
-        Lever_Attack(wk, 8, 0, 0x40);
-        break;
-
-    default:
-        End_Pattern(wk);
-        break;
-    }
+    const Pattern_Step script[3] = { [0] = STEP(EM_Term, -0x7FB0, -1, 5, 1, -1),
+                                     [1] = STEP(Adjust_Attack, 9, 0x100),
+                                     [2] = STEP(Lever_Attack, 8, 0, 0x40) };
+    Run_Pattern(wk, script, 3);
 }
 
 void Pattern09_0031(PLW* wk) {
@@ -224,19 +187,8 @@ void Pattern09_0033(PLW* wk) {
 }
 
 void Pattern09_0034(PLW* wk) {
-    switch (CP_Index[wk->wu.id][0]) {
-    case 0:
-        Normal_Attack(wk, 0, 0x100);
-        break;
-
-    case 1:
-        Look(wk, 0);
-        break;
-
-    default:
-        End_Pattern(wk);
-        break;
-    }
+    const Pattern_Step script[2] = { [0] = STEP(Normal_Attack, 0, 0x100), [1] = STEP(Look, 0) };
+    Run_Pattern(wk, script, 2);
 }
 
 void Pattern09_0035(PLW* wk) {
@@ -281,27 +233,11 @@ void Pattern09_0041(PLW* wk) {
 }
 
 void Pattern09_0042(PLW* wk) {
-    switch (CP_Index[wk->wu.id][0]) {
-    case 0:
-        Normal_Attack(wk, 8, 0x12);
-        break;
-
-    case 1:
-        Normal_Attack(wk, 8, 0x12);
-        break;
-
-    case 2:
-        Normal_Attack(wk, 8, 0x12);
-        break;
-
-    case 3:
-        Normal_Attack(wk, 8, 0x202);
-        break;
-
-    default:
-        End_Pattern(wk);
-        break;
-    }
+    const Pattern_Step script[4] = { [0] = STEP(Normal_Attack, 8, 0x12),
+                                     [1] = STEP(Normal_Attack, 8, 0x12),
+                                     [2] = STEP(Normal_Attack, 8, 0x12),
+                                     [3] = STEP(Normal_Attack, 8, 0x202) };
+    Run_Pattern(wk, script, 4);
 }
 
 void Pattern09_0043(PLW* wk) {
@@ -439,15 +375,8 @@ void Pattern09_0069(PLW* wk) {
 }
 
 void Pattern09_0070(PLW* wk) {
-    switch (CP_Index[wk->wu.id][0]) {
-    case 0:
-        Look(wk, 0);
-        break;
-
-    default:
-        End_Pattern(wk);
-        break;
-    }
+    const Pattern_Step script[1] = { [0] = STEP(Look, 0) };
+    Run_Pattern(wk, script, 1);
 }
 
 void Pattern09_0071(PLW* wk) {
@@ -488,35 +417,13 @@ void Pattern09_0077(PLW* wk) {
 }
 
 void Pattern09_0078(PLW* wk) {
-    switch (CP_Index[wk->wu.id][0]) {
-    case 0:
-        Search_Back_Term(wk, 0x60, 2, 0x4F);
-        break;
-
-    case 1:
-        SA_Term(wk, &(SA_Term_Args){0x35, -1, -1, 0x9F});
-        break;
-
-    case 2:
-        Pierce_On(wk);
-        break;
-
-    case 3:
-        Command_Attack(wk, &(Command_Attack_Args){8, 1, 0xB, -1});
-        break;
-
-    case 4:
-        SA_Term(wk, &(SA_Term_Args){-1, 100, 0x3A, 0});
-        break;
-
-    case 5:
-        Command_Attack(wk, &(Command_Attack_Args){8, 0x8016, 10, -1});
-        break;
-
-    default:
-        End_Pattern(wk);
-        break;
-    }
+    const Pattern_Step script[6] = { [0] = STEP(Search_Back_Term, 0x60, 2, 0x4F),
+                                     [1] = STEP(SA_Term, 0x35, -1, -1, 0x9F),
+                                     [2] = STEP_NOARG(Pierce_On),
+                                     [3] = STEP(Command_Attack, 8, 1, 0xB, -1),
+                                     [4] = STEP(SA_Term, -1, 100, 0x3A, 0),
+                                     [5] = STEP(Command_Attack, 8, 0x8016, 10, -1) };
+    Run_Pattern(wk, script, 6);
 }
 
 void Pattern09_0079(PLW* wk) {
@@ -528,23 +435,10 @@ void Pattern09_0079(PLW* wk) {
 }
 
 void Pattern09_0080(PLW* wk) {
-    switch (CP_Index[wk->wu.id][0]) {
-    case 0:
-        Lever_On(wk, 1, 2);
-        break;
-
-    case 1:
-        Command_Attack(wk, &(Command_Attack_Args){8, 0, 0xB, -1});
-        break;
-
-    case 2:
-        J_Command_Attack(wk, &(Command_Attack_Args){8, 0x1C, 8, -1});
-        break;
-
-    default:
-        End_Pattern(wk);
-        break;
-    }
+    const Pattern_Step script[3] = { [0] = STEP(Lever_On, 1, 2),
+                                     [1] = STEP(Command_Attack, 8, 0, 0xB, -1),
+                                     [2] = STEP(J_Command_Attack, 8, 0x1C, 8, -1) };
+    Run_Pattern(wk, script, 3);
 }
 
 void Pattern09_0081(PLW* wk) {
@@ -626,15 +520,8 @@ void Pattern09_0097(PLW* wk) {
 }
 
 void Pattern09_0098(PLW* wk) {
-    switch (CP_Index[wk->wu.id][0]) {
-    case 0:
-        ORO_HJA_Term(wk, &(ORO_Air_Term_Args){8, 1, 0x50, 0, -1, -1, -1, -0x7FB0, -0x7FD0, 0x400});
-        break;
-
-    default:
-        End_Pattern(wk);
-        break;
-    }
+    const Pattern_Step script[1] = { [0] = STEP(ORO_HJA_Term, 8, 1, 0x50, 0, -1, -1, -1, -0x7FB0, -0x7FD0, 0x400) };
+    Run_Pattern(wk, script, 1);
 }
 
 void Pattern09_0099(PLW* wk) {
@@ -650,15 +537,8 @@ void Pattern09_0100(PLW* wk) {
 }
 
 void Pattern09_0101(PLW* wk) {
-    switch (CP_Index[wk->wu.id][0]) {
-    case 0:
-        Lever_On(wk, -1, 2);
-        break;
-
-    default:
-        End_Pattern(wk);
-        break;
-    }
+    const Pattern_Step script[1] = { [0] = STEP(Lever_On, -1, 2) };
+    Run_Pattern(wk, script, 1);
 }
 
 void (*const Pattern09_Tbl[102])(PLW*) = {
