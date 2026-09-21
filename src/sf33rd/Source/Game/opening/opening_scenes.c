@@ -153,9 +153,8 @@ static void spawn_op_103_effects(void) {
 /* The effect sequence 103 and 107 share: once the sound has reached the step's
  * cue, move the scene on and spawn its six effects; until then, keep the
  * background moving. */
-static void run_op_effect_sequence(
-    bool (*cue_reached)(void), void (*advance)(void), void (*spawn_effects)(void), s16 bg_step
-) {
+static void run_op_effect_sequence(bool (*cue_reached)(void), void (*advance)(void), void (*spawn_effects)(void),
+                                   s16 bg_step) {
     if (cue_reached()) {
         advance();
         spawn_effects();
@@ -577,10 +576,6 @@ static void update_op_108_final_transition(void) {
  * had for an out-of-range step is what each link is written into. */
 static void op_108_move_last() {
     switch (op_w.r_no_2) {
-    case 8:
-        update_op_108_timed_transition(49);
-        break;
-
     case 9:
         update_op_108_scene_49_transition();
         break;
@@ -619,6 +614,10 @@ static void op_108_move_late() {
 
     case 7:
         update_op_108_scene_47_transition();
+        break;
+
+    case 8:
+        update_op_108_timed_transition(49);
         break;
 
     default:
