@@ -82,9 +82,7 @@ void Passive14_0011(PLW* wk) {
         [2] = STEP(Normal_Attack, 0xC, 0x40),         [3] = STEP_NOARG(Pierce_On),
         [4] = STEP(J_Command_Attack, 8, 0x20, 8, -1), [5] = STEP(Wait, 3)
     };
-    if (!Run_Pattern_Steps(wk, script, 6)) {
-        pattern_j_command_attack_from_step_6(wk);
-    }
+    Run_Pattern_Or(wk, script, 6, pattern_j_command_attack_from_step_6);
 }
 
 void Passive14_0012(PLW* wk) {
@@ -127,9 +125,7 @@ void Passive14_0016(PLW* wk) {
     const Pattern_Step script[6] = { [0] = STEP(Approach_Walk, 0x47, 2),   [1] = STEP(EM_Term, -1, -0x7FF8, 6, 6, 0x7C),
                                      [2] = STEP(Normal_Attack, 0xC, 0x40), [3] = STEP(J_Command_Attack, 9, 0x20, 8, -1),
                                      [4] = STEP_NOARG(Pierce_On),          [5] = STEP(Wait, 3) };
-    if (!Run_Pattern_Steps(wk, script, 6)) {
-        passive14_0016_from_step_6(wk);
-    }
+    Run_Pattern_Or(wk, script, 6, passive14_0016_from_step_6);
 }
 
 void Passive14_0017(PLW* wk) {
@@ -211,9 +207,7 @@ void Passive14_0028(PLW* wk) {
         [2] = STEP(EM_Term, -1, -0x7FF8, 6, 6, 0x7C),    [3] = STEP(Normal_Attack, 0xC, 0x40),
         [4] = STEP(J_Command_Attack, 0xC, 0x1E, 10, -1), [5] = STEP(Wait, 4)
     };
-    if (!Run_Pattern_Steps(wk, script, 6)) {
-        pattern_sa_term_from_step_6(wk);
-    }
+    Run_Pattern_Or(wk, script, 6, pattern_sa_term_from_step_6);
 }
 
 void Passive14_0029(PLW* wk) {
@@ -222,9 +216,7 @@ void Passive14_0029(PLW* wk) {
         [2] = STEP(EM_Term, -1, -0x7FF0, 6, 1, -1),    [3] = STEP(Normal_Attack, 0xC, 0x202),
         [4] = STEP(Command_Attack, 0xC, 0x1F, 10, -1), [5] = STEP(Wait, 1)
     };
-    if (!Run_Pattern_Steps(wk, script, 6)) {
-        pattern_sa_term_from_step_6(wk);
-    }
+    Run_Pattern_Or(wk, script, 6, pattern_sa_term_from_step_6);
 }
 
 void Passive14_0030(PLW* wk) {
@@ -234,9 +226,7 @@ void Passive14_0030(PLW* wk) {
                                      [3] = STEP(Normal_Attack, 0xC, 0x202),
                                      [4] = STEP_NOARG(Pierce_On),
                                      [5] = STEP(J_Command_Attack, 0xB, 0x20, 8, -1) };
-    if (!Run_Pattern_Steps(wk, script, 6)) {
-        pattern_wait_j_command_attack_from_step_6(wk);
-    }
+    Run_Pattern_Or(wk, script, 6, pattern_wait_j_command_attack_from_step_6);
 }
 
 void Passive14_0031(PLW* wk) {
@@ -284,9 +274,7 @@ void Passive14_0035(PLW* wk) {
         [2] = STEP(EM_Term, -1, -0x7FF8, 6, 6, 0x7C),   [3] = STEP(Normal_Attack, 0xC, 0x40),
         [4] = STEP(J_Command_Attack, 0xB, 0x20, 8, -1), [5] = STEP_NOARG(Pierce_On)
     };
-    if (!Run_Pattern_Steps(wk, script, 6)) {
-        passive14_0035_from_step_6(wk);
-    }
+    Run_Pattern_Or(wk, script, 6, passive14_0035_from_step_6);
 }
 
 void Passive14_0036(PLW* wk) {
