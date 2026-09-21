@@ -329,9 +329,7 @@ void Passive14_0147(PLW* wk) {
         [0] = STEP(Check_SA_Full, 6, 0x76), [1] = STEP(Only_Shot, 0x10), [2] = STEP(Wait, 1),
         [3] = STEP(Only_Shot, 0x10),        [4] = STEP(Wait, 1),         [5] = STEP(Lever_On, 0, 0)
     };
-    if (!Run_Pattern_Steps(wk, script, 6)) {
-        passive14_0147_from_step_6(wk);
-    }
+    Run_Pattern_Or(wk, script, 6, passive14_0147_from_step_6);
 }
 
 void Passive14_0148(PLW* wk) {
