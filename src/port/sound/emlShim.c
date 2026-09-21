@@ -339,6 +339,22 @@ static int checkOneIdCondition(struct VId* id, CSE_REQP* match, u32 masked) {
     return 1;
 }
 
+/* The note bit, reached from the bank half's default. Every case keeps its
+ * original label. */
+static int checkOneNoteCondition(struct VId* id, CSE_REQP* match, u32 masked) {
+    switch (masked) {
+    case MATCH_NOTE:
+        if (id->note != match->note) {
+            return 0;
+        }
+        break;
+    default:
+        return checkOneIdCondition(id, match, masked);
+    }
+
+    return 1;
+}
+
 /* One condition bit: the arms that disqualify the voice return 0, and every
  * other path leaves it eligible. */
 static int checkOneCondition(struct VId* id, CSE_REQP* match, u32 masked) {
@@ -356,13 +372,8 @@ static int checkOneCondition(struct VId* id, CSE_REQP* match, u32 masked) {
             return 0;
         }
         break;
-    case MATCH_NOTE:
-        if (id->note != match->note) {
-            return 0;
-        }
-        break;
     default:
-        return checkOneIdCondition(id, match, masked);
+        return checkOneNoteCondition(id, match, masked);
     }
 
     return 1;
@@ -567,7 +578,9 @@ void emlShimStartSound(CSE_SYS_PARAM_SNDSTART* param) {
     SDL_UnlockMutex(soundLock);
 }
 
-void emlShimSeKeyOff(CSE_REQP* pReqp) {
+/* The key-off and the stop walk differed in one call and nothing else. The walk
+ * lives here once; each entry point names the action it always named. */
+static void actOnMatchingVoices(CSE_REQP* pReqp, void (*action)(int)) {
     u32 cond = makeConditions(pReqp);
     struct VWork* i;
 
@@ -579,30 +592,19 @@ void emlShimSeKeyOff(CSE_REQP* pReqp) {
                 continue;
             }
 
-            SPU_VoiceKeyOff(i->voice_num);
+            action(i->voice_num);
         }
     }
 
     SDL_UnlockMutex(soundLock);
 }
 
+void emlShimSeKeyOff(CSE_REQP* pReqp) {
+    actOnMatchingVoices(pReqp, SPU_VoiceKeyOff);
+}
+
 void emlShimSeStop(CSE_REQP* pReqp) {
-    u32 cond = makeConditions(pReqp);
-    struct VWork* i;
-
-    SDL_LockMutex(soundLock);
-
-    list_for_each (i, &active_voices, list) {
-        if (checkConditions(&i->id, pReqp, cond)) {
-            if (pReqp->prio < i->id.prio) {
-                continue;
-            }
-
-            SPU_VoiceStop(i->voice_num);
-        }
-    }
-
-    SDL_UnlockMutex(soundLock);
+    actOnMatchingVoices(pReqp, SPU_VoiceStop);
 }
 
 void emlShimSeStopAll() {
