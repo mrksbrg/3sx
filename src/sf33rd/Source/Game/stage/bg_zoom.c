@@ -99,19 +99,19 @@ static void select_horizontal_zoom_request_middle(u16 p1zoom, u16 zoom_wk) {
 
 static void select_horizontal_2000_zoom_request(u16 zoom_wk) {
     switch (zoom_wk) {
-        case 0x4000:
-            request_horizontal_zoom(plw[0].wu.xyz[0].disp.pos);
-            break;
+    case 0x4000:
+        request_horizontal_zoom(plw[0].wu.xyz[0].disp.pos);
+        break;
 
-        case 0x2000:
-            request_horizontal_zoom(fighters_horizontal_midpoint());
-            break;
+    case 0x2000:
+        request_horizontal_zoom(fighters_horizontal_midpoint());
+        break;
 
-        case 0x200:
-        case 0x0:
-        case 0x2200:
-            request_horizontal_zoom(plw[1].wu.xyz[0].disp.pos);
-            break;
+    case 0x200:
+    case 0x0:
+    case 0x2200:
+        request_horizontal_zoom(plw[1].wu.xyz[0].disp.pos);
+        break;
     }
 }
 
@@ -227,19 +227,19 @@ static void select_vertical_zoom_request_middle(u16 p1zoom, u16 zoom_wk) {
 
 static void select_vertical_1000_zoom_request(u16 zoom_wk) {
     switch (zoom_wk) {
-        case 0x1000:
-            request_vertical_zoom(fighters_vertical_midpoint());
-            break;
+    case 0x1000:
+        request_vertical_zoom(fighters_vertical_midpoint());
+        break;
 
-        case 0x100:
-        case 0x0:
-        case 0x1100:
-            request_vertical_zoom(plw[1].wu.xyz[1].disp.pos);
-            break;
+    case 0x100:
+    case 0x0:
+    case 0x1100:
+        request_vertical_zoom(plw[1].wu.xyz[1].disp.pos);
+        break;
 
-        case 0x4000:
-            request_vertical_zoom(0);
-            break;
+    case 0x4000:
+        request_vertical_zoom(0);
+        break;
     }
 }
 
@@ -263,18 +263,27 @@ static void select_vertical_zoom_request(u16 p1zoom, u16 p2zoom) {
     }
 }
 
+static void place_fighter_on_screen(s16 i) {
+    if (plw[i].scr_pos_set_flag) {
+        plw[i].wu.scr_mv_x = plw[i].wu.xyz[0].disp.pos;
+        plw[i].wu.scr_mv_y = plw[i].wu.xyz[1].disp.pos;
+    } else if (plw[i].tsukamare_f) {
+        plw[i].wu.scr_mv_x = plw[(i + 1) & 1].wu.xyz[0].disp.pos;
+        plw[i].wu.scr_mv_y = plw[(i + 1) & 1].wu.xyz[1].disp.pos;
+    }
+}
+
 static void update_fighter_screen_positions() {
     s16 i;
 
     for (i = 0; i < 2; i++) {
-        if (plw[i].scr_pos_set_flag) {
-            plw[i].wu.scr_mv_x = plw[i].wu.xyz[0].disp.pos;
-            plw[i].wu.scr_mv_y = plw[i].wu.xyz[1].disp.pos;
-        } else if (plw[i].tsukamare_f) {
-            plw[i].wu.scr_mv_x = plw[(i + 1) & 1].wu.xyz[0].disp.pos;
-            plw[i].wu.scr_mv_y = plw[(i + 1) & 1].wu.xyz[1].disp.pos;
-        }
+        place_fighter_on_screen(i);
     }
+}
+
+static void begin_zoom_request_frame() {
+    zoom_req_flag_old = zoom_request_flag;
+    zoom_request_flag = 0;
 }
 
 static u16 higher_zoom_level(u16 p1zoom, u16 p2zoom) {
@@ -287,6 +296,14 @@ static u16 higher_zoom_level(u16 p1zoom, u16 p2zoom) {
     }
 
     return zmlv;
+}
+
+static void publish_zoom_request_level(u16 p1zoom, u16 p2zoom) {
+    zoom_request_level = higher_zoom_level(p1zoom, p2zoom);
+
+    if (zoom_request_level) {
+        zoom_request_flag |= 1;
+    }
 }
 
 void check_cg_zoom() {
@@ -308,17 +325,12 @@ void check_cg_zoom() {
         p2zoom = zmlv | (lookp1 << 12 | lookp2 << 8);
     }
 
-    zoom_req_flag_old = zoom_request_flag;
-    zoom_request_flag = 0;
+    begin_zoom_request_frame();
 
     update_fighter_screen_positions();
 
     select_horizontal_zoom_request(p1zoom, p2zoom);
     select_vertical_zoom_request(p1zoom, p2zoom);
 
-    zoom_request_level = higher_zoom_level(p1zoom, p2zoom);
-
-    if (zoom_request_level) {
-        zoom_request_flag |= 1;
-    }
+    publish_zoom_request_level(p1zoom, p2zoom);
 }
