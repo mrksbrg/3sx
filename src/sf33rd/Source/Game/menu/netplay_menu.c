@@ -85,10 +85,10 @@ void Setup_Netplay_Menu(struct _TASK* task_ptr) {
         }
 
         // EXIT button
-        effect_40_init(&(Effect40Init){2, 0, 0x48, 0, 2, 1});
-        effect_40_init(&(Effect40Init){2, 1, 0x49, 0, 2, 1});
-        effect_40_init(&(Effect40Init){2, 2, 0x4A, 0, 2, 0});
-        effect_40_init(&(Effect40Init){2, 3, 0x4B, 0, 2, 2});
+        effect_40_init(&(Effect40Init) { 2, 0, 0x48, 0, 2, 1 });
+        effect_40_init(&(Effect40Init) { 2, 1, 0x49, 0, 2, 1 });
+        effect_40_init(&(Effect40Init) { 2, 2, 0x4A, 0, 2, 0 });
+        effect_40_init(&(Effect40Init) { 2, 3, 0x4B, 0, 2, 2 });
 
         break;
     }
@@ -141,6 +141,17 @@ static void run_netplay_menu_confirm(struct _TASK* task_ptr) {
     }
 }
 
+/* Cancel while queued: the same button that exits the menu, but the queue
+ * takes it first. */
+static bool netplay_queue_cancel_pressed() {
+    return IO_Result == SWK_EAST && Fistbump_GetState() == FISTBUMP_AWAITING_MATCH;
+}
+
+/* Cancel on an offered match declines it rather than leaving the menu. */
+static bool netplay_match_decline_pressed() {
+    return IO_Result == SWK_EAST && Fistbump_GetState() == FISTBUMP_MATCHED;
+}
+
 /* The menu page's own input frame: the cursor moves, the exits and the two
  * confirm paths. Every `break` that left the menu's switch is a return here;
  * the cursor switch keeps its own. */
@@ -171,14 +182,53 @@ static void run_netplay_menu_input(struct _TASK* task_ptr, FistbumpState fs) {
         Netplay_HandleMenuExit();
         SE_dir_selected();
         return;
-    } else if (IO_Result == SWK_EAST && Fistbump_GetState() == FISTBUMP_AWAITING_MATCH) {
+    } else if (netplay_queue_cancel_pressed()) {
         Fistbump_CancelQueue();
         return;
-    } else if (IO_Result == SWK_EAST && Fistbump_GetState() == FISTBUMP_MATCHED) {
+    } else if (netplay_match_decline_pressed()) {
         Fistbump_DeclineMatch();
         return;
     } else if (IO_Result == SWK_SOUTH) {
         run_netplay_menu_confirm(task_ptr);
+        return;
+    }
+}
+
+/* Pick the page the menu shows, then build it. Falls through into the wait
+ * below, exactly as the switch did. */
+static void open_netplay_page(struct _TASK* task_ptr) {
+    FadeOut(1, 0xFF, 8);
+    task_ptr->r_no[2]++;
+    if (Netplay_IsDirectP2PConfigured()) {
+        Menu_Page = NETPLAY_PAGE_DIRECT;
+    } else {
+        Menu_Page = is_logged_in ? NETPLAY_PAGE_LOGGED_IN : NETPLAY_PAGE_LOGGED_OUT;
+    }
+
+    Setup_Netplay_Menu(task_ptr);
+}
+
+/* Hold the fade out while the connection is still coming up, then run the
+ * timer down to the fade in. The `break` that left the switch is a return. */
+static void wait_netplay_menu_ready(struct _TASK* task_ptr, FistbumpState fs) {
+    FadeOut(1, 0xFF, 8);
+
+    if (fs == FISTBUMP_CONNECTING) {
+        return;
+    }
+
+    if (--task_ptr->timer == 0) {
+        display_netplay_text = true;
+        task_ptr->r_no[2]++;
+        task_ptr->r_no[3] = 1;
+        FadeInit();
+    }
+}
+
+/* The fade in; the state advances on the frame it completes. */
+static void advance_netplay_menu_fade_in(struct _TASK* task_ptr) {
+    if (FadeIn(1, 25, 8)) {
+        task_ptr->r_no[2]++;
         return;
     }
 }
@@ -206,39 +256,15 @@ void Netplay_Menu(struct _TASK* task_ptr) {
         break;
 
     case 1:
-        FadeOut(1, 0xFF, 8);
-        task_ptr->r_no[2]++;
-        if (Netplay_IsDirectP2PConfigured()) {
-            Menu_Page = NETPLAY_PAGE_DIRECT;
-        } else {
-            Menu_Page = is_logged_in ? NETPLAY_PAGE_LOGGED_IN : NETPLAY_PAGE_LOGGED_OUT;
-        }
-
-        Setup_Netplay_Menu(task_ptr);
+        open_netplay_page(task_ptr);
         /* fallthrough */
 
     case 2:
-        FadeOut(1, 0xFF, 8);
-
-        if (fs == FISTBUMP_CONNECTING) {
-            break;
-        }
-
-        if (--task_ptr->timer == 0) {
-            display_netplay_text = true;
-            task_ptr->r_no[2]++;
-            task_ptr->r_no[3] = 1;
-            FadeInit();
-        }
-
+        wait_netplay_menu_ready(task_ptr, fs);
         break;
 
     case 3:
-        if (FadeIn(1, 25, 8)) {
-            task_ptr->r_no[2]++;
-            break;
-        }
-
+        advance_netplay_menu_fade_in(task_ptr);
         break;
 
     case 4:
