@@ -88,6 +88,12 @@ void end_1000_move() {
     end_1000_jp[end_w.r_no_2]();
 }
 
+/* The panel position both 1000 scene entries set from the scene table. */
+static void set_end_10_scene_position() {
+    bgw_ptr->xy[0].disp.pos = end_10_pos[end_w.r_no_2][0];
+    bgw_ptr->xy[1].disp.pos = end_10_pos[end_w.r_no_2][1];
+}
+
 /* Open a scene: step the state and put the panel where this scene starts. */
 static void end_10_open_scene() {
     bgw_ptr->r_no_1++;
@@ -122,17 +128,20 @@ static void step_end_1000_colour_cycle(s16 interval, s16 limit) {
     }
 }
 
+static void arm_end_1000_colour_hold(s16 interval, u16 message) {
+    bgw_ptr->free = interval;
+    bgw_ptr->l_limit = 0;
+    Rewrite_End_Message(message);
+}
+
 void end_1000_0000() {
     switch (bgw_ptr->r_no_1) {
     case 0:
         bgw_ptr->r_no_1++;
         Bg_On_W(1);
         effect_E6_init(0x4C);
-        bgw_ptr->xy[0].disp.pos = end_10_pos[end_w.r_no_2][0];
-        bgw_ptr->xy[1].disp.pos = end_10_pos[end_w.r_no_2][1];
-        bgw_ptr->free = 4;
-        bgw_ptr->l_limit = 0;
-        Rewrite_End_Message(1);
+        set_end_10_scene_position();
+        arm_end_1000_colour_hold(4, 1);
         break;
 
     case 1:
@@ -220,13 +229,10 @@ void end_1000_4000() {
     switch (bgw_ptr->r_no_1) {
     case 0:
         bgw_ptr->r_no_1++;
-        bgw_ptr->xy[0].disp.pos = end_10_pos[end_w.r_no_2][0];
-        bgw_ptr->xy[1].disp.pos = end_10_pos[end_w.r_no_2][1];
+        set_end_10_scene_position();
         effect_E6_init(0x9C);
         effect_E6_init(0xA5);
-        bgw_ptr->free = 8;
-        bgw_ptr->l_limit = 0;
-        Rewrite_End_Message(5);
+        arm_end_1000_colour_hold(8, 5);
         break;
 
     case 1:
