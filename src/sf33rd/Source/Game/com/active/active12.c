@@ -4,6 +4,7 @@
  */
 
 #include "sf33rd/Source/Game/com/active/active12.h"
+#include "sf33rd/Source/Game/com/patterns/com_pattern_run.h"
 #include "sf33rd/Source/Game/com/patterns/com_patterns.h"
 #include "common.h"
 #include "sf33rd/Source/Game/com/com_sub.h"
@@ -173,27 +174,11 @@ void Pattern12_0037(PLW* wk) {
 }
 
 void Pattern12_0038(PLW* wk) {
-    switch (CP_Index[wk->wu.id][0]) {
-    case 0:
-        J_Command_Attack(wk, &(Command_Attack_Args){8, 0x1D, 9, -1});
-        break;
-
-    case 1:
-        J_Command_Attack(wk, &(Command_Attack_Args){8, 0x1D, 9, -1});
-        break;
-
-    case 2:
-        J_Command_Attack(wk, &(Command_Attack_Args){8, 0x1D, 0xA, -1});
-        break;
-
-    case 3:
-        Com_Random_Select(wk, &(Branch_Menu_Args){6, 0, 0xA, 0x13, 0x1F}, 0);
-        break;
-
-    default:
-        End_Pattern(wk);
-        break;
-    }
+    const Pattern_Step script[4] = { [0] = STEP(J_Command_Attack, 8, 0x1D, 9, -1),
+                                     [1] = STEP(J_Command_Attack, 8, 0x1D, 9, -1),
+                                     [2] = STEP(J_Command_Attack, 8, 0x1D, 0xA, -1),
+                                     [3] = STEP(Com_Random_Select, &(Branch_Menu_Args) { 6, 0, 0xA, 0x13, 0x1F }, 0) };
+    Run_Pattern(wk, script, 4);
 }
 
 void Pattern12_0039(PLW* wk) {
@@ -301,35 +286,14 @@ void Pattern12_0056(PLW* wk) {
 }
 
 void Pattern12_0057(PLW* wk) {
-    switch (CP_Index[wk->wu.id][0]) {
-    case 0:
-        Jump_Attack_Term(wk, &(Jump_Term_Args){0x8058, 0x8040, 9, 0x20, 0, 0x8050, -1, 0x200});
-        break;
-
-    case 1:
-        Normal_Attack(wk, 9, 0x12);
-        break;
-
-    case 2:
-        Normal_Attack(wk, 9, 0x102);
-        break;
-
-    case 3:
-        Normal_Attack(wk, 8, 0x202);
-        break;
-
-    case 4:
-        Command_Attack(wk, &(Command_Attack_Args){8, 0x1c, 0x4008, -1});
-        break;
-
-    case 5:
-        Com_Random_Select(wk, &(Branch_Menu_Args){6, 0x2d, 0xff, 0xff, 0xff}, 0);
-        break;
-
-    default:
-        End_Pattern(wk);
-        break;
-    }
+    const Pattern_Step script[6] = { [0] = STEP(Jump_Attack_Term, 0x8058, 0x8040, 9, 0x20, 0, 0x8050, -1, 0x200),
+                                     [1] = STEP(Normal_Attack, 9, 0x12),
+                                     [2] = STEP(Normal_Attack, 9, 0x102),
+                                     [3] = STEP(Normal_Attack, 8, 0x202),
+                                     [4] = STEP(Command_Attack, 8, 0x1c, 0x4008, -1),
+                                     [5] = STEP(
+                                         Com_Random_Select, &(Branch_Menu_Args) { 6, 0x2d, 0xff, 0xff, 0xff }, 0) };
+    Run_Pattern(wk, script, 6);
 }
 
 void Pattern12_0058(PLW* wk) {
@@ -373,27 +337,11 @@ void Pattern12_0067(PLW* wk) {
 }
 
 void Pattern12_0068(PLW* wk) {
-    switch (CP_Index[wk->wu.id][0]) {
-    case 0:
-        Normal_Attack(wk, 8, 0x10);
-        break;
-
-    case 1:
-        Normal_Attack(wk, 8, 0x20);
-        break;
-
-    case 2:
-        Normal_Attack(wk, 8, 0x40);
-        break;
-
-    case 3:
-        Command_Attack(wk, &(Command_Attack_Args){8, 0x1E, 0xA, -1});
-        break;
-
-    default:
-        End_Pattern(wk);
-        break;
-    }
+    const Pattern_Step script[4] = { [0] = STEP(Normal_Attack, 8, 0x10),
+                                     [1] = STEP(Normal_Attack, 8, 0x20),
+                                     [2] = STEP(Normal_Attack, 8, 0x40),
+                                     [3] = STEP(Command_Attack, 8, 0x1E, 0xA, -1) };
+    Run_Pattern(wk, script, 4);
 }
 
 void Pattern12_0069(PLW* wk) {
@@ -405,27 +353,11 @@ void Pattern12_0070(PLW* wk) {
 }
 
 void Pattern12_0071(PLW* wk) {
-    switch (CP_Index[wk->wu.id][0]) {
-    case 0:
-        Jump_Attack_Term(wk, &(Jump_Term_Args){-0x7FA8, -0x7FC0, 9, 0x200, 0, -0x7FB0, -1, 0x200});
-        break;
-
-    case 1:
-        Normal_Attack(wk, 8, 0x102);
-        break;
-
-    case 2:
-        Normal_Attack(wk, 8, 0x202);
-        break;
-
-    case 3:
-        Command_Attack(wk, &(Command_Attack_Args){8, 0x1E, 8, -1});
-        break;
-
-    default:
-        End_Pattern(wk);
-        break;
-    }
+    const Pattern_Step script[4] = { [0] = STEP(Jump_Attack_Term, -0x7FA8, -0x7FC0, 9, 0x200, 0, -0x7FB0, -1, 0x200),
+                                     [1] = STEP(Normal_Attack, 8, 0x102),
+                                     [2] = STEP(Normal_Attack, 8, 0x202),
+                                     [3] = STEP(Command_Attack, 8, 0x1E, 8, -1) };
+    Run_Pattern(wk, script, 4);
 }
 
 void Pattern12_0072(PLW* wk) {
@@ -438,23 +370,10 @@ void Pattern12_0072(PLW* wk) {
 }
 
 void Pattern12_0073(PLW* wk) {
-    switch (CP_Index[wk->wu.id][0]) {
-    case 0:
-        Normal_Attack(wk, 9, 0x40);
-        break;
-
-    case 1:
-        Command_Attack(wk, &(Command_Attack_Args){0xC, 0x1C, 9, -1});
-        break;
-
-    case 2:
-        Command_Attack(wk, &(Command_Attack_Args){8, 0x1E, 8, -1});
-        break;
-
-    default:
-        End_Pattern(wk);
-        break;
-    }
+    const Pattern_Step script[3] = { [0] = STEP(Normal_Attack, 9, 0x40),
+                                     [1] = STEP(Command_Attack, 0xC, 0x1C, 9, -1),
+                                     [2] = STEP(Command_Attack, 8, 0x1E, 8, -1) };
+    Run_Pattern(wk, script, 3);
 }
 
 void Pattern12_0074(PLW* wk) {
@@ -467,27 +386,11 @@ void Pattern12_0074(PLW* wk) {
 }
 
 void Pattern12_0075(PLW* wk) {
-    switch (CP_Index[wk->wu.id][0]) {
-    case 0:
-        Normal_Attack(wk, 8, 0x202);
-        break;
-
-    case 1:
-        Normal_Attack(wk, 8, 0x202);
-        break;
-
-    case 2:
-        SA_Term(wk, &(SA_Term_Args){0xFFFF, 0x30, 0xFFFF, 0});
-        break;
-
-    case 3:
-        J_Command_Attack(wk, &(Command_Attack_Args){8, 0x1E, 0xA, -1});
-        break;
-
-    default:
-        End_Pattern(wk);
-        break;
-    }
+    const Pattern_Step script[4] = { [0] = STEP(Normal_Attack, 8, 0x202),
+                                     [1] = STEP(Normal_Attack, 8, 0x202),
+                                     [2] = STEP(SA_Term, 0xFFFF, 0x30, 0xFFFF, 0),
+                                     [3] = STEP(J_Command_Attack, 8, 0x1E, 0xA, -1) };
+    Run_Pattern(wk, script, 4);
 }
 
 void Pattern12_0076(PLW* wk) {
@@ -495,27 +398,11 @@ void Pattern12_0076(PLW* wk) {
 }
 
 void Pattern12_0077(PLW* wk) {
-    switch (CP_Index[wk->wu.id][0]) {
-    case 0:
-        Keep_Away(wk, 0xBF, 0);
-        break;
-
-    case 1:
-        Keep_Away(wk, 0x7F, 0);
-        break;
-
-    case 2:
-        Keep_Away(wk, 0xBF, 0);
-        break;
-
-    case 3:
-        Keep_Away(wk, 0x37, 0);
-        break;
-
-    default:
-        End_Pattern(wk);
-        break;
-    }
+    const Pattern_Step script[4] = { [0] = STEP(Keep_Away, 0xBF, 0),
+                                     [1] = STEP(Keep_Away, 0x7F, 0),
+                                     [2] = STEP(Keep_Away, 0xBF, 0),
+                                     [3] = STEP(Keep_Away, 0x37, 0) };
+    Run_Pattern(wk, script, 4);
 }
 
 void Pattern12_0078(PLW* wk) {
@@ -539,19 +426,8 @@ void Pattern12_0082(PLW* wk) {
 }
 
 void Pattern12_0083(PLW* wk) {
-    switch (CP_Index[wk->wu.id][0]) {
-    case 0:
-        Hi_Jump(wk, 0xC, 1);
-        break;
-
-    case 1:
-        Command_Attack(wk, &(Command_Attack_Args){0xC, 0x20, 0xA, -1});
-        break;
-
-    default:
-        End_Pattern(wk);
-        break;
-    }
+    const Pattern_Step script[2] = { [0] = STEP(Hi_Jump, 0xC, 1), [1] = STEP(Command_Attack, 0xC, 0x20, 0xA, -1) };
+    Run_Pattern(wk, script, 2);
 }
 
 void Pattern12_0084(PLW* wk) {
