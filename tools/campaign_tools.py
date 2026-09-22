@@ -6,10 +6,16 @@ and the share of each session's context that CodeScene's output occupied.
 
 A tool result is paid for once as cache write and then again as a cache read on every
 later turn of the session, so its cost is its size times the turns that follow it. The
-"context share" column estimates that: for each response, the CodeScene bytes already in
-the transcript divided by that response's cache-read tokens, summed over the session.
-CodeScene output is recognised whether it came through the MCP tool or through a script
-run in Bash, by the text it produces ("Code Health score", the review JSON).
+"CS ctx share" column estimates that: for each response, the CodeScene bytes already in
+the transcript (at four characters per token) divided by that response's cache-read
+tokens, averaged over the session. CodeScene output is recognised whether it came through
+the MCP tool or through a script run in Bash, by the text it produces.
+
+What this cannot measure: the MCP server's *tool definitions*. Transcripts do not record
+the system prompt or the tool block. Their only trace is the first response's context
+("1st ctx": system prompt + tools + first message), and Claude Code's /context view is the
+authoritative reading of that block - as a share of the window at the moment it is run,
+which is large on early turns and small once the context has grown.
 """
 from __future__ import annotations
 
@@ -44,6 +50,7 @@ def analyse(path, since, until):
     responses = 0
     model = None
     first = None
+    first_ctx = None         # context of the first response: system prompt + tool definitions + first message
     for line in open(path, encoding="utf-8", errors="replace"):
         try:
             o = json.loads(line)
@@ -60,8 +67,11 @@ def analyse(path, since, until):
                 seen.add(key)
                 model = m.get("model")
                 responses += 1
-                r = m["usage"].get("cache_read_input_tokens", 0) or 0
+                u = m["usage"]
+                r = u.get("cache_read_input_tokens", 0) or 0
                 reads += r
+                if first_ctx is None:
+                    first_ctx = r + (u.get("cache_creation_input_tokens") or 0) + (u.get("input_tokens") or 0)
                 if r:
                     cs_weighted += min(1.0, (cs_chars_so_far / 4) / r)
             if isinstance(content, list):
@@ -83,7 +93,7 @@ def analyse(path, since, until):
     if not first or first[:10] < since or first[:10] > until or not responses:
         return None
     return dict(session=os.path.basename(path)[:8], model=model, responses=responses, reads=reads,
-                calls=calls, chars=chars, cs_calls=cs_calls, cs_chars=cs_chars_total,
+                first_ctx=first_ctx or 0, calls=calls, chars=chars, cs_calls=cs_calls, cs_chars=cs_chars_total,
                 cs_share=(cs_weighted / responses) if responses else 0.0)
 
 
@@ -93,25 +103,37 @@ def main():
     ap.add_argument("--until", default="2026-09-30")
     ap.add_argument("--claude-root", default=os.path.expanduser("~/.claude*/projects"))
     args = ap.parse_args()
-    sessions = [s for s in (analyse(f, args.since, args.until) for f in sorted(glob.glob(os.path.join(args.claude_root, "*", "*.jsonl")))) if s]
+    sessions = [s for s in (analyse(f, args.since, args.until)
+                            for f in sorted(glob.glob(os.path.join(args.claude_root, "*", "*.jsonl")))) if s]
 
-    calls = collections.Counter(); chars = collections.Counter()
+    calls = collections.Counter()
+    chars = collections.Counter()
     for s in sessions:
-        calls.update(s["calls"]); chars.update(s["chars"])
+        calls.update(s["calls"])
+        chars.update(s["chars"])
     tc, tch = sum(calls.values()), sum(chars.values())
     print("%-40s %7s %7s %13s %7s" % ("tool", "calls", "share", "result chars", "share"))
     for name, n in calls.most_common(15):
         print("%-40s %7d %6.1f%% %13s %6.1f%%" % (name, n, 100 * n / tc, f"{chars[name]:,}", 100 * chars[name] / max(tch, 1)))
     print("%-40s %7d %7s %13s" % ("total", tc, "", f"{tch:,}"))
 
-    print("\n%-9s %-18s %9s %14s %8s %12s %11s" % ("session", "model", "responses", "cache reads", "CS calls", "CS chars", "CS ctx share"))
-    tot_reads = tot_w = 0.0; tot_cs_calls = tot_cs_chars = 0
+    print("\n%-9s %-18s %9s %14s %10s %8s %12s %11s" % ("session", "model", "responses", "cache reads", "1st ctx", "CS calls", "CS chars", "CS ctx share"))
+    tot_reads = tot_w = 0.0
+    tot_cs_calls = tot_cs_chars = 0
     for s in sorted(sessions, key=lambda s: -s["reads"]):
-        print("%-9s %-18s %9d %14s %8d %12s %10.1f%%" % (s["session"], s["model"], s["responses"], f'{s["reads"]:,}', s["cs_calls"], f'{s["cs_chars"]:,}', 100 * s["cs_share"]))
-        tot_reads += s["reads"]; tot_w += s["cs_share"] * s["reads"]; tot_cs_calls += s["cs_calls"]; tot_cs_chars += s["cs_chars"]
-    print("%-9s %-18s %9s %14s %8d %12s %10.1f%%  (weighted by cache reads)" % ("all", "", "", f"{int(tot_reads):,}", tot_cs_calls, f"{tot_cs_chars:,}", 100 * tot_w / max(tot_reads, 1)))
-    print("\nCS ctx share = CodeScene output resident in context as a fraction of each response's cache reads, averaged;")
-    print("add the server's tool definitions - 27 tools, about 10,800 tokens on every turn the MCP is loaded - for the full per-turn overhead.")
+        print("%-9s %-18s %9d %14s %10s %8d %12s %10.1f%%" % (
+            s["session"], s["model"], s["responses"], f'{s["reads"]:,}', f'{s["first_ctx"]:,}',
+            s["cs_calls"], f'{s["cs_chars"]:,}', 100 * s["cs_share"]))
+        tot_reads += s["reads"]
+        tot_w += s["cs_share"] * s["reads"]
+        tot_cs_calls += s["cs_calls"]
+        tot_cs_chars += s["cs_chars"]
+    print("%-9s %-18s %9s %14s %10s %8d %12s %10.1f%%  (weighted by cache reads)" % (
+        "all", "", "", f"{int(tot_reads):,}", "", tot_cs_calls, f"{tot_cs_chars:,}", 100 * tot_w / max(tot_reads, 1)))
+    print("\nCS ctx share: CodeScene *output* resident in context as a fraction of each response's cache reads, averaged over")
+    print("the session, assuming results stay in context (no compaction) and four characters per token.")
+    print("NOT measured here: the MCP tool *definitions*. Transcripts do not record the system prompt or tool block; their")
+    print("size is only visible inside '1st ctx' (system prompt + tools + first message) or in Claude Code's /context view.")
 
 
 if __name__ == "__main__":
