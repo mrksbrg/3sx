@@ -47,8 +47,17 @@ def norm(path):
     return path.replace("\\", "/")
 
 
+import functools
+
+
+@functools.lru_cache(maxsize=None)
+def real(path):
+    """Resolved, forward-slash spelling, so Windows short names (MARKUS~2) and long names compare equal."""
+    return norm(os.path.realpath(path))
+
+
 def first_party(path, repo):
-    p = norm(path)
+    p = real(path)
     if not p.startswith(repo + "/src/"):
         return False
     rel = p[len(repo) + 1:]
@@ -92,7 +101,7 @@ def walk(cursor, repo, rows, seen, scope=None):
                 else:
                     linkage = ""
                 rows[key] = dict(name=c.spelling, kind=kind, linkage=linkage, scope=scope or "",
-                                 file=norm(loc.file.name)[len(repo) + 1:], line=loc.line,
+                                 file=real(loc.file.name)[len(repo) + 1:], line=loc.line,
                                  type=(c.type.spelling if c.kind in (ci.CursorKind.VAR_DECL, ci.CursorKind.PARM_DECL, ci.CursorKind.FIELD_DECL) else ""))
         child_scope = scope
         if c.kind == ci.CursorKind.FUNCTION_DECL:
@@ -122,8 +131,8 @@ def main():
     if not resource_dir and clang_exe:
         resource_dir = subprocess.run([clang_exe, "-print-resource-dir"], capture_output=True, text=True).stdout.strip()
     extra = ["-resource-dir", norm(resource_dir)] if resource_dir else []
-    repo = norm(os.path.abspath(os.getcwd()))
-    entries = [e for e in json.load(open(args.compdb, encoding="utf-8")) if first_party(e["file"], repo)]
+    repo = real(os.getcwd())
+    entries = [e for e in json.load(open(args.compdb, encoding="utf-8")) if e.get("file", ".") != "." and first_party(e["file"], repo)]
     index = ci.Index.create()
     rows, seen = {}, {}
     failed = 0
@@ -139,7 +148,7 @@ def main():
         if errors:
             units_with_errors += 1
             if units_with_errors <= 5:
-                print("errors in", norm(e["file"])[len(repo) + 1:], ":", errors[0].spelling, file=sys.stderr)
+                print("errors in", real(e["file"])[len(repo) + 1:], ":", errors[0].spelling, file=sys.stderr)
         walk(tu.cursor, repo, rows, seen)
         if i % 100 == 0:
             print("%d/%d translation units, %d identifiers" % (i, len(entries), len(rows)), file=sys.stderr)
