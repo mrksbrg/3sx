@@ -49,6 +49,10 @@ def price(model, uncached, w5m, w1h, read, out):
 
 
 def claude_sessions(root, since, until, cwd_filter):
+    # Claude Code writes one line per content block, and each line repeats the whole
+    # response's usage; a resumed session can also copy earlier responses into a new file.
+    # Count each API response once, by message id and request id.
+    seen = set()
     rows = []
     for f in sorted(glob.glob(os.path.join(root, "*", "*.jsonl"))):
         if cwd_filter and cwd_filter.replace(" ", "-") not in os.path.basename(os.path.dirname(f)):
@@ -71,6 +75,10 @@ def claude_sessions(root, since, until, cwd_filter):
                 model = m.get("model") or "?"
                 if model.startswith("<"):
                     continue
+                key = (m.get("id"), o.get("requestId"))
+                if key[0] and key in seen:
+                    continue
+                seen.add(key)
                 u = m["usage"]
                 c = per_model[model]
                 c["turns"] += 1
