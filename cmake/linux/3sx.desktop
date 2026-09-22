@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=3SX
+Comment=Street Fighter III: 3rd Strike native port
+Exec=3sx
+Icon=3sx
+Terminal=false
+Categories=Game;ArcadeGame;
