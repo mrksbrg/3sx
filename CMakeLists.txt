@@ -50,6 +50,15 @@ if(APPLE)
         MACOSX_PACKAGE_LOCATION "Resources"
     )
     target_sources(3sx PRIVATE "${THREESX_MACOS_ICON}")
+elseif(WIN32)
+    enable_language(RC)
+    set(THREESX_WINDOWS_ICON "${CMAKE_SOURCE_DIR}/cmake/windows/3SX.ico")
+    configure_file(
+        "${CMAKE_SOURCE_DIR}/cmake/windows/3SX.rc.in"
+        "${CMAKE_CURRENT_BINARY_DIR}/3SX.rc"
+        @ONLY
+    )
+    target_sources(3sx PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/3SX.rc")
 endif()
 
 if(NOT PSP)
@@ -360,6 +369,16 @@ elseif(WIN32)
 elseif(UNIX)
     install(TARGETS 3sx
         RUNTIME DESTINATION bin
+    )
+
+    install(FILES
+        "${CMAKE_SOURCE_DIR}/cmake/linux/3sx.desktop"
+        DESTINATION share/applications
+    )
+
+    install(FILES
+        "${CMAKE_SOURCE_DIR}/cmake/linux/3sx.png"
+        DESTINATION share/icons/hicolor/256x256/apps
     )
 
     file(GLOB SDL3_SO "${SDL3_ROOT}/lib/libSDL3.so*")
