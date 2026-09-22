@@ -3,7 +3,8 @@
 
 Reads the two log stores an agent harness leaves on a machine:
 
-  ~/.claude/projects/<project>/*.jsonl   Claude Code transcripts; every assistant message
+  ~/.claude*/projects/<project>/*.jsonl  Claude Code transcripts, from every config directory
+                                         (~/.claude, ~/.claude-work, ...); every assistant message
                                          carries usage: input, output, cache writes (split
                                          by 5m / 1h TTL) and cache reads, plus the model.
   ~/.codex/sessions/YYYY/MM/DD/*.jsonl   Codex rollouts; token_count events carry a
@@ -146,7 +147,8 @@ def main():
     ap.add_argument("--since", default="2026-09-01")
     ap.add_argument("--until", default="2026-09-30")
     ap.add_argument("--cwd-filter", default="Street Fighter")
-    ap.add_argument("--claude-root", default=os.path.expanduser("~/.claude/projects"))
+    ap.add_argument("--claude-root", default=os.path.expanduser("~/.claude*/projects"),
+                    help="glob of Claude Code project roots; the default covers every ~/.claude* profile")
     ap.add_argument("--codex-root", default=os.path.expanduser("~/.codex/sessions"))
     ap.add_argument("--sessions", action="store_true", help="print one line per session")
     args = ap.parse_args()
